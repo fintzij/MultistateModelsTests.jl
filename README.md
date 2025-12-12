@@ -4,6 +4,31 @@ Comprehensive test suite for [MultistateModels.jl](https://github.com/fintzij/Mu
 
 This repository contains unit tests, integration tests, and long-running statistical validation tests for the MultistateModels.jl package.
 
+## Test Coverage Summary
+
+| Category | Tests | Status | Description |
+|----------|-------|--------|-------------|
+| **Unit Tests** | 1,149 | ✅ | Fast tests (~2 min) |
+| **Exact Data** | 45 | ✅ | Exact Markov inference validation |
+| **MCEM Parametric** | 45 | ✅ | MCEM with Exp/Weibull/Gompertz |
+| **MCEM Splines** | 45 | ✅ | MCEM with M-spline hazards |
+| **MCEM TVC** | 38 | ✅ | Time-varying covariates |
+| **Simulation Distribution** | 65 | ✅ | Event time distribution correctness |
+| **Simulation TVC** | 9,702 | ✅ | TVC simulation validation |
+| **Phase-Type** | 35 | ✅ | Importance sampling validation |
+| **Total** | **11,124+** | ✅ | All tests passing |
+
+### What is Tested
+
+- **Hazard Functions**: Analytic validation of Exponential, Weibull, Gompertz hazards (PH/AFT)
+- **Model Generation**: State space parsing, transition matrices, formula handling
+- **Simulation**: Event time sampling, competing risks, path reconstruction
+- **MCEM Inference**: Convergence to true parameters across all hazard families
+- **Phase-Type Approximations**: Importance sampling bias and variance
+- **Variance Estimation**: IJ/JK sandwich estimators, coverage validation
+- **Spline Hazards**: M-spline construction, boundary conditions, monotonicity
+- **Time-Varying Covariates**: Piecewise hazard computation, interval handling
+
 ## Installation
 
 ```julia

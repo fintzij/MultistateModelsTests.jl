@@ -253,7 +253,62 @@ end
         @test ase >= 0.0
     end
     
-    @testset "SubjectWeights in exact data likelihood" begin
+    @testset "Exact data: weighted vs duplicated equivalence" begin
+        # Core test: weight=2 should equal duplicating the subject for exact data
+        h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
+        h23 = Hazard(@formula(0 ~ 1), "exp", 2, 3)
+        
+        # Single subject exact data
+        dat_single = DataFrame(
+            id = [1, 1],
+            tstart = [0.0, 1.0],
+            tstop = [1.0, 2.0],
+            statefrom = [1, 2],
+            stateto = [2, 3],
+            obstype = [1, 1]  # exact data
+        )
+        
+        # Duplicated exact data
+        dat_duplicated = DataFrame(
+            id = [1, 1, 2, 2],
+            tstart = [0.0, 1.0, 0.0, 1.0],
+            tstop = [1.0, 2.0, 1.0, 2.0],
+            statefrom = [1, 2, 1, 2],
+            stateto = [2, 3, 2, 3],
+            obstype = [1, 1, 1, 1]
+        )
+        
+        # Model with weight=2
+        model_weighted = multistatemodel(h12, h23; data=dat_single, SubjectWeights=[2.0])
+        set_test_params!(model_weighted, [log(0.5), log(0.3)])
+        
+        # Model with duplicated data
+        model_duplicated = multistatemodel(h12, h23; data=dat_duplicated)
+        set_test_params!(model_duplicated, [log(0.5), log(0.3)])
+        
+        # Create sample paths
+        samplepaths_single = [MultistateModels.SamplePath(1, [0.0, 1.0, 2.0], [1, 2, 3])]
+        samplepaths_duplicated = [
+            MultistateModels.SamplePath(1, [0.0, 1.0, 2.0], [1, 2, 3]),
+            MultistateModels.SamplePath(2, [0.0, 1.0, 2.0], [1, 2, 3])
+        ]
+        
+        exactdata_weighted = MultistateModels.ExactData(model_weighted, samplepaths_single)
+        exactdata_duplicated = MultistateModels.ExactData(model_duplicated, samplepaths_duplicated)
+        
+        ll_weighted = MultistateModels.loglik_exact(
+            MultistateModels.get_parameters_flat(model_weighted), 
+            exactdata_weighted; neg=false
+        )
+        ll_duplicated = MultistateModels.loglik_exact(
+            MultistateModels.get_parameters_flat(model_duplicated), 
+            exactdata_duplicated; neg=false
+        )
+        
+        @test ll_weighted ≈ ll_duplicated rtol=1e-10
+    end
+    
+    @testset "Exact data: subject-level weights correctness" begin
         # Test weighted exact data likelihood
         h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
         h23 = Hazard(@formula(0 ~ 1), "exp", 2, 3)
@@ -293,8 +348,16 @@ end
         # Weighted ll should differ from uniform (unless weights average to 1)
         # Here sum(weights)/nsubj = 3.5/3 ≠ 1, so they should differ
         @test !isapprox(ll, ll_uniform, rtol=0.01)
+        
+        # Test subject-level scaling
+        # With uniform weights, compute per-subject contributions
+        # All subjects have same paths, so unweighted contributions should be equal
+        # Then weighted total should be: sum(w_i * unweighted_ll_i)
+        ll_per_subj = ll_uniform / nsubj  # Uniform contribution per subject
+        expected_weighted = sum(weights) * ll_per_subj
+        @test ll ≈ expected_weighted rtol=1e-10
     end
-    
+
     @testset "Gradient correctness with SubjectWeights" begin
         # ForwardDiff should handle weighted likelihoods correctly
         using ForwardDiff
@@ -449,6 +512,63 @@ end
         # Verify weights are preserved in expanded model
         @test model.SubjectWeights == weights
         @test length(model.SubjectWeights) == nsubj
+    end
+    
+    @testset "Weibull exact data: weighted vs duplicated equivalence" begin
+        # Test SubjectWeights for semi-Markov (Weibull) with exact data
+        # Exact data doesn't use MCEM - tests direct likelihood calculation
+        
+        h12 = Hazard(@formula(0 ~ 1), "wei", 1, 2)
+        h23 = Hazard(@formula(0 ~ 1), "wei", 2, 3)
+        
+        # Single subject exact data
+        dat_single = DataFrame(
+            id = [1, 1],
+            tstart = [0.0, 1.0],
+            tstop = [1.0, 2.0],
+            statefrom = [1, 2],
+            stateto = [2, 3],
+            obstype = [1, 1]  # exact data
+        )
+        
+        # Duplicated exact data
+        dat_duplicated = DataFrame(
+            id = [1, 1, 2, 2],
+            tstart = [0.0, 1.0, 0.0, 1.0],
+            tstop = [1.0, 2.0, 1.0, 2.0],
+            statefrom = [1, 2, 1, 2],
+            stateto = [2, 3, 2, 3],
+            obstype = [1, 1, 1, 1]
+        )
+        
+        # Model with weight=2
+        model_weighted = multistatemodel(h12, h23; data=dat_single, SubjectWeights=[2.0])
+        set_parameters!(model_weighted, [[0.0, 0.0], [0.0, 0.0]])
+        
+        # Model with duplicated data
+        model_duplicated = multistatemodel(h12, h23; data=dat_duplicated)
+        set_parameters!(model_duplicated, [[0.0, 0.0], [0.0, 0.0]])
+        
+        # Create sample paths
+        samplepaths_single = [MultistateModels.SamplePath(1, [0.0, 1.0, 2.0], [1, 2, 3])]
+        samplepaths_duplicated = [
+            MultistateModels.SamplePath(1, [0.0, 1.0, 2.0], [1, 2, 3]),
+            MultistateModels.SamplePath(2, [0.0, 1.0, 2.0], [1, 2, 3])
+        ]
+        
+        exactdata_weighted = MultistateModels.ExactData(model_weighted, samplepaths_single)
+        exactdata_duplicated = MultistateModels.ExactData(model_duplicated, samplepaths_duplicated)
+        
+        ll_weighted = MultistateModels.loglik_exact(
+            MultistateModels.get_parameters_flat(model_weighted), 
+            exactdata_weighted; neg=false
+        )
+        ll_duplicated = MultistateModels.loglik_exact(
+            MultistateModels.get_parameters_flat(model_duplicated), 
+            exactdata_duplicated; neg=false
+        )
+        
+        @test ll_weighted ≈ ll_duplicated rtol=1e-10
     end
     
 end

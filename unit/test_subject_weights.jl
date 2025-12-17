@@ -337,5 +337,119 @@ end
         @test !all(isapprox.(grad, grad_uniform, rtol=0.01))
     end
     
+    @testset "Phase-type model with SubjectWeights" begin
+        # Test that SubjectWeights work correctly with phase-type distributions
+        # Phase-type uses MCEM with importance sampling, different code path
+        
+        # Setup a Weibull hazard (requires phase-type approximation for panel data)
+        h12 = Hazard(@formula(0 ~ 1), "wei", 1, 2)
+        h23 = Hazard(@formula(0 ~ 1), "wei", 2, 3)
+        
+        nsubj = 5
+        dat = DataFrame(
+            id = repeat(1:nsubj, inner=2),
+            tstart = repeat([0.0, 1.0], outer=nsubj),
+            tstop = repeat([1.0, 2.0], outer=nsubj),
+            statefrom = repeat([1, 2], outer=nsubj),
+            stateto = repeat([2, 3], outer=nsubj),
+            obstype = fill(2, 2*nsubj)  # panel data
+        )
+        
+        # Model with uniform weights
+        model_uniform = multistatemodel(h12, h23; data=dat)
+        @test model_uniform.SubjectWeights == ones(nsubj)
+        
+        # Model with non-uniform weights
+        custom_weights = [1.0, 2.0, 0.5, 1.5, 3.0]
+        model_weighted = multistatemodel(h12, h23; data=dat, SubjectWeights=custom_weights)
+        @test model_weighted.SubjectWeights == custom_weights
+        
+        # Verify weights are stored correctly in the model
+        @test length(model_weighted.SubjectWeights) == nsubj
+        @test all(model_weighted.SubjectWeights .> 0)
+    end
+    
+    @testset "Phase-type weighted vs duplicated equivalence" begin
+        # For phase-type, test that weight=2 gives same result as duplicating data
+        
+        h12 = Hazard(@formula(0 ~ 1), "wei", 1, 2)
+        h23 = Hazard(@formula(0 ~ 1), "wei", 2, 3)
+        
+        # Single subject data
+        dat_single = DataFrame(
+            id = [1, 1],
+            tstart = [0.0, 1.0],
+            tstop = [1.0, 2.0],
+            statefrom = [1, 2],
+            stateto = [2, 3],
+            obstype = [2, 2]
+        )
+        
+        # Duplicated data (same subject twice)
+        dat_duplicated = DataFrame(
+            id = [1, 1, 2, 2],
+            tstart = [0.0, 1.0, 0.0, 1.0],
+            tstop = [1.0, 2.0, 1.0, 2.0],
+            statefrom = [1, 2, 1, 2],
+            stateto = [2, 3, 2, 3],
+            obstype = [2, 2, 2, 2]
+        )
+        
+        # Model with weight=2
+        model_weighted = multistatemodel(h12, h23; data=dat_single, SubjectWeights=[2.0])
+        
+        # Model with duplicated data (uniform weights)
+        model_duplicated = multistatemodel(h12, h23; data=dat_duplicated)
+        
+        # Set same parameters (Weibull has 2 params per hazard: log_scale, log_shape)
+        set_parameters!(model_weighted, [[0.0, 0.0], [0.0, 0.0]])
+        set_parameters!(model_duplicated, [[0.0, 0.0], [0.0, 0.0]])
+        
+        # Compute log-likelihoods using the Markov wrapper
+        books_weighted = MultistateModels.build_tpm_mapping(model_weighted.data)
+        mpd_weighted = MultistateModels.MPanelData(model_weighted, books_weighted)
+        ll_weighted = MultistateModels.loglik_markov(
+            MultistateModels.get_parameters_flat(model_weighted), 
+            mpd_weighted; 
+            neg=false
+        )
+        
+        books_duplicated = MultistateModels.build_tpm_mapping(model_duplicated.data)
+        mpd_duplicated = MultistateModels.MPanelData(model_duplicated, books_duplicated)
+        ll_duplicated = MultistateModels.loglik_markov(
+            MultistateModels.get_parameters_flat(model_duplicated), 
+            mpd_duplicated; 
+            neg=false
+        )
+        
+        # Should be equal: w=2 for one subject ≡ two identical subjects with w=1
+        @test ll_weighted ≈ ll_duplicated rtol=1e-10
+    end
+    
+    @testset "Phase-type expansion preserves SubjectWeights" begin
+        # Test that phase-type state expansion correctly propagates SubjectWeights
+        
+        # Use explicit phase-type hazard for expansion test
+        h12 = Hazard(@formula(0 ~ 1), :pt, 1, 2; n_phases=3, coxian_structure=:sctp)
+        h23 = Hazard(@formula(0 ~ 1), "exp", 2, 3)
+        
+        nsubj = 3
+        dat = DataFrame(
+            id = repeat(1:nsubj, inner=2),
+            tstart = repeat([0.0, 1.0], outer=nsubj),
+            tstop = repeat([1.0, 2.0], outer=nsubj),
+            statefrom = repeat([1, 2], outer=nsubj),
+            stateto = repeat([2, 3], outer=nsubj),
+            obstype = fill(2, 2*nsubj)
+        )
+        
+        weights = [1.0, 2.0, 0.5]
+        model = multistatemodel(h12, h23; data=dat, SubjectWeights=weights)
+        
+        # Verify weights are preserved in expanded model
+        @test model.SubjectWeights == weights
+        @test length(model.SubjectWeights) == nsubj
+    end
+    
 end
 

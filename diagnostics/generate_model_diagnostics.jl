@@ -8,7 +8,7 @@ using StatsBase
 using StatsModels
 
 pushfirst!(LOAD_PATH, normpath(joinpath(@__DIR__, "..", "..")))
-using MultistateModels: Hazard, multistatemodel, set_parameters!, simulate_path, call_haz, call_cumulhaz, survprob, truncate_distribution, CachedTransformStrategy, DirectTransformStrategy
+using MultistateModels: Hazard, multistatemodel, set_parameters!, simulate_path, eval_hazard, eval_cumhaz, survprob, truncate_distribution, CachedTransformStrategy, DirectTransformStrategy, get_hazard_params
 using MultistateModels
 
 const OUTPUT_DIR = normpath(joinpath(@__DIR__, "assets"))
@@ -354,7 +354,7 @@ function collect_event_durations(model, nsamples; use_cached_strategy::Bool, rng
     max_attempts = nsamples * 200
     strategy = use_cached_strategy ? CachedTransformStrategy() : DirectTransformStrategy()
     while collected < nsamples
-        path = simulate_path(model, 1, DELTA_U, DELTA_T; strategy = strategy, rng = rng)
+        path = simulate_path(model, 1; strategy = strategy, rng = rng)
         attempts += 1
         attempts > max_attempts && error("Exceeded maximum attempts without enough uncensored paths")
         if path.states[end] != path.states[1]
@@ -369,37 +369,46 @@ function plot_function_panel(scenario::Scenario, model, data)
     times_h, times_cs = hazard_time_grid(scenario)
     curves = expected_curves(scenario, times_h, times_cs)
     hazard = model.hazards[1]
-    pars = model.parameters[1]
+    # Use natural scale parameters for eval_hazard
+    all_pars = get_hazard_params(model.parameters, model.hazards)
+    pars = all_pars[hazard.hazname]
     
     if scenario.covariate_mode == :tvc
-        # For TVC, use the correct row based on time
-        t_change = scenario.config.t_change
-        row1 = data[1, :]
-        row2 = data[2, :]
+        # For TVC, find the correct row for each time t
+        # data has rows corresponding to intervals [tstart, tstop)
         
-        # Hazard at each time point uses the appropriate row
-        haz_calc = [t < t_change ? call_haz(t, pars, row1, hazard; give_log = false, apply_transform = false) : 
-                                   call_haz(t, pars, row2, hazard; give_log = false, apply_transform = false) for t in times_h]
-        haz_tt = [t < t_change ? call_haz(t, pars, row1, hazard; give_log = false, apply_transform = true) : 
-                                 call_haz(t, pars, row2, hazard; give_log = false, apply_transform = true) for t in times_h]
+        function get_row_at_t(t)
+            for i in 1:nrow(data)
+                if t >= data.tstart[i] && t < data.tstop[i]
+                    return data[i, :]
+                end
+            end
+            return data[end, :] # For t == horizon
+        end
+        
+        haz_calc = [eval_hazard(hazard, t, pars, get_row_at_t(t); apply_transform = false) for t in times_h]
+        haz_tt = [eval_hazard(hazard, t, pars, get_row_at_t(t); apply_transform = true) for t in times_h]
         
         # Cumulative hazard: piecewise integration
-        cum_calc = [begin
-            if t <= t_change
-                call_cumulhaz(0.0, t, pars, row1, hazard; give_log = false, apply_transform = false)
-            else
-                call_cumulhaz(0.0, t_change, pars, row1, hazard; give_log = false, apply_transform = false) +
-                call_cumulhaz(t_change, t, pars, row2, hazard; give_log = false, apply_transform = false)
+        function piecewise_cumhaz(t, apply_transform)
+            ch = 0.0
+            current_t = 0.0
+            for i in 1:nrow(data)
+                row = data[i, :]
+                interval_end = data.tstop[i]
+                if t <= interval_end
+                    ch += eval_cumhaz(hazard, current_t, t, pars, row; apply_transform = apply_transform)
+                    return ch
+                else
+                    ch += eval_cumhaz(hazard, current_t, interval_end, pars, row; apply_transform = apply_transform)
+                    current_t = interval_end
+                end
             end
-        end for t in times_cs]
-        cum_tt = [begin
-            if t <= t_change
-                call_cumulhaz(0.0, t, pars, row1, hazard; give_log = false, apply_transform = true)
-            else
-                call_cumulhaz(0.0, t_change, pars, row1, hazard; give_log = false, apply_transform = true) +
-                call_cumulhaz(t_change, t, pars, row2, hazard; give_log = false, apply_transform = true)
-            end
-        end for t in times_cs]
+            return ch
+        end
+
+        cum_calc = [piecewise_cumhaz(t, false) for t in times_cs]
+        cum_tt = [piecewise_cumhaz(t, true) for t in times_cs]
         
         # Survival: exp(-cumhaz)
         surv_calc = exp.(-cum_calc)
@@ -407,12 +416,12 @@ function plot_function_panel(scenario::Scenario, model, data)
     else
         # Non-TVC: use single row
         subj_row = data[1, :]
-        haz_calc = [call_haz(t, pars, subj_row, hazard; give_log = false, apply_transform = false) for t in times_h]
-        haz_tt = [call_haz(t, pars, subj_row, hazard; give_log = false, apply_transform = true) for t in times_h]
-        cum_calc = [call_cumulhaz(0.0, t, pars, subj_row, hazard; give_log = false, apply_transform = false) for t in times_cs]
-        cum_tt = [call_cumulhaz(0.0, t, pars, subj_row, hazard; give_log = false, apply_transform = true) for t in times_cs]
-        surv_calc = [survprob(0.0, t, model.parameters, subj_row, model.totalhazards[1], model.hazards; give_log = false, apply_transform = false) for t in times_cs]
-        surv_tt = [survprob(0.0, t, model.parameters, subj_row, model.totalhazards[1], model.hazards; give_log = false, apply_transform = true) for t in times_cs]
+        haz_calc = [eval_hazard(hazard, t, pars, subj_row; apply_transform = false) for t in times_h]
+        haz_tt = [eval_hazard(hazard, t, pars, subj_row; apply_transform = true) for t in times_h]
+        cum_calc = [eval_cumhaz(hazard, 0.0, t, pars, subj_row; apply_transform = false) for t in times_cs]
+        cum_tt = [eval_cumhaz(hazard, 0.0, t, pars, subj_row; apply_transform = true) for t in times_cs]
+        surv_calc = [survprob(0.0, t, all_pars, subj_row, model.totalhazards[1], model.hazards; give_log = false, apply_transform = false) for t in times_cs]
+        surv_tt = [survprob(0.0, t, all_pars, subj_row, model.totalhazards[1], model.hazards; give_log = false, apply_transform = true) for t in times_cs]
     end
 
     fig = Figure(size = (1200, 900))
@@ -420,8 +429,8 @@ function plot_function_panel(scenario::Scenario, model, data)
 
     ax1 = Axis(fig[1, 1], title = "Hazard", xlabel = "Time", ylabel = "h(t)")
     lines!(ax1, times_h, curves.haz_expected, color = colors[:expected], linewidth = 3, label = "analytic")
-    lines!(ax1, times_h, haz_calc, color = colors[:calc], linewidth = 2, label = "call_haz")
-    lines!(ax1, times_h, haz_tt, color = colors[:tt], linewidth = 2, linestyle = :dash, label = "call_haz (time transform)")
+    lines!(ax1, times_h, haz_calc, color = colors[:calc], linewidth = 2, label = "eval_hazard")
+    lines!(ax1, times_h, haz_tt, color = colors[:tt], linewidth = 2, linestyle = :dash, label = "eval_hazard (time transform)")
     axislegend(ax1, position = :rb)
 
     ax2 = Axis(fig[1, 2], title = "Cumulative hazard", xlabel = "Time", ylabel = "Λ(t)")

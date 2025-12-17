@@ -158,9 +158,10 @@ function toy_fitted_exact_model()
         base_model.ObservationWeights,
         base_model.CensoringPatterns,
         base_model.markovsurrogate,
-        nothing,
-        nothing,
+        nothing,  # ConvergenceRecords
+        nothing,  # ProposedPaths
         base_model.modelcall,
+        base_model.phasetype_expansion,  # phasetype_expansion
     )
 
     return (; model = fitted, loglik = stored_loglik)

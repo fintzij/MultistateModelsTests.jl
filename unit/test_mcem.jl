@@ -39,6 +39,7 @@ using ForwardDiff
         exactdata = MultistateModels.ExactData(model, samplepaths)
         
         grad = ForwardDiff.gradient(p -> MultistateModels.loglik_exact(p, exactdata; neg=true), params)
+        # AD consistency: gradient should be finite and have correct length
         @test length(grad) == length(params)
         @test all(isfinite.(grad))
         
@@ -48,6 +49,7 @@ using ForwardDiff
         smdata = MultistateModels.SMPanelData(model, samplepaths_nested, weights)
         
         grad_sm = ForwardDiff.gradient(p -> MultistateModels.loglik_semi_markov(p, smdata; neg=true), params)
+        # AD consistency: gradient should be finite and have correct length
         @test length(grad_sm) == length(params)
         @test all(isfinite.(grad_sm))
     end
@@ -110,9 +112,10 @@ using ForwardDiff
         @test MultistateModels.squarem_should_accept(-10.0, -12.0, -15.0) == true
         @test MultistateModels.squarem_should_accept(-20.0, -12.0, -15.0) == false
         
-        # SquaremState constructor
+        # SquaremState constructor - verify initialization values
         state = MultistateModels.SquaremState(5)
         @test length(state.θ0) == 5
+        @test all(state.θ0 .== 0.0)  # Should be zero-initialized
         @test state.step == 0
         @test state.n_accelerations == 0
     end

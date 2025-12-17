@@ -133,12 +133,10 @@ import MultistateModels: FlattenContinuous, FlattenAll, UnflattenStrict, Unflatt
         
         flat = flatten_fn(x)
         @test flat ≈ [1.5, 0.2]
-        @test length(flat) == 2
         
         reconstructed = unflatten_fn(flat)
         @test reconstructed isa NamedTuple
-        @test haskey(reconstructed, :shape)
-        @test haskey(reconstructed, :scale)
+        # Value tests prove the keys exist
         @test reconstructed.shape ≈ 1.5
         @test reconstructed.scale ≈ 0.2
         
@@ -154,7 +152,6 @@ import MultistateModels: FlattenContinuous, FlattenAll, UnflattenStrict, Unflatt
         
         flat_nested = flatten_fn_nested(x_nested)
         @test flat_nested ≈ [1.5, 0.2, 0.3, 0.1]
-        @test length(flat_nested) == 4
         
         reconstructed_nested = unflatten_fn_nested(flat_nested)
         @test reconstructed_nested isa NamedTuple

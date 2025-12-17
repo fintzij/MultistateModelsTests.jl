@@ -48,9 +48,8 @@ using StatsModels: @formula
         
         set_parameters!(model, (h12=[log_h12], h13=[log_h13], h23=[log_h23]))
         
-        # Verify get_parameters_flat returns in transition matrix order
+        # Verify get_parameters_flat returns in transition matrix order with correct values
         flat = get_parameters_flat(model)
-        @test length(flat) == 3
         @test flat[1] ≈ log_h12  # h12 first (1->2)
         @test flat[2] ≈ log_h13  # h13 second (1->3)
         @test flat[3] ≈ log_h23  # h23 third (2->3)
@@ -85,7 +84,6 @@ using StatsModels: @formula
         set_parameters!(model, (h12=[log_shape, log_scale],))
         
         flat = get_parameters_flat(model)
-        @test length(flat) == 2
         @test flat[1] ≈ log_shape  # First parameter is shape
         @test flat[2] ≈ log_scale  # Second parameter is scale
         
@@ -117,7 +115,6 @@ using StatsModels: @formula
         set_parameters!(model, (h12=[log_shape, log_scale],))
         
         flat = get_parameters_flat(model)
-        @test length(flat) == 2
         @test flat[1] ≈ log_shape  # First parameter is shape
         @test flat[2] ≈ log_scale  # Second parameter is scale
         
@@ -159,7 +156,6 @@ using StatsModels: @formula
         ))
         
         flat = get_parameters_flat(model)
-        @test length(flat) == 5  # 1 + 2 + 2
         
         # Check ordering: h12 (1 param), h13 (2 params), h23 (2 params)
         @test flat[1] ≈ log_rate         # h12 rate

@@ -55,7 +55,12 @@ using ForwardDiff
         hess = ForwardDiff.hessian(p -> loglik_exact(p, exact_data; neg=false), pars)
         @test size(hess) == (length(pars), length(pars))
         @test all(isfinite.(hess))
+        # Hessian of log-likelihood should be negative semi-definite at/near MLE
+        # (i.e., -hess should be PSD). We check symmetry and eigenvalue structure.
         @test issymmetric(hess)
+        # All eigenvalues should be <= 0 for concave log-likelihood
+        eigs = eigvals(Symmetric(hess))
+        @test all(eigs .<= sqrt(eps()))
     end
 end
 
@@ -116,14 +121,12 @@ end
             2  # npar_total = npar_baseline
         )
         
+        # Verify structure and values directly
         @test params isa NamedTuple
-        @test haskey(params, :baseline)
         @test params.baseline isa NamedTuple
-        @test haskey(params.baseline, :h12_shape)
-        @test haskey(params.baseline, :h12_scale)
         @test params.baseline.h12_shape ≈ log(1.5)
         @test params.baseline.h12_scale ≈ log(0.2)
-        @test !haskey(params, :covariates)
+        @test !hasproperty(params, :covariates)  # No covariates
     end
     
     @testset "Weibull with covariates" begin
@@ -134,12 +137,9 @@ end
             4  # npar_total
         )
         
-        @test haskey(params, :baseline)
-        @test haskey(params, :covariates)
+        # Verify all values directly (accessing them proves keys exist)
         @test params.baseline.h12_shape ≈ log(1.5)
         @test params.baseline.h12_scale ≈ log(0.2)
-        @test haskey(params.covariates, :h12_age)
-        @test haskey(params.covariates, :h12_sex)
         @test params.covariates.h12_age ≈ 0.3
         @test params.covariates.h12_sex ≈ 0.1
     end
@@ -153,7 +153,7 @@ end
         )
         
         @test params.baseline.h13_intercept ≈ log(0.5)
-        @test !haskey(params, :covariates)
+        @test !hasproperty(params, :covariates)  # No covariates
     end
     
     @testset "Error on mismatched lengths" begin

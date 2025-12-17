@@ -35,8 +35,10 @@ using LinearAlgebra
 # Import internal functions
 import MultistateModels: Hazard, multistatemodel, fit, set_parameters!, simulate,
     get_parameters_flat, get_parameters, SamplePath, @formula,
-    PhaseTypeConfig, build_phasetype_model, build_phasetype_surrogate,
-    phasetype_parameters_to_Q, build_phasetype_hazards
+    PhaseTypeConfig, build_phasetype_surrogate
+
+# Include longtest-only helpers (build_phasetype_model, build_phasetype_hazards, etc.)
+include("phasetype_longtest_helpers.jl")
 
 const RNG_SEED = 0xABCD0001
 const N_SUBJECTS = 1000           # Large sample for MLE precision
@@ -121,7 +123,7 @@ end
     # State 1: phases 1-2
     # State 2: phases 3-4  
     # State 3 (absorbing): phase 5
-    config = PhaseTypeConfig(n_phases=[2, 2, 1])
+    config = PhaseTypeConfig(n_phases=Dict(1=>2, 2=>2))
     
     println("\n--- 2-Phase Coxian Illness-Death Model ---")
     println("Observed states: 3, Phases per transient: 2")
@@ -239,7 +241,7 @@ end
     
     # Simple 2-state model: 1 → 2
     tmat = [0 1; 0 0]
-    config = PhaseTypeConfig(n_phases=[2, 1])
+    config = PhaseTypeConfig(n_phases=Dict(1=>2))
     
     # Build surrogate to understand phase structure
     surrogate = build_phasetype_surrogate(tmat, config)
@@ -311,6 +313,204 @@ end
         else
             @test_skip "Insufficient events"
         end
+    end
+end
+
+# ============================================================================
+# TEST SECTION 4: PHASE-TYPE WITH FIXED COVARIATES
+# ============================================================================
+
+@testset "Phase-Type Hazard: 2-Phase with Fixed Covariate (Exact Data)" begin
+    Random.seed!(RNG_SEED + 100)
+    
+    println("\n--- 2-Phase Phase-Type with Fixed Covariate ---")
+    
+    # Simple 2-state model: 1 → 2 (absorbing)
+    tmat = [0 1; 0 0]
+    config = PhaseTypeConfig(n_phases=Dict(1=>2))
+    
+    # Build surrogate structure
+    surrogate = build_phasetype_surrogate(tmat, config)
+    
+    @test surrogate.n_observed_states == 2
+    @test surrogate.n_expanded_states == 3  # 2 phases for state 1, 1 for absorbing state 2
+    
+    # Generate covariate data - binary treatment
+    cov_data = DataFrame(x = rand([0.0, 1.0], N_SUBJECTS))
+    
+    # Create data template with covariate
+    template = DataFrame(
+        id = 1:N_SUBJECTS,
+        tstart = zeros(N_SUBJECTS),
+        tstop = fill(MAX_TIME, N_SUBJECTS),
+        statefrom = ones(Int, N_SUBJECTS),
+        stateto = ones(Int, N_SUBJECTS),
+        obstype = ones(Int, N_SUBJECTS),
+        x = cov_data.x
+    )
+    
+    # Build model with covariate
+    covariate_formula = @formula(0 ~ x)
+    result = build_phasetype_model(tmat, config; 
+                                    data=template,
+                                    covariate_formula=covariate_formula,
+                                    verbose=true)
+    model = result.model
+    
+    # For 2-phase Coxian with 1 destination:
+    # - λ₁: progression rate (phase 1 → phase 2)
+    # - μ₁: exit from phase 1 → absorbing
+    # - μ₂: exit from phase 2 → absorbing
+    # Each has (log_rate, beta) parameters
+    # Total: 6 parameters
+    
+    n_hazards = length(model.hazards)
+    println("  Number of hazards: $n_hazards")
+    @test n_hazards == 3  # λ₁, μ₁, μ₂
+    
+    # True parameters: (log_rate, beta) for each hazard
+    # Covariate x has positive effect on exit rates (increases hazard)
+    true_rates = [0.5, 0.3, 0.6]  # λ₁, μ₁, μ₂
+    true_betas = [0.0, 0.4, 0.3]   # No effect on progression, positive on exit
+    
+    # Set parameters
+    pars_dict = Dict{Symbol, Vector{Float64}}()
+    for (i, haz) in enumerate(model.hazards)
+        pars_dict[haz.hazname] = [log(true_rates[i]), true_betas[i]]
+    end
+    set_parameters!(model, NamedTuple(pars_dict))
+    
+    println("  True rates: $(round.(true_rates, digits=3))")
+    println("  True betas: $(round.(true_betas, digits=3))")
+    
+    # Simulate exact data
+    println("\nSimulating exact data with covariate...")
+    sim_result = simulate(model; paths=false, data=true, nsim=1)
+    exact_data = sim_result[1]
+    
+    println("  Simulated $(nrow(exact_data)) observations")
+    println("  Events: $(sum(exact_data.stateto .== 3))")  # Phase 3 is absorbing
+    
+    # Fit model - rebuild with covariate formula
+    hazards_for_fit = build_phasetype_hazards(tmat, config, surrogate;
+                                               covariate_formula=covariate_formula)
+    model_fit = multistatemodel(hazards_for_fit...; data=exact_data)
+    
+    @testset "Parameter recovery with covariate" begin
+        println("\nFitting phase-type model with covariate...")
+        fitted = fit(model_fit; verbose=false)
+        
+        fitted_params = get_parameters_flat(fitted)
+        
+        # Check rate recovery (log scale)
+        for i in 1:n_hazards
+            true_log_rate = log(true_rates[i])
+            fitted_log_rate = fitted_params[2*(i-1) + 1]
+            rel_err = abs(fitted_log_rate - true_log_rate) / abs(true_log_rate)
+            @test rel_err < PARAM_TOL_REL
+        end
+        
+        # Check beta recovery - exit rates should have positive effect recovered
+        # μ₁ beta: fitted_params[4], true = 0.4
+        # μ₂ beta: fitted_params[6], true = 0.3
+        @test fitted_params[4] > 0.0  # Positive direction correct for μ₁
+        @test isapprox(fitted_params[4], true_betas[2]; atol=0.25)
+        @test fitted_params[6] > 0.0  # Positive direction correct for μ₂
+        @test isapprox(fitted_params[6], true_betas[3]; atol=0.25)
+    end
+end
+
+# ============================================================================
+# TEST SECTION 5: PHASE-TYPE WITH TIME-VARYING COVARIATES
+# ============================================================================
+
+@testset "Phase-Type Hazard: 2-Phase with TVC (Exact Data)" begin
+    Random.seed!(RNG_SEED + 200)
+    
+    println("\n--- 2-Phase Phase-Type with Time-Varying Covariate ---")
+    
+    # Simple 2-state model: 1 → 2 (absorbing)
+    tmat = [0 1; 0 0]
+    config = PhaseTypeConfig(n_phases=Dict(1=>2))
+    surrogate = build_phasetype_surrogate(tmat, config)
+    
+    # TVC setup: covariate changes at t=3
+    n_subj = N_SUBJECTS
+    change_time = 3.0
+    
+    # Create TVC template - each subject has 2 intervals
+    rows = []
+    for subj in 1:n_subj
+        # Treatment: 50% switch from 0 to 1 at change_time
+        trt_switch = rand() < 0.5
+        x_before = 0.0
+        x_after = trt_switch ? 1.0 : 0.0
+        
+        # Interval 1: [0, change_time)
+        push!(rows, (id=subj, tstart=0.0, tstop=change_time, 
+                     statefrom=1, stateto=1, obstype=1, x=x_before))
+        # Interval 2: [change_time, MAX_TIME]
+        push!(rows, (id=subj, tstart=change_time, tstop=MAX_TIME,
+                     statefrom=1, stateto=1, obstype=1, x=x_after))
+    end
+    tvc_template = DataFrame(rows)
+    
+    # Build model with covariate
+    covariate_formula = @formula(0 ~ x)
+    result = build_phasetype_model(tmat, config;
+                                    data=tvc_template,
+                                    covariate_formula=covariate_formula,
+                                    verbose=false)
+    model = result.model
+    
+    # True parameters
+    true_rates = [0.4, 0.25, 0.5]  # λ₁, μ₁, μ₂
+    true_betas = [0.0, 0.5, 0.4]   # TVC effect on exit rates
+    
+    # Set parameters
+    pars_dict = Dict{Symbol, Vector{Float64}}()
+    for (i, haz) in enumerate(model.hazards)
+        pars_dict[haz.hazname] = [log(true_rates[i]), true_betas[i]]
+    end
+    set_parameters!(model, NamedTuple(pars_dict))
+    
+    println("  True rates: $(round.(true_rates, digits=3))")
+    println("  True TVC betas: $(round.(true_betas, digits=3))")
+    
+    # Simulate with TVC - use autotmax=false to preserve TVC structure
+    println("\nSimulating exact data with TVC...")
+    sim_result = simulate(model; paths=false, data=true, nsim=1, autotmax=false)
+    exact_data = sim_result[1]
+    
+    println("  Simulated $(nrow(exact_data)) observations")
+    
+    # Fit model
+    hazards_for_fit = build_phasetype_hazards(tmat, config, surrogate;
+                                               covariate_formula=covariate_formula)
+    model_fit = multistatemodel(hazards_for_fit...; data=exact_data)
+    
+    @testset "TVC parameter recovery" begin
+        println("\nFitting phase-type model with TVC...")
+        fitted = fit(model_fit; verbose=false)
+        
+        fitted_params = get_parameters_flat(fitted)
+        n_hazards = 3
+        
+        # Check rate recovery
+        for i in 1:n_hazards
+            true_log_rate = log(true_rates[i])
+            fitted_log_rate = fitted_params[2*(i-1) + 1]
+            @test isfinite(fitted_log_rate)
+        end
+        
+        # Check TVC effect direction (positive effects on exit rates)
+        # μ₁ beta: fitted_params[4]
+        # μ₂ beta: fitted_params[6]
+        @test fitted_params[4] > -0.2  # Should be positive or near zero
+        @test fitted_params[6] > -0.2  # Should be positive or near zero
+        
+        # Recovery tolerance is higher for TVC
+        @test isapprox(fitted_params[4], true_betas[2]; atol=0.4)
     end
 end
 

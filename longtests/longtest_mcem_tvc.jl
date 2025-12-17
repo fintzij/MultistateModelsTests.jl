@@ -36,7 +36,7 @@ using LinearAlgebra
 
 # Import internal functions for testing
 import MultistateModels: Hazard, multistatemodel, fit, set_parameters!, simulate,
-    get_parameters_flat, SamplePath
+    get_parameters_flat, SamplePath, get_parameters, PhaseTypeProposal
 
 const RNG_SEED = 0xABCDEF01
 const N_SUBJECTS = 1000       # Standard sample size for longtests
@@ -94,6 +94,67 @@ function build_tvc_panel_data(;
     end
     
     return DataFrame(rows)
+end
+
+# ============================================================================
+# Test 0: Markov Panel Exponential + TVC (validates TVC data handling)
+# ============================================================================
+# Note: Exponential hazards are Markovian, so this uses _fit_markov_panel,
+# not MCEM. This test validates that TVC data structures work correctly
+# with the Markov panel likelihood.
+
+@testset "Markov Panel Exponential + TVC" begin
+    Random.seed!(RNG_SEED - 1)
+    
+    # Simple exponential with TVC treatment effect
+    true_log_rate = log(0.25)
+    true_beta = 0.5  # Treatment increases hazard
+    
+    # Build panel data with treatment switch at t=3
+    panel_data = build_tvc_panel_data(
+        n_subjects = N_SUBJECTS,
+        obs_times = [2.0, 4.0, 6.0, 8.0],
+        covariate_change_times = [3.0],
+        covariate_generator = subj -> rand() < 0.5 ? [0.0, 1.0] : [0.0, 0.0],  # Half get treatment
+        obstype = 2
+    )
+    
+    # Simulate from exponential model
+    h12_sim = Hazard(@formula(0 ~ x), "exp", 1, 2)
+    model_sim = multistatemodel(h12_sim; data=panel_data, surrogate=:markov)
+    set_parameters!(model_sim, (h12 = [true_log_rate, true_beta],))
+    
+    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false)
+    simulated_data = sim_result[1, 1]
+    
+    # Fit model (Markov panel fitting, not MCEM)
+    h12_fit = Hazard(@formula(0 ~ x), "exp", 1, 2)
+    model_fit = multistatemodel(h12_fit; data=simulated_data, surrogate=:markov)
+    
+    fitted = fit(model_fit;
+        verbose=false,
+        compute_vcov=false)
+    
+    # Verify Markov panel fitting was used (ConvergenceRecords has solution, not ess_trace)
+    @test !isnothing(fitted.ConvergenceRecords)
+    @test hasproperty(fitted.ConvergenceRecords, :solution)
+    
+    # Parameter recovery
+    fitted_params = get_parameters_flat(fitted)
+    @test all(isfinite.(fitted_params))
+    
+    # Rate parameter recovery
+    fitted_rate = exp(fitted_params[1])
+    true_rate = exp(true_log_rate)
+    @test isapprox(fitted_rate, true_rate; rtol=PARAM_TOL_REL)
+    
+    # Beta recovery (TVC effect - check sign is correct)
+    @test fitted_params[2] > 0  # Correct sign (positive effect)
+    
+    # Convergence check
+    @test isfinite(fitted.loglik.loglik)
+    
+    println("  ✓ Markov Panel Exponential + TVC fitting works")
 end
 
 # ============================================================================
@@ -627,11 +688,244 @@ end
 end
 
 # ============================================================================
+# Test 9: MCEM Spline + TVC (Coverage Gap Fill)
+# ============================================================================
+
+@testset "MCEM Spline + TVC" begin
+    Random.seed!(RNG_SEED + 8)
+    
+    # Generate data from Weibull with TVC, fit with splines
+    # This tests that splines can handle TVC scenarios
+    true_shape = 1.2
+    true_scale = 0.20
+    true_beta = 0.4
+    
+    # Panel data with TVC - treatment switch at t=3
+    n_subj = N_SUBJECTS
+    obs_times = [2.0, 4.0, 6.0]
+    change_time = 3.0
+    
+    rows = []
+    for subj in 1:n_subj
+        trt = rand() < 0.5 ? [0.0, 1.0] : [0.0, 0.0]
+        all_times = sort(unique([0.0; obs_times; change_time]))
+        for i in 1:(length(all_times)-1)
+            x_val = all_times[i] < change_time ? trt[1] : trt[2]
+            push!(rows, (id=subj, tstart=all_times[i], tstop=all_times[i+1],
+                         statefrom=1, stateto=1, obstype=2, x=x_val))
+        end
+    end
+    panel_data = DataFrame(rows)
+    
+    # Simulate from Weibull with TVC
+    h12_wei = Hazard(@formula(0 ~ x), "wei", 1, 2)
+    model_sim = multistatemodel(h12_wei; data=panel_data, surrogate=:markov)
+    set_parameters!(model_sim, (h12 = [log(true_shape), log(true_scale), true_beta],))
+    
+    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false)
+    simulated_data = sim_result[1, 1]
+    
+    # Fit with splines + TVC covariate
+    max_time = 7.0
+    h12_sp = Hazard(@formula(0 ~ x), "sp", 1, 2; degree=3, knots=[3.0],
+                    boundaryknots=[0.0, max_time], extrapolation="constant")
+    
+    model_fit = multistatemodel(h12_sp; data=simulated_data, surrogate=:markov)
+    
+    fitted = fit(model_fit;
+        proposal=:markov,
+        verbose=false,
+        maxiter=MAX_ITER,
+        tol=MCEM_TOL,
+        ess_target_initial=25,
+        max_ess=400,
+        compute_vcov=false,
+        return_convergence_records=true)
+    
+    # Verify MCEM was used
+    @test !isnothing(fitted.ConvergenceRecords)
+    @test hasproperty(fitted.ConvergenceRecords, :ess_trace)
+    
+    # Convergence check
+    @test isfinite(fitted.loglik.loglik)
+    @test fitted.loglik.loglik < 0
+    
+    # TVC covariate effect should have correct sign
+    fitted_params = get_parameters_flat(fitted)
+    beta_est = fitted_params[end]  # Last param is TVC beta
+    @test sign(beta_est) == sign(true_beta)
+    
+    println("  ✓ Spline + TVC MCEM fitting works")
+end
+
+# ============================================================================
+# Test 10: MCEM Weibull + TVC with PhaseType Proposal
+# ============================================================================
+#
+# These tests validate PhaseType proposal for semi-Markov models with TVC.
+# PhaseType proposal is mathematically appropriate for non-exponential sojourn times.
+# See MultistateModelsTests/diagnostics/phasetype_testing_plan.md for background.
+
+@testset "MCEM Weibull + TVC - PhaseType Proposal" begin
+    Random.seed!(RNG_SEED + 100)
+    
+    # Semi-Markov illness-death with time-varying treatment effect
+    true_shape_12, true_scale_12, true_beta_12 = 1.3, 0.15, 0.5
+    true_shape_23, true_scale_23 = 1.4, 0.20
+    true_shape_13, true_scale_13 = 1.2, 0.10
+    
+    # Panel data with TVC - treatment switch at t=4
+    n_subj = N_SUBJECTS
+    obs_times = [3.0, 6.0, 9.0, 12.0]
+    change_time = 4.0
+    
+    rows = []
+    for subj in 1:n_subj
+        # Random treatment assignment (half get treatment at t=4)
+        trt = rand() < 0.5 ? [0.0, 1.0] : [0.0, 0.0]
+        all_times = sort(unique([0.0; obs_times; change_time]))
+        for i in 1:(length(all_times)-1)
+            x_val = all_times[i] < change_time ? trt[1] : trt[2]
+            push!(rows, (id=subj, tstart=all_times[i], tstop=all_times[i+1],
+                         statefrom=1, stateto=1, obstype=2, x=x_val))
+        end
+    end
+    template_data = DataFrame(rows)
+    
+    # Set up model and simulate
+    h12 = Hazard(@formula(0 ~ x), "wei", 1, 2)  # TVC on 1→2
+    h23 = Hazard(@formula(0 ~ 1), "wei", 2, 3)
+    h13 = Hazard(@formula(0 ~ 1), "wei", 1, 3)
+    
+    model_sim = multistatemodel(h12, h23, h13; data=template_data, surrogate=:markov)
+    set_parameters!(model_sim, (
+        h12 = [log(true_shape_12), log(true_scale_12), true_beta_12],
+        h23 = [log(true_shape_23), log(true_scale_23)],
+        h13 = [log(true_shape_13), log(true_scale_13)]
+    ))
+    
+    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false)
+    panel_data = sim_result[1, 1]
+    
+    # Fit with PhaseType proposal
+    h12_fit = Hazard(@formula(0 ~ x), "wei", 1, 2)
+    h23_fit = Hazard(@formula(0 ~ 1), "wei", 2, 3)
+    h13_fit = Hazard(@formula(0 ~ 1), "wei", 1, 3)
+    
+    model = multistatemodel(h12_fit, h23_fit, h13_fit; data=panel_data, surrogate=:markov)
+    
+    fitted = fit(model;
+        proposal=PhaseTypeProposal(n_phases=3),
+        verbose=false,
+        maxiter=MAX_ITER,
+        tol=MCEM_TOL,
+        ess_target_initial=25,
+        max_ess=300,
+        compute_vcov=false,
+        return_convergence_records=true)
+    
+    @testset "Convergence and Pareto-k" begin
+        records = fitted.ConvergenceRecords
+        pareto_k = records.psis_pareto_k
+        
+        # Pareto-k should be below 1.0 (reliable IS weights)
+        finite_k = filter(!isnan, pareto_k)
+        @test maximum(finite_k) < 1.0
+        # Most subjects should have k < 0.7 (good IS)
+        @test mean(pareto_k .< 0.7) > 0.7
+    end
+    
+    @testset "Parameter recovery" begin
+        p = get_parameters(fitted; scale=:natural)
+        
+        # Shape and scale recovery with relaxed tolerance
+        @test isapprox(p.h12[1], true_shape_12; rtol=PARAM_TOL_REL)
+        @test isapprox(p.h12[2], true_scale_12; rtol=PARAM_TOL_REL)
+        
+        # TVC covariate effect direction
+        @test sign(p.h12[3]) == sign(true_beta_12)
+    end
+    
+    println("  ✓ Weibull + TVC with PhaseType proposal works")
+end
+
+@testset "MCEM Gompertz + TVC - PhaseType Proposal" begin
+    Random.seed!(RNG_SEED + 101)
+    
+    # 2-state progressive model with Gompertz hazard and TVC
+    true_shape = 0.25
+    true_rate = 0.15
+    true_beta = 0.6
+    
+    # Panel data with treatment switch at t=3
+    n_subj = N_SUBJECTS
+    obs_times = [2.0, 4.0, 6.0, 8.0]
+    change_time = 3.0
+    
+    rows = []
+    for subj in 1:n_subj
+        trt = rand() < 0.5 ? [0.0, 1.0] : [0.0, 0.0]
+        all_times = sort(unique([0.0; obs_times; change_time]))
+        for i in 1:(length(all_times)-1)
+            x_val = all_times[i] < change_time ? trt[1] : trt[2]
+            push!(rows, (id=subj, tstart=all_times[i], tstop=all_times[i+1],
+                         statefrom=1, stateto=1, obstype=2, x=x_val))
+        end
+    end
+    template_data = DataFrame(rows)
+    
+    # Set up model and simulate
+    h12 = Hazard(@formula(0 ~ x), "gom", 1, 2)
+    
+    model_sim = multistatemodel(h12; data=template_data, surrogate=:markov)
+    set_parameters!(model_sim, (h12 = [true_shape, log(true_rate), true_beta],))
+    
+    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false)
+    panel_data = sim_result[1, 1]
+    
+    # Fit with PhaseType proposal
+    h12_fit = Hazard(@formula(0 ~ x), "gom", 1, 2)
+    model = multistatemodel(h12_fit; data=panel_data, surrogate=:markov)
+    
+    fitted = fit(model;
+        proposal=PhaseTypeProposal(n_phases=3),
+        verbose=false,
+        maxiter=MAX_ITER,
+        tol=MCEM_TOL,
+        ess_target_initial=25,
+        max_ess=300,
+        compute_vcov=false,
+        return_convergence_records=true)
+    
+    @testset "Convergence and Pareto-k" begin
+        records = fitted.ConvergenceRecords
+        pareto_k = records.psis_pareto_k
+        
+        finite_k = filter(!isnan, pareto_k)
+        @test maximum(finite_k) < 1.0
+    end
+    
+    @testset "Parameter recovery" begin
+        p = get_parameters(fitted; scale=:natural)
+        
+        # Shape recovery (relaxed for Gompertz shape)
+        @test isapprox(p.h12[1], true_shape; atol=0.25)
+        # Rate recovery
+        @test isapprox(p.h12[2], true_rate; rtol=PARAM_TOL_REL)
+        # TVC effect direction
+        @test sign(p.h12[3]) == sign(true_beta)
+    end
+    
+    println("  ✓ Gompertz + TVC with PhaseType proposal works")
+end
+
+# ============================================================================
 # Summary
 # ============================================================================
 
-println("\n=== MCEM TVC Long Test Suite Complete ===\n")
-println("Tests verify MCEM fitting for:")
+println("\n=== TVC Long Test Suite Complete ===\n")
+println("Tests verify fitting for:")
+println("  - Markov Panel Exponential + TVC")
 println("  - Binary TVC (treatment switch)")
 println("  - Continuous TVC (biomarker)")
 println("  - Weibull + TVC (semi-Markov)")
@@ -640,3 +934,6 @@ println("  - Illness-death model with TVC")
 println("  - Multiple TVC change points")
 println("  - AFT effect with TVC")
 println("  - Reversible model with TVC")
+println("  - Spline + TVC")
+println("  - Weibull + TVC with PhaseType proposal")
+println("  - Gompertz + TVC with PhaseType proposal")

@@ -8,15 +8,13 @@ This test suite validates:
    should have similar distributional properties (state prevalence) to trajectories 
    simulated from models with true parameters.
 3. **Proposal Selection**: Phase-type vs Markov proposal appropriately selected.
+4. **PhaseType Proposal Fitting**: PhaseType proposal works correctly for semi-Markov models.
 
 Test matrix (panel data):
 - Hazard families: exponential, Weibull, Gompertz
 - Covariates: none, time-fixed
 - Model structure: illness-death (1→2, 2→3, 1→3 where 3 is absorbing)
-
-**KNOWN ISSUE**: Phase-type proposals have a bug causing poor convergence for 
-semi-Markov models. All tests currently use Markov proposals. See Phase-Type 
-Proposal Selection tests for diagnostic checks.
+- Proposals: Markov (Section 1-3), PhaseType (Section 3B)
 
 References:
 - Morsomme et al. (2025) Biostatistics kxaf038 - multistate semi-Markov MCEM
@@ -493,6 +491,139 @@ end
 end
 
 # ============================================================================
+# TEST SECTION 3B: PHASETYPE PROPOSAL FITTING
+# ============================================================================
+#
+# These tests validate that PhaseTypeProposal works correctly for semi-Markov 
+# models. The Pareto-k diagnostic issue was resolved as of 2024-12-17.
+# See MultistateModelsTests/diagnostics/phasetype_testing_plan.md for details.
+#
+# Note: PhaseType proposal is the mathematically appropriate choice for 
+# semi-Markov models (Weibull, Gompertz) since it approximates the true 
+# sojourn time distribution. Markov proposal works but may be less efficient.
+
+@testset "MCEM Weibull - PhaseType Proposal" begin
+    Random.seed!(RNG_SEED + 100)
+    
+    # Illness-death model with Weibull hazards (semi-Markov)
+    # PhaseType proposal should provide efficient importance sampling
+    
+    # True parameters in natural scale
+    true_shape_12, true_scale_12 = 1.3, 0.15
+    true_shape_23, true_scale_23 = 1.4, 0.20
+    true_shape_13, true_scale_13 = 1.2, 0.08
+    
+    true_params = (
+        h12 = [log(true_shape_12), log(true_scale_12)],
+        h23 = [log(true_shape_23), log(true_scale_23)],
+        h13 = [log(true_shape_13), log(true_scale_13)]
+    )
+    
+    h12 = Hazard(@formula(0 ~ 1), "wei", 1, 2)
+    h23 = Hazard(@formula(0 ~ 1), "wei", 2, 3)
+    h13 = Hazard(@formula(0 ~ 1), "wei", 1, 3)
+    
+    panel_data = generate_panel_data_illness_death((h12, h23, h13), true_params)
+    
+    h12_fit = Hazard(@formula(0 ~ 1), "wei", 1, 2)
+    h23_fit = Hazard(@formula(0 ~ 1), "wei", 2, 3)
+    h13_fit = Hazard(@formula(0 ~ 1), "wei", 1, 3)
+    
+    # MCEM requires surrogate=:markov
+    model = multistatemodel(h12_fit, h23_fit, h13_fit; data=panel_data, surrogate=:markov)
+    
+    # Fit with PhaseType proposal explicitly
+    fitted = fit(model;
+        proposal=PhaseTypeProposal(n_phases=3),
+        verbose=false,
+        maxiter=MAX_ITER,
+        tol=MCEM_TOL,
+        ess_target_initial=30,
+        max_ess=200,
+        compute_vcov=false,
+        return_convergence_records=true)
+    
+    @testset "Convergence and Pareto-k" begin
+        records = fitted.ConvergenceRecords
+        pareto_k = records.psis_pareto_k
+        
+        # Pareto-k should be below 1.0 (reliable IS weights)
+        @test maximum(filter(!isnan, pareto_k)) < 1.0
+        # Most subjects should have k < 0.7 (good IS)
+        @test mean(pareto_k .< 0.7) > 0.8
+    end
+    
+    @testset "Parameter recovery" begin
+        # Use natural scale for comparison (consistent with other MCEM tests)
+        p = get_parameters(fitted; scale=:natural)
+        
+        @test isapprox(p.h12[1], true_shape_12; rtol=PARAM_TOL_REL)
+        @test isapprox(p.h12[2], true_scale_12; rtol=PARAM_TOL_REL)
+        @test isapprox(p.h23[1], true_shape_23; rtol=PARAM_TOL_REL)
+        @test isapprox(p.h23[2], true_scale_23; rtol=PARAM_TOL_REL)
+        @test isapprox(p.h13[1], true_shape_13; rtol=PARAM_TOL_REL)
+        @test isapprox(p.h13[2], true_scale_13; rtol=PARAM_TOL_REL)
+    end
+end
+
+@testset "MCEM Gompertz - PhaseType Proposal" begin
+    Random.seed!(RNG_SEED + 101)
+    
+    # Simple 2-state progressive model with Gompertz hazard
+    # (simpler than illness-death to avoid complexity)
+    
+    true_shape, true_rate = 0.3, 0.12
+    true_params = (h12 = [true_shape, log(true_rate)],)
+    
+    h12 = Hazard(@formula(0 ~ 1), "gom", 1, 2)
+    
+    # Use simpler panel template for 2-state model
+    nobs = length(collect(0.0:2.0:MAX_TIME)) - 1
+    template = DataFrame(
+        id = repeat(1:N_SUBJECTS, inner=nobs),
+        tstart = repeat(collect(0.0:2.0:(MAX_TIME-2.0)), N_SUBJECTS),
+        tstop = repeat(collect(2.0:2.0:MAX_TIME), N_SUBJECTS),
+        statefrom = ones(Int, N_SUBJECTS * nobs),
+        stateto = ones(Int, N_SUBJECTS * nobs),
+        obstype = fill(2, N_SUBJECTS * nobs)
+    )
+    
+    model_sim = multistatemodel(h12; data=template, surrogate=:markov)
+    set_parameters!(model_sim, true_params)
+    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false)
+    panel_data = sim_result[1, 1]
+    
+    h12_fit = Hazard(@formula(0 ~ 1), "gom", 1, 2)
+    model = multistatemodel(h12_fit; data=panel_data, surrogate=:markov)
+    
+    fitted = fit(model;
+        proposal=PhaseTypeProposal(n_phases=3),
+        verbose=false,
+        maxiter=MAX_ITER,
+        tol=MCEM_TOL,
+        ess_target_initial=30,
+        max_ess=200,
+        compute_vcov=false,
+        return_convergence_records=true)
+    
+    @testset "Convergence and Pareto-k" begin
+        records = fitted.ConvergenceRecords
+        pareto_k = records.psis_pareto_k
+        @test maximum(filter(!isnan, pareto_k)) < 1.0
+    end
+    
+    @testset "Parameter recovery" begin
+        p = get_parameters(fitted; scale=:natural)
+        # Gompertz parameters: shape (identity), rate (identity on natural scale)
+        @test all(isfinite.(p.h12))
+        # Shape should be close to true value
+        @test isapprox(p.h12[1], true_shape; atol=0.3)  # Relaxed tolerance for shape
+        # Rate recovery
+        @test isapprox(p.h12[2], true_rate; rtol=PARAM_TOL_REL)
+    end
+end
+
+# ============================================================================
 # TEST SECTION 4: PROPOSAL SELECTION AND CONVERGENCE
 # ============================================================================
 
@@ -647,6 +778,7 @@ println("This test suite validated:")
 println("  - MCEM parameter recovery for exponential, Weibull, Gompertz hazards")
 println("  - MCEM with covariates")
 println("  - MCEM distributional fidelity (state prevalence)")
+println("  - MCEM with PhaseType proposal (Weibull, Gompertz)")
 println("  - Phase-type vs Markov proposal selection")
 println("  - Convergence diagnostics and ESS tracking")
 println("  - Markov surrogate fitting")

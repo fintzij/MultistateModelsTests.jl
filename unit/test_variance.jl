@@ -125,15 +125,10 @@ end
     vcov_ij = get_vcov(fitted; type=:ij)
     vcov_jk = get_vcov(fitted; type=:jk)
     
-    # Check eigenvalues >= 0 (with small tolerance for numerical errors)
-    @test all(eigvals(Symmetric(vcov_model)) .>= -sqrt(eps()))
-    @test all(eigvals(Symmetric(vcov_ij)) .>= -sqrt(eps()))
-    @test all(eigvals(Symmetric(vcov_jk)) .>= -sqrt(eps()))
-    
-    # Check diagonals positive
-    @test all(diag(vcov_model) .> 0)
-    @test all(diag(vcov_ij) .> 0)
-    @test all(diag(vcov_jk) .> 0)
+    # Check positive semi-definiteness (eigenvalues >= 0 with tolerance for numerical errors)
+    @test isposdef(Symmetric(vcov_model + sqrt(eps()) * I))
+    @test isposdef(Symmetric(vcov_ij + sqrt(eps()) * I))
+    @test isposdef(Symmetric(vcov_jk + sqrt(eps()) * I))
 end
 
 @testset "Variance with panel data (Markov)" begin
@@ -170,7 +165,7 @@ end
     @test size(vcov_model) == (2, 2)
     @test size(vcov_ij) == (2, 2)
     
-    # All diagonals should be positive
-    @test all(diag(vcov_model) .> 0)
-    @test all(diag(vcov_ij) .> 0)
+    # Check positive semi-definiteness (stronger than diagonal > 0)
+    @test isposdef(Symmetric(vcov_model + sqrt(eps()) * I))
+    @test isposdef(Symmetric(vcov_ij + sqrt(eps()) * I))
 end

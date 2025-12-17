@@ -22,7 +22,7 @@ using Statistics
 
 # Import internal functions for testing
 import MultistateModels: Hazard, multistatemodel, fit, set_parameters!, simulate,
-    get_parameters_flat, cumulative_hazard
+    get_parameters_flat, cumulative_hazard, get_parameters, PhaseTypeProposal
 
 const RNG_SEED = 0xABCD5678
 const N_SUBJECTS = 1000      # Standard sample size for longtests
@@ -407,6 +407,104 @@ end
 end
 
 # ============================================================================
+# Test 6: Spline Hazards with PhaseType Proposal
+# ============================================================================
+#
+# This test validates PhaseType proposal for spline hazards.
+# Splines are inherently semi-Markov (non-exponential sojourn times),
+# so PhaseType proposal is theoretically appropriate.
+# See MultistateModelsTests/diagnostics/phasetype_testing_plan.md for background.
+
+@testset "MCEM Spline - PhaseType Proposal" begin
+    Random.seed!(RNG_SEED + 100)
+    
+    # Generate data from Weibull, fit with splines using PhaseType proposal
+    # This tests that PhaseType proposal works correctly with flexible hazards
+    
+    true_shape = 1.4
+    true_scale = 0.20
+    
+    # Panel data template
+    nobs = 4
+    obs_times = [2.0, 4.0, 6.0, 8.0]
+    template = DataFrame(
+        id = repeat(1:N_SUBJECTS, inner=nobs),
+        tstart = repeat([0.0; obs_times[1:end-1]], N_SUBJECTS),
+        tstop = repeat(obs_times, N_SUBJECTS),
+        statefrom = ones(Int, N_SUBJECTS * nobs),
+        stateto = ones(Int, N_SUBJECTS * nobs),
+        obstype = fill(2, N_SUBJECTS * nobs)
+    )
+    
+    # Simulate from Weibull
+    h12_wei = Hazard(@formula(0 ~ 1), "wei", 1, 2)
+    model_sim = multistatemodel(h12_wei; data=template, surrogate=:markov)
+    set_parameters!(model_sim, (h12 = [log(true_shape), log(true_scale)],))
+    
+    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false)
+    panel_data = sim_result[1, 1]
+    
+    # Fit with cubic spline using PhaseType proposal
+    max_time = maximum(obs_times)
+    h12_sp = Hazard(@formula(0 ~ 1), "sp", 1, 2; degree=3, knots=[4.0],
+                    boundaryknots=[0.0, max_time], extrapolation="constant")
+    
+    model_fit = multistatemodel(h12_sp; data=panel_data, surrogate=:markov)
+    
+    fitted = fit(model_fit;
+        proposal=PhaseTypeProposal(n_phases=3),
+        verbose=false,
+        maxiter=MAX_ITER,
+        tol=MCEM_TOL,
+        ess_target_initial=25,
+        max_ess=300,
+        compute_vcov=false,
+        return_convergence_records=true)
+    
+    @testset "Convergence and Pareto-k" begin
+        records = fitted.ConvergenceRecords
+        pareto_k = records.psis_pareto_k
+        
+        finite_k = filter(!isnan, pareto_k)
+        # Pareto-k should be below 1.0 (reliable IS weights)
+        @test maximum(finite_k) < 1.0
+        # Most subjects should have reasonable k
+        @test mean(pareto_k .< 0.7) > 0.6
+    end
+    
+    @testset "Hazard shape recovery" begin
+        # The spline should approximate Weibull shape (increasing hazard)
+        pars_12 = MultistateModels.get_parameters(fitted, 1, scale=:log)
+        
+        h_vals = [fitted.hazards[1](t, pars_12, NamedTuple()) for t in 1.0:1.0:7.0]
+        
+        # All hazard values should be positive and finite
+        @test all(h .> 0 for h in h_vals)
+        @test all(isfinite.(h_vals))
+        
+        # Weibull with shape > 1 has increasing hazard - check general trend
+        # Use linear regression to verify positive slope
+        ts = 1.0:1.0:7.0
+        mean_t = mean(ts)
+        mean_h = mean(h_vals)
+        slope = sum((ts .- mean_t) .* (h_vals .- mean_h)) / sum((ts .- mean_t).^2)
+        @test slope > 0  # Positive trend (increasing hazard)
+        
+        # Hazard at t=6 should be higher than at t=2 (Weibull shape=1.4)
+        h_early = fitted.hazards[1](2.0, pars_12, NamedTuple())
+        h_late = fitted.hazards[1](6.0, pars_12, NamedTuple())
+        @test h_late > h_early
+    end
+    
+    @testset "Convergence quality" begin
+        @test isfinite(fitted.loglik.loglik)
+        @test fitted.loglik.loglik < 0
+    end
+    
+    println("  ✓ Spline with PhaseType proposal works")
+end
+
+# ============================================================================
 # Summary
 # ============================================================================
 
@@ -417,3 +515,4 @@ println("  - Spline with interior knots handles piecewise hazard")
 println("  - Cubic spline approximates Gompertz (exponential) hazard")
 println("  - Spline with covariates recovers log hazard ratio")
 println("  - Monotone spline constraints are enforced in MCEM")
+println("  - Spline hazards work with PhaseType proposal")

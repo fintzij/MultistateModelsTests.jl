@@ -34,8 +34,10 @@ using LinearAlgebra
 # Import internal functions
 import MultistateModels: Hazard, multistatemodel, fit, set_parameters!, simulate,
     get_parameters_flat, get_parameters, SamplePath, @formula,
-    PhaseTypeConfig, build_phasetype_model, build_phasetype_surrogate,
-    build_phasetype_hazards, observe_path
+    PhaseTypeConfig, build_phasetype_surrogate, observe_path
+
+# Include longtest-only helpers (build_phasetype_model, build_phasetype_hazards, etc.)
+include("phasetype_longtest_helpers.jl")
 
 const RNG_SEED = 0xDEAD0001
 const N_SUBJECTS = 1000            # Standard sample size for longtests
@@ -224,7 +226,7 @@ end
     
     # Simple 2-state model: 1 → 2 (absorbing)
     tmat = [0 1; 0 0]
-    config = PhaseTypeConfig(n_phases=[2, 1])  # 2 phases for transient, 1 for absorbing
+    config = PhaseTypeConfig(n_phases=Dict(1=>2))  # 2 phases for transient, absorbing defaults to 1
     
     surrogate = build_phasetype_surrogate(tmat, config)
     println("Observed states: 2, Expanded phases: $(surrogate.n_expanded_states)")
@@ -329,7 +331,7 @@ end
     
     # 3-state illness-death: 1 → 2 → 3, with 1 → 3 direct
     tmat = [0 1 1; 0 0 1; 0 0 0]
-    config = PhaseTypeConfig(n_phases=[2, 2, 1])  # 2 phases for each transient
+    config = PhaseTypeConfig(n_phases=Dict(1=>2, 2=>2))  # 2 phases for each transient
     
     surrogate = build_phasetype_surrogate(tmat, config)
     println("Observed states: 3, Expanded phases: $(surrogate.n_expanded_states)")
@@ -398,7 +400,7 @@ end
     
     # Simple 2-state for clarity
     tmat = [0 1; 0 0]
-    config = PhaseTypeConfig(n_phases=[2, 1])
+    config = PhaseTypeConfig(n_phases=Dict(1=>2))
     
     surrogate = build_phasetype_surrogate(tmat, config)
     
@@ -523,7 +525,7 @@ end
     
     # Simple 2-state for reliable testing
     tmat = [0 1; 0 0]
-    config = PhaseTypeConfig(n_phases=[2, 1])
+    config = PhaseTypeConfig(n_phases=Dict(1=>2))
     
     surrogate = build_phasetype_surrogate(tmat, config)
     absorbing_phase = first(surrogate.state_to_phases[2])
@@ -606,7 +608,7 @@ end
     
     # Simple model for clear comparison
     tmat = [0 1; 0 0]
-    config = PhaseTypeConfig(n_phases=[2, 1])
+    config = PhaseTypeConfig(n_phases=Dict(1=>2))
     surrogate = build_phasetype_surrogate(tmat, config)
     absorbing_phase = first(surrogate.state_to_phases[2])
     
@@ -686,6 +688,213 @@ end
 end
 
 # ============================================================================
+# TEST SECTION 6: PHASE-TYPE WITH FIXED COVARIATES (PANEL DATA)
+# ============================================================================
+
+@testset "Phase-Type Hazard: 2-Phase with Fixed Covariate (Panel Data)" begin
+    Random.seed!(RNG_SEED + 100)
+    
+    println("\n--- 2-Phase Phase-Type with Fixed Covariate (Panel Data) ---")
+    
+    # Simple 2-state model: 1 → 2 (absorbing)
+    tmat = [0 1; 0 0]
+    config = PhaseTypeConfig(n_phases=Dict(1=>2))
+    surrogate = build_phasetype_surrogate(tmat, config)
+    
+    # Generate covariate data
+    n_subj = N_SUBJECTS
+    cov_vals = rand([0.0, 1.0], n_subj)
+    
+    # Create exact data template with covariate for simulation
+    exact_template = DataFrame(
+        id = 1:n_subj,
+        tstart = zeros(n_subj),
+        tstop = fill(MAX_TIME, n_subj),
+        statefrom = ones(Int, n_subj),
+        stateto = ones(Int, n_subj),
+        obstype = ones(Int, n_subj),
+        x = cov_vals
+    )
+    
+    # Build model with covariate
+    covariate_formula = @formula(0 ~ x)
+    result = build_phasetype_model(tmat, config;
+                                    data=exact_template,
+                                    covariate_formula=covariate_formula,
+                                    verbose=false)
+    model = result.model
+    
+    # True parameters
+    true_rates = [0.4, 0.25, 0.5]
+    true_betas = [0.0, 0.4, 0.3]
+    
+    pars_dict = Dict{Symbol, Vector{Float64}}()
+    for (i, haz) in enumerate(model.hazards)
+        pars_dict[haz.hazname] = [log(true_rates[i]), true_betas[i]]
+    end
+    set_parameters!(model, NamedTuple(pars_dict))
+    
+    # Simulate exact data
+    sim_result = simulate(model; paths=false, data=true, nsim=1)
+    exact_data = sim_result[1]
+    
+    # Convert to panel observations
+    absorbing_phase = first(surrogate.state_to_phases[2])
+    phase_to_state = surrogate.phase_to_state
+    panel_data = exact_to_panel_observations(exact_data, PANEL_TIMES, phase_to_state)
+    
+    # Add covariate to panel data
+    # For each subject, get their covariate value
+    panel_data.x = [cov_vals[id] for id in panel_data.id]
+    
+    # Fit
+    hazards_for_fit = build_phasetype_hazards(tmat, config, surrogate;
+                                               covariate_formula=covariate_formula)
+    model_fit = multistatemodel(hazards_for_fit...; data=panel_data)
+    
+    @testset "Parameter recovery with covariate (panel)" begin
+        println("\nFitting phase-type model with covariate from panel data...")
+        fitted = fit(model_fit; verbose=false)
+        fitted_params = get_parameters_flat(fitted)
+        
+        # Check covariate effect direction
+        # μ₁ beta: fitted_params[4]
+        # μ₂ beta: fitted_params[6]
+        @test fitted_params[4] > -0.1  # Should be positive or near zero
+        @test fitted_params[6] > -0.1  # Should be positive or near zero
+        
+        # Panel data has higher variance - use relaxed tolerance
+        @test isapprox(fitted_params[4], true_betas[2]; atol=0.5)
+    end
+end
+
+# ============================================================================
+# TEST SECTION 7: PHASE-TYPE WITH TIME-VARYING COVARIATES (PANEL DATA)
+# ============================================================================
+
+@testset "Phase-Type Hazard: 2-Phase with TVC (Panel Data)" begin
+    Random.seed!(RNG_SEED + 200)
+    
+    println("\n--- 2-Phase Phase-Type with TVC (Panel Data) ---")
+    
+    # Simple 2-state model: 1 → 2 (absorbing)
+    tmat = [0 1; 0 0]
+    config = PhaseTypeConfig(n_phases=Dict(1=>2))
+    surrogate = build_phasetype_surrogate(tmat, config)
+    
+    # TVC setup: covariate changes at t=3
+    n_subj = N_SUBJECTS
+    change_time = 3.0
+    
+    # Track which subjects get treatment
+    trt_assignments = rand(Bool, n_subj)
+    
+    # Create TVC template for simulation
+    rows = []
+    for subj in 1:n_subj
+        x_before = 0.0
+        x_after = trt_assignments[subj] ? 1.0 : 0.0
+        
+        push!(rows, (id=subj, tstart=0.0, tstop=change_time,
+                     statefrom=1, stateto=1, obstype=1, x=x_before))
+        push!(rows, (id=subj, tstart=change_time, tstop=MAX_TIME,
+                     statefrom=1, stateto=1, obstype=1, x=x_after))
+    end
+    tvc_template = DataFrame(rows)
+    
+    # Build model with covariate
+    covariate_formula = @formula(0 ~ x)
+    result = build_phasetype_model(tmat, config;
+                                    data=tvc_template,
+                                    covariate_formula=covariate_formula,
+                                    verbose=false)
+    model = result.model
+    
+    # True parameters
+    true_rates = [0.4, 0.25, 0.5]
+    true_betas = [0.0, 0.5, 0.4]
+    
+    pars_dict = Dict{Symbol, Vector{Float64}}()
+    for (i, haz) in enumerate(model.hazards)
+        pars_dict[haz.hazname] = [log(true_rates[i]), true_betas[i]]
+    end
+    set_parameters!(model, NamedTuple(pars_dict))
+    
+    # Simulate exact data with TVC
+    sim_result = simulate(model; paths=false, data=true, nsim=1, autotmax=false)
+    exact_data = sim_result[1]
+    
+    # Create panel data template with TVC
+    # For each subject, create panel intervals that include TVC change
+    obs_times = sort(unique([0.0; PANEL_TIMES; change_time]))
+    
+    panel_rows = []
+    for subj in 1:n_subj
+        for i in 1:(length(obs_times)-1)
+            t_start = obs_times[i]
+            t_stop = obs_times[i+1]
+            x_val = t_start < change_time ? 0.0 : (trt_assignments[subj] ? 1.0 : 0.0)
+            
+            # Find state at this time from exact data
+            subj_exact = exact_data[exact_data.id .== subj, :]
+            if nrow(subj_exact) == 0
+                continue
+            end
+            
+            # Determine observed state at t_stop
+            last_row_before = findlast(subj_exact.tstart .<= t_stop)
+            if isnothing(last_row_before)
+                obs_state = surrogate.phase_to_state[subj_exact.statefrom[1]]
+            else
+                if t_stop >= subj_exact.tstop[last_row_before]
+                    obs_state = surrogate.phase_to_state[subj_exact.stateto[last_row_before]]
+                else
+                    obs_state = surrogate.phase_to_state[subj_exact.statefrom[last_row_before]]
+                end
+            end
+            
+            # State at start
+            first_row = findlast(subj_exact.tstart .<= t_start)
+            if isnothing(first_row)
+                obs_state_from = surrogate.phase_to_state[subj_exact.statefrom[1]]
+            else
+                obs_state_from = surrogate.phase_to_state[subj_exact.statefrom[first_row]]
+            end
+            
+            push!(panel_rows, (id=subj, tstart=t_start, tstop=t_stop,
+                               statefrom=obs_state_from, stateto=obs_state,
+                               obstype=2, x=x_val))
+        end
+    end
+    
+    panel_data = DataFrame(panel_rows)
+    
+    # Expand panel data statefrom/stateto to phase indices for fitting
+    panel_data_expanded = copy(panel_data)
+    panel_data_expanded.statefrom = [first(surrogate.state_to_phases[s]) for s in panel_data.statefrom]
+    panel_data_expanded.stateto = [first(surrogate.state_to_phases[s]) for s in panel_data.stateto]
+    
+    # Fit
+    hazards_for_fit = build_phasetype_hazards(tmat, config, surrogate;
+                                               covariate_formula=covariate_formula)
+    model_fit = multistatemodel(hazards_for_fit...; data=panel_data_expanded)
+    
+    @testset "TVC parameter recovery (panel)" begin
+        println("\nFitting phase-type model with TVC from panel data...")
+        fitted = fit(model_fit; verbose=false)
+        fitted_params = get_parameters_flat(fitted)
+        
+        # Basic checks - parameters should be finite
+        @test all(isfinite.(fitted_params))
+        
+        # TVC effects should have correct direction (positive on exit rates)
+        # Panel + TVC has high variance, so just check direction
+        @test fitted_params[4] > -0.5  # μ₁ beta
+        @test fitted_params[6] > -0.5  # μ₂ beta
+    end
+end
+
+# ============================================================================
 # Summary
 # ============================================================================
 
@@ -698,6 +907,8 @@ println("  2. Illness-death phase-type with panel data")
 println("  3. Mixed exact + panel observations")
 println("  4. Illness-death with exactly observed absorptions")
 println("  5. Distributional fidelity for panel data fitting")
+println("  6. Phase-type with fixed covariates (panel data)")
+println("  7. Phase-type with time-varying covariates (panel data)")
 println("\nKey insight: Phase-type hazard models remain Markov on expanded space,")
 println("so panel data can be fit with direct likelihood (no MCEM needed).")
 println("="^70)

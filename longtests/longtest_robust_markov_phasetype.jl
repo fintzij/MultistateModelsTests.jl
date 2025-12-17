@@ -205,7 +205,7 @@ end
     
     # Build phase-type with 1 phase (equivalent to Markov)
     tmat = model.tmat
-    phasetype_config = PhaseTypeConfig(n_phases=[1, 1])
+    phasetype_config = PhaseTypeConfig(n_phases=1)
     surrogate = build_phasetype_surrogate(tmat, phasetype_config)
     
     # Set phase-type rate to match Markov
@@ -269,7 +269,7 @@ end
     model = multistatemodel(h12; data=dat)
     
     # Fit phase-type surrogate (must be fitted, not just built with defaults)
-    surrogate = fit_surrogate(model; type=:phasetype, n_phases=[2, 1], verbose=false)
+    surrogate = fit_surrogate(model; type=:phasetype, n_phases=Dict(1=>2), verbose=false)
     
     emat_ph = build_phasetype_emat_expanded(model, surrogate)
     books = build_tpm_mapping(model.data)

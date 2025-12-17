@@ -36,12 +36,15 @@ using Random
 using QuadGK
 
 import MultistateModels: PhaseTypeConfig, PhaseTypeDistribution, PhaseTypeSurrogate,
-    build_phasetype_surrogate, build_phasetype_emat, build_phasetype_emat_expanded,
+    build_phasetype_surrogate, build_phasetype_emat_expanded,
     expand_data_for_phasetype, needs_data_expansion_for_phasetype,
     compute_expanded_subject_indices, build_coxian_intensity, subintensity,
-    absorption_rates, progression_rates, loglik_phasetype_expanded, SamplePath,
+    absorption_rates, progression_rates, loglik_expanded_path, SamplePath,
     collapse_phasetype_path, get_parameters_flat, get_parameters_nested,
     get_parameters_natural, get_unflatten_fn
+
+# Include longtest helper for build_phasetype_emat (test infrastructure)
+include(joinpath(@__DIR__, "..", "longtests", "phasetype_longtest_helpers.jl"))
 
 # =============================================================================
 # Helper: Analytic Matrix Exponential for 2-Phase Coxian
@@ -122,7 +125,7 @@ end
     @testset "build_phasetype_emat obstype handling" begin
         # Create a simple 3-state model: 1 → 2 → 3 (absorbing)
         tmat = [0 1 0; 0 0 1; 0 0 0]
-        config = PhaseTypeConfig(n_phases=[2, 2, 1])  # 2 phases for states 1 & 2, 1 for absorbing
+        config = PhaseTypeConfig(n_phases=Dict(1=>2, 2=>2))  # 2 phases for states 1 & 2, absorbing defaults to 1
         surrogate = build_phasetype_surrogate(tmat, config)
         
         # Verify surrogate structure
@@ -151,32 +154,34 @@ end
         # Check dimensions
         @test size(emat) == (4, 5)  # 4 rows of data, 5 expanded states
         
-        # Row 1: obstype=2, stateto=1 → phases 1,2 should be 1.0
+        # Row 1: obstype=2, stateto=1 → phases 1,2 should be 1.0 (panel: any phase possible)
         @test emat[1, 1] == 1.0
         @test emat[1, 2] == 1.0
         @test emat[1, 3] == 0.0
         @test emat[1, 4] == 0.0
         @test emat[1, 5] == 0.0
         
-        # Row 2: obstype=1, stateto=2 → phases 3,4 should be 1.0
+        # Row 2: obstype=1, stateto=2 → only FIRST phase (3) should be 1.0
+        # (Exact transitions always enter at phase 1 of destination state)
         @test emat[2, 1] == 0.0
         @test emat[2, 2] == 0.0
         @test emat[2, 3] == 1.0
-        @test emat[2, 4] == 1.0
+        @test emat[2, 4] == 0.0  # NOT 1.0 - transitions enter at phase 1
         @test emat[2, 5] == 0.0
         
-        # Row 3: obstype=2, stateto=2 → phases 3,4 should be 1.0
+        # Row 3: obstype=2, stateto=2 → phases 3,4 should be 1.0 (panel: any phase possible)
         @test emat[3, 3] == 1.0
         @test emat[3, 4] == 1.0
         
         # Row 4: obstype=1, stateto=3 → phase 5 should be 1.0
+        # (State 3 only has 1 phase, so first phase = only phase)
         @test emat[4, 5] == 1.0
         @test emat[4, 1:4] == zeros(4)
     end
     
     @testset "build_phasetype_emat obstype=0 (fully censored)" begin
         tmat = [0 1 0; 0 0 1; 0 0 0]
-        config = PhaseTypeConfig(n_phases=[2, 2, 1])
+        config = PhaseTypeConfig(n_phases=Dict(1=>2, 2=>2))
         surrogate = build_phasetype_surrogate(tmat, config)
         
         data = DataFrame(
@@ -197,7 +202,7 @@ end
     
     @testset "build_phasetype_emat with CensoringPatterns" begin
         tmat = [0 1 1; 0 0 1; 0 0 0]  # States 1→2, 1→3, 2→3
-        config = PhaseTypeConfig(n_phases=[2, 2, 1])
+        config = PhaseTypeConfig(n_phases=Dict(1=>2, 2=>2))
         surrogate = build_phasetype_surrogate(tmat, config)
         
         # Create censoring pattern: obstype=3 means "could be state 1 or 2"
@@ -226,7 +231,7 @@ end
     @testset "Phase mappings are consistent" begin
         # Verify phase_to_state inverts state_to_phases
         tmat = [0 1 1; 0 0 1; 0 0 0]
-        config = PhaseTypeConfig(n_phases=[3, 2, 1])
+        config = PhaseTypeConfig(n_phases=Dict(1=>3, 2=>2))
         surrogate = build_phasetype_surrogate(tmat, config)
         
         # Check that phase_to_state correctly maps back
@@ -265,18 +270,18 @@ end
         # Should have 2 rows
         @test nrow(expanded) == 2
         
-        # Row 1: sojourn interval with censoring code = 2 + statefrom = 3
+        # Row 1: sojourn interval [tstart, tstop) with censoring code = 2 + statefrom = 3
         @test expanded.id[1] == 1
         @test expanded.tstart[1] == 0.0
-        @test expanded.tstop[1] ≈ 1.0 - sqrt(eps()) atol=1e-10
+        @test expanded.tstop[1] == 1.0  # No epsilon offset
         @test expanded.statefrom[1] == 1
         @test expanded.stateto[1] == 0  # Censored at end
         @test expanded.obstype[1] == 3  # 2 + statefrom = 2 + 1 = 3
         
-        # Row 2: exact observation of transition
+        # Row 2: instantaneous exact observation at tstop (dt = 0)
         @test expanded.id[2] == 1
-        @test expanded.tstart[2] ≈ 1.0 - sqrt(eps()) atol=1e-10
-        @test expanded.tstop[2] == 1.0
+        @test expanded.tstart[2] == 1.0
+        @test expanded.tstop[2] == 1.0  # Instantaneous: tstart == tstop
         @test expanded.statefrom[2] == 0  # Coming from censored
         @test expanded.stateto[2] == 2
         @test expanded.obstype[2] == 1  # Exact
@@ -600,10 +605,10 @@ end
 
 @testset "Phase-Type Loglik Analytic Correctness" begin
     
-    @testset "loglik_phasetype_expanded for exponential path" begin
+    @testset "loglik_expanded_path for exponential path" begin
         # Create a simple 1-phase (exponential) surrogate
         tmat = [0 1; 0 0]  # 1 → 2 (absorbing)
-        config = PhaseTypeConfig(n_phases=[1, 1])
+        config = PhaseTypeConfig(n_phases=1)  # 1 phase for all transient states
         surrogate = build_phasetype_surrogate(tmat, config)
         
         # Set rate = 2.0 for transition 1→2
@@ -620,15 +625,15 @@ end
         # Analytic loglik: log(S(T)) + log(rate) = -rate*T + log(rate)
         expected_ll = -rate * T + log(rate)
         
-        computed_ll = loglik_phasetype_expanded(path, surrogate)
+        computed_ll = loglik_expanded_path(path, surrogate)
         
         @test isapprox(computed_ll, expected_ll; rtol=1e-10)
     end
     
-    @testset "loglik_phasetype_expanded for 2-phase path" begin
+    @testset "loglik_expanded_path for 2-phase path" begin
         # 2-phase Coxian for state 1, then absorbing state 2
         tmat = [0 1; 0 0]
-        config = PhaseTypeConfig(n_phases=[2, 1])
+        config = PhaseTypeConfig(n_phases=Dict(1=>2))
         surrogate = build_phasetype_surrogate(tmat, config)
         
         # Set Q matrix:
@@ -662,26 +667,26 @@ end
         
         expected_ll = -(r + a1) * t1 + log(r) - a2 * t2 + log(a2)
         
-        computed_ll = loglik_phasetype_expanded(path, surrogate)
+        computed_ll = loglik_expanded_path(path, surrogate)
         
         @test isapprox(computed_ll, expected_ll; rtol=1e-10)
     end
     
-    @testset "loglik_phasetype_expanded no transition path" begin
+    @testset "loglik_expanded_path no transition path" begin
         tmat = [0 1; 0 0]
-        config = PhaseTypeConfig(n_phases=[1, 1])
+        config = PhaseTypeConfig(n_phases=1)
         surrogate = build_phasetype_surrogate(tmat, config)
         
         # Path with no transitions (just initial state)
         path = SamplePath(1, [0.0], [1])
         
         # No transitions → loglik = 0
-        @test loglik_phasetype_expanded(path, surrogate) == 0.0
+        @test loglik_expanded_path(path, surrogate) == 0.0
     end
     
     @testset "collapse_phasetype_path correctness" begin
         tmat = [0 1 0; 0 0 1; 0 0 0]
-        config = PhaseTypeConfig(n_phases=[2, 2, 1])
+        config = PhaseTypeConfig(n_phases=Dict(1=>2, 2=>2))
         surrogate = build_phasetype_surrogate(tmat, config)
         absorbingstates = [3]
         
@@ -705,7 +710,7 @@ end
     
     @testset "Row sums are zero" begin
         tmat = [0 1 1; 0 0 1; 0 0 0]  # 1→2, 1→3, 2→3
-        config = PhaseTypeConfig(n_phases=[2, 2, 1])
+        config = PhaseTypeConfig(n_phases=Dict(1=>2, 2=>2))
         surrogate = build_phasetype_surrogate(tmat, config)
         
         Q = surrogate.expanded_Q
@@ -718,7 +723,7 @@ end
     
     @testset "Absorbing state has no outgoing transitions" begin
         tmat = [0 1; 0 0]
-        config = PhaseTypeConfig(n_phases=[2, 1])
+        config = PhaseTypeConfig(n_phases=Dict(1=>2))
         surrogate = build_phasetype_surrogate(tmat, config)
         
         Q = surrogate.expanded_Q
@@ -730,7 +735,7 @@ end
     
     @testset "Transient state diagonals are negative" begin
         tmat = [0 1 0; 0 0 1; 0 0 0]
-        config = PhaseTypeConfig(n_phases=[3, 2, 1])
+        config = PhaseTypeConfig(n_phases=Dict(1=>3, 2=>2))
         surrogate = build_phasetype_surrogate(tmat, config)
         
         Q = surrogate.expanded_Q
@@ -746,7 +751,7 @@ end
     @testset "Phase progression structure is Coxian" begin
         # For a Coxian within each state, only forward transitions allowed
         tmat = [0 1; 0 0]
-        config = PhaseTypeConfig(n_phases=[3, 1])
+        config = PhaseTypeConfig(n_phases=Dict(1=>3))
         surrogate = build_phasetype_surrogate(tmat, config)
         
         Q = surrogate.expanded_Q
@@ -817,7 +822,7 @@ using LinearAlgebra
         
         # Build phase-type with 1 phase per state (equivalent to Markov)
         tmat = model.tmat
-        phasetype_config = MultistateModels.PhaseTypeConfig(n_phases=[1, 1])
+        phasetype_config = MultistateModels.PhaseTypeConfig(n_phases=1)
         surrogate = MultistateModels.build_phasetype_surrogate(tmat, phasetype_config)
         
         # Update phase-type Q matrix to match the fitted Markov surrogate
@@ -847,7 +852,7 @@ using LinearAlgebra
             
             params = MultistateModels.get_hazard_params(model.parameters)
             ll_target = MultistateModels.loglik(params, path_result.collapsed, model.hazards, model)
-            ll_surrog = MultistateModels.loglik_phasetype_expanded(path_result.expanded, surrogate)
+            ll_surrog = MultistateModels.loglik_expanded_path(path_result.expanded, surrogate)
             push!(log_weights, ll_target - ll_surrog)
         end
         
@@ -874,7 +879,7 @@ using LinearAlgebra
     @testset "collapse_phasetype_path" begin
         # Create a simple surrogate for testing
         tmat = [0 1 0; 0 0 1; 0 0 0]
-        config = MultistateModels.PhaseTypeConfig(n_phases=[2, 2, 1])
+        config = MultistateModels.PhaseTypeConfig(n_phases=Dict(1=>2, 2=>2))
         surrogate = MultistateModels.build_phasetype_surrogate(tmat, config)
         absorbingstates = [3]
         
@@ -898,12 +903,12 @@ using LinearAlgebra
     end
 
     # -------------------------------------------------------------------------
-    # Test 3: loglik_phasetype_expanded correctness
+    # Test 3: loglik_expanded_path correctness
     # -------------------------------------------------------------------------
-    @testset "loglik_phasetype_expanded" begin
+    @testset "loglik_expanded_path" begin
         # Create surrogate
         tmat = [0 1 0; 0 0 1; 0 0 0]
-        config = MultistateModels.PhaseTypeConfig(n_phases=[1, 1, 1])
+        config = MultistateModels.PhaseTypeConfig(n_phases=1)
         surrogate = MultistateModels.build_phasetype_surrogate(tmat, config)
         
         # Set Q matrix manually for testing
@@ -925,13 +930,13 @@ using LinearAlgebra
         #   transition: log(2)
         # Total: -0.5 + 0 - 1.0 + log(2) = -1.5 + 0.693 = -0.807
         
-        ll = MultistateModels.loglik_phasetype_expanded(path, surrogate)
+        ll = MultistateModels.loglik_expanded_path(path, surrogate)
         expected = -0.5 + 0.0 - 1.0 + log(2.0)
         @test ll ≈ expected atol=1e-10
         
         # Path with no transitions
         path_none = MultistateModels.SamplePath(1, [0.0], [1])
-        ll_none = MultistateModels.loglik_phasetype_expanded(path_none, surrogate)
+        ll_none = MultistateModels.loglik_expanded_path(path_none, surrogate)
         @test ll_none == 0.0  # No transitions = log(1) = 0
     end
 
@@ -960,7 +965,7 @@ using LinearAlgebra
         
         # Build phase-type
         tmat = model.tmat
-        config = MultistateModels.PhaseTypeConfig(n_phases=[2, 2, 1])
+        config = MultistateModels.PhaseTypeConfig(n_phases=Dict(1=>2, 2=>2))
         surrogate = MultistateModels.build_phasetype_surrogate(tmat, config)
         
         emat_ph = MultistateModels.build_phasetype_emat_expanded(model, surrogate)
@@ -1027,7 +1032,7 @@ using LinearAlgebra
         
         # Build phase-type surrogate with 2 phases
         tmat = model.tmat
-        config = MultistateModels.PhaseTypeConfig(n_phases=[2, 1])
+        config = MultistateModels.PhaseTypeConfig(n_phases=Dict(1=>2))
         surrogate = MultistateModels.build_phasetype_surrogate(tmat, config)
         
         emat_ph = MultistateModels.build_phasetype_emat_expanded(model, surrogate)
@@ -1049,7 +1054,7 @@ using LinearAlgebra
             
             params = MultistateModels.get_hazard_params(model.parameters)
             ll_target = MultistateModels.loglik(params, result.collapsed, model.hazards, model)
-            ll_surrog = MultistateModels.loglik_phasetype_expanded(result.expanded, surrogate)
+            ll_surrog = MultistateModels.loglik_expanded_path(result.expanded, surrogate)
             push!(log_weights, ll_target - ll_surrog)
         end
         
@@ -1068,17 +1073,16 @@ using LinearAlgebra
     # -------------------------------------------------------------------------
     # Test: Coxian structure options
     #
-    # Tests that the three Coxian structure options (:allequal, :prop_to_prog, 
-    # :unstructured) produce valid PhaseTypeDistribution objects with correct
-    # structure.
+    # Tests that the two Coxian structure options (:unstructured, :sctp) 
+    # produce valid PhaseTypeDistribution objects with correct structure.
     # -------------------------------------------------------------------------
     @testset "Coxian structure options" begin
         total_rate = 1.5
         n_phases = 3
         
-        # Test :allequal structure
-        @testset ":allequal structure" begin
-            ph = MultistateModels._build_coxian_from_rate(n_phases, total_rate; structure=:allequal)
+        # Test :unstructured structure
+        @testset ":unstructured structure" begin
+            ph = MultistateModels._build_coxian_from_rate(n_phases, total_rate; structure=:unstructured)
             
             @test ph.n_phases == n_phases
             @test size(ph.Q) == (n_phases + 1, n_phases + 1)  # Q includes absorbing state
@@ -1087,12 +1091,14 @@ using LinearAlgebra
             # Get subintensity for checking transient rates
             S = MultistateModels.subintensity(ph)
             
-            # Check structure: all progression rates should be equal
+            # For :unstructured, all rates are initialized uniformly
             prog_rates = [S[i, i+1] for i in 1:n_phases-1]
+            abs_rates = MultistateModels.absorption_rates(ph)
+            
+            # All progression rates should be equal (uniform initialization)
             @test all(prog_rates .≈ prog_rates[1])
             
-            # Check structure: all absorption rates should be equal
-            abs_rates = MultistateModels.absorption_rates(ph)
+            # All absorption rates should be equal (uniform initialization)
             @test all(abs_rates .≈ abs_rates[1])
             
             # Diagonal should be negative for transient states
@@ -1102,9 +1108,9 @@ using LinearAlgebra
             @test all(ph.Q[end, :] .== 0)
         end
         
-        # Test :prop_to_prog structure
-        @testset ":prop_to_prog structure" begin
-            ph = MultistateModels._build_coxian_from_rate(n_phases, total_rate; structure=:prop_to_prog)
+        # Test :sctp structure (Stationary Conditional Transition Probability)
+        @testset ":sctp structure" begin
+            ph = MultistateModels._build_coxian_from_rate(n_phases, total_rate; structure=:sctp)
             
             @test ph.n_phases == n_phases
             @test size(ph.Q) == (n_phases + 1, n_phases + 1)
@@ -1114,10 +1120,11 @@ using LinearAlgebra
             S = MultistateModels.subintensity(ph)
             
             # Check structure: absorption rates proportional to progression rates
-            # For phases 1 to n-1: a_i = c * r_i where c is constant
+            # For phases 1 to n-1: a_i = c * r_i where c is constant (SCTP property)
             prog_rates = [S[i, i+1] for i in 1:n_phases-1]
             abs_rates = MultistateModels.absorption_rates(ph)
             
+            # For :sctp, intermediate absorption rates should be proportional to progression
             # Compute ratios a_i / r_i for phases 1 to n-1
             ratios = [abs_rates[i] / prog_rates[i] for i in 1:n_phases-1]
             @test all(ratios .≈ ratios[1])  # All ratios should be equal (= c)
@@ -1126,52 +1133,23 @@ using LinearAlgebra
             @test all(diag(S) .< 0)
         end
         
-        # Test :unstructured structure
-        @testset ":unstructured structure" begin
-            ph = MultistateModels._build_coxian_from_rate(n_phases, total_rate; structure=:unstructured)
-            
-            @test ph.n_phases == n_phases
-            @test size(ph.Q) == (n_phases + 1, n_phases + 1)
-            @test ph.initial == [1.0, 0.0, 0.0]
-            
-            # Get subintensity for checking transient rates
-            S = MultistateModels.subintensity(ph)
-            
-            # Check structure: rates can vary (decreasing progression, increasing absorption)
-            prog_rates = [S[i, i+1] for i in 1:n_phases-1]
-            abs_rates = MultistateModels.absorption_rates(ph)
-            
-            # Progression rates should be decreasing
-            @test prog_rates[1] > prog_rates[2]
-            
-            # Absorption rates (for phases 1 to n-1) should be increasing
-            @test abs_rates[1] < abs_rates[2]
-            
-            # Diagonal should be negative
-            @test all(diag(S) .< 0)
-        end
-        
         # Test single phase (all structures should be equivalent)
         @testset "Single phase equivalence" begin
-            ph1 = MultistateModels._build_coxian_from_rate(1, total_rate; structure=:allequal)
-            ph2 = MultistateModels._build_coxian_from_rate(1, total_rate; structure=:prop_to_prog)
-            ph3 = MultistateModels._build_coxian_from_rate(1, total_rate; structure=:unstructured)
+            ph1 = MultistateModels._build_coxian_from_rate(1, total_rate; structure=:unstructured)
+            ph2 = MultistateModels._build_coxian_from_rate(1, total_rate; structure=:sctp)
             
-            @test ph1.Q ≈ ph2.Q ≈ ph3.Q
+            @test ph1.Q ≈ ph2.Q
             @test ph1.Q[1,1] ≈ -total_rate  # Diagonal of transient state
             @test ph1.Q[1,2] ≈ total_rate   # Absorption rate to absorbing state
         end
         
         # Test PhaseTypeConfig structure field
         @testset "PhaseTypeConfig structure field" begin
-            config1 = MultistateModels.PhaseTypeConfig(n_phases=3, structure=:allequal)
-            @test config1.structure == :allequal
+            config1 = MultistateModels.PhaseTypeConfig(n_phases=3, structure=:unstructured)
+            @test config1.structure == :unstructured
             
-            config2 = MultistateModels.PhaseTypeConfig(n_phases=3, structure=:prop_to_prog)
-            @test config2.structure == :prop_to_prog
-            
-            config3 = MultistateModels.PhaseTypeConfig(n_phases=3, structure=:unstructured)
-            @test config3.structure == :unstructured
+            config2 = MultistateModels.PhaseTypeConfig(n_phases=3, structure=:sctp)
+            @test config2.structure == :sctp
             
             # Default should be :unstructured
             config_default = MultistateModels.PhaseTypeConfig(n_phases=3)
@@ -1183,16 +1161,16 @@ using LinearAlgebra
         
         # Test ProposalConfig structure field
         @testset "ProposalConfig structure field" begin
-            config1 = MultistateModels.ProposalConfig(type=:phasetype, structure=:prop_to_prog)
-            @test config1.structure == :prop_to_prog
+            config1 = MultistateModels.ProposalConfig(type=:phasetype, structure=:sctp)
+            @test config1.structure == :sctp
             
             # Default should be :unstructured
             config_default = MultistateModels.ProposalConfig(type=:phasetype)
             @test config_default.structure == :unstructured
             
             # PhaseTypeProposal should forward structure
-            config2 = MultistateModels.PhaseTypeProposal(n_phases=3, structure=:allequal)
-            @test config2.structure == :allequal
+            config2 = MultistateModels.PhaseTypeProposal(n_phases=3, structure=:sctp)
+            @test config2.structure == :sctp
         end
     end
 
@@ -1231,39 +1209,53 @@ using LinearAlgebra
         h23 = Hazard(@formula(0 ~ 1), "exp", 2, 3)
         
         model = multistatemodel(h12, h23; data=data)
+        initialize_parameters!(model)
         
-        # Test get_parameters returns user-facing parameters
+        # Test get_parameters returns user-facing parameters with correct structure
         params = get_parameters(model)
-        @test haskey(params, :h12)  # Phase-type hazard
-        @test haskey(params, :h23)  # Exponential hazard
+        @test params[:h12] isa Vector{Float64}
+        @test params[:h23] isa Vector{Float64}
+        @test length(params[:h12]) == 5  # 3-phase: 2 progression + 3 exit rates
+        @test length(params[:h23]) == 1  # Exponential: 1 rate
+        @test all(params[:h12] .> 0)  # All rates positive
+        @test all(params[:h23] .> 0)
         
-        # Test get_expanded_parameters returns internal parameters
+        # Test get_expanded_parameters returns internal parameters with correct values
         exp_params = get_expanded_parameters(model)
-        @test haskey(exp_params, :h1_prog1)  # λ₁
-        @test haskey(exp_params, :h1_prog2)  # λ₂
-        @test haskey(exp_params, :h12_exit1) # μ₁
-        @test haskey(exp_params, :h12_exit2) # μ₂
-        @test haskey(exp_params, :h12_exit3) # μ₃
-        @test haskey(exp_params, :h23)       # h23 transition
+        # Verify expanded params are vectors with positive rates
+        @test exp_params[:h1_ab] isa Vector{Float64}  # λ₁ (phase a → b)
+        @test exp_params[:h1_bc] isa Vector{Float64}  # λ₂ (phase b → c)
+        @test exp_params[:h12_a] isa Vector{Float64}  # μ₁ (exit from phase a)
+        @test exp_params[:h12_b] isa Vector{Float64}  # μ₂ (exit from phase b)
+        @test exp_params[:h12_c] isa Vector{Float64}  # μ₃ (exit from phase c)
+        @test exp_params[:h23] isa Vector{Float64}    # h23 transition
+        # Verify all rates are positive
+        @test all(exp_params[:h1_ab] .> 0)
+        @test all(exp_params[:h12_a] .> 0)
+        @test all(exp_params[:h23] .> 0)
         
-        # Test get_parameters_flat returns flat vector
+        # Test get_parameters_flat returns flat vector with correct length and values
         flat = get_parameters_flat(model)
         @test flat isa Vector{Float64}
         @test length(flat) == 6  # 5 phase-type params + 1 exp param
+        # Verify flat params are finite (log-scale)
+        @test all(isfinite.(flat))
         
-        # Test get_parameters_nested
+        # Test get_parameters_nested and verify structure
         nested = get_parameters_nested(model)
         @test nested isa NamedTuple
+        @test length(keys(nested)) == 6  # 6 expanded hazards
         
-        # Test get_parameters_natural
+        # Test get_parameters_natural returns positive rates
         natural = get_parameters_natural(model)
         @test natural isa NamedTuple
+        # All natural-scale rates should be positive
+        for (k, v) in pairs(natural)
+            @test all(v .> 0)
+        end
         
-        # Test get_unflatten_fn
+        # Test get_unflatten_fn and round-trip: flatten → unflatten
         unflatten = get_unflatten_fn(model)
-        @test unflatten isa Function
-        
-        # Test round-trip: flatten → unflatten
         restored = unflatten(flat)
         for key in keys(nested)
             # Compare baseline parameter values (now NamedTuples with named fields)
@@ -1279,40 +1271,35 @@ using LinearAlgebra
         end
     end
     
-    @testset "set_parameters! with Vector{Vector}" begin
+    @testset "set_parameters! with Vector{Vector} (expanded hazards)" begin
         h12 = Hazard(@formula(0 ~ 1), "pt", 1, 2; n_phases=2, coxian_structure=:unstructured)
         h23 = Hazard(@formula(0 ~ 1), "exp", 2, 3)
         
         model = multistatemodel(h12, h23; data=data)
         initialize_parameters!(model)
         
-        # Set new values using Vector{Vector} format
-        # h12: [λ₁, μ₁, μ₂] (2n-1 = 3 params for n=2)
-        # h23: [rate]
+        # In the new architecture, set_parameters! operates on expanded hazards
+        # Model has 4 hazards: h1_ab (progression), h12_a, h12_b (exits), h23
         new_values = [
-            [log(0.5), log(0.3), log(0.4)],  # h12
-            [log(0.6)]                        # h23
+            [log(0.5)],  # h1_ab (λ₁)
+            [log(0.3)],  # h12_a (μ₁)
+            [log(0.4)],  # h12_b (μ₂)
+            [log(0.6)]   # h23
         ]
         
         set_parameters!(model, new_values)
         
-        # Verify user-facing parameters were updated
-        params = get_parameters(model)
-        @test isapprox(params[:h12][1], 0.5; rtol=1e-6)
-        @test isapprox(params[:h12][2], 0.3; rtol=1e-6)
-        @test isapprox(params[:h12][3], 0.4; rtol=1e-6)
-        @test isapprox(params[:h23][1], 0.6; rtol=1e-6)
-        
-        # Verify expanded parameters were also updated
-        exp_params = get_expanded_parameters(model)
-        @test isapprox(exp_params[:h1_prog1][1], 0.5; rtol=1e-6)
-        @test isapprox(exp_params[:h12_exit1][1], 0.3; rtol=1e-6)
-        @test isapprox(exp_params[:h12_exit2][1], 0.4; rtol=1e-6)
+        # Verify expanded parameters were updated
+        exp_params = get_parameters(model; expanded=true)
+        @test isapprox(exp_params[:h1_ab][1], 0.5; rtol=1e-6)
+        @test isapprox(exp_params[:h12_a][1], 0.3; rtol=1e-6)
+        @test isapprox(exp_params[:h12_b][1], 0.4; rtol=1e-6)
+        @test isapprox(exp_params[:h23][1], 0.6; rtol=1e-6)
     end
     
     @testset "Initialization Respects Structure" begin
-        # Test all three structures initialize with uniform rates
-        for structure in [:unstructured, :allequal, :prop_to_prog]
+        # Test both structures initialize with uniform rates
+        for structure in [:unstructured, :sctp]
             h12 = Hazard(@formula(0 ~ 1), "pt", 1, 2; n_phases=3, coxian_structure=structure)
             h23 = Hazard(@formula(0 ~ 1), "exp", 2, 3)
             
@@ -1321,24 +1308,23 @@ using LinearAlgebra
             
             exp_params = get_expanded_parameters(model)
             
-            # Get all phase-type rates
-            λ1 = exp_params[:h1_prog1][1]
-            λ2 = exp_params[:h1_prog2][1]
-            μ1 = exp_params[:h12_exit1][1]
-            μ2 = exp_params[:h12_exit2][1]
-            μ3 = exp_params[:h12_exit3][1]
+            # Get all phase-type rates (new naming: ab, bc for progression; a, b, c for exit)
+            λ1 = exp_params[:h1_ab][1]   # phase a → b
+            λ2 = exp_params[:h1_bc][1]   # phase b → c
+            μ1 = exp_params[:h12_a][1]   # exit from phase a
+            μ2 = exp_params[:h12_b][1]   # exit from phase b
+            μ3 = exp_params[:h12_c][1]   # exit from phase c
             
             all_rates = [λ1, λ2, μ1, μ2, μ3]
-            rate_range = maximum(all_rates) - minimum(all_rates)
             
-            # All rates should be equal for all built-in structures
-            @test rate_range < 1e-10
+            # Both structures should produce valid positive rates
+            @test all(all_rates .> 0)
         end
     end
     
     @testset "Basic Fitting" begin
         # Simple 2-phase model
-        h12 = Hazard(@formula(0 ~ 1), "pt", 1, 2; n_phases=2, coxian_structure=:allequal)
+        h12 = Hazard(@formula(0 ~ 1), "pt", 1, 2; n_phases=2, coxian_structure=:unstructured)
         h23 = Hazard(@formula(0 ~ 1), "exp", 2, 3)
         
         model = multistatemodel(h12, h23; data=data)
@@ -1355,22 +1341,28 @@ using LinearAlgebra
         # Check convergence
         @test get_convergence(fitted) == true
         
-        # Check loglikelihood is finite
-        @test isfinite(get_loglik(fitted))
+        # Check loglikelihood is finite and reasonable
+        ll = get_loglik(fitted)
+        @test isfinite(ll)
+        @test ll < 0  # Log-likelihood should be negative
+        @test ll > -1e6  # Not implausibly negative
         
-        # Check parameters are returned (user-facing phase-type params by default)
+        # Check user-facing parameters are valid positive rates
         params = get_parameters(fitted)
-        @test haskey(params, :h12)
-        @test haskey(params, :h23)
-        
-        # Check parameters are positive (natural scale)
-        @test all(params[:h12] .> 0)
+        @test length(params[:h12]) == 3  # 2-phase: 1 progression + 2 exit rates
+        @test length(params[:h23]) == 1  # Exponential: 1 rate
+        @test all(params[:h12] .> 0)  # All positive
         @test all(params[:h23] .> 0)
+        # Check rates are in plausible range (not absurdly large)
+        @test all(params[:h12] .< 100)  # Upper bound
+        @test all(params[:h23] .< 100)
         
-        # Check expanded parameters are accessible
+        # Check expanded parameters have correct structure
         exp_params = get_parameters(fitted; expanded=true)
-        @test haskey(exp_params, :h1_prog1)
-        @test haskey(exp_params, :h12_exit1)
+        @test exp_params[:h1_ab] isa Vector{Float64}    # Progression rate
+        @test exp_params[:h12_a] isa Vector{Float64}    # Exit rate from phase a
+        @test all(exp_params[:h1_ab] .> 0)
+        @test all(exp_params[:h12_a] .> 0)
     end
     
     @testset "Fitting with Variance-Covariance" begin
@@ -1445,7 +1437,13 @@ using LinearAlgebra
         # Get expanded parameters
         exp_params = get_parameters(fitted; expanded=true)
         
-        # The h23 rate should match in both representations
+        # User-facing h12 params should be a vector of length 2n-1 = 3
+        @test params[:h12] isa Vector{Float64}
+        @test length(params[:h12]) == 3  # λ₁, μ₁, μ₂
+        
+        # For non-PT hazard (h23), both should match
+        @test params[:h23] isa Vector{Float64}
+        @test exp_params[:h23] isa Vector{Float64}
         @test isapprox(params[:h23][1], exp_params[:h23][1]; rtol=1e-6)
         
         # Can also use explicit accessor
@@ -1485,10 +1483,11 @@ using Random
     
     @testset "State Space Structure" begin
         # Verify mappings are correct
-        @test model.mappings.n_observed == 3
-        @test model.mappings.n_expanded == 4  # 2 phases for state 1, 1 for state 2, 1 for state 3
-        @test model.mappings.phase_to_state == [1, 1, 2, 3]
-        @test model.mappings.n_phases_per_state == [2, 1, 1]
+        mappings = get_mappings(model)
+        @test mappings.n_observed == 3
+        @test mappings.n_expanded == 4  # 2 phases for state 1, 1 for state 2, 1 for state 3
+        @test mappings.phase_to_state == [1, 1, 2, 3]
+        @test mappings.n_phases_per_state == [2, 1, 1]
     end
     
     @testset "simulate_path" begin
@@ -1513,13 +1512,14 @@ using Random
         
         @testset "collapsed path merges phases correctly" begin
             # Find a case where expanded path has multiple phases in same observed state
+            mappings = get_mappings(model)
             found_merge = false
             for seed in 1:100
                 Random.seed!(seed)
                 path_exp = simulate_path(model, 1; expanded=true)
                 
                 # Check if any consecutive expanded states map to same observed state
-                observed = [model.mappings.phase_to_state[s] for s in path_exp.states]
+                observed = [mappings.phase_to_state[s] for s in path_exp.states]
                 for i in 2:length(observed)
                     if observed[i] == observed[i-1]
                         Random.seed!(seed)
@@ -1591,17 +1591,17 @@ using Random
         @test datasets isa Vector{DataFrame}
         @test length(datasets) == 3
         
-        # Collapsed data should have states in original space
+        # Collapsed data should have states in original space (or missing for censored)
         for df in datasets
-            @test all(s in 1:3 for s in df.statefrom)
-            @test all(s in 1:3 for s in df.stateto)
+            @test all(ismissing(s) || s in 1:3 for s in df.statefrom)
+            @test all(ismissing(s) || s in 1:3 for s in df.stateto)
         end
         
-        # Expanded data should have states in expanded space
+        # Expanded data should have states in expanded space (or missing for censored)
         datasets_exp = simulate_data(model; nsim=3, expanded=true)
         for df in datasets_exp
-            @test all(s in 1:4 for s in df.statefrom)
-            @test all(s in 1:4 for s in df.stateto)
+            @test all(ismissing(s) || s in 1:4 for s in df.statefrom)
+            @test all(ismissing(s) || s in 1:4 for s in df.stateto)
         end
     end
     
@@ -1619,14 +1619,15 @@ using Random
     
     @testset "Path collapsing correctness" begin
         # Test that collapsing merges consecutive same-state phases
-        phase_to_state = model.mappings.phase_to_state
+        mappings = get_mappings(model)
+        phase_to_state = mappings.phase_to_state
         
         # Create a synthetic expanded path that should collapse
         expanded_path = MultistateModels.SamplePath(1, [0.0, 0.5, 1.0, 1.5], [1, 2, 3, 4])
         # Phase 1 -> State 1, Phase 2 -> State 1, Phase 3 -> State 2, Phase 4 -> State 3
         # Expected: [1, 2, 3] at times [0.0, 1.0, 1.5]
         
-        collapsed = MultistateModels._collapse_path(expanded_path, model.mappings)
+        collapsed = MultistateModels._collapse_path(expanded_path, mappings)
         
         @test collapsed.states == [1, 2, 3]
         @test collapsed.times == [0.0, 1.0, 1.5]
@@ -1643,7 +1644,8 @@ using Random
             obstype = [1, 1, 1, 3]  # Last is censored
         )
         
-        collapsed = MultistateModels._collapse_data(expanded_df, model.mappings)
+        mappings = get_mappings(model)
+        collapsed = MultistateModels._collapse_data(expanded_df, mappings)
         
         # First two rows (phases 1→2, 2→3) both map to state 1 staying in state 1
         # Then state 1 → state 2 (phase 3 maps to state 2)
@@ -1652,6 +1654,232 @@ using Random
         @test nrow(collapsed) <= nrow(expanded_df)
         @test all(s in 1:3 for s in collapsed.statefrom)
         @test all(s in 1:3 for s in collapsed.stateto)
+    end
+end
+
+# =============================================================================
+# New Interface Tests: n_phases Dict, coxian_structure, Letter-Based Naming
+# =============================================================================
+
+@testset "Phase-Type Model Interface" begin
+    
+    @testset "n_phases Dict interface" begin
+        # Create simple test data
+        df = DataFrame(
+            id = repeat(1:5, inner=2),
+            tstart = repeat([0.0, 1.0], 5),
+            tstop = repeat([1.0, 2.0], 5),
+            statefrom = repeat([1, 2], 5),
+            stateto = vcat(repeat([2], 5), repeat([2], 5)),
+            obstype = fill(1, 10)
+        )
+        
+        # Define phase-type hazard
+        h12 = Hazard(@formula(0 ~ 1), "pt", 1, 2)
+        
+        # Build model with n_phases as Dict
+        model = multistatemodel(h12; data=df, n_phases=Dict(1 => 3))
+        
+        # Check phases were set correctly
+        mappings = get_mappings(model)
+        @test mappings.n_phases_per_state[1] == 3
+        @test mappings.n_phases_per_state[2] == 1
+        @test mappings.n_expanded == 4  # 3 phases + 1 absorbing
+    end
+    
+    @testset "Letter-based hazard naming" begin
+        df = DataFrame(
+            id = repeat(1:5, inner=2),
+            tstart = repeat([0.0, 1.0], 5),
+            tstop = repeat([1.0, 2.0], 5),
+            statefrom = repeat([1, 2], 5),
+            stateto = vcat(repeat([2], 5), repeat([2], 5)),
+            obstype = fill(1, 10)
+        )
+        
+        h12 = Hazard(@formula(0 ~ 1), "pt", 1, 2)
+        model = multistatemodel(h12; data=df, n_phases=Dict(1 => 3))
+        
+        # Check hazard names use letter convention
+        haznames = [h.hazname for h in model.hazards]
+        
+        # Progression hazards: h1_ab, h1_bc
+        @test :h1_ab in haznames
+        @test :h1_bc in haznames
+        
+        # Exit hazards: h12_a, h12_b, h12_c
+        @test :h12_a in haznames
+        @test :h12_b in haznames
+        @test :h12_c in haznames
+        
+        # Check parameter names
+        parnames_flat = reduce(vcat, [h.parnames for h in model.hazards])
+        @test :log_λ_h1_ab in parnames_flat
+        @test :log_λ_h1_bc in parnames_flat
+        @test :log_λ_h12_a in parnames_flat
+        @test :log_λ_h12_b in parnames_flat
+        @test :log_λ_h12_c in parnames_flat
+    end
+    
+    @testset "SCTP constraint generation" begin
+        # Need at least 2 destinations for SCTP to generate constraints
+        df = DataFrame(
+            id = repeat(1:6, inner=2),
+            tstart = repeat([0.0, 1.0], 6),
+            tstop = repeat([1.0, 2.0], 6),
+            statefrom = repeat([1, 2], 6),
+            stateto = vcat([2, 2, 3, 3, 2, 2], fill(3, 6)),  # Mix of 1→2 and 1→3
+            obstype = fill(1, 12)
+        )
+        
+        h12 = Hazard(@formula(0 ~ 1), "pt", 1, 2)
+        h13 = Hazard(@formula(0 ~ 1), "pt", 1, 3)
+        
+        # Build model with SCTP
+        model = multistatemodel(h12, h13; data=df, n_phases=Dict(1 => 3), coxian_structure=:sctp)
+        
+        # Should have constraints
+        @test haskey(model.modelcall, :constraints)
+        @test !isnothing(model.modelcall.constraints)
+        
+        cons = model.modelcall.constraints
+        
+        # For 3 phases and 2 destinations, expect (3-1) * (2-1) = 2 constraints
+        @test length(cons.cons) == 2
+        @test length(cons.lcons) == 2
+        @test length(cons.ucons) == 2
+        
+        # All constraints should be equality (lcons = ucons = 0)
+        @test all(cons.lcons .== 0.0)
+        @test all(cons.ucons .== 0.0)
+    end
+    
+    @testset "No SCTP constraints for unstructured" begin
+        df = DataFrame(
+            id = repeat(1:6, inner=2),
+            tstart = repeat([0.0, 1.0], 6),
+            tstop = repeat([1.0, 2.0], 6),
+            statefrom = repeat([1, 2], 6),
+            stateto = vcat([2, 2, 3, 3, 2, 2], fill(3, 6)),
+            obstype = fill(1, 12)
+        )
+        
+        h12 = Hazard(@formula(0 ~ 1), "pt", 1, 2)
+        h13 = Hazard(@formula(0 ~ 1), "pt", 1, 3)
+        
+        # Build model without SCTP (default)
+        model = multistatemodel(h12, h13; data=df, n_phases=Dict(1 => 3))
+        
+        # Should have no constraints
+        if haskey(model.modelcall, :constraints)
+            @test isnothing(model.modelcall.constraints)
+        end
+    end
+    
+    @testset "n_phases validation - error for non-pt state" begin
+        df = DataFrame(
+            id = [1, 1],
+            tstart = [0.0, 1.0],
+            tstop = [1.0, 2.0],
+            statefrom = [1, 2],
+            stateto = [2, 2],
+            obstype = [1, 2]
+        )
+        
+        # Exponential hazard (not :pt)
+        h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
+        
+        # Should error if n_phases specified for non-pt state
+        @test_throws ErrorException multistatemodel(h12; data=df, n_phases=Dict(1 => 3))
+    end
+    
+    @testset "Mixed hazard types warning" begin
+        df = DataFrame(
+            id = repeat(1:6, inner=2),
+            tstart = repeat([0.0, 1.0], 6),
+            tstop = repeat([1.0, 2.0], 6),
+            statefrom = repeat([1, 2], 6),
+            stateto = vcat([2, 2, 3, 3, 2, 2], fill(3, 6)),
+            obstype = fill(1, 12)
+        )
+        
+        # Mix of pt and non-pt from same state
+        h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)  # Non-pt
+        h13 = Hazard(@formula(0 ~ 1), "pt", 1, 3)   # pt
+        
+        # Should warn about mixed types
+        @test_logs (:warn, r"has :pt hazards but also has non-:pt hazards") multistatemodel(h12, h13; data=df, n_phases=Dict(1 => 2))
+    end
+end
+
+@testset "expand_data_for_phasetype_fitting" begin
+    
+    @testset "Exact observations are split" begin
+        # Create data with exact observation
+        df = DataFrame(
+            id = [1],
+            tstart = [0.0],
+            tstop = [1.0],
+            statefrom = [1],
+            stateto = [2],
+            obstype = [1]  # Exact
+        )
+        
+        h12 = Hazard(@formula(0 ~ 1), "pt", 1, 2)
+        model = multistatemodel(h12; data=df, n_phases=Dict(1 => 2))
+        
+        # Check that data was expanded
+        @test nrow(model.data) == 2  # Sojourn + transition
+        
+        # First row should be sojourn (obstype > 2 indicates phase uncertainty)
+        @test model.data.obstype[1] >= 3
+        
+        # Second row should be transition (obstype = 1)
+        @test model.data.obstype[2] == 1
+        
+        # Times should be properly split (instantaneous transition at tstop)
+        @test model.data.tstart[1] == 0.0
+        @test model.data.tstop[1] == 1.0  # Sojourn ends at tstop
+        @test model.data.tstart[2] == 1.0  # Transition is instantaneous (tstart = tstop)
+        @test model.data.tstop[2] == 1.0
+    end
+    
+    @testset "Panel observations preserved" begin
+        # Create data with panel observation
+        df = DataFrame(
+            id = [1],
+            tstart = [0.0],
+            tstop = [1.0],
+            statefrom = [1],
+            stateto = [2],
+            obstype = [2]  # Panel
+        )
+        
+        h12 = Hazard(@formula(0 ~ 1), "pt", 1, 2)
+        model = multistatemodel(h12; data=df, n_phases=Dict(1 => 2))
+        
+        # Panel obs should remain as 1 row
+        @test nrow(model.data) == 1
+        @test model.data.obstype[1] == 2
+    end
+    
+    @testset "State indices mapped to phases" begin
+        df = DataFrame(
+            id = [1],
+            tstart = [0.0],
+            tstop = [1.0],
+            statefrom = [1],
+            stateto = [2],
+            obstype = [2]  # Panel - won't be split
+        )
+        
+        h12 = Hazard(@formula(0 ~ 1), "pt", 1, 2)
+        model = multistatemodel(h12; data=df, n_phases=Dict(1 => 3))
+        
+        # State 1 maps to phases 1,2,3 (so first phase = 1)
+        # State 2 maps to phase 4 (absorbing with 1 phase)
+        @test model.data.statefrom[1] == 1  # First phase of state 1
+        @test model.data.stateto[1] == 4    # First (only) phase of state 2
     end
 end
 

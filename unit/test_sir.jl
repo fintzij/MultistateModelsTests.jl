@@ -7,7 +7,6 @@
 # - resample_multinomial: Standard SIR resampling
 # - resample_lhs: Latin Hypercube Sampling resampling
 # - get_sir_subsample_indices: Dispatcher
-# - should_resample: Resampling decision logic
 # - mcem_mll_sir: MCEM marginal log-likelihood with SIR
 # - mcem_ase_sir: MCEM asymptotic standard error with SIR
 
@@ -124,23 +123,6 @@ using LinearAlgebra
         # LHS should have lower or similar variance (with some tolerance)
         var_ratio = var(means_lhs) / var(means_sir)
         @test var_ratio <= 1.5  # Allow some slack for sampling variability
-    end
-
-    @testset "should_resample" begin
-        # :always mode
-        @test MultistateModels.should_resample(:always, 0.3, 0.7) == true
-        @test MultistateModels.should_resample(:always, 0.9, 0.7) == true
-        @test MultistateModels.should_resample(:always, 0.0, 0.7) == true
-        
-        # :degeneracy mode
-        @test MultistateModels.should_resample(:degeneracy, 0.3, 0.7) == false  # Below threshold
-        @test MultistateModels.should_resample(:degeneracy, 0.7, 0.7) == false  # At threshold (not >)
-        @test MultistateModels.should_resample(:degeneracy, 0.71, 0.7) == true  # Above threshold
-        @test MultistateModels.should_resample(:degeneracy, 0.9, 0.7) == true
-        
-        # Different thresholds
-        @test MultistateModels.should_resample(:degeneracy, 0.5, 0.4) == true
-        @test MultistateModels.should_resample(:degeneracy, 0.5, 0.6) == false
     end
 
     @testset "get_sir_subsample_indices" begin

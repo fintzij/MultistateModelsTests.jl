@@ -63,16 +63,22 @@ using Statistics
         @test is_surrogate_fitted(model)
     end
     
-    @testset "Markov MLE produces positive rates" begin
+    @testset "Markov MLE produces valid rates" begin
         dat = create_test_data()
         h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
         model = multistatemodel(h12; data = dat)
         
         surrogate = MultistateModels._fit_markov_surrogate(model; method = :mle, verbose = false)
         
-        # Rates must be positive (or model is broken)
+        # Rates must be positive
         rates = values(surrogate.parameters.natural)
         @test all(r[1] > 0 for r in rates)
+        
+        # Verify rate is in plausible range for test data (30 subjects, ~30% transition rate)
+        # With 3 observations per subject at times 0-1, 1-2, 2-3, rate should be ~0.1-0.5
+        rate_12 = first(values(surrogate.parameters.natural))[1]
+        @test rate_12 > 0.05  # Lower bound based on data generation
+        @test rate_12 < 1.0   # Upper bound: not implausibly high
         
         # Surrogate should be marked as fitted
         @test surrogate.fitted == true
@@ -84,7 +90,7 @@ using Statistics
         model = multistatemodel(h12; data = dat)
         
         surrogate = MultistateModels._fit_phasetype_surrogate(model; 
-            method = :mle, n_phases = 2, verbose = false)
+            method = :mle, n_phases = Dict(1=>2), verbose = false)
         
         Q = surrogate.expanded_Q
         
@@ -136,9 +142,11 @@ using Statistics
         @test is_surrogate_fitted(model)
         @test model.markovsurrogate.fitted == true
         
-        # Rates should be positive
+        # Rates should be positive and in plausible range
         rates = values(model.markovsurrogate.parameters.natural)
-        @test all(r[1] > 0 for r in rates)
+        rate_12 = first(rates)[1]
+        @test rate_12 > 0.05  # Lower bound
+        @test rate_12 < 1.0   # Upper bound
     end
     
     @testset "Input validation" begin

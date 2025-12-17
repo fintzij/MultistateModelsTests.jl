@@ -421,6 +421,9 @@ import MultistateModels: get_parameters_flat, default_nknots, place_interior_kno
         
         # Rectification should produce valid parameters
         @test all(isfinite.(ests_after))
+        # Rectified parameters should be the same or modified (not NaN/Inf)
+        # For monotone splines, coefficients may be adjusted
+        @test length(ests_after) == length(ests_before)
         
         # Update model with rectified parameters using safe_unflatten
         pars_nested = MultistateModels.safe_unflatten(ests_after, model)
@@ -622,16 +625,22 @@ import MultistateModels: get_parameters_flat, default_nknots, place_interior_kno
             # Auto-select nknots
             knots = calibrate_splines(model)
             
-            @test haskey(knots, :h12)
-            @test haskey(knots, :h13)
+            # Verify structure and values (accessing fields proves keys exist)
             @test knots.h12.boundary_knots[1] ≈ 0.0  # Lower boundary is always 0
             @test knots.h13.boundary_knots[1] ≈ 0.0
+            @test knots.h12.boundary_knots[2] > 0.0  # Upper boundary is positive
+            @test knots.h13.boundary_knots[2] > 0.0
             @test length(knots.h12.interior_knots) >= 1
             @test length(knots.h13.interior_knots) >= 1
             
-            # Check interior knots are within boundaries
+            # Check interior knots are strictly within boundaries
             @test all(knots.h12.boundary_knots[1] .< knots.h12.interior_knots .< knots.h12.boundary_knots[2])
             @test all(knots.h13.boundary_knots[1] .< knots.h13.interior_knots .< knots.h13.boundary_knots[2])
+            
+            # Interior knots should be increasing
+            if length(knots.h12.interior_knots) > 1
+                @test issorted(knots.h12.interior_knots)
+            end
         end
         
         @testset "calibrate_splines - explicit nknots" begin
@@ -693,12 +702,18 @@ import MultistateModels: get_parameters_flat, default_nknots, place_interior_kno
             # Verify model was modified (knots changed)
             @test length(new_knots) != length(old_knots) || new_knots != old_knots
             
-            # Verify parameters were rebuilt
-            @test haskey(model.parameters, :flat)
-            @test length(model.parameters.flat) == sum(h.npar_total for h in model.hazards)
+            # Verify parameters were rebuilt with correct size
+            expected_npar = sum(h.npar_total for h in model.hazards)
+            @test length(model.parameters.flat) == expected_npar
+            @test all(isfinite.(model.parameters.flat))  # All params should be valid
             
             # Verify result matches model state
             @test knots_result.h12.interior_knots == new_knots[2:end-1]
+            
+            # Verify interior knots are strictly increasing
+            if length(knots_result.h12.interior_knots) > 1
+                @test issorted(knots_result.h12.interior_knots)
+            end
         end
     end
 end

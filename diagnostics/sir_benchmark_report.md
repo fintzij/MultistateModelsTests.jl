@@ -97,15 +97,25 @@ LHS resampling is ~2.5x faster than SIR.
 
 2. **Expected speedup**: M-step optimization will be approximately (pool_size / ess_target)x faster.
 
-3. **Default settings**: 
-   - `sir=:lhs` 
+3. **Default settings** (as of v0.2.3): 
+   - `sir=:adaptive_lhs` (starts with IS, switches to LHS when cost-effective)
+   - `sir_adaptive_threshold=2.0` (switch when path ratio exceeds 2.0)
+   - `sir_adaptive_min_iters=3` (minimum iterations before considering switch)
    - `sir_pool_constant=2.0` (pool = 2 × ESS × log(ESS))
-   - `max_sir_pool_size=8192`
+   - `sir_max_pool=8192`
 
-4. **When to use SIR/LHS**:
+4. **SIR mode options**:
+   - `:none` - Standard IS without resampling
+   - `:sir` - Multinomial SIR from iteration 1
+   - `:lhs` - Latin Hypercube SIR from iteration 1 (lower variance)
+   - `:adaptive_sir` - Start with IS, switch to SIR when cost-effective
+   - `:adaptive_lhs` - Start with IS, switch to LHS when cost-effective (recommended)
+
+5. **When to use SIR/LHS**:
    - Large pool sizes (>500 paths/subject)
    - Many MCEM iterations expected
    - Computational cost is dominated by M-step optimization
+   - The adaptive modes automatically detect when switching is beneficial
 
 ## Test Source
 

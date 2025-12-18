@@ -797,8 +797,9 @@ end
     )
     
     # Generate panel data using helper function
+    n_subj = 50
     dat = generate_panel_data_progressive((h12, h23), true_params; 
-                                         n_subj=50, 
+                                         n_subj=n_subj, 
                                          obs_times=[0.0, 1.0, 2.0, 3.0])
     
     # surrogate=:markov required for MCEM fitting

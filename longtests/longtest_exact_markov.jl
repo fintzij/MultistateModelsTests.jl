@@ -190,7 +190,11 @@ end
 # TEST SECTION 1: EXPONENTIAL HAZARDS
 # ============================================================================
 
+println("  ▸ [Exact Data] Section 1: Exponential hazards")
+flush(stdout)
+
 @testset "Exponential - No Covariates" begin
+    println("    ▸ Exponential - No Covariates"); flush(stdout)
     Random.seed!(RNG_SEED)
     
     # True parameters (log scale) - Progressive model: 1→2→3
@@ -259,7 +263,11 @@ end
 # TEST SECTION 2: WEIBULL HAZARDS
 # ============================================================================
 
+println("  ▸ [Exact Data] Section 2: Weibull hazards")
+flush(stdout)
+
 @testset "Weibull - No Covariates" begin
+    println("    ▸ Weibull - No Covariates"); flush(stdout)
     Random.seed!(RNG_SEED + 10)
     
     # True parameters: h(t) = shape * scale * t^(shape-1)

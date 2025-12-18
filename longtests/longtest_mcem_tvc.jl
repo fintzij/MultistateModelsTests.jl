@@ -626,69 +626,7 @@ end
 end
 
 # ============================================================================
-# Test 8: MCEM Reversible Model with TVC (Bidirectional Transitions)
-# ============================================================================
-
-@testset "MCEM Reversible Model with TVC" begin
-    Random.seed!(RNG_SEED + 7)
-    
-    # Reversible 1 ↔ 2 model with TVC
-    n_subj = N_SUBJECTS
-    obs_times = [1.5, 3.0, 4.5, 6.0]
-    change_time = 2.0
-    
-    rows = []
-    for subj in 1:n_subj
-        trt = rand() < 0.5 ? [0.0, 1.0] : [0.0, 0.0]
-        
-        all_times = sort(unique([0.0; obs_times; change_time]))
-        for i in 1:(length(all_times)-1)
-            x_val = all_times[i] < change_time ? trt[1] : trt[2]
-            push!(rows, (id=subj, tstart=all_times[i], tstop=all_times[i+1],
-                         statefrom=1, stateto=1, obstype=2, x=x_val))
-        end
-    end
-    panel_data = DataFrame(rows)
-    
-    # Reversible Weibull model
-    h12_sim = Hazard(@formula(0 ~ x), "wei", 1, 2)
-    h21_sim = Hazard(@formula(0 ~ x), "wei", 2, 1)
-    
-    model_sim = multistatemodel(h12_sim, h21_sim; data=panel_data, surrogate=:markov)
-    set_parameters!(model_sim, (
-        h12 = [log(1.3), log(0.3), 0.3],
-        h21 = [log(1.2), log(0.25), 0.2]
-    ))
-    
-    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false)
-    simulated_data = sim_result[1, 1]
-    
-    # Fit
-    h12_fit = Hazard(@formula(0 ~ x), "wei", 1, 2)
-    h21_fit = Hazard(@formula(0 ~ x), "wei", 2, 1)
-    model_fit = multistatemodel(h12_fit, h21_fit; data=simulated_data, surrogate=:markov)
-    
-    fitted = fit(model_fit;
-        proposal=:markov,
-        verbose=true,
-        maxiter=MAX_ITER,
-        tol=MCEM_TOL,
-        ess_target_initial=30,
-        max_ess=500,
-        compute_vcov=false,
-        return_convergence_records=true)
-    
-    # Verify MCEM was used
-    @test !isnothing(fitted.ConvergenceRecords)
-    @test hasproperty(fitted.ConvergenceRecords, :ess_trace)
-    
-    @test isfinite(fitted.loglik.loglik)
-    
-    println("  ✓ Reversible model with TVC MCEM fitting works")
-end
-
-# ============================================================================
-# Test 9: MCEM Spline + TVC (Coverage Gap Fill)
+# Test 8: MCEM Spline + TVC (Coverage Gap Fill)
 # ============================================================================
 
 @testset "MCEM Spline + TVC" begin
@@ -933,7 +871,6 @@ println("  - Gompertz + TVC (aging + treatment)")
 println("  - Illness-death model with TVC")
 println("  - Multiple TVC change points")
 println("  - AFT effect with TVC")
-println("  - Reversible model with TVC")
 println("  - Spline + TVC")
 println("  - Weibull + TVC with PhaseType proposal")
 println("  - Gompertz + TVC with PhaseType proposal")

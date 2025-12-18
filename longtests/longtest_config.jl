@@ -6,6 +6,11 @@
 # All tests use a 3-state progressive model: State 1 → State 2 → State 3
 # =============================================================================
 
+using Test
+
+# Verbose mode for progress tracking
+const VERBOSE_LONGTESTS = get(ENV, "MSM_VERBOSE_LONGTESTS", "true") == "true"
+
 # Sample size (same for all tests)
 const N_SUBJECTS = 1000
 
@@ -109,3 +114,31 @@ const DATA_NAMES = Dict(
     "exact" => "Exact",
     "panel" => "Panel"
 )
+
+# =============================================================================
+# Verbose Test Macro
+# =============================================================================
+
+"""
+    @verbose_testset name expr
+
+A wrapper around @testset that prints progress when VERBOSE_LONGTESTS is true.
+Shows start time, test name, and elapsed time on completion.
+"""
+macro verbose_testset(name, expr)
+    quote
+        local test_name = $(esc(name))
+        if VERBOSE_LONGTESTS
+            local start_time = time()
+            println("  ▶ Starting: ", test_name)
+            flush(stdout)
+        end
+        local result = @testset $name $(esc(expr))
+        if VERBOSE_LONGTESTS
+            local elapsed = round(time() - start_time; digits=1)
+            println("  ✓ Completed: ", test_name, " (", elapsed, "s)")
+            flush(stdout)
+        end
+        result
+    end
+end

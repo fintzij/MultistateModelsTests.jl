@@ -194,7 +194,11 @@ end
 # TEST SECTION 1: EXPONENTIAL HAZARDS (MARKOV PANEL SOLVER)
 # ============================================================================
 
+println("  ▸ [MCEM] Section 1: Exponential hazards (Markov panel solver)")
+flush(stdout)
+
 @testset "Exponential panel (Markov) - No Covariates" begin
+    println("    ▸ Exponential panel (Markov) - No Covariates"); flush(stdout)
     Random.seed!(RNG_SEED)
     
     # True parameters
@@ -251,6 +255,7 @@ end
 end
 
 @testset "Exponential panel (Markov) - With Covariate" begin
+    println("    ▸ Exponential panel (Markov) - With Covariate"); flush(stdout)
     Random.seed!(RNG_SEED + 1)
     
     true_rate_12, true_beta_12 = 0.20, 0.4
@@ -302,7 +307,11 @@ end
 # TEST SECTION 2: WEIBULL HAZARDS (MCEM)
 # ============================================================================
 
+println("  ▸ [MCEM] Section 2: Weibull hazards")
+flush(stdout)
+
 @testset "MCEM Weibull - No Covariates" begin
+    println("    ▸ MCEM Weibull - No Covariates"); flush(stdout)
     Random.seed!(RNG_SEED + 10)
     
     # Weibull hazards (semi-Markov)
@@ -350,6 +359,7 @@ end
 end
 
 @testset "MCEM Weibull - With Covariate" begin
+    println("    ▸ MCEM Weibull - With Covariate"); flush(stdout)
     Random.seed!(RNG_SEED + 11)
     
     true_shape_12, true_scale_12, true_beta_12 = 1.3, 0.15, 0.4
@@ -394,7 +404,11 @@ end
 # TEST SECTION 3: GOMPERTZ HAZARDS (MCEM)
 # ============================================================================
 
+println("  ▸ [MCEM] Section 3: Gompertz hazards")
+flush(stdout)
+
 @testset "MCEM Gompertz - No Covariates" begin
+    println("    ▸ MCEM Gompertz - No Covariates"); flush(stdout)
     Random.seed!(RNG_SEED + 20)
     
     # Gompertz: h(t) = rate * exp(shape * t)
@@ -444,6 +458,7 @@ end
 end
 
 @testset "MCEM Gompertz - With Covariate" begin
+    println("    ▸ MCEM Gompertz - With Covariate"); flush(stdout)
     Random.seed!(RNG_SEED + 21)
     
     # Gompertz: h(t) = rate * exp(shape * t) * exp(beta * x)
@@ -502,7 +517,11 @@ end
 # semi-Markov models (Weibull, Gompertz) since it approximates the true 
 # sojourn time distribution. Markov proposal works but may be less efficient.
 
+println("  ▸ [MCEM] Section 3B: PhaseType proposal fitting")
+flush(stdout)
+
 @testset "MCEM Weibull - PhaseType Proposal" begin
+    println("    ▸ MCEM Weibull - PhaseType Proposal"); flush(stdout)
     Random.seed!(RNG_SEED + 100)
     
     # Illness-death model with Weibull hazards (semi-Markov)
@@ -567,6 +586,7 @@ end
 end
 
 @testset "MCEM Gompertz - PhaseType Proposal" begin
+    println("    ▸ MCEM Gompertz - PhaseType Proposal"); flush(stdout)
     Random.seed!(RNG_SEED + 101)
     
     # Simple 2-state progressive model with Gompertz hazard
@@ -627,7 +647,11 @@ end
 # TEST SECTION 4: PROPOSAL SELECTION AND CONVERGENCE
 # ============================================================================
 
+println("  ▸ [MCEM] Section 4: Proposal selection and convergence")
+flush(stdout)
+
 @testset "Phase-Type vs Markov Proposal Selection" begin
+    println("    ▸ Phase-Type vs Markov Proposal Selection"); flush(stdout)
     Random.seed!(RNG_SEED + 30)
     
     # Panel data for testing proposal selection
@@ -680,24 +704,25 @@ end
 end
 
 @testset "MCEM Convergence Diagnostics" begin
+    println("    ▸ MCEM Convergence Diagnostics"); flush(stdout)
     Random.seed!(RNG_SEED + 31)
     
-    # Simple model for convergence testing
+    # Progressive 3-state illness-death model for convergence testing
     h12 = Hazard(@formula(0 ~ 1), "wei", 1, 2)
-    h21 = Hazard(@formula(0 ~ 1), "wei", 2, 1)
+    h23 = Hazard(@formula(0 ~ 1), "wei", 2, 3)
     
     n_subj = 50
     dat = DataFrame(
         id = repeat(1:n_subj, inner=3),
         tstart = repeat([0.0, 1.0, 2.0], n_subj),
         tstop = repeat([1.0, 2.0, 3.0], n_subj),
-        statefrom = repeat([1, 1, 2], n_subj),
-        stateto = vcat([[1, rand() < 0.5 ? 2 : 1, rand() < 0.5 ? 1 : 2] for _ in 1:n_subj]...),
+        statefrom = repeat([1, 1, 1], n_subj),
+        stateto = vcat([[1, rand() < 0.5 ? 2 : 1, rand() < 0.3 ? 3 : (rand() < 0.5 ? 2 : 1)] for _ in 1:n_subj]...),
         obstype = repeat([2, 2, 2], n_subj)
     )
     
     # surrogate=:markov required for MCEM fitting
-    model = multistatemodel(h12, h21; data=dat, surrogate=:markov)
+    model = multistatemodel(h12, h23; data=dat, surrogate=:markov)
     
     fitted = fit(model;
         proposal=:markov,
@@ -740,8 +765,9 @@ end
 @testset "Markov Surrogate Fitting" begin
     Random.seed!(RNG_SEED + 40)
     
+    # Progressive 3-state illness-death model
     h12 = Hazard(@formula(0 ~ 1), "wei", 1, 2)
-    h21 = Hazard(@formula(0 ~ 1), "wei", 2, 1)
+    h23 = Hazard(@formula(0 ~ 1), "wei", 2, 3)
     
     n_subj = 40
     dat = DataFrame(
@@ -749,11 +775,11 @@ end
         tstart = repeat([0.0, 1.5], n_subj),
         tstop = repeat([1.5, 3.0], n_subj),
         statefrom = repeat([1, 1], n_subj),
-        stateto = vcat([[rand() < 0.4 ? 2 : 1, 2] for _ in 1:n_subj]...),
+        stateto = vcat([[rand() < 0.4 ? 2 : 1, rand() < 0.3 ? 3 : 2] for _ in 1:n_subj]...),
         obstype = repeat([2, 2], n_subj)
     )
     
-    model = multistatemodel(h12, h21; data=dat)
+    model = multistatemodel(h12, h23; data=dat)
     
     surrogate_fitted = fit_surrogate(model; verbose=false)
     

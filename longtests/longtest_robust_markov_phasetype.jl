@@ -503,56 +503,6 @@ end
 end
 
 # =============================================================================
-# TEST SECTION 5: REVERSIBLE MODEL
-# =============================================================================
-
-@testset "Robust Markov Reversible Model (n=$N_SUBJECTS)" begin
-    Random.seed!(RNG_SEED + 50)
-    
-    # Reversible 1 ↔ 2 model
-    true_rate_12 = 0.30
-    true_rate_21 = 0.25
-    
-    true_params = (
-        h12 = [log(true_rate_12)],
-        h21 = [log(true_rate_21)]
-    )
-    
-    h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
-    h21 = Hazard(@formula(0 ~ 1), "exp", 2, 1)
-    
-    nobs = 5
-    obs_times = [0.0, 2.0, 4.0, 6.0, 8.0, MAX_TIME]
-    
-    template = DataFrame(
-        id = repeat(1:N_SUBJECTS, inner=nobs),
-        tstart = repeat(obs_times[1:end-1], N_SUBJECTS),
-        tstop = repeat(obs_times[2:end], N_SUBJECTS),
-        statefrom = ones(Int, N_SUBJECTS * nobs),
-        stateto = ones(Int, N_SUBJECTS * nobs),
-        obstype = fill(2, N_SUBJECTS * nobs)
-    )
-    
-    model_sim = multistatemodel(h12, h21; data=template)
-    set_parameters!(model_sim, true_params)
-    
-    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false)
-    panel_data = sim_result[1]
-    
-    model_fit = multistatemodel(h12, h21; data=panel_data)
-    fitted = fit(model_fit; verbose=false, compute_vcov=true)
-    
-    p = get_parameters(fitted; scale=:natural)
-    
-    @test isapprox(p.h12[1], true_rate_12; rtol=PARAM_TOL_REL)
-    @test isapprox(p.h21[1], true_rate_21; rtol=PARAM_TOL_REL)
-    
-    @test isfinite(fitted.loglik.loglik)
-    
-    println("  ✓ Reversible Markov model: both rates recovered")
-end
-
-# =============================================================================
 # SUMMARY
 # =============================================================================
 

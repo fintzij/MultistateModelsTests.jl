@@ -151,6 +151,132 @@ using MultistateModels: _interpolate_covariates!, _is_semimarkov,
         @test all(!isnan, params)
     end
 
+    @testset "Default initialization at model creation" begin
+        # Test that multistatemodel() initializes by default (initialize=true)
+        h12 = Hazard(@formula(0 ~ 1), :exp, 1, 2)
+        data = DataFrame(
+            id = [1, 1, 2, 2],
+            tstart = [0.0, 1.0, 0.0, 1.5],
+            tstop = [1.0, 2.0, 1.5, 3.0],
+            statefrom = [1, 1, 1, 1],
+            stateto = [1, 2, 1, 2],
+            obstype = [2, 1, 2, 1]
+        )
+        
+        # Default: initialize=true
+        model_init = multistatemodel(h12; data = data)
+        
+        # Parameters should be set to reasonable values (not zeros/NaN)
+        params_init = get_parameters(model_init; scale = :flat)
+        @test all(!isnan, params_init)
+        @test all(isfinite, params_init)
+        
+        # All representations should be consistent
+        flat = model_init.parameters.flat
+        nested = model_init.parameters.nested
+        natural = model_init.parameters.natural
+        
+        @test flat[1] ≈ nested.h12.baseline.h12_Intercept
+        @test natural.h12[1] ≈ exp(flat[1])
+    end
+
+    @testset "initialize=false skips initialization" begin
+        # Test that initialize=false leaves parameters at defaults
+        h12 = Hazard(@formula(0 ~ 1), :wei, 1, 2)
+        data = DataFrame(
+            id = [1, 1],
+            tstart = [0.0, 1.0],
+            tstop = [1.0, 2.0],
+            statefrom = [1, 1],
+            stateto = [1, 2],
+            obstype = [2, 1]
+        )
+        
+        # With initialize=false, parameters stay at construction defaults (zeros)
+        model_noinit = multistatemodel(h12; data = data, surrogate = :markov, initialize = false)
+        
+        params_noinit = model_noinit.parameters.flat
+        # Default initialization sets all params to 0 on log scale
+        @test all(params_noinit .== 0.0)
+        
+        # With initialize=true (default), parameters should be different
+        model_init = multistatemodel(h12; data = data, surrogate = :markov, initialize = true)
+        params_init = model_init.parameters.flat
+        @test !all(params_init .== 0.0)
+    end
+
+    @testset "Semi-Markov panel data uses :surrogate initialization" begin
+        # This tests the :surrogate method which:
+        # 1. Fits Markov surrogate
+        # 2. Draws paths
+        # 3. Fits exact model to simulated paths
+        # 4. Transfers parameters back
+        Random.seed!(98765)
+        
+        h12 = Hazard(@formula(0 ~ 1), :wei, 1, 2)
+        
+        # Panel data (obstype=2) for semi-Markov model triggers :surrogate init
+        n_subj = 50
+        data = DataFrame(
+            id = repeat(1:n_subj, inner=3),
+            tstart = repeat([0.0, 2.0, 4.0], n_subj),
+            tstop = repeat([2.0, 4.0, 6.0], n_subj),
+            statefrom = ones(Int, n_subj * 3),
+            stateto = [rand([1, 2]) for _ in 1:(n_subj*3)],
+            obstype = fill(2, n_subj * 3)
+        )
+        # Force at least some transitions
+        data.stateto[3:3:end] .= 2
+        
+        # Create model with default initialization (should use :surrogate)
+        model = multistatemodel(h12; data = data, surrogate = :markov)
+        
+        # Parameters should be initialized to reasonable values
+        params = get_parameters(model; scale = :flat)
+        @test all(!isnan, params)
+        @test all(isfinite, params)
+        @test length(params) == 2  # shape and scale
+        
+        # All three representations should be consistent
+        flat = model.parameters.flat
+        nested = model.parameters.nested
+        natural = model.parameters.natural
+        
+        @test nested.h12.baseline.h12_shape ≈ flat[1]
+        @test nested.h12.baseline.h12_scale ≈ flat[2]
+        @test natural.h12[1] ≈ exp(flat[1])
+        @test natural.h12[2] ≈ exp(flat[2])
+    end
+
+    @testset "Semi-Markov panel - no recursive initialization" begin
+        # Regression test: :surrogate initialization calls multistatemodel() internally
+        # to create an exact-data model. This must NOT recursively initialize.
+        # If it does, it causes infinite recursion or very slow startup.
+        Random.seed!(11111)
+        
+        h12 = Hazard(@formula(0 ~ 1), :wei, 1, 2)
+        h23 = Hazard(@formula(0 ~ 1), :wei, 2, 3)
+        
+        # Progressive 3-state model with panel data
+        n_subj = 30
+        data = DataFrame(
+            id = repeat(1:n_subj, inner=4),
+            tstart = repeat([0.0, 2.0, 4.0, 6.0], n_subj),
+            tstop = repeat([2.0, 4.0, 6.0, 8.0], n_subj),
+            statefrom = ones(Int, n_subj * 4),
+            stateto = ones(Int, n_subj * 4),
+            obstype = fill(2, n_subj * 4)
+        )
+        
+        # The test is that this completes in reasonable time (no infinite recursion)
+        # and produces valid parameters
+        model = multistatemodel(h12, h23; data = data, surrogate = :markov)
+        
+        params = get_parameters(model; scale = :flat)
+        @test all(!isnan, params)
+        @test length(params) == 4  # 2 hazards × 2 params each
+    end
+
     @testset "Method: validation" begin
         h12 = Hazard(@formula(0 ~ 1), :exp, 1, 2)
         data = DataFrame(id=[1], tstart=[0.0], tstop=[1.0], 
@@ -198,8 +324,8 @@ using MultistateModels: _interpolate_covariates!, _is_semimarkov,
             statefrom = [1], stateto = [2], obstype = [1], x = [0.5]
         )
         
-        model1 = multistatemodel(h12; data = data1, surrogate = :markov)
-        model2 = multistatemodel(h12; data = data2, surrogate = :markov)
+        model1 = multistatemodel(h12; data = data1, surrogate = :markov, initialize = false)
+        model2 = multistatemodel(h12; data = data2, surrogate = :markov, initialize = false)
         
         # Set known parameters on model2
         known_params = [0.3, 0.5, -0.2]  # log_shape, log_scale, coef
@@ -208,8 +334,49 @@ using MultistateModels: _interpolate_covariates!, _is_semimarkov,
         # Transfer to model1
         _transfer_parameters!(model1, model2)
         
-        # Verify transfer
+        # Verify transfer on all scales
         @test get_parameters(model1; scale = :flat) ≈ get_parameters(model2; scale = :flat)
+        
+        # Verify nested structure is consistent with flat
+        nested1 = model1.parameters.nested
+        @test nested1.h12.baseline.h12_shape ≈ known_params[1]
+        @test nested1.h12.baseline.h12_scale ≈ known_params[2]
+        @test nested1.h12.covariates.h12_x ≈ known_params[3]
+        
+        # Verify natural scale is consistent (exp transform for baseline)
+        natural1 = model1.parameters.natural
+        @test natural1.h12[1] ≈ exp(known_params[1])  # shape
+        @test natural1.h12[2] ≈ exp(known_params[2])  # scale
+        @test natural1.h12[3] ≈ known_params[3]       # coef (no transform)
+    end
+
+    @testset "Parameter transfer - all scales consistent" begin
+        # Regression test: _transfer_parameters! must update nested and natural,
+        # not just flat. This catches the bug where only flat was copied.
+        h12 = Hazard(@formula(0 ~ 1), :exp, 1, 2)
+        
+        data1 = DataFrame(id=[1], tstart=[0.0], tstop=[1.0], 
+                         statefrom=[1], stateto=[2], obstype=[1])
+        data2 = DataFrame(id=[1], tstart=[0.0], tstop=[2.0], 
+                         statefrom=[1], stateto=[2], obstype=[1])
+        
+        model1 = multistatemodel(h12; data = data1, initialize = false)
+        model2 = multistatemodel(h12; data = data2, initialize = false)
+        
+        # Set specific parameter on model2
+        set_parameters!(model2, (h12 = [-1.5],))
+        
+        # Transfer
+        _transfer_parameters!(model1, model2)
+        
+        # All three views must be consistent
+        flat1 = model1.parameters.flat
+        nested1 = model1.parameters.nested
+        natural1 = model1.parameters.natural
+        
+        @test flat1[1] ≈ -1.5
+        @test nested1.h12.baseline.h12_Intercept ≈ -1.5
+        @test natural1.h12[1] ≈ exp(-1.5)
     end
 
 end

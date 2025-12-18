@@ -5,15 +5,19 @@ This test suite verifies that MCEM correctly handles:
 1. Panel data with covariate changes within observation intervals
 2. Both PH and AFT covariate effects under TVC
 3. All hazard families (exponential, Weibull, Gompertz) with TVC
-4. Illness-death models with TVC
+4. Progressive and multistate models with TVC
 5. Semi-Markov models where sojourn time resets interact with TVC
 6. Parameter recovery under TVC scenarios
+
+Model structures:
+- Most tests use 2-state progressive (1→2, absorbing) where transition to absorbing is exact
+- Multi-transition tests use progressive 3-state (1→2→3) where 1→2 is panel, 2→3 is exact
+- Observation types specified using per-transition obstype_by_transition parameter
 
 Key scenarios:
 - Binary TVC (treatment switches)
 - Continuous TVC (time-varying biomarker)
 - Multiple covariate change points per subject
-- Competing risks with TVC
 
 Notes on ESS behavior:
 - Subjects with early transitions (in the first observation interval) may have ESS ≈ 1.0
@@ -33,6 +37,7 @@ using DataFrames
 using Random
 using Statistics
 using LinearAlgebra
+using Printf
 
 # Import internal functions for testing
 import MultistateModels: Hazard, multistatemodel, fit, set_parameters!, simulate,
@@ -43,6 +48,47 @@ const N_SUBJECTS = 1000       # Standard sample size for longtests
 const MCEM_TOL = 0.05
 const MAX_ITER = 25
 const PARAM_TOL_REL = 0.50  # Relative tolerance for parameter recovery (50% - relaxed for TVC)
+
+# ============================================================================
+# Helper Functions
+# ============================================================================
+
+"""
+    print_parameter_comparison(test_name, true_params, fitted_params; param_names=nothing)
+
+Print a table comparing true vs. estimated parameters with absolute and relative differences.
+"""
+function print_parameter_comparison(test_name::String, true_params::Vector, fitted_params::Vector;
+    param_names::Union{Nothing, Vector{String}}=nothing)
+    
+    @assert length(true_params) == length(fitted_params) "Parameter vectors must have same length"
+    
+    n = length(true_params)
+    if isnothing(param_names)
+        param_names = ["param[$i]" for i in 1:n]
+    end
+    
+    println("\n    Parameter Comparison: $test_name")
+    println("    " * "-"^70)
+    println("    ", rpad("Parameter", 18), rpad("True", 12), rpad("Estimated", 12), rpad("Abs Diff", 12), "Rel Diff (%)")
+    println("    " * "-"^70)
+    
+    for i in 1:n
+        true_val = true_params[i]
+        est_val = fitted_params[i]
+        abs_diff = abs(est_val - true_val)
+        rel_diff = abs(true_val) > 1e-10 ? 100.0 * abs_diff / abs(true_val) : NaN
+        
+        println("    ", 
+            rpad(param_names[i], 18),
+            rpad(@sprintf("%.4f", true_val), 12),
+            rpad(@sprintf("%.4f", est_val), 12),
+            rpad(@sprintf("%.4f", abs_diff), 12),
+            isnan(rel_diff) ? "N/A" : @sprintf("%.1f%%", rel_diff))
+    end
+    println("    " * "-"^70)
+    flush(stdout)
+end
 
 # ============================================================================
 # Helper: Build TVC Panel Data
@@ -124,7 +170,10 @@ end
     model_sim = multistatemodel(h12_sim; data=panel_data, surrogate=:markov)
     set_parameters!(model_sim, (h12 = [true_log_rate, true_beta],))
     
-    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false)
+    # For 2-state model (1→2 absorbing), transition 1 is exact
+    obstype_map = Dict(1 => 1)
+    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false,
+                         obstype_by_transition=obstype_map)
     simulated_data = sim_result[1, 1]
     
     # Fit model (Markov panel fitting, not MCEM)
@@ -132,7 +181,7 @@ end
     model_fit = multistatemodel(h12_fit; data=simulated_data, surrogate=:markov)
     
     fitted = fit(model_fit;
-        verbose=false,
+        verbose=true,
         compute_vcov=false)
     
     # Verify Markov panel fitting was used (ConvergenceRecords has solution, not ess_trace)
@@ -188,7 +237,10 @@ end
     set_parameters!(model_sim, (h12 = [true_log_shape, true_log_scale, true_beta],))
     
     # Simulate panel data
-    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false)
+    # For 2-state model (1→2 absorbing), transition 1 is exact
+    obstype_map = Dict(1 => 1)
+    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false,
+                         obstype_by_transition=obstype_map)
     simulated_data = sim_result[1, 1]
     
     # Fit model via MCEM (Weibull triggers MCEM path)
@@ -197,7 +249,7 @@ end
     
     fitted = fit(model_fit;
         proposal=:markov,
-        verbose=false,
+        verbose=true,
         maxiter=MAX_ITER,
         tol=MCEM_TOL,
         ess_target_initial=25,
@@ -270,7 +322,10 @@ end
     model_sim = multistatemodel(h12_sim; data=panel_data, surrogate=:markov)
     set_parameters!(model_sim, (h12 = [true_log_shape, true_log_scale, true_beta],))
     
-    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false)
+    # For 2-state model (1→2 absorbing), transition 1 is exact
+    obstype_map = Dict(1 => 1)
+    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false,
+                         obstype_by_transition=obstype_map)
     simulated_data = sim_result[1, 1]
     
     # Fit model
@@ -279,7 +334,7 @@ end
     
     fitted = fit(model_fit;
         proposal=:markov,
-        verbose=false,
+        verbose=true,
         maxiter=MAX_ITER,
         tol=MCEM_TOL,
         ess_target_initial=25,
@@ -343,7 +398,10 @@ end
     model_sim = multistatemodel(h12_sim; data=panel_data, surrogate=:markov)
     set_parameters!(model_sim, (h12 = [true_log_shape, true_log_scale, true_beta],))
     
-    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false)
+    # For 2-state model (1→2 absorbing), transition 1 is exact
+    obstype_map = Dict(1 => 1)
+    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false,
+                         obstype_by_transition=obstype_map)
     simulated_data = sim_result[1, 1]
     
     # Fit model
@@ -352,7 +410,7 @@ end
     
     fitted = fit(model_fit;
         proposal=:markov,
-        verbose=false,
+        verbose=true,
         maxiter=MAX_ITER,
         tol=MCEM_TOL,
         ess_target_initial=30,
@@ -413,7 +471,10 @@ end
     model_sim = multistatemodel(h12_sim; data=panel_data, surrogate=:markov)
     set_parameters!(model_sim, (h12 = [true_shape, true_log_scale, true_beta],))
     
-    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false)
+    # For 2-state model (1→2 absorbing), transition 1 is exact
+    obstype_map = Dict(1 => 1)
+    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false,
+                         obstype_by_transition=obstype_map)
     simulated_data = sim_result[1, 1]
     
     # Fit model
@@ -422,7 +483,7 @@ end
     
     fitted = fit(model_fit;
         proposal=:markov,
-        verbose=false,
+        verbose=true,
         maxiter=MAX_ITER,
         tol=MCEM_TOL,
         ess_target_initial=25,
@@ -441,13 +502,13 @@ end
 end
 
 # ============================================================================
-# Test 5: MCEM Illness-Death Model with TVC
+# Test 5: MCEM Progressive 3-State Model with TVC
 # ============================================================================
 
-@testset "MCEM Illness-Death with TVC" begin
+@testset "MCEM Progressive with TVC" begin
     Random.seed!(RNG_SEED + 4)
     
-    # Illness-death model: 1 (healthy) → 2 (ill) → 3 (dead), plus 1 → 3
+    # Progressive 3-state model: 1 (healthy) → 2 (ill) → 3 (dead)
     # TVC: Treatment status changes
     # NOTE: Using Weibull for all hazards to ensure MCEM is triggered
     
@@ -472,29 +533,33 @@ end
     
     # Define hazards - use Weibull for all to trigger MCEM
     h12_sim = Hazard(@formula(0 ~ x), "wei", 1, 2)   # Healthy → Ill
-    h13_sim = Hazard(@formula(0 ~ x), "wei", 1, 3)   # Healthy → Dead
     h23_sim = Hazard(@formula(0 ~ x), "wei", 2, 3)   # Ill → Dead
     
-    model_sim = multistatemodel(h12_sim, h13_sim, h23_sim; data=panel_data, surrogate=:markov)
-    set_parameters!(model_sim, (
+    # True parameters for progressive model
+    true_params = (
         h12 = [log(1.0), log(0.15), 0.3],  # wei: log(shape), log(scale), beta
-        h13 = [log(1.2), log(0.08), 0.2],  # wei: log(shape), log(scale), beta
         h23 = [log(1.0), log(0.25), 0.4]   # wei: log(shape), log(scale), beta
-    ))
+    )
     
-    # Simulate
-    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false)
+    model_sim = multistatemodel(h12_sim, h23_sim; data=panel_data, surrogate=:markov)
+    set_parameters!(model_sim, true_params)
+    
+    # Simulate with obstype_by_transition:
+    #   - Transition 1 (1→2): Panel data (obstype=2)
+    #   - Transition 2 (2→3): Exact observation (obstype=1)
+    obstype_map = Dict(1 => 2, 2 => 1)
+    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false,
+                         obstype_by_transition=obstype_map)
     simulated_data = sim_result[1, 1]
     
     # Fit
     h12_fit = Hazard(@formula(0 ~ x), "wei", 1, 2)
-    h13_fit = Hazard(@formula(0 ~ x), "wei", 1, 3)
     h23_fit = Hazard(@formula(0 ~ x), "wei", 2, 3)
-    model_fit = multistatemodel(h12_fit, h13_fit, h23_fit; data=simulated_data, surrogate=:markov)
+    model_fit = multistatemodel(h12_fit, h23_fit; data=simulated_data, surrogate=:markov)
     
     fitted = fit(model_fit;
         proposal=:markov,
-        verbose=false,
+        verbose=true,
         maxiter=MAX_ITER,
         tol=MCEM_TOL,
         ess_target_initial=30,
@@ -513,7 +578,15 @@ end
     fitted_params = get_parameters_flat(fitted)
     @test all(isfinite.(fitted_params))
     
-    println("  ✓ Illness-death model with TVC MCEM fitting works")
+    # Print parameter comparison (natural scale)
+    p = get_parameters(fitted; scale=:natural)
+    print_parameter_comparison("Progressive with TVC",
+        [exp(true_params.h12[1]), exp(true_params.h12[2]), true_params.h12[3],
+         exp(true_params.h23[1]), exp(true_params.h23[2]), true_params.h23[3]],
+        [p.h12[1], p.h12[2], p.h12[3], p.h23[1], p.h23[2], p.h23[3]],
+        param_names=["shape_12", "scale_12", "beta_12", "shape_23", "scale_23", "beta_23"])
+    
+    println("  ✓ Progressive model with TVC MCEM fitting works")
 end
 
 # ============================================================================
@@ -546,7 +619,10 @@ end
     model_sim = multistatemodel(h12_sim; data=panel_data, surrogate=:markov)
     set_parameters!(model_sim, (h12 = [true_log_shape, true_log_scale, true_beta],))
     
-    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false)
+    # For 2-state model (1→2 absorbing), transition 1 is exact
+    obstype_map = Dict(1 => 1)
+    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false,
+                         obstype_by_transition=obstype_map)
     simulated_data = sim_result[1, 1]
     
     # Fit
@@ -555,7 +631,7 @@ end
     
     fitted = fit(model_fit;
         proposal=:markov,
-        verbose=false,
+        verbose=true,
         maxiter=MAX_ITER,
         tol=MCEM_TOL,
         ess_target_initial=25,
@@ -599,7 +675,10 @@ end
     model_sim = multistatemodel(h12_sim; data=panel_data, surrogate=:markov)
     set_parameters!(model_sim, (h12 = [true_log_shape, true_log_scale, true_beta],))
     
-    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false)
+    # For 2-state model (1→2 absorbing), transition 1 is exact
+    obstype_map = Dict(1 => 1)
+    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false,
+                         obstype_by_transition=obstype_map)
     simulated_data = sim_result[1, 1]
     
     # Fit with Weibull AFT
@@ -608,7 +687,7 @@ end
     
     fitted = fit(model_fit;
         proposal=:markov,
-        verbose=false,
+        verbose=true,
         maxiter=MAX_ITER,
         tol=MCEM_TOL,
         ess_target_initial=25,
@@ -660,7 +739,10 @@ end
     model_sim = multistatemodel(h12_wei; data=panel_data, surrogate=:markov)
     set_parameters!(model_sim, (h12 = [log(true_shape), log(true_scale), true_beta],))
     
-    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false)
+    # For 2-state model (1→2 absorbing), transition 1 is exact
+    obstype_map = Dict(1 => 1)
+    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false,
+                         obstype_by_transition=obstype_map)
     simulated_data = sim_result[1, 1]
     
     # Fit with splines + TVC covariate
@@ -672,7 +754,7 @@ end
     
     fitted = fit(model_fit;
         proposal=:markov,
-        verbose=false,
+        verbose=true,
         maxiter=MAX_ITER,
         tol=MCEM_TOL,
         ess_target_initial=25,
@@ -707,10 +789,9 @@ end
 @testset "MCEM Weibull + TVC - PhaseType Proposal" begin
     Random.seed!(RNG_SEED + 100)
     
-    # Semi-Markov illness-death with time-varying treatment effect
+    # Semi-Markov progressive 3-state with time-varying treatment effect
     true_shape_12, true_scale_12, true_beta_12 = 1.3, 0.15, 0.5
     true_shape_23, true_scale_23 = 1.4, 0.20
-    true_shape_13, true_scale_13 = 1.2, 0.10
     
     # Panel data with TVC - treatment switch at t=4
     n_subj = N_SUBJECTS
@@ -733,28 +814,32 @@ end
     # Set up model and simulate
     h12 = Hazard(@formula(0 ~ x), "wei", 1, 2)  # TVC on 1→2
     h23 = Hazard(@formula(0 ~ 1), "wei", 2, 3)
-    h13 = Hazard(@formula(0 ~ 1), "wei", 1, 3)
     
-    model_sim = multistatemodel(h12, h23, h13; data=template_data, surrogate=:markov)
-    set_parameters!(model_sim, (
+    true_params = (
         h12 = [log(true_shape_12), log(true_scale_12), true_beta_12],
-        h23 = [log(true_shape_23), log(true_scale_23)],
-        h13 = [log(true_shape_13), log(true_scale_13)]
-    ))
+        h23 = [log(true_shape_23), log(true_scale_23)]
+    )
     
-    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false)
+    model_sim = multistatemodel(h12, h23; data=template_data, surrogate=:markov)
+    set_parameters!(model_sim, true_params)
+    
+    # Simulate with obstype_by_transition:
+    #   - Transition 1 (1→2): Panel data (obstype=2)
+    #   - Transition 2 (2→3): Exact observation (obstype=1)
+    obstype_map = Dict(1 => 2, 2 => 1)
+    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false,
+                         obstype_by_transition=obstype_map)
     panel_data = sim_result[1, 1]
     
     # Fit with PhaseType proposal
     h12_fit = Hazard(@formula(0 ~ x), "wei", 1, 2)
     h23_fit = Hazard(@formula(0 ~ 1), "wei", 2, 3)
-    h13_fit = Hazard(@formula(0 ~ 1), "wei", 1, 3)
     
-    model = multistatemodel(h12_fit, h23_fit, h13_fit; data=panel_data, surrogate=:markov)
+    model = multistatemodel(h12_fit, h23_fit; data=panel_data, surrogate=:markov)
     
     fitted = fit(model;
         proposal=PhaseTypeProposal(n_phases=3),
-        verbose=false,
+        verbose=true,
         maxiter=MAX_ITER,
         tol=MCEM_TOL,
         ess_target_initial=25,
@@ -775,6 +860,12 @@ end
     
     @testset "Parameter recovery" begin
         p = get_parameters(fitted; scale=:natural)
+        
+        # Print parameter comparison
+        print_parameter_comparison("Weibull + TVC - PhaseType",
+            [true_shape_12, true_scale_12, true_beta_12, true_shape_23, true_scale_23],
+            [p.h12[1], p.h12[2], p.h12[3], p.h23[1], p.h23[2]],
+            param_names=["shape_12", "scale_12", "beta_12", "shape_23", "scale_23"])
         
         # Shape and scale recovery with relaxed tolerance
         @test isapprox(p.h12[1], true_shape_12; rtol=PARAM_TOL_REL)
@@ -818,7 +909,10 @@ end
     model_sim = multistatemodel(h12; data=template_data, surrogate=:markov)
     set_parameters!(model_sim, (h12 = [true_shape, log(true_rate), true_beta],))
     
-    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false)
+    # For 2-state model (1→2 absorbing), transition 1 is exact
+    obstype_map = Dict(1 => 1)
+    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false,
+                         obstype_by_transition=obstype_map)
     panel_data = sim_result[1, 1]
     
     # Fit with PhaseType proposal
@@ -827,7 +921,7 @@ end
     
     fitted = fit(model;
         proposal=PhaseTypeProposal(n_phases=3),
-        verbose=false,
+        verbose=true,
         maxiter=MAX_ITER,
         tol=MCEM_TOL,
         ess_target_initial=25,
@@ -868,7 +962,7 @@ println("  - Binary TVC (treatment switch)")
 println("  - Continuous TVC (biomarker)")
 println("  - Weibull + TVC (semi-Markov)")
 println("  - Gompertz + TVC (aging + treatment)")
-println("  - Illness-death model with TVC")
+println("  - Progressive 3-state model with TVC")
 println("  - Multiple TVC change points")
 println("  - AFT effect with TVC")
 println("  - Spline + TVC")

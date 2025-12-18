@@ -18,7 +18,8 @@ using Random
 using QuadGK
 
 # Import internal functions for testing
-import MultistateModels: get_parameters_flat, default_nknots, place_interior_knots
+import MultistateModels: get_parameters_flat, default_nknots, place_interior_knots,
+    ReConstructor, unflatten, flatten
 
 @testset "Spline Hazards" begin
 
@@ -714,6 +715,61 @@ import MultistateModels: get_parameters_flat, default_nknots, place_interior_kno
             if length(knots_result.h12.interior_knots) > 1
                 @test issorted(knots_result.h12.interior_knots)
             end
+        end
+        
+        @testset "calibrate_splines! - parameter structure integrity" begin
+            # This test verifies the fix for the bug where _rebuild_model_parameters!
+            # was creating an 'unflatten' field instead of 'reconstructor'
+            model = multistatemodel(h12_calib, h13_calib; data=calib_data)
+            
+            calibrate_splines!(model; nknots=3, verbose=false)
+            
+            # Verify reconstructor field exists and is the correct type
+            @test haskey(model.parameters, :reconstructor)
+            @test model.parameters.reconstructor isa MultistateModels.ReConstructor
+            
+            # Verify unflatten operations work with the reconstructor
+            flat_params = model.parameters.flat
+            nested = MultistateModels.unflatten(model.parameters.reconstructor, flat_params)
+            @test haskey(nested, :h12)
+            @test haskey(nested, :h13)
+            
+            # Verify flatten/unflatten round-trip preserves values
+            reflattened = MultistateModels.flatten(model.parameters.reconstructor, nested)
+            @test reflattened ≈ flat_params
+        end
+        
+        @testset "calibrate_splines! - model remains functional" begin
+            # Verify model can still be fitted after calibration
+            model = multistatemodel(h12_calib, h13_calib; data=calib_data)
+            calibrate_splines!(model; nknots=2, verbose=false)
+            
+            # Model should be fittable
+            fitted = fit(model; verbose=false, compute_vcov=false)
+            @test fitted isa MultistateModels.MultistateModelFitted
+            @test isfinite(fitted.loglik.loglik)
+            
+            # Parameters should have been optimized
+            @test !all(fitted.parameters.flat .≈ 0.0)
+        end
+        
+        @testset "calibrate_splines! - set_parameters! works after calibration" begin
+            model = multistatemodel(h12_calib, h13_calib; data=calib_data)
+            calibrate_splines!(model; nknots=2, verbose=false)
+            
+            # set_parameters! should work with various input formats
+            npar_h12 = model.hazards[1].npar_total
+            npar_h13 = model.hazards[2].npar_total
+            
+            # Vector{Vector{Float64}} format
+            new_params = [randn(npar_h12), randn(npar_h13)]
+            set_parameters!(model, new_params)
+            @test model.parameters.flat[1:npar_h12] ≈ new_params[1]
+            
+            # NamedTuple format
+            nt_params = (h12 = randn(npar_h12), h13 = randn(npar_h13))
+            set_parameters!(model, nt_params)
+            @test model.parameters.flat[1:npar_h12] ≈ collect(nt_params.h12)
         end
     end
 end

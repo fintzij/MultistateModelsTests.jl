@@ -19,10 +19,38 @@ using MultistateModels
 using DataFrames
 using Random
 using Statistics
+using Printf
 
 # Import internal functions for testing
 import MultistateModels: Hazard, multistatemodel, fit, set_parameters!, simulate,
     get_parameters_flat, cumulative_hazard, get_parameters, PhaseTypeProposal
+
+"""
+    print_parameter_comparison(test_name, true_params, fitted_params; param_names=nothing)
+
+Print a formatted table comparing true vs fitted parameters.
+"""
+function print_parameter_comparison(test_name::String, true_params::Vector, fitted_params::Vector;
+    param_names::Union{Nothing, Vector{String}}=nothing)
+    println("\n    Parameter Comparison: $test_name")
+    println("    " * "-"^70)
+    println("    Parameter         True        Estimated   Abs Diff    Rel Diff (%)")
+    println("    " * "-"^70)
+    
+    names = isnothing(param_names) ? ["param_$i" for i in 1:length(true_params)] : param_names
+    
+    for i in 1:length(true_params)
+        abs_diff = fitted_params[i] - true_params[i]
+        rel_diff = abs(true_params[i]) > 0.01 ? (abs_diff / true_params[i]) * 100 : abs_diff * 100
+        
+        println("    ", rpad(names[i], 18), 
+                @sprintf("%.4f", true_params[i]), "      ",
+                @sprintf("%.4f", fitted_params[i]), "      ",
+                @sprintf("%.4f", abs_diff), "      ",
+                @sprintf("%.1f%%", rel_diff))
+    end
+    println("    " * "-"^70)
+end
 
 const RNG_SEED = 0xABCD5678
 const N_SUBJECTS = 1000      # Standard sample size for longtests
@@ -61,7 +89,10 @@ const HAZARD_TOL_FACTOR = 3.0  # Spline hazard should be within factor of 3 of t
     MultistateModels.set_parameters!(model_sim, (h12 = [true_log_rate],))
     
     # Simulate panel data
-    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false)
+    # For 2-state model (1→2 absorbing), transition 1 is exact
+    obstype_map = Dict(1 => 1)
+    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false,
+                         obstype_by_transition=obstype_map)
     panel_data = sim_result[1, 1]
     
     # Fit linear spline (degree=1) with boundary knots only (no interior knots)
@@ -77,7 +108,7 @@ const HAZARD_TOL_FACTOR = 3.0  # Spline hazard should be within factor of 3 of t
     # Fit via MCEM
     fitted = fit(model_spline;
         proposal=:markov,
-        verbose=false,
+        verbose=true,
         maxiter=MAX_ITER,
         tol=MCEM_TOL,
         ess_target_initial=25,
@@ -134,7 +165,10 @@ end
     model_sim = multistatemodel(h12_exp; data=sim_data)
     MultistateModels.set_parameters!(model_sim, (h12 = [log(avg_rate)],))
     
-    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false)
+    # For 2-state model (1→2 absorbing), transition 1 is exact
+    obstype_map = Dict(1 => 1)
+    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false,
+                         obstype_by_transition=obstype_map)
     panel_data = sim_result[1, 1]
     
     # Fit spline with interior knot at change point
@@ -149,7 +183,7 @@ end
     # Fit via MCEM
     fitted = fit(model_spline;
         proposal=:markov,
-        verbose=false,
+        verbose=true,
         maxiter=MAX_ITER,
         tol=MCEM_TOL,
         ess_target_initial=25,
@@ -209,7 +243,10 @@ end
     # Gompertz params: [shape, log_scale] where h(t) = scale * exp(shape * t)
     MultistateModels.set_parameters!(model_sim, (h12 = [true_b, true_a],))
     
-    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false)
+    # For 2-state model (1→2 absorbing), transition 1 is exact
+    obstype_map = Dict(1 => 1)
+    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false,
+                         obstype_by_transition=obstype_map)
     panel_data = sim_result[1, 1]
     
     # Fit cubic spline with one interior knot (more stable than natural cubic with no interior knots)
@@ -226,7 +263,7 @@ end
     # Fit via MCEM
     fitted = fit(model_spline;
         proposal=:markov,
-        verbose=false,
+        verbose=true,
         maxiter=MAX_ITER,
         tol=MCEM_TOL,
         ess_target_initial=25,
@@ -286,7 +323,10 @@ end
     model_sim = multistatemodel(h12_exp; data=sim_data)
     MultistateModels.set_parameters!(model_sim, (h12 = [log(true_baseline), true_beta],))
     
-    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false)
+    # For 2-state model (1→2 absorbing), transition 1 is exact
+    obstype_map = Dict(1 => 1)
+    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false,
+                         obstype_by_transition=obstype_map)
     panel_data = sim_result[1, 1]
     
     # Fit spline model with covariate
@@ -301,7 +341,7 @@ end
     # Fit via MCEM
     fitted = fit(model_spline;
         proposal=:markov,
-        verbose=false,
+        verbose=true,
         maxiter=MAX_ITER,
         tol=MCEM_TOL,
         ess_target_initial=25,
@@ -361,7 +401,10 @@ end
     model_sim = multistatemodel(h12_exp; data=sim_data)
     MultistateModels.set_parameters!(model_sim, (h12 = [log(0.3)],))
     
-    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false)
+    # For 2-state model (1→2 absorbing), transition 1 is exact
+    obstype_map = Dict(1 => 1)
+    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false,
+                         obstype_by_transition=obstype_map)
     panel_data = sim_result[1, 1]
     
     # Fit monotone increasing spline
@@ -377,7 +420,7 @@ end
     # Fit via MCEM
     fitted = fit(model_spline;
         proposal=:markov,
-        verbose=false,
+        verbose=true,
         maxiter=MAX_ITER,
         tol=MCEM_TOL,
         ess_target_initial=25,
@@ -441,7 +484,10 @@ end
     model_sim = multistatemodel(h12_wei; data=template, surrogate=:markov)
     set_parameters!(model_sim, (h12 = [log(true_shape), log(true_scale)],))
     
-    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false)
+    # For 2-state model (1→2 absorbing), transition 1 is exact
+    obstype_map = Dict(1 => 1)
+    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false,
+                         obstype_by_transition=obstype_map)
     panel_data = sim_result[1, 1]
     
     # Fit with cubic spline using PhaseType proposal
@@ -453,7 +499,7 @@ end
     
     fitted = fit(model_fit;
         proposal=PhaseTypeProposal(n_phases=3),
-        verbose=false,
+        verbose=true,
         maxiter=MAX_ITER,
         tol=MCEM_TOL,
         ess_target_initial=25,

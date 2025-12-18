@@ -34,7 +34,10 @@ export baseline_exact_data,
        toy_tvc_gom_model,
        toy_illness_death_tvc_model,
        toy_semi_markov_tvc_model,
-       TVC_MULTI_CHANGE_CONFIG
+       TVC_MULTI_CHANGE_CONFIG,
+       # Per-transition obstype fixtures
+       toy_illness_death_model,
+       toy_multisubject_illness_death_model
 
 const INTERCEPT_ONLY = @formula(0 ~ 1)
 
@@ -543,6 +546,90 @@ function toy_semi_markov_tvc_model(;
     ))
     
     return (; model, data, config = (; t_changes, x_values, horizon, linpred_effect))
+end
+
+# =============================================================================
+# Per-Transition Observation Type Fixtures
+# =============================================================================
+
+"""
+    toy_illness_death_model()
+
+Create a simple illness-death model (3-state progressive) for per-transition 
+obstype testing.
+
+Transitions:
+- Index 1: 1 → 2 (healthy → ill)
+- Index 2: 1 → 3 (healthy → dead)  
+- Index 3: 2 → 3 (ill → dead)
+
+Data structure: Single subject with two observation intervals [0,5] and [5,10].
+Parameters set to make 1→2 transitions more likely than 1→3.
+
+# Returns
+Named tuple with `model` and `data`.
+
+# Example
+```julia
+fixture = toy_illness_death_model()
+print_transition_map(fixture.model)  # Shows transition indices
+```
+"""
+function toy_illness_death_model()
+    data = DataFrame(
+        id = [1, 1],
+        tstart = [0.0, 5.0],
+        tstop = [5.0, 10.0],
+        statefrom = [1, 1],
+        stateto = [1, 1],
+        obstype = [1, 1]
+    )
+    
+    h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
+    h13 = Hazard(@formula(0 ~ 1), "exp", 1, 3)
+    h23 = Hazard(@formula(0 ~ 1), "exp", 2, 3)
+    
+    model = multistatemodel(h12, h13, h23; data = data)
+    
+    # Set rates: h12=0.5, h13=0.01, h23=0.2
+    # Makes 1→2 much more likely than direct 1→3
+    set_parameters!(model, [[0.5], [0.01], [0.2]])
+    
+    return (; model, data)
+end
+
+"""
+    toy_multisubject_illness_death_model()
+
+Create an illness-death model with multiple subjects for per-transition 
+obstype testing.
+
+Subjects:
+- Subject 1: Two intervals [0,2], [2,5]
+- Subject 2: Two intervals [0,3], [3,5]  
+- Subject 3: Single interval [0,5]
+
+# Returns
+Named tuple with `model` and `data`.
+"""
+function toy_multisubject_illness_death_model()
+    data = DataFrame(
+        id = [1, 1, 2, 2, 3],
+        tstart = [0.0, 2.0, 0.0, 3.0, 0.0],
+        tstop = [2.0, 5.0, 3.0, 5.0, 5.0],
+        statefrom = [1, 1, 1, 1, 1],
+        stateto = [1, 1, 1, 1, 1],
+        obstype = [1, 1, 1, 1, 1]
+    )
+    
+    h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
+    h13 = Hazard(@formula(0 ~ 1), "exp", 1, 3)
+    h23 = Hazard(@formula(0 ~ 1), "exp", 2, 3)
+    
+    model = multistatemodel(h12, h13, h23; data = data)
+    set_parameters!(model, [[0.3], [0.1], [0.4]])
+    
+    return (; model, data)
 end
 
 end # module

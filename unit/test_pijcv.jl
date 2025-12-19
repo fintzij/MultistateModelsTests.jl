@@ -1,21 +1,22 @@
 # =============================================================================
-# NCV (Neighbourhood Cross-Validation) Tests
+# PIJCV (Predictive Infinitesimal Jackknife Cross-Validation) Tests
 # =============================================================================
 #
-# Tests for the NCV framework implementing Wood (2024) "Neighbourhood Cross 
+# Tests for the PIJCV framework implementing Wood (2024) "Neighbourhood Cross 
 # Validation" (arXiv:2404.16490).
 #
 # All tests verify mathematical correctness through analytical formulas.
 
 using LinearAlgebra
 using Random
+using Test
 
 # Import internal functions for testing
 import MultistateModels: cholesky_downdate!, cholesky_downdate_copy,
-                          ncv_loo_perturbation_direct, ncv_loo_perturbation_cholesky,
-                          ncv_loo_perturbation_woodbury,
-                          NCVState, compute_ncv_perturbations!, ncv_criterion,
-                          loo_perturbations_direct, ncv_get_loo_estimates, ncv_vcov
+                          pijcv_loo_perturbation_direct, pijcv_loo_perturbation_cholesky,
+                          pijcv_loo_perturbation_woodbury,
+                          PIJCVState, compute_pijcv_perturbations!, pijcv_criterion,
+                          loo_perturbations_direct, pijcv_get_loo_estimates, pijcv_vcov
 
 # =============================================================================
 # 1. Cholesky Downdate Algorithm
@@ -123,7 +124,7 @@ end
         g_k = randn(p)
         H_k = 0.1 * g_k * g_k'
         
-        result = ncv_loo_perturbation_direct(H_lambda, H_k, g_k)
+        result = pijcv_loo_perturbation_direct(H_lambda, H_k, g_k)
         delta_expected = (H_lambda - H_k) \ g_k
         
         @test result.delta ≈ delta_expected atol=1e-10
@@ -139,8 +140,8 @@ end
         g_k = randn(p)
         H_k = 0.05 * g_k * g_k'
         
-        result_chol = ncv_loo_perturbation_cholesky(H_chol, H_k, g_k)
-        result_direct = ncv_loo_perturbation_direct(H_lambda, H_k, g_k)
+        result_chol = pijcv_loo_perturbation_cholesky(H_chol, H_k, g_k)
+        result_direct = pijcv_loo_perturbation_direct(H_lambda, H_k, g_k)
         
         @test result_chol.delta ≈ result_direct.delta atol=1e-8
     end
@@ -154,7 +155,7 @@ end
         g_k = randn(p)
         H_k = 0.1 * g_k * g_k'
         
-        result = ncv_loo_perturbation_woodbury(H_chol, H_k, g_k)
+        result = pijcv_loo_perturbation_woodbury(H_chol, H_k, g_k)
         delta_expected = (H_lambda - H_k) \ g_k
         
         @test result.delta ≈ delta_expected atol=1e-8
@@ -169,7 +170,7 @@ end
         g_k = randn(p)
         H_k = zeros(p, p)
         
-        result = ncv_loo_perturbation_cholesky(H_chol, H_k, g_k)
+        result = pijcv_loo_perturbation_cholesky(H_chol, H_k, g_k)
         expected = H_chol \ g_k
         
         @test result.delta ≈ expected atol=1e-10
@@ -185,7 +186,7 @@ end
         H_k = 0.1 * B' * B  # Full-rank
         g_k = randn(p)
         
-        result = ncv_loo_perturbation_cholesky(H_chol, H_k, g_k)
+        result = pijcv_loo_perturbation_cholesky(H_chol, H_k, g_k)
         delta_expected = (H_lambda - H_k) \ g_k
         
         @test result.delta ≈ delta_expected atol=1e-6
@@ -193,10 +194,10 @@ end
 end
 
 # =============================================================================
-# 3. NCV Perturbation Computation
+# 3. PIJCV Perturbation Computation
 # =============================================================================
 
-@testset "NCV Perturbation Computation" begin
+@testset "PIJCV Perturbation Computation" begin
     
     @testset "Outer product approximation: delta_k = (H - g_k g_k')^{-1} g_k" begin
         Random.seed!(88888)
@@ -206,8 +207,8 @@ end
         H_lambda = A' * A + 5.0 * I
         subject_grads = 0.5 * randn(p, n)
         
-        state = NCVState(H_lambda, subject_grads)
-        compute_ncv_perturbations!(state)
+        state = PIJCVState(H_lambda, subject_grads)
+        compute_pijcv_perturbations!(state)
         
         for k in 1:n
             g_k = subject_grads[:, k]
@@ -230,8 +231,8 @@ end
             subject_hessians[:, :, k] = 0.05 * B' * B
         end
         
-        state = NCVState(H_lambda, subject_grads; subject_hessians=subject_hessians)
-        compute_ncv_perturbations!(state)
+        state = PIJCVState(H_lambda, subject_grads; subject_hessians=subject_hessians)
+        compute_pijcv_perturbations!(state)
         
         for k in 1:n
             g_k = subject_grads[:, k]
@@ -243,10 +244,10 @@ end
 end
 
 # =============================================================================
-# 4. NCV Criterion
+# 4. PIJCV Criterion
 # =============================================================================
 
-@testset "NCV Criterion" begin
+@testset "PIJCV Criterion" begin
     
     @testset "Criterion = mean of LOO losses" begin
         Random.seed!(10101)
@@ -256,13 +257,13 @@ end
         H_lambda = A' * A + 5.0 * I
         subject_grads = 0.3 * randn(p, n)
         
-        state = NCVState(H_lambda, subject_grads)
-        compute_ncv_perturbations!(state)
+        state = PIJCVState(H_lambda, subject_grads)
+        compute_pijcv_perturbations!(state)
         
         params = randn(p)
         loss_fn(pars, data, k) = sum(pars.^2)
         
-        V = ncv_criterion(state, params, loss_fn, nothing)
+        V = pijcv_criterion(state, params, loss_fn, nothing)
         
         V_expected = 0.0
         for k in 1:n
@@ -282,11 +283,11 @@ end
         H_lambda = A' * A + 3.0 * I
         subject_grads = randn(p, n)
         
-        state = NCVState(H_lambda, subject_grads)
-        compute_ncv_perturbations!(state)
+        state = PIJCVState(H_lambda, subject_grads)
+        compute_pijcv_perturbations!(state)
         
         params = randn(p)
-        loo_estimates = ncv_get_loo_estimates(state, params)
+        loo_estimates = pijcv_get_loo_estimates(state, params)
         
         for k in 1:n
             @test loo_estimates[:, k] ≈ params .+ state.deltas[:, k]
@@ -298,7 +299,7 @@ end
 # 5. Variance Estimation
 # =============================================================================
 
-@testset "NCV Variance Estimation" begin
+@testset "PIJCV Variance Estimation" begin
     
     @testset "Covariance matrices are positive semi-definite" begin
         Random.seed!(60606)
@@ -308,10 +309,10 @@ end
         H_lambda = A' * A + 2.0 * I
         subject_grads = randn(p, n)
         
-        state = NCVState(H_lambda, subject_grads)
-        compute_ncv_perturbations!(state)
+        state = PIJCVState(H_lambda, subject_grads)
+        compute_pijcv_perturbations!(state)
         
-        vcov_result = ncv_vcov(state)
+        vcov_result = pijcv_vcov(state)
         
         @test all(eigvals(vcov_result.ij_vcov) .>= -1e-10)
         @test all(eigvals(vcov_result.jk_vcov) .>= -1e-10)
@@ -325,10 +326,10 @@ end
         H_lambda = A' * A + 3.0 * I
         subject_grads = 0.5 * randn(p, n)
         
-        state = NCVState(H_lambda, subject_grads)
-        compute_ncv_perturbations!(state)
+        state = PIJCVState(H_lambda, subject_grads)
+        compute_pijcv_perturbations!(state)
         
-        vcov_result = ncv_vcov(state)
+        vcov_result = pijcv_vcov(state)
         
         delta_outer = state.deltas * state.deltas'
         @test vcov_result.ij_vcov ≈ Symmetric(delta_outer / n)
@@ -340,7 +341,7 @@ end
 # 6. Consistency with IJ/JK Methods
 # =============================================================================
 
-@testset "NCV Consistency with IJ/JK" begin
+@testset "PIJCV Consistency with IJ/JK" begin
     
     @testset "Zero H_k matches IJ exactly: delta_k = H^{-1} g_k" begin
         Random.seed!(10110)
@@ -351,8 +352,8 @@ end
         subject_grads = randn(p, n)
         subject_hessians = zeros(p, p, n)
         
-        state = NCVState(fishinf, subject_grads; subject_hessians=subject_hessians)
-        compute_ncv_perturbations!(state)
+        state = PIJCVState(fishinf, subject_grads; subject_hessians=subject_hessians)
+        compute_pijcv_perturbations!(state)
         
         vcov_ij = inv(fishinf)
         loo_deltas_ij = loo_perturbations_direct(vcov_ij, subject_grads)
@@ -360,7 +361,7 @@ end
         @test state.deltas ≈ loo_deltas_ij atol=1e-8
     end
     
-    @testset "NCV vs IJ perturbations highly correlated" begin
+    @testset "PIJCV vs IJ perturbations highly correlated" begin
         Random.seed!(90909)
         p = 4
         n = 8
@@ -371,8 +372,8 @@ end
         vcov_ij = inv(fishinf)
         loo_deltas_ij = loo_perturbations_direct(vcov_ij, subject_grads)
         
-        state = NCVState(fishinf, subject_grads)
-        compute_ncv_perturbations!(state)
+        state = PIJCVState(fishinf, subject_grads)
+        compute_pijcv_perturbations!(state)
         
         for k in 1:n
             corr = dot(loo_deltas_ij[:, k], state.deltas[:, k]) / 

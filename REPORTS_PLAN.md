@@ -30,7 +30,6 @@ MultistateModelsTests/
 │   ├── long_tests.qmd        # ✅ Long test status
 │   ├── simulation_diagnostics.qmd  # ✅ Simulation validation
 │   └── benchmarks.qmd        # ✅ Performance benchmarks
-├── diagnostics/              # Legacy diagnostic scripts
 └── REPORTS_PLAN.md           # This file
 ```
 

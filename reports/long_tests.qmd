@@ -296,7 +296,7 @@ Tests phase-type proposals with interval-censored (panel) data:
 Validates that variance estimates achieve nominal coverage.
 
 **Approach**:
-1. Simulate 500+ datasets from true DGP
+1. Simulate 500+ datasets (1000 for variance, 100 for coverage) from true DGP
 2. Fit model to each dataset
 3. Compute 95% CIs using different variance methods
 4. Check that coverage rate ≈ 95%

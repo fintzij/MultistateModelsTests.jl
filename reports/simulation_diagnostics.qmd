@@ -421,7 +421,7 @@ For explicit verification, the hazard functions use the following formulas:
 | Family | Hazard $h(t)$ | Implementation |
 |--------|---------------|----------------|
 | Exponential | $\lambda$ | `rate` |
-| Weibull | $\frac{a}{b}\left(\frac{t}{b}\right)^{a-1}$ | `shape/scale * (t/scale)^(shape-1)` |
+| Weibull | $a \cdot b \cdot t^{a-1}$ | `shape * scale * t^(shape-1)` |
 | Gompertz | $b \cdot e^{at}$ | `rate * exp(shape * t)` |
 
 Where `shape` and `scale` (or `rate`) are the distribution parameters. The Gompertz uses the flexsurv parameterization.

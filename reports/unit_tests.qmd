@@ -149,7 +149,7 @@ hazard_tests
 | Distribution | Hazard $h(t)$ | Cumulative Hazard $H(t)$ |
 |-------------|---------------|-------------------------|
 | Exponential | $\lambda$ | $\lambda t$ |
-| Weibull | $\frac{\kappa}{\lambda}\left(\frac{t}{\lambda}\right)^{\kappa-1}$ | $\left(\frac{t}{\lambda}\right)^\kappa$ |
+| Weibull | $\lambda \kappa t^{\kappa-1}$ | $\lambda t^\kappa$ |
 | Gompertz | $b \exp(at)$ | $\frac{b}{a}(\exp(at) - 1)$ |
 
 ### Spline Hazards (`test_splines.jl`)
@@ -166,8 +166,7 @@ spline_tests = DataFrame(
         "Cumhaz additivity",
         "Knot placement",
         "Coefficient transforms",
-        "Boundary conditions",
-        "Natural spline constraints"
+        "Boundary conditions"
     ],
     Coverage = [
         "H(a,b) = ∫ₐᵇ h(t)dt numerical verification",
@@ -176,10 +175,9 @@ spline_tests = DataFrame(
         "H(a,c) = H(a,b) + H(b,c) partition property",
         "Auto knot placement from data quantiles",
         "Log-coefficient ↔ natural scale transforms",
-        "Boundary knot handling for extrapolation",
-        "Natural spline second derivative constraints"
+        "Boundary knot handling for extrapolation"
     ],
-    Status = fill("✅", 8)
+    Status = fill("✅", 7)
 )
 
 spline_tests
@@ -294,18 +292,16 @@ var_tests = DataFrame(
         "IJ covariance",
         "JK covariance",
         "Pseudovalues",
-        "Subject gradients",
-        "LOO perturbations"
+        "Subject gradients"
     ],
     Coverage = [
         "Hessian-based variance at MLE",
         "Jackknife sandwich covariance (IJ)",
         "Infinitesimal jackknife (JK)",
         "Pseudovalue computation for robust SE",
-        "Per-subject gradient extraction",
-        "Leave-one-out influence diagnostics"
+        "Per-subject gradient extraction"
     ],
-    Status = fill("✅", 6)
+    Status = fill("✅", 5)
 )
 
 var_tests

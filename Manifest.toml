@@ -2,7 +2,7 @@
 
 julia_version = "1.12.2"
 manifest_format = "2.0"
-project_hash = "d46342a34520bffa2ff91c70b084ce94f78ad254"
+project_hash = "40d0fc97288ccc2ef61e546cd9a9cb2edfec9bbb"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "8b2b045b22740e4be20654175cc38291d48539db"
@@ -1944,10 +1944,10 @@ version = "0.2.4"
 deps = ["ADTypes", "BSplineKit", "BenchmarkTools", "CairoMakie", "Chain", "ComponentArrays", "DataFrames", "DiffResults", "Distributions", "ElasticArrays", "Enzyme", "ExponentialUtilities", "ForwardDiff", "HypothesisTests", "Ipopt", "JSON", "LinearAlgebra", "MacroTools", "ModelContextProtocol", "Mooncake", "NonlinearSolve", "Optim", "Optimization", "OptimizationMOI", "OptimizationOptimJL", "OrderedCollections", "ParameterHandling", "ParetoSmooth", "Preferences", "QuadGK", "QuasiMonteCarlo", "Random", "RuntimeGeneratedFunctions", "SpecialFunctions", "Statistics", "StatsBase", "StatsFuns", "StatsModels", "Symbolics"]
 path = "/Users/fintzij/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl"
 uuid = "0f8f0c3e-0b3a-5b8a-9e9a-0a0a0a0a0a0a"
-version = "0.2.1"
+version = "0.2.3"
 
 [[deps.MultistateModelsTests]]
-deps = ["BSplineKit", "DataFrames", "Distributions", "ForwardDiff", "HypothesisTests", "LinearAlgebra", "MultistateModels", "Optim", "ParameterHandling", "QuadGK", "Random", "SpecialFunctions", "Statistics", "StatsBase", "StatsModels", "Test"]
+deps = ["BSplineKit", "CairoMakie", "DataFrames", "Dates", "Distributions", "ForwardDiff", "HypothesisTests", "JSON3", "LinearAlgebra", "Logging", "MultistateModels", "Optim", "ParameterHandling", "QuadGK", "Random", "SpecialFunctions", "Statistics", "StatsBase", "StatsModels", "Test"]
 path = "."
 uuid = "e3a6b8f0-3f9f-4b8d-9e4b-3f1a6c8db2d3"
 version = "0.1.0"

@@ -2,6 +2,8 @@
 
 Comprehensive test suite for [MultistateModels.jl](https://github.com/fintzij/MultistateModels.jl).
 
+[**View Full Test Reports & Benchmarks**](https://fintzij.github.io/MultistateModelsTests.jl/)
+
 This repository contains unit tests, integration tests, and long-running statistical validation tests for the MultistateModels.jl package.
 
 ## Test Coverage Summary

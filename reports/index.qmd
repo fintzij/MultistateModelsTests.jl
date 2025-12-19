@@ -1,0 +1,113 @@
+---
+title: "MultistateModels.jl"
+subtitle: "Test & Validation Reports"
+page-layout: full
+---
+
+```{julia}
+#| echo: false
+#| output: false
+using Pkg
+Pkg.activate(joinpath(@__DIR__, ".."))
+include(joinpath(@__DIR__, "..", "src", "ReportHelpers.jl"))
+using .ReportHelpers
+```
+
+::: {.callout-note appearance="minimal"}
+```{julia}
+#| echo: false
+#| output: asis
+git_info = get_git_info()
+status = get_cache_status()
+badge = status.exists && !status.is_stale ? "![Tests](https://img.shields.io/badge/tests-passing-brightgreen)" : "![Tests](https://img.shields.io/badge/tests-stale-yellow)"
+println("$badge &nbsp; **Branch:** `$(git_info.branch)` &nbsp; **Commit:** `$(git_info.hash)`")
+```
+:::
+
+## Overview
+
+Comprehensive validation and documentation for [MultistateModels.jl](https://github.com/fintzij/MultistateModels.jl) — a Julia package for continuous-time multistate modeling.
+
+::: {.grid}
+
+::: {.g-col-6 .g-col-md-4}
+### [📐 Architecture](architecture.qmd)
+Type hierarchy, hazard families, inference engine, and simulation strategies.
+:::
+
+::: {.g-col-6 .g-col-md-4}
+### [✅ Unit Tests](unit_tests.qmd)
+Function-level tests for hazards, simulation, MCEM, and model construction.
+:::
+
+::: {.g-col-6 .g-col-md-4}
+### [📊 Long Tests](long_tests.qmd)
+Statistical recovery of parameters across hazard families and data types.
+:::
+
+::: {.g-col-6 .g-col-md-4}
+### [🎯 Simulation](simulation_diagnostics.qmd)
+Visual verification of event time distributions (CDF diagnostic plots).
+:::
+
+::: {.g-col-6 .g-col-md-4}
+### [⚡ Benchmarks](benchmarks.qmd)
+Performance comparison of sampling methods and optimization strategies.
+:::
+
+::: {.g-col-6 .g-col-md-4}
+### [📦 Main Package](https://github.com/fintzij/MultistateModels.jl)
+Source code and documentation for MultistateModels.jl.
+:::
+
+:::
+
+## Test Results Summary
+
+```{julia}
+#| echo: false
+#| output: asis
+status = get_cache_status()
+if status.exists
+    total = status.total_passed + status.total_failed + status.total_errors
+    pass_rate = total > 0 ? round(100 * status.total_passed / total, digits=1) : 0.0
+    
+    println("""
+| Metric | Value |
+|--------|-------|
+| **Passed** | $(status.total_passed) |
+| **Failed** | $(status.total_failed) |
+| **Errors** | $(status.total_errors) |
+| **Pass Rate** | $(pass_rate)% |
+| **Categories** | $(length(status.categories)) |
+| **Last Updated** | $(status.last_updated) |
+""")
+else
+    println("*No cached test results available.*")
+end
+```
+
+## Quick Start
+
+### Building Reports Locally
+
+```bash
+cd MultistateModelsTests/reports
+quarto render
+```
+
+### Recording Test Results
+
+```julia
+# After running tests manually
+include("scripts/test_cache.jl")
+record_test_result(:hazards, passed=15, failed=0, errors=0)
+record_test_result(:simulation, passed=8, failed=0, errors=0)
+```
+
+### Checking Cache Status
+
+```bash
+julia --project=. scripts/refresh_cache.jl
+```
+

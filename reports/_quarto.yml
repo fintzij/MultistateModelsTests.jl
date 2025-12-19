@@ -1,0 +1,49 @@
+project:
+  type: website
+  output-dir: _site
+  # Pre-render hook to show test cache status
+  pre-render: 
+    - "julia --project=.. ../scripts/refresh_cache.jl"
+  # Post-render: add .nojekyll for GitHub Pages
+  post-render:
+    - "touch _site/.nojekyll"
+
+website:
+  title: "MultistateModels Test Reports"
+  repo-url: https://github.com/fintzij/MultistateModelsTests.jl
+  repo-actions: [source, issue]
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+      - href: architecture.qmd
+        text: Architecture
+      - href: unit_tests.qmd
+        text: Unit Tests
+      - href: long_tests.qmd
+        text: Long Tests
+      - href: simulation_diagnostics.qmd
+        text: Simulation
+      - href: benchmarks.qmd
+        text: Benchmarks
+    right:
+      - icon: github
+        href: https://github.com/fintzij/MultistateModels.jl
+  page-footer:
+    left: "© 2025 MultistateModels.jl"
+    right: "Built with [Quarto](https://quarto.org/)"
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    code-fold: true
+    code-summary: "Show code"
+    highlight-style: github
+
+execute:
+  freeze: auto
+  cache: false
+
+engine: julia

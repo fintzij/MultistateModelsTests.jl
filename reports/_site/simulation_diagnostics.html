@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.22">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Simulation Diagnostics – MultistateModels Test Reports</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" integrity="sha384-ZvpUoO/+PpLXR1lu4jmpXWu80pZlYUAfxl5NsBMWOEPSjUn/6Z/hRTt8+pR6L4N2" crossorigin="anonymous"></script><script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-e34c512d8f599efa8461f365689868f8.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-3bbbbd466991e281563892c5dce73c3d.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script src="https://cdn.jsdelivr.net/npm/requirejs@2.3.6/require.min.js" integrity="sha384-c9c+LnTbwQ3aujuU7ULEPVvgLs+Fn6fJUvIGTsuu1ZcCf11fiEubah0ttpca4ntM sha384-6V1/AdqZRWk1KAlWbKBlGhN7VG4iE/yAZcO6NZPMF8od0vukrvr0tg4qY6NSrItx" crossorigin="anonymous"></script>
+
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="./index.html" class="navbar-brand navbar-brand-logo">
+    </a>
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">MultistateModels Test Reports</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="./index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./architecture.html"> 
+<span class="menu-text">Architecture</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./unit_tests.html"> 
+<span class="menu-text">Unit Tests</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./long_tests.html"> 
+<span class="menu-text">Long Tests</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link active" href="./simulation_diagnostics.html" aria-current="page"> 
+<span class="menu-text">Simulation</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./benchmarks.html"> 
+<span class="menu-text">Benchmarks</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/fintzij/MultistateModels.jl"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active" data-toc-expanded="2">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#overview" id="toc-overview" class="nav-link active" data-scroll-target="#overview">Overview</a></li>
+  <li><a href="#configuration" id="toc-configuration" class="nav-link" data-scroll-target="#configuration">Configuration</a></li>
+  <li><a href="#analytical-reference-formulas" id="toc-analytical-reference-formulas" class="nav-link" data-scroll-target="#analytical-reference-formulas">Analytical Reference Formulas</a>
+  <ul class="collapse">
+  <li><a href="#exponential-distribution" id="toc-exponential-distribution" class="nav-link" data-scroll-target="#exponential-distribution">Exponential Distribution</a></li>
+  <li><a href="#weibull-distribution-shape-kappa-scale-lambda" id="toc-weibull-distribution-shape-kappa-scale-lambda" class="nav-link" data-scroll-target="#weibull-distribution-shape-kappa-scale-lambda">Weibull Distribution (shape <span class="math inline">\(\kappa\)</span>, scale <span class="math inline">\(\lambda\)</span>)</a></li>
+  <li><a href="#gompertz-distribution-flexsurv-parameterization-shape-a-rate-b" id="toc-gompertz-distribution-flexsurv-parameterization-shape-a-rate-b" class="nav-link" data-scroll-target="#gompertz-distribution-flexsurv-parameterization-shape-a-rate-b">Gompertz Distribution (flexsurv parameterization: shape <span class="math inline">\(a\)</span>, rate <span class="math inline">\(b\)</span>)</a></li>
+  <li><a href="#covariate-effects" id="toc-covariate-effects" class="nav-link" data-scroll-target="#covariate-effects">Covariate Effects</a></li>
+  </ul></li>
+  <li><a href="#helper-functions" id="toc-helper-functions" class="nav-link" data-scroll-target="#helper-functions">Helper Functions</a></li>
+  <li><a href="#diagnostic-results" id="toc-diagnostic-results" class="nav-link" data-scroll-target="#diagnostic-results">Diagnostic Results</a></li>
+  <li><a href="#diagnostic-plots" id="toc-diagnostic-plots" class="nav-link" data-scroll-target="#diagnostic-plots">Diagnostic Plots</a>
+  <ul class="collapse">
+  <li><a href="#exponential-distribution-1" id="toc-exponential-distribution-1" class="nav-link" data-scroll-target="#exponential-distribution-1">Exponential Distribution</a></li>
+  <li><a href="#weibull-distribution" id="toc-weibull-distribution" class="nav-link" data-scroll-target="#weibull-distribution">Weibull Distribution</a></li>
+  <li><a href="#gompertz-distribution" id="toc-gompertz-distribution" class="nav-link" data-scroll-target="#gompertz-distribution">Gompertz Distribution</a></li>
+  </ul></li>
+  <li><a href="#hazard-function-verification" id="toc-hazard-function-verification" class="nav-link" data-scroll-target="#hazard-function-verification">Hazard Function Verification</a></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
+  <li><a href="#technical-notes" id="toc-technical-notes" class="nav-link" data-scroll-target="#technical-notes">Technical Notes</a>
+  <ul class="collapse">
+  <li><a href="#gompertz-parameterization" id="toc-gompertz-parameterization" class="nav-link" data-scroll-target="#gompertz-parameterization">Gompertz Parameterization</a></li>
+  <li><a href="#simulation-strategy" id="toc-simulation-strategy" class="nav-link" data-scroll-target="#simulation-strategy">Simulation Strategy</a></li>
+  <li><a href="#monte-carlo-error" id="toc-monte-carlo-error" class="nav-link" data-scroll-target="#monte-carlo-error">Monte Carlo Error</a></li>
+  </ul></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/fintzij/MultistateModels.jl/blob/main/simulation_diagnostics.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/fintzij/MultistateModels.jl/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Simulation Diagnostics</h1>
+<p class="subtitle lead">Verifying Simulated Distributions Match Theoretical Formulas</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="overview" class="level2">
+<h2 class="anchored" data-anchor-id="overview">Overview</h2>
+<p>This report validates that MultistateModels.jl correctly simulates event times by comparing:</p>
+<ol type="1">
+<li><strong>Empirical CDFs</strong> of simulated event times against theoretical CDFs</li>
+<li><strong>Hazard functions</strong> computed by the package against analytical formulas</li>
+<li><strong>Cumulative hazard functions</strong> computed vs.&nbsp;expected</li>
+</ol>
+<p>For each hazard family (Exponential, Weibull, Gompertz) and covariate effect type (PH, AFT), we: - Simulate many event times from a 2-state model - Compare the empirical distribution to the theoretical distribution - Report the maximum absolute difference in CDF (should be ≈ 0)</p>
+</section>
+<section id="configuration" class="level2">
+<h2 class="anchored" data-anchor-id="configuration">Configuration</h2>
+<div id="0a058ac1" class="cell" data-execution_count="2">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> COVARIATE_VALUE <span class="op">=</span> <span class="fl">1.5</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> SIM_SAMPLES <span class="op">=</span> <span class="fl">40_000</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> DIST_GRID_POINTS <span class="op">=</span> <span class="fl">400</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> FAMILY_CONFIG <span class="op">=</span> <span class="fu">Dict</span>(</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"exp"</span> <span class="op">=&gt;</span> (; rate <span class="op">=</span> <span class="fl">0.35</span>, beta <span class="op">=</span> <span class="fl">0.6</span>, horizon <span class="op">=</span> <span class="fl">5.0</span>),</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">"wei"</span> <span class="op">=&gt;</span> (; shape <span class="op">=</span> <span class="fl">1.35</span>, scale <span class="op">=</span> <span class="fl">0.4</span>, beta <span class="op">=</span> <span class="op">-</span><span class="fl">0.35</span>, horizon <span class="op">=</span> <span class="fl">5.0</span>),</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">"gom"</span> <span class="op">=&gt;</span> (; shape <span class="op">=</span> <span class="fl">0.6</span>, rate <span class="op">=</span> <span class="fl">0.4</span>, beta <span class="op">=</span> <span class="fl">0.5</span>, horizon <span class="op">=</span> <span class="fl">5.0</span>),</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display" data-execution_count="3">
+<pre><code>Dict{String, NamedTuple} with 3 entries:
+  "exp" =&gt; (rate = 0.35, beta = 0.6, horizon = 5.0)
+  "wei" =&gt; (shape = 1.35, scale = 0.4, beta = -0.35, horizon = 5.0)
+  "gom" =&gt; (shape = 0.6, rate = 0.4, beta = 0.5, horizon = 5.0)</code></pre>
+</div>
+</div>
+</section>
+<section id="analytical-reference-formulas" class="level2">
+<h2 class="anchored" data-anchor-id="analytical-reference-formulas">Analytical Reference Formulas</h2>
+<section id="exponential-distribution" class="level3">
+<h3 class="anchored" data-anchor-id="exponential-distribution">Exponential Distribution</h3>
+<ul>
+<li><strong>Hazard</strong>: <span class="math inline">\(h(t) = \lambda\)</span></li>
+<li><strong>Cumulative hazard</strong>: <span class="math inline">\(H(t) = \lambda t\)</span></li>
+<li><strong>CDF</strong>: <span class="math inline">\(F(t) = 1 - e^{-\lambda t}\)</span></li>
+</ul>
+</section>
+<section id="weibull-distribution-shape-kappa-scale-lambda" class="level3">
+<h3 class="anchored" data-anchor-id="weibull-distribution-shape-kappa-scale-lambda">Weibull Distribution (shape <span class="math inline">\(\kappa\)</span>, scale <span class="math inline">\(\lambda\)</span>)</h3>
+<ul>
+<li><strong>Hazard</strong>: <span class="math inline">\(h(t) = \kappa \lambda t^{\kappa-1}\)</span></li>
+<li><strong>Cumulative hazard</strong>: <span class="math inline">\(H(t) = \lambda t^\kappa\)</span></li>
+<li><strong>CDF</strong>: <span class="math inline">\(F(t) = 1 - e^{-\lambda t^\kappa}\)</span></li>
+</ul>
+</section>
+<section id="gompertz-distribution-flexsurv-parameterization-shape-a-rate-b" class="level3">
+<h3 class="anchored" data-anchor-id="gompertz-distribution-flexsurv-parameterization-shape-a-rate-b">Gompertz Distribution (flexsurv parameterization: shape <span class="math inline">\(a\)</span>, rate <span class="math inline">\(b\)</span>)</h3>
+<ul>
+<li><strong>Hazard</strong>: <span class="math inline">\(h(t) = b e^{at}\)</span></li>
+<li><strong>Cumulative hazard</strong>: <span class="math inline">\(H(t) = \frac{b}{a}(e^{at} - 1)\)</span></li>
+<li><strong>CDF</strong>: <span class="math inline">\(F(t) = 1 - e^{-H(t)}\)</span></li>
+</ul>
+</section>
+<section id="covariate-effects" class="level3">
+<h3 class="anchored" data-anchor-id="covariate-effects">Covariate Effects</h3>
+<p><strong>Proportional Hazards (PH)</strong>: <span class="math inline">\(h(t|x) = h_0(t) e^{\beta x}\)</span></p>
+<p><strong>Accelerated Failure Time (AFT)</strong>: <span class="math inline">\(h(t|x) = h_0(t \cdot e^{-\beta x}) \cdot e^{-\beta x}\)</span></p>
+</section>
+</section>
+<section id="helper-functions" class="level2">
+<h2 class="anchored" data-anchor-id="helper-functions">Helper Functions</h2>
+<div id="aa481497" class="cell" data-execution_count="3">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a 2-state model for a given scenario</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">build_test_model</span>(family<span class="op">::</span><span class="dt">String</span>, effect<span class="op">::</span><span class="dt">Symbol</span>, with_covariate<span class="op">::</span><span class="dt">Bool</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    cfg <span class="op">=</span> FAMILY_CONFIG[family]</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Build data frame</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> with_covariate</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>        data <span class="op">=</span> <span class="fu">DataFrame</span>(</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>            id <span class="op">=</span> [<span class="fl">1</span>], tstart <span class="op">=</span> [<span class="fl">0.0</span>], tstop <span class="op">=</span> [cfg.horizon],</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>            statefrom <span class="op">=</span> [<span class="fl">1</span>], stateto <span class="op">=</span> [<span class="fl">2</span>], obstype <span class="op">=</span> [<span class="fl">1</span>],</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>            x <span class="op">=</span> [COVARIATE_VALUE]</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>        formula <span class="op">=</span> <span class="pp">@formula</span>(<span class="fl">0</span> <span class="op">~</span> x)</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>        data <span class="op">=</span> <span class="fu">DataFrame</span>(</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>            id <span class="op">=</span> [<span class="fl">1</span>], tstart <span class="op">=</span> [<span class="fl">0.0</span>], tstop <span class="op">=</span> [cfg.horizon],</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>            statefrom <span class="op">=</span> [<span class="fl">1</span>], stateto <span class="op">=</span> [<span class="fl">2</span>], obstype <span class="op">=</span> [<span class="fl">1</span>]</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>        formula <span class="op">=</span> <span class="pp">@formula</span>(<span class="fl">0</span> <span class="op">~</span> <span class="fl">1</span>)</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    <span class="cf">end</span></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Build hazard</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>    hazard <span class="op">=</span> <span class="fu">Hazard</span>(formula, family, <span class="fl">1</span>, <span class="fl">2</span>; linpred_effect <span class="op">=</span> effect)</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>    model <span class="op">=</span> <span class="fu">multistatemodel</span>(hazard; data <span class="op">=</span> data)</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Set parameters</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> family <span class="op">==</span> <span class="st">"exp"</span></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>        base <span class="op">=</span> [<span class="fu">log</span>(cfg.rate)]</span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elseif</span> family <span class="op">==</span> <span class="st">"wei"</span></span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>        base <span class="op">=</span> [<span class="fu">log</span>(cfg.shape), <span class="fu">log</span>(cfg.scale)]</span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elseif</span> family <span class="op">==</span> <span class="st">"gom"</span></span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>        base <span class="op">=</span> [cfg.shape, <span class="fu">log</span>(cfg.rate)]  <span class="co"># shape unconstrained, rate log-transformed</span></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>    <span class="cf">end</span></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>    pars <span class="op">=</span> with_covariate ? <span class="fu">vcat</span>(base, [cfg.beta]) <span class="op">:</span> base</span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>    hazname <span class="op">=</span> model.hazards[<span class="fl">1</span>].hazname</span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>    <span class="fu">set_parameters!</span>(model, <span class="fu">NamedTuple</span><span class="dt">{(hazname,)}</span>((pars,)))</span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> model, cfg</span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute expected CDF for given scenario</span></span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">expected_cdf</span>(family<span class="op">::</span><span class="dt">String</span>, effect<span class="op">::</span><span class="dt">Symbol</span>, with_covariate<span class="op">::</span><span class="dt">Bool</span>, t<span class="op">::</span><span class="dt">Float64</span>)</span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a>    cfg <span class="op">=</span> FAMILY_CONFIG[family]</span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a>    xval <span class="op">=</span> with_covariate ? COVARIATE_VALUE <span class="op">:</span> <span class="fl">0.0</span></span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>    beta <span class="op">=</span> with_covariate ? cfg.beta <span class="op">:</span> <span class="fl">0.0</span></span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a>    cumhaz <span class="op">=</span> <span class="cf">if</span> family <span class="op">==</span> <span class="st">"exp"</span></span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a>        rate <span class="op">=</span> effect <span class="op">==</span> <span class="op">:</span>ph ? cfg.rate <span class="op">*</span> <span class="fu">exp</span>(beta <span class="op">*</span> xval) <span class="op">:</span> cfg.rate <span class="op">*</span> <span class="fu">exp</span>(<span class="op">-</span>beta <span class="op">*</span> xval)</span>
+<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a>        rate <span class="op">*</span> t</span>
+<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elseif</span> family <span class="op">==</span> <span class="st">"wei"</span></span>
+<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a>        shape, scale <span class="op">=</span> cfg.shape, cfg.scale</span>
+<span id="cb3-52"><a href="#cb3-52" aria-hidden="true" tabindex="-1"></a>        mult <span class="op">=</span> effect <span class="op">==</span> <span class="op">:</span>ph ? <span class="fu">exp</span>(beta <span class="op">*</span> xval) <span class="op">:</span> <span class="fu">exp</span>(<span class="op">-</span>shape <span class="op">*</span> beta <span class="op">*</span> xval)</span>
+<span id="cb3-53"><a href="#cb3-53" aria-hidden="true" tabindex="-1"></a>        scale <span class="op">*</span> mult <span class="op">*</span> (t<span class="op">^</span>shape)</span>
+<span id="cb3-54"><a href="#cb3-54" aria-hidden="true" tabindex="-1"></a>    <span class="cf">elseif</span> family <span class="op">==</span> <span class="st">"gom"</span></span>
+<span id="cb3-55"><a href="#cb3-55" aria-hidden="true" tabindex="-1"></a>        shape, rate <span class="op">=</span> cfg.shape, cfg.rate</span>
+<span id="cb3-56"><a href="#cb3-56" aria-hidden="true" tabindex="-1"></a>        linpred <span class="op">=</span> beta <span class="op">*</span> xval</span>
+<span id="cb3-57"><a href="#cb3-57" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> effect <span class="op">==</span> <span class="op">:</span>ph</span>
+<span id="cb3-58"><a href="#cb3-58" aria-hidden="true" tabindex="-1"></a>            (rate <span class="op">/</span> shape) <span class="op">*</span> <span class="fu">exp</span>(linpred) <span class="op">*</span> (<span class="fu">exp</span>(shape <span class="op">*</span> t) <span class="op">-</span> <span class="fl">1</span>)</span>
+<span id="cb3-59"><a href="#cb3-59" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span></span>
+<span id="cb3-60"><a href="#cb3-60" aria-hidden="true" tabindex="-1"></a>            time_scale <span class="op">=</span> <span class="fu">exp</span>(<span class="op">-</span>linpred)</span>
+<span id="cb3-61"><a href="#cb3-61" aria-hidden="true" tabindex="-1"></a>            scaled_shape <span class="op">=</span> shape <span class="op">*</span> time_scale</span>
+<span id="cb3-62"><a href="#cb3-62" aria-hidden="true" tabindex="-1"></a>            scaled_rate <span class="op">=</span> rate <span class="op">*</span> time_scale</span>
+<span id="cb3-63"><a href="#cb3-63" aria-hidden="true" tabindex="-1"></a>            (scaled_rate <span class="op">/</span> scaled_shape) <span class="op">*</span> (<span class="fu">exp</span>(scaled_shape <span class="op">*</span> t) <span class="op">-</span> <span class="fl">1</span>)</span>
+<span id="cb3-64"><a href="#cb3-64" aria-hidden="true" tabindex="-1"></a>        <span class="cf">end</span></span>
+<span id="cb3-65"><a href="#cb3-65" aria-hidden="true" tabindex="-1"></a>    <span class="cf">end</span></span>
+<span id="cb3-66"><a href="#cb3-66" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-67"><a href="#cb3-67" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="fl">1</span> <span class="op">-</span> <span class="fu">exp</span>(<span class="op">-</span>cumhaz)</span>
+<span id="cb3-68"><a href="#cb3-68" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
+<span id="cb3-69"><a href="#cb3-69" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-70"><a href="#cb3-70" aria-hidden="true" tabindex="-1"></a><span class="co"># Simulate event times from model</span></span>
+<span id="cb3-71"><a href="#cb3-71" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">simulate_event_times</span>(model, nsim<span class="op">::</span><span class="dt">Int</span>; rng <span class="op">=</span> <span class="bu">Random</span>.<span class="fu">default_rng</span>())</span>
+<span id="cb3-72"><a href="#cb3-72" aria-hidden="true" tabindex="-1"></a>    durations <span class="op">=</span> <span class="dt">Float64</span>[]</span>
+<span id="cb3-73"><a href="#cb3-73" aria-hidden="true" tabindex="-1"></a>    strategy <span class="op">=</span> <span class="fu">CachedTransformStrategy</span>()</span>
+<span id="cb3-74"><a href="#cb3-74" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="fu">length</span>(durations) <span class="op">&lt;</span> nsim</span>
+<span id="cb3-75"><a href="#cb3-75" aria-hidden="true" tabindex="-1"></a>        path <span class="op">=</span> <span class="fu">simulate_path</span>(model, <span class="fl">1</span>; strategy <span class="op">=</span> strategy, rng <span class="op">=</span> rng)</span>
+<span id="cb3-76"><a href="#cb3-76" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> path.states[<span class="kw">end</span>] <span class="op">!=</span> path.states[<span class="fl">1</span>]</span>
+<span id="cb3-77"><a href="#cb3-77" aria-hidden="true" tabindex="-1"></a>            <span class="fu">push!</span>(durations, path.times[<span class="kw">end</span>] <span class="op">-</span> path.times[<span class="fl">1</span>])</span>
+<span id="cb3-78"><a href="#cb3-78" aria-hidden="true" tabindex="-1"></a>        <span class="cf">end</span></span>
+<span id="cb3-79"><a href="#cb3-79" aria-hidden="true" tabindex="-1"></a>    <span class="cf">end</span></span>
+<span id="cb3-80"><a href="#cb3-80" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> durations</span>
+<span id="cb3-81"><a href="#cb3-81" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
+<span id="cb3-82"><a href="#cb3-82" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-83"><a href="#cb3-83" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute maximum CDF difference</span></span>
+<span id="cb3-84"><a href="#cb3-84" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">max_cdf_diff</span>(durations<span class="op">::</span><span class="dt">Vector{Float64}</span>, cdf_func, horizon<span class="op">::</span><span class="dt">Float64</span>)</span>
+<span id="cb3-85"><a href="#cb3-85" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Compute empirical CDF</span></span>
+<span id="cb3-86"><a href="#cb3-86" aria-hidden="true" tabindex="-1"></a>    sorted <span class="op">=</span> <span class="fu">sort</span>(durations)</span>
+<span id="cb3-87"><a href="#cb3-87" aria-hidden="true" tabindex="-1"></a>    n <span class="op">=</span> <span class="fu">length</span>(sorted)</span>
+<span id="cb3-88"><a href="#cb3-88" aria-hidden="true" tabindex="-1"></a>    ecdf_vals <span class="op">=</span> (<span class="fl">1</span><span class="op">:</span>n) <span class="op">./</span> n</span>
+<span id="cb3-89"><a href="#cb3-89" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-90"><a href="#cb3-90" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Compute theoretical CDF at each point</span></span>
+<span id="cb3-91"><a href="#cb3-91" aria-hidden="true" tabindex="-1"></a>    tcdf_vals <span class="op">=</span> [<span class="fu">cdf_func</span>(t) for t <span class="kw">in</span> sorted]</span>
+<span id="cb3-92"><a href="#cb3-92" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-93"><a href="#cb3-93" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Max absolute difference</span></span>
+<span id="cb3-94"><a href="#cb3-94" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="fu">maximum</span>(<span class="fu">abs</span>.(ecdf_vals <span class="op">.-</span> tcdf_vals))</span>
+<span id="cb3-95"><a href="#cb3-95" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display" data-execution_count="4">
+<pre><code>max_cdf_diff (generic function with 1 method)</code></pre>
+</div>
+</div>
+</section>
+<section id="diagnostic-results" class="level2">
+<h2 class="anchored" data-anchor-id="diagnostic-results">Diagnostic Results</h2>
+<div class="cell" data-execution_count="4">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Run diagnostics for all scenarios</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>results <span class="op">=</span> <span class="fu">DataFrame</span>(</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    Family <span class="op">=</span> <span class="dt">String</span>[],</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    Effect <span class="op">=</span> <span class="dt">String</span>[],</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    Covariate <span class="op">=</span> <span class="dt">String</span>[],</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    MaxCDFDiff <span class="op">=</span> <span class="dt">Float64</span>[],</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    Status <span class="op">=</span> <span class="dt">String</span>[]</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>scenarios <span class="op">=</span> [</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"exp"</span>, <span class="op">:</span>ph, <span class="cn">false</span>), (<span class="st">"exp"</span>, <span class="op">:</span>ph, <span class="cn">true</span>),</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"exp"</span>, <span class="op">:</span>aft, <span class="cn">false</span>), (<span class="st">"exp"</span>, <span class="op">:</span>aft, <span class="cn">true</span>),</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"wei"</span>, <span class="op">:</span>ph, <span class="cn">false</span>), (<span class="st">"wei"</span>, <span class="op">:</span>ph, <span class="cn">true</span>),</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"wei"</span>, <span class="op">:</span>aft, <span class="cn">false</span>), (<span class="st">"wei"</span>, <span class="op">:</span>aft, <span class="cn">true</span>),</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"gom"</span>, <span class="op">:</span>ph, <span class="cn">false</span>), (<span class="st">"gom"</span>, <span class="op">:</span>ph, <span class="cn">true</span>),</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"gom"</span>, <span class="op">:</span>aft, <span class="cn">false</span>), (<span class="st">"gom"</span>, <span class="op">:</span>aft, <span class="cn">true</span>),</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a><span class="bu">Random</span>.<span class="fu">seed!</span>(<span class="fl">12345</span>)</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (family, effect, with_cov) <span class="kw">in</span> scenarios</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>    model, cfg <span class="op">=</span> <span class="fu">build_test_model</span>(family, effect, with_cov)</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Simulate event times</span></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>    durations <span class="op">=</span> <span class="fu">simulate_event_times</span>(model, SIM_SAMPLES)</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Expected CDF function</span></span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>    cdf_func <span class="op">=</span> t <span class="op">-&gt;</span> <span class="fu">expected_cdf</span>(family, effect, with_cov, t)</span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Compute max difference</span></span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>    max_diff <span class="op">=</span> <span class="fu">max_cdf_diff</span>(durations, cdf_func, cfg.horizon)</span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb5-33"><a href="#cb5-33" aria-hidden="true" tabindex="-1"></a>    <span class="fu">push!</span>(results, (</span>
+<span id="cb5-34"><a href="#cb5-34" aria-hidden="true" tabindex="-1"></a>        <span class="fu">uppercasefirst</span>(family),</span>
+<span id="cb5-35"><a href="#cb5-35" aria-hidden="true" tabindex="-1"></a>        <span class="fu">uppercase</span>(<span class="fu">String</span>(effect)),</span>
+<span id="cb5-36"><a href="#cb5-36" aria-hidden="true" tabindex="-1"></a>        with_cov ? <span class="st">"Yes"</span> <span class="op">:</span> <span class="st">"No"</span>,</span>
+<span id="cb5-37"><a href="#cb5-37" aria-hidden="true" tabindex="-1"></a>        <span class="fu">round</span>(max_diff, digits<span class="op">=</span><span class="fl">4</span>),</span>
+<span id="cb5-38"><a href="#cb5-38" aria-hidden="true" tabindex="-1"></a>        max_diff <span class="op">&lt;</span> <span class="fl">0.02</span> ? <span class="st">"✅ Pass"</span> <span class="op">:</span> <span class="st">"❌ Fail"</span></span>
+<span id="cb5-39"><a href="#cb5-39" aria-hidden="true" tabindex="-1"></a>    ))</span>
+<span id="cb5-40"><a href="#cb5-40" aria-hidden="true" tabindex="-1"></a><span class="cf">end</span></span>
+<span id="cb5-41"><a href="#cb5-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-42"><a href="#cb5-42" aria-hidden="true" tabindex="-1"></a>results</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+******************************************************************************
+This program contains Ipopt, a library for large-scale nonlinear optimization.
+ Ipopt is released as open source code under the Eclipse Public License (EPL).
+         For more information visit https://github.com/coin-or/Ipopt
+******************************************************************************
+</code></pre>
+</div>
+<div id="tbl-results" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="4">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-results-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;1: Simulation Diagnostic Summary
+</figcaption>
+<div aria-describedby="tbl-results-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display" data-execution_count="5">
+<div><div style="float: left;"><span>12×5 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
+<table class="data-frame do-not-create-environment cell caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Row</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Family</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Effect</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Covariate</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">MaxCDFDiff</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Status</th>
+</tr>
+<tr class="subheader headerLastRow even">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;"></th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
+<td style="text-align: left;">Exp</td>
+<td style="text-align: left;">PH</td>
+<td style="text-align: left;">No</td>
+<td style="text-align: right;">0.1738</td>
+<td style="text-align: left;">❌ Fail</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
+<td style="text-align: left;">Exp</td>
+<td style="text-align: left;">PH</td>
+<td style="text-align: left;">Yes</td>
+<td style="text-align: right;">0.0145</td>
+<td style="text-align: left;">✅ Pass</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">3</td>
+<td style="text-align: left;">Exp</td>
+<td style="text-align: left;">AFT</td>
+<td style="text-align: left;">No</td>
+<td style="text-align: right;">0.1738</td>
+<td style="text-align: left;">❌ Fail</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
+<td style="text-align: left;">Exp</td>
+<td style="text-align: left;">AFT</td>
+<td style="text-align: left;">Yes</td>
+<td style="text-align: right;">0.4909</td>
+<td style="text-align: left;">❌ Fail</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">5</td>
+<td style="text-align: left;">Wei</td>
+<td style="text-align: left;">PH</td>
+<td style="text-align: left;">No</td>
+<td style="text-align: right;">0.0299</td>
+<td style="text-align: left;">❌ Fail</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">6</td>
+<td style="text-align: left;">Wei</td>
+<td style="text-align: left;">PH</td>
+<td style="text-align: left;">Yes</td>
+<td style="text-align: right;">0.1252</td>
+<td style="text-align: left;">❌ Fail</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">7</td>
+<td style="text-align: left;">Wei</td>
+<td style="text-align: left;">AFT</td>
+<td style="text-align: left;">No</td>
+<td style="text-align: right;">0.0299</td>
+<td style="text-align: left;">❌ Fail</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">8</td>
+<td style="text-align: left;">Wei</td>
+<td style="text-align: left;">AFT</td>
+<td style="text-align: left;">Yes</td>
+<td style="text-align: right;">0.0049</td>
+<td style="text-align: left;">✅ Pass</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">9</td>
+<td style="text-align: left;">Gom</td>
+<td style="text-align: left;">PH</td>
+<td style="text-align: left;">No</td>
+<td style="text-align: right;">0.0043</td>
+<td style="text-align: left;">✅ Pass</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">10</td>
+<td style="text-align: left;">Gom</td>
+<td style="text-align: left;">PH</td>
+<td style="text-align: left;">Yes</td>
+<td style="text-align: right;">0.0043</td>
+<td style="text-align: left;">✅ Pass</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">11</td>
+<td style="text-align: left;">Gom</td>
+<td style="text-align: left;">AFT</td>
+<td style="text-align: left;">No</td>
+<td style="text-align: right;">0.0039</td>
+<td style="text-align: left;">✅ Pass</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">12</td>
+<td style="text-align: left;">Gom</td>
+<td style="text-align: left;">AFT</td>
+<td style="text-align: left;">Yes</td>
+<td style="text-align: right;">0.1245</td>
+<td style="text-align: left;">❌ Fail</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</figure>
+</div>
+</div>
+</section>
+<section id="diagnostic-plots" class="level2">
+<h2 class="anchored" data-anchor-id="diagnostic-plots">Diagnostic Plots</h2>
+<section id="exponential-distribution-1" class="level3">
+<h3 class="anchored" data-anchor-id="exponential-distribution-1">Exponential Distribution</h3>
+<div id="cell-fig-exp" class="cell" data-fig-height="8" data-execution_count="5">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> <span class="fu">Figure</span>(size<span class="op">=</span>(<span class="fl">900</span>, <span class="fl">700</span>))</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="bu">Random</span>.<span class="fu">seed!</span>(<span class="fl">11111</span>)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Baseline PH</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>model_exp_base, cfg_exp <span class="op">=</span> <span class="fu">build_test_model</span>(<span class="st">"exp"</span>, <span class="op">:</span>ph, <span class="cn">false</span>)</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>durations_exp_base <span class="op">=</span> <span class="fu">simulate_event_times</span>(model_exp_base, SIM_SAMPLES)</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>ax1 <span class="op">=</span> <span class="fu">Axis</span>(fig[<span class="fl">1</span>, <span class="fl">1</span>], xlabel<span class="op">=</span><span class="st">"Time"</span>, ylabel<span class="op">=</span><span class="st">"CDF"</span>, title<span class="op">=</span><span class="st">"Exp PH Baseline"</span>)</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>t_grid <span class="op">=</span> <span class="fu">range</span>(<span class="fl">0</span>, cfg_exp.horizon, length<span class="op">=</span>DIST_GRID_POINTS)</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>ecdf_exp <span class="op">=</span> <span class="fu">ecdf</span>(durations_exp_base)</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax1, t_grid, [<span class="fu">ecdf_exp</span>(t) for t <span class="kw">in</span> t_grid], label<span class="op">=</span><span class="st">"Empirical"</span>, linewidth<span class="op">=</span><span class="fl">2</span>)</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax1, t_grid, [<span class="fu">expected_cdf</span>(<span class="st">"exp"</span>, <span class="op">:</span>ph, <span class="cn">false</span>, t) for t <span class="kw">in</span> t_grid], </span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>       label<span class="op">=</span><span class="st">"Theoretical"</span>, linestyle<span class="op">=:</span>dash, linewidth<span class="op">=</span><span class="fl">2</span>, color<span class="op">=:</span>red)</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a><span class="fu">axislegend</span>(ax1, position<span class="op">=:</span>rb)</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a><span class="co"># With covariate PH</span></span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>model_exp_cov, _ <span class="op">=</span> <span class="fu">build_test_model</span>(<span class="st">"exp"</span>, <span class="op">:</span>ph, <span class="cn">true</span>)</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>durations_exp_cov <span class="op">=</span> <span class="fu">simulate_event_times</span>(model_exp_cov, SIM_SAMPLES)</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>ax2 <span class="op">=</span> <span class="fu">Axis</span>(fig[<span class="fl">1</span>, <span class="fl">2</span>], xlabel<span class="op">=</span><span class="st">"Time"</span>, ylabel<span class="op">=</span><span class="st">"CDF"</span>, title<span class="op">=</span><span class="st">"Exp PH with Covariate"</span>)</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a>ecdf_exp_cov <span class="op">=</span> <span class="fu">ecdf</span>(durations_exp_cov)</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax2, t_grid, [<span class="fu">ecdf_exp_cov</span>(t) for t <span class="kw">in</span> t_grid], label<span class="op">=</span><span class="st">"Empirical"</span>, linewidth<span class="op">=</span><span class="fl">2</span>)</span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax2, t_grid, [<span class="fu">expected_cdf</span>(<span class="st">"exp"</span>, <span class="op">:</span>ph, <span class="cn">true</span>, t) for t <span class="kw">in</span> t_grid], </span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a>       label<span class="op">=</span><span class="st">"Theoretical"</span>, linestyle<span class="op">=:</span>dash, linewidth<span class="op">=</span><span class="fl">2</span>, color<span class="op">=:</span>red)</span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a><span class="fu">axislegend</span>(ax2, position<span class="op">=:</span>rb)</span>
+<span id="cb7-27"><a href="#cb7-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-28"><a href="#cb7-28" aria-hidden="true" tabindex="-1"></a><span class="co"># AFT baseline</span></span>
+<span id="cb7-29"><a href="#cb7-29" aria-hidden="true" tabindex="-1"></a>model_exp_aft, _ <span class="op">=</span> <span class="fu">build_test_model</span>(<span class="st">"exp"</span>, <span class="op">:</span>aft, <span class="cn">false</span>)</span>
+<span id="cb7-30"><a href="#cb7-30" aria-hidden="true" tabindex="-1"></a>durations_exp_aft <span class="op">=</span> <span class="fu">simulate_event_times</span>(model_exp_aft, SIM_SAMPLES)</span>
+<span id="cb7-31"><a href="#cb7-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-32"><a href="#cb7-32" aria-hidden="true" tabindex="-1"></a>ax3 <span class="op">=</span> <span class="fu">Axis</span>(fig[<span class="fl">2</span>, <span class="fl">1</span>], xlabel<span class="op">=</span><span class="st">"Time"</span>, ylabel<span class="op">=</span><span class="st">"CDF"</span>, title<span class="op">=</span><span class="st">"Exp AFT Baseline"</span>)</span>
+<span id="cb7-33"><a href="#cb7-33" aria-hidden="true" tabindex="-1"></a>ecdf_exp_aft <span class="op">=</span> <span class="fu">ecdf</span>(durations_exp_aft)</span>
+<span id="cb7-34"><a href="#cb7-34" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax3, t_grid, [<span class="fu">ecdf_exp_aft</span>(t) for t <span class="kw">in</span> t_grid], label<span class="op">=</span><span class="st">"Empirical"</span>, linewidth<span class="op">=</span><span class="fl">2</span>)</span>
+<span id="cb7-35"><a href="#cb7-35" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax3, t_grid, [<span class="fu">expected_cdf</span>(<span class="st">"exp"</span>, <span class="op">:</span>aft, <span class="cn">false</span>, t) for t <span class="kw">in</span> t_grid], </span>
+<span id="cb7-36"><a href="#cb7-36" aria-hidden="true" tabindex="-1"></a>       label<span class="op">=</span><span class="st">"Theoretical"</span>, linestyle<span class="op">=:</span>dash, linewidth<span class="op">=</span><span class="fl">2</span>, color<span class="op">=:</span>red)</span>
+<span id="cb7-37"><a href="#cb7-37" aria-hidden="true" tabindex="-1"></a><span class="fu">axislegend</span>(ax3, position<span class="op">=:</span>rb)</span>
+<span id="cb7-38"><a href="#cb7-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-39"><a href="#cb7-39" aria-hidden="true" tabindex="-1"></a><span class="co"># AFT with covariate</span></span>
+<span id="cb7-40"><a href="#cb7-40" aria-hidden="true" tabindex="-1"></a>model_exp_aft_cov, _ <span class="op">=</span> <span class="fu">build_test_model</span>(<span class="st">"exp"</span>, <span class="op">:</span>aft, <span class="cn">true</span>)</span>
+<span id="cb7-41"><a href="#cb7-41" aria-hidden="true" tabindex="-1"></a>durations_exp_aft_cov <span class="op">=</span> <span class="fu">simulate_event_times</span>(model_exp_aft_cov, SIM_SAMPLES)</span>
+<span id="cb7-42"><a href="#cb7-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-43"><a href="#cb7-43" aria-hidden="true" tabindex="-1"></a>ax4 <span class="op">=</span> <span class="fu">Axis</span>(fig[<span class="fl">2</span>, <span class="fl">2</span>], xlabel<span class="op">=</span><span class="st">"Time"</span>, ylabel<span class="op">=</span><span class="st">"CDF"</span>, title<span class="op">=</span><span class="st">"Exp AFT with Covariate"</span>)</span>
+<span id="cb7-44"><a href="#cb7-44" aria-hidden="true" tabindex="-1"></a>ecdf_exp_aft_cov <span class="op">=</span> <span class="fu">ecdf</span>(durations_exp_aft_cov)</span>
+<span id="cb7-45"><a href="#cb7-45" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax4, t_grid, [<span class="fu">ecdf_exp_aft_cov</span>(t) for t <span class="kw">in</span> t_grid], label<span class="op">=</span><span class="st">"Empirical"</span>, linewidth<span class="op">=</span><span class="fl">2</span>)</span>
+<span id="cb7-46"><a href="#cb7-46" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax4, t_grid, [<span class="fu">expected_cdf</span>(<span class="st">"exp"</span>, <span class="op">:</span>aft, <span class="cn">true</span>, t) for t <span class="kw">in</span> t_grid], </span>
+<span id="cb7-47"><a href="#cb7-47" aria-hidden="true" tabindex="-1"></a>       label<span class="op">=</span><span class="st">"Theoretical"</span>, linestyle<span class="op">=:</span>dash, linewidth<span class="op">=</span><span class="fl">2</span>, color<span class="op">=:</span>red)</span>
+<span id="cb7-48"><a href="#cb7-48" aria-hidden="true" tabindex="-1"></a><span class="fu">axislegend</span>(ax4, position<span class="op">=:</span>rb)</span>
+<span id="cb7-49"><a href="#cb7-49" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-50"><a href="#cb7-50" aria-hidden="true" tabindex="-1"></a>fig</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display" data-execution_count="6">
+<div id="fig-exp" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-exp-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="simulation_diagnostics_files/figure-html/fig-exp-output-1.svg" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-exp-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Exponential Hazard Diagnostics
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="weibull-distribution" class="level3">
+<h3 class="anchored" data-anchor-id="weibull-distribution">Weibull Distribution</h3>
+<div id="cell-fig-wei" class="cell" data-fig-height="8" data-execution_count="6">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> <span class="fu">Figure</span>(size<span class="op">=</span>(<span class="fl">900</span>, <span class="fl">700</span>))</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="bu">Random</span>.<span class="fu">seed!</span>(<span class="fl">22222</span>)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>cfg_wei <span class="op">=</span> FAMILY_CONFIG[<span class="st">"wei"</span>]</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>t_grid_wei <span class="op">=</span> <span class="fu">range</span>(<span class="fl">0.02</span>, cfg_wei.horizon, length<span class="op">=</span>DIST_GRID_POINTS)  <span class="co"># Start &gt; 0 for Weibull</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Baseline PH</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>model_wei_base, _ <span class="op">=</span> <span class="fu">build_test_model</span>(<span class="st">"wei"</span>, <span class="op">:</span>ph, <span class="cn">false</span>)</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>durations_wei_base <span class="op">=</span> <span class="fu">simulate_event_times</span>(model_wei_base, SIM_SAMPLES)</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>ax1 <span class="op">=</span> <span class="fu">Axis</span>(fig[<span class="fl">1</span>, <span class="fl">1</span>], xlabel<span class="op">=</span><span class="st">"Time"</span>, ylabel<span class="op">=</span><span class="st">"CDF"</span>, title<span class="op">=</span><span class="st">"Weibull PH Baseline"</span>)</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>ecdf_wei <span class="op">=</span> <span class="fu">ecdf</span>(durations_wei_base)</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax1, t_grid_wei, [<span class="fu">ecdf_wei</span>(t) for t <span class="kw">in</span> t_grid_wei], label<span class="op">=</span><span class="st">"Empirical"</span>, linewidth<span class="op">=</span><span class="fl">2</span>)</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax1, t_grid_wei, [<span class="fu">expected_cdf</span>(<span class="st">"wei"</span>, <span class="op">:</span>ph, <span class="cn">false</span>, t) for t <span class="kw">in</span> t_grid_wei], </span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>       label<span class="op">=</span><span class="st">"Theoretical"</span>, linestyle<span class="op">=:</span>dash, linewidth<span class="op">=</span><span class="fl">2</span>, color<span class="op">=:</span>red)</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a><span class="fu">axislegend</span>(ax1, position<span class="op">=:</span>rb)</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a><span class="co"># With covariate PH</span></span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>model_wei_cov, _ <span class="op">=</span> <span class="fu">build_test_model</span>(<span class="st">"wei"</span>, <span class="op">:</span>ph, <span class="cn">true</span>)</span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>durations_wei_cov <span class="op">=</span> <span class="fu">simulate_event_times</span>(model_wei_cov, SIM_SAMPLES)</span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>ax2 <span class="op">=</span> <span class="fu">Axis</span>(fig[<span class="fl">1</span>, <span class="fl">2</span>], xlabel<span class="op">=</span><span class="st">"Time"</span>, ylabel<span class="op">=</span><span class="st">"CDF"</span>, title<span class="op">=</span><span class="st">"Weibull PH with Covariate"</span>)</span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>ecdf_wei_cov <span class="op">=</span> <span class="fu">ecdf</span>(durations_wei_cov)</span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax2, t_grid_wei, [<span class="fu">ecdf_wei_cov</span>(t) for t <span class="kw">in</span> t_grid_wei], label<span class="op">=</span><span class="st">"Empirical"</span>, linewidth<span class="op">=</span><span class="fl">2</span>)</span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax2, t_grid_wei, [<span class="fu">expected_cdf</span>(<span class="st">"wei"</span>, <span class="op">:</span>ph, <span class="cn">true</span>, t) for t <span class="kw">in</span> t_grid_wei], </span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>       label<span class="op">=</span><span class="st">"Theoretical"</span>, linestyle<span class="op">=:</span>dash, linewidth<span class="op">=</span><span class="fl">2</span>, color<span class="op">=:</span>red)</span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a><span class="fu">axislegend</span>(ax2, position<span class="op">=:</span>rb)</span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a><span class="co"># AFT baseline</span></span>
+<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>model_wei_aft, _ <span class="op">=</span> <span class="fu">build_test_model</span>(<span class="st">"wei"</span>, <span class="op">:</span>aft, <span class="cn">false</span>)</span>
+<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a>durations_wei_aft <span class="op">=</span> <span class="fu">simulate_event_times</span>(model_wei_aft, SIM_SAMPLES)</span>
+<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a>ax3 <span class="op">=</span> <span class="fu">Axis</span>(fig[<span class="fl">2</span>, <span class="fl">1</span>], xlabel<span class="op">=</span><span class="st">"Time"</span>, ylabel<span class="op">=</span><span class="st">"CDF"</span>, title<span class="op">=</span><span class="st">"Weibull AFT Baseline"</span>)</span>
+<span id="cb8-34"><a href="#cb8-34" aria-hidden="true" tabindex="-1"></a>ecdf_wei_aft <span class="op">=</span> <span class="fu">ecdf</span>(durations_wei_aft)</span>
+<span id="cb8-35"><a href="#cb8-35" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax3, t_grid_wei, [<span class="fu">ecdf_wei_aft</span>(t) for t <span class="kw">in</span> t_grid_wei], label<span class="op">=</span><span class="st">"Empirical"</span>, linewidth<span class="op">=</span><span class="fl">2</span>)</span>
+<span id="cb8-36"><a href="#cb8-36" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax3, t_grid_wei, [<span class="fu">expected_cdf</span>(<span class="st">"wei"</span>, <span class="op">:</span>aft, <span class="cn">false</span>, t) for t <span class="kw">in</span> t_grid_wei], </span>
+<span id="cb8-37"><a href="#cb8-37" aria-hidden="true" tabindex="-1"></a>       label<span class="op">=</span><span class="st">"Theoretical"</span>, linestyle<span class="op">=:</span>dash, linewidth<span class="op">=</span><span class="fl">2</span>, color<span class="op">=:</span>red)</span>
+<span id="cb8-38"><a href="#cb8-38" aria-hidden="true" tabindex="-1"></a><span class="fu">axislegend</span>(ax3, position<span class="op">=:</span>rb)</span>
+<span id="cb8-39"><a href="#cb8-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-40"><a href="#cb8-40" aria-hidden="true" tabindex="-1"></a><span class="co"># AFT with covariate</span></span>
+<span id="cb8-41"><a href="#cb8-41" aria-hidden="true" tabindex="-1"></a>model_wei_aft_cov, _ <span class="op">=</span> <span class="fu">build_test_model</span>(<span class="st">"wei"</span>, <span class="op">:</span>aft, <span class="cn">true</span>)</span>
+<span id="cb8-42"><a href="#cb8-42" aria-hidden="true" tabindex="-1"></a>durations_wei_aft_cov <span class="op">=</span> <span class="fu">simulate_event_times</span>(model_wei_aft_cov, SIM_SAMPLES)</span>
+<span id="cb8-43"><a href="#cb8-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-44"><a href="#cb8-44" aria-hidden="true" tabindex="-1"></a>ax4 <span class="op">=</span> <span class="fu">Axis</span>(fig[<span class="fl">2</span>, <span class="fl">2</span>], xlabel<span class="op">=</span><span class="st">"Time"</span>, ylabel<span class="op">=</span><span class="st">"CDF"</span>, title<span class="op">=</span><span class="st">"Weibull AFT with Covariate"</span>)</span>
+<span id="cb8-45"><a href="#cb8-45" aria-hidden="true" tabindex="-1"></a>ecdf_wei_aft_cov <span class="op">=</span> <span class="fu">ecdf</span>(durations_wei_aft_cov)</span>
+<span id="cb8-46"><a href="#cb8-46" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax4, t_grid_wei, [<span class="fu">ecdf_wei_aft_cov</span>(t) for t <span class="kw">in</span> t_grid_wei], label<span class="op">=</span><span class="st">"Empirical"</span>, linewidth<span class="op">=</span><span class="fl">2</span>)</span>
+<span id="cb8-47"><a href="#cb8-47" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax4, t_grid_wei, [<span class="fu">expected_cdf</span>(<span class="st">"wei"</span>, <span class="op">:</span>aft, <span class="cn">true</span>, t) for t <span class="kw">in</span> t_grid_wei], </span>
+<span id="cb8-48"><a href="#cb8-48" aria-hidden="true" tabindex="-1"></a>       label<span class="op">=</span><span class="st">"Theoretical"</span>, linestyle<span class="op">=:</span>dash, linewidth<span class="op">=</span><span class="fl">2</span>, color<span class="op">=:</span>red)</span>
+<span id="cb8-49"><a href="#cb8-49" aria-hidden="true" tabindex="-1"></a><span class="fu">axislegend</span>(ax4, position<span class="op">=:</span>rb)</span>
+<span id="cb8-50"><a href="#cb8-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-51"><a href="#cb8-51" aria-hidden="true" tabindex="-1"></a>fig</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display" data-execution_count="7">
+<div id="fig-wei" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-wei-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="simulation_diagnostics_files/figure-html/fig-wei-output-1.svg" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-wei-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Weibull Hazard Diagnostics
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="gompertz-distribution" class="level3">
+<h3 class="anchored" data-anchor-id="gompertz-distribution">Gompertz Distribution</h3>
+<div id="cell-fig-gom" class="cell" data-fig-height="8" data-execution_count="7">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> <span class="fu">Figure</span>(size<span class="op">=</span>(<span class="fl">900</span>, <span class="fl">700</span>))</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="bu">Random</span>.<span class="fu">seed!</span>(<span class="fl">33333</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>cfg_gom <span class="op">=</span> FAMILY_CONFIG[<span class="st">"gom"</span>]</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>t_grid_gom <span class="op">=</span> <span class="fu">range</span>(<span class="fl">0</span>, cfg_gom.horizon, length<span class="op">=</span>DIST_GRID_POINTS)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Baseline PH</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>model_gom_base, _ <span class="op">=</span> <span class="fu">build_test_model</span>(<span class="st">"gom"</span>, <span class="op">:</span>ph, <span class="cn">false</span>)</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>durations_gom_base <span class="op">=</span> <span class="fu">simulate_event_times</span>(model_gom_base, SIM_SAMPLES)</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>ax1 <span class="op">=</span> <span class="fu">Axis</span>(fig[<span class="fl">1</span>, <span class="fl">1</span>], xlabel<span class="op">=</span><span class="st">"Time"</span>, ylabel<span class="op">=</span><span class="st">"CDF"</span>, title<span class="op">=</span><span class="st">"Gompertz PH Baseline"</span>)</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>ecdf_gom <span class="op">=</span> <span class="fu">ecdf</span>(durations_gom_base)</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax1, t_grid_gom, [<span class="fu">ecdf_gom</span>(t) for t <span class="kw">in</span> t_grid_gom], label<span class="op">=</span><span class="st">"Empirical"</span>, linewidth<span class="op">=</span><span class="fl">2</span>)</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax1, t_grid_gom, [<span class="fu">expected_cdf</span>(<span class="st">"gom"</span>, <span class="op">:</span>ph, <span class="cn">false</span>, t) for t <span class="kw">in</span> t_grid_gom], </span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>       label<span class="op">=</span><span class="st">"Theoretical"</span>, linestyle<span class="op">=:</span>dash, linewidth<span class="op">=</span><span class="fl">2</span>, color<span class="op">=:</span>red)</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a><span class="fu">axislegend</span>(ax1, position<span class="op">=:</span>rb)</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a><span class="co"># With covariate PH</span></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>model_gom_cov, _ <span class="op">=</span> <span class="fu">build_test_model</span>(<span class="st">"gom"</span>, <span class="op">:</span>ph, <span class="cn">true</span>)</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>durations_gom_cov <span class="op">=</span> <span class="fu">simulate_event_times</span>(model_gom_cov, SIM_SAMPLES)</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>ax2 <span class="op">=</span> <span class="fu">Axis</span>(fig[<span class="fl">1</span>, <span class="fl">2</span>], xlabel<span class="op">=</span><span class="st">"Time"</span>, ylabel<span class="op">=</span><span class="st">"CDF"</span>, title<span class="op">=</span><span class="st">"Gompertz PH with Covariate"</span>)</span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>ecdf_gom_cov <span class="op">=</span> <span class="fu">ecdf</span>(durations_gom_cov)</span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax2, t_grid_gom, [<span class="fu">ecdf_gom_cov</span>(t) for t <span class="kw">in</span> t_grid_gom], label<span class="op">=</span><span class="st">"Empirical"</span>, linewidth<span class="op">=</span><span class="fl">2</span>)</span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax2, t_grid_gom, [<span class="fu">expected_cdf</span>(<span class="st">"gom"</span>, <span class="op">:</span>ph, <span class="cn">true</span>, t) for t <span class="kw">in</span> t_grid_gom], </span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>       label<span class="op">=</span><span class="st">"Theoretical"</span>, linestyle<span class="op">=:</span>dash, linewidth<span class="op">=</span><span class="fl">2</span>, color<span class="op">=:</span>red)</span>
+<span id="cb9-27"><a href="#cb9-27" aria-hidden="true" tabindex="-1"></a><span class="fu">axislegend</span>(ax2, position<span class="op">=:</span>rb)</span>
+<span id="cb9-28"><a href="#cb9-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-29"><a href="#cb9-29" aria-hidden="true" tabindex="-1"></a><span class="co"># AFT baseline</span></span>
+<span id="cb9-30"><a href="#cb9-30" aria-hidden="true" tabindex="-1"></a>model_gom_aft, _ <span class="op">=</span> <span class="fu">build_test_model</span>(<span class="st">"gom"</span>, <span class="op">:</span>aft, <span class="cn">false</span>)</span>
+<span id="cb9-31"><a href="#cb9-31" aria-hidden="true" tabindex="-1"></a>durations_gom_aft <span class="op">=</span> <span class="fu">simulate_event_times</span>(model_gom_aft, SIM_SAMPLES)</span>
+<span id="cb9-32"><a href="#cb9-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-33"><a href="#cb9-33" aria-hidden="true" tabindex="-1"></a>ax3 <span class="op">=</span> <span class="fu">Axis</span>(fig[<span class="fl">2</span>, <span class="fl">1</span>], xlabel<span class="op">=</span><span class="st">"Time"</span>, ylabel<span class="op">=</span><span class="st">"CDF"</span>, title<span class="op">=</span><span class="st">"Gompertz AFT Baseline"</span>)</span>
+<span id="cb9-34"><a href="#cb9-34" aria-hidden="true" tabindex="-1"></a>ecdf_gom_aft <span class="op">=</span> <span class="fu">ecdf</span>(durations_gom_aft)</span>
+<span id="cb9-35"><a href="#cb9-35" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax3, t_grid_gom, [<span class="fu">ecdf_gom_aft</span>(t) for t <span class="kw">in</span> t_grid_gom], label<span class="op">=</span><span class="st">"Empirical"</span>, linewidth<span class="op">=</span><span class="fl">2</span>)</span>
+<span id="cb9-36"><a href="#cb9-36" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax3, t_grid_gom, [<span class="fu">expected_cdf</span>(<span class="st">"gom"</span>, <span class="op">:</span>aft, <span class="cn">false</span>, t) for t <span class="kw">in</span> t_grid_gom], </span>
+<span id="cb9-37"><a href="#cb9-37" aria-hidden="true" tabindex="-1"></a>       label<span class="op">=</span><span class="st">"Theoretical"</span>, linestyle<span class="op">=:</span>dash, linewidth<span class="op">=</span><span class="fl">2</span>, color<span class="op">=:</span>red)</span>
+<span id="cb9-38"><a href="#cb9-38" aria-hidden="true" tabindex="-1"></a><span class="fu">axislegend</span>(ax3, position<span class="op">=:</span>rb)</span>
+<span id="cb9-39"><a href="#cb9-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-40"><a href="#cb9-40" aria-hidden="true" tabindex="-1"></a><span class="co"># AFT with covariate</span></span>
+<span id="cb9-41"><a href="#cb9-41" aria-hidden="true" tabindex="-1"></a>model_gom_aft_cov, _ <span class="op">=</span> <span class="fu">build_test_model</span>(<span class="st">"gom"</span>, <span class="op">:</span>aft, <span class="cn">true</span>)</span>
+<span id="cb9-42"><a href="#cb9-42" aria-hidden="true" tabindex="-1"></a>durations_gom_aft_cov <span class="op">=</span> <span class="fu">simulate_event_times</span>(model_gom_aft_cov, SIM_SAMPLES)</span>
+<span id="cb9-43"><a href="#cb9-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-44"><a href="#cb9-44" aria-hidden="true" tabindex="-1"></a>ax4 <span class="op">=</span> <span class="fu">Axis</span>(fig[<span class="fl">2</span>, <span class="fl">2</span>], xlabel<span class="op">=</span><span class="st">"Time"</span>, ylabel<span class="op">=</span><span class="st">"CDF"</span>, title<span class="op">=</span><span class="st">"Gompertz AFT with Covariate"</span>)</span>
+<span id="cb9-45"><a href="#cb9-45" aria-hidden="true" tabindex="-1"></a>ecdf_gom_aft_cov <span class="op">=</span> <span class="fu">ecdf</span>(durations_gom_aft_cov)</span>
+<span id="cb9-46"><a href="#cb9-46" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax4, t_grid_gom, [<span class="fu">ecdf_gom_aft_cov</span>(t) for t <span class="kw">in</span> t_grid_gom], label<span class="op">=</span><span class="st">"Empirical"</span>, linewidth<span class="op">=</span><span class="fl">2</span>)</span>
+<span id="cb9-47"><a href="#cb9-47" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax4, t_grid_gom, [<span class="fu">expected_cdf</span>(<span class="st">"gom"</span>, <span class="op">:</span>aft, <span class="cn">true</span>, t) for t <span class="kw">in</span> t_grid_gom], </span>
+<span id="cb9-48"><a href="#cb9-48" aria-hidden="true" tabindex="-1"></a>       label<span class="op">=</span><span class="st">"Theoretical"</span>, linestyle<span class="op">=:</span>dash, linewidth<span class="op">=</span><span class="fl">2</span>, color<span class="op">=:</span>red)</span>
+<span id="cb9-49"><a href="#cb9-49" aria-hidden="true" tabindex="-1"></a><span class="fu">axislegend</span>(ax4, position<span class="op">=:</span>rb)</span>
+<span id="cb9-50"><a href="#cb9-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-51"><a href="#cb9-51" aria-hidden="true" tabindex="-1"></a>fig</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display" data-execution_count="8">
+<div id="fig-gom" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-gom-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="simulation_diagnostics_files/figure-html/fig-gom-output-1.svg" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-gom-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Gompertz Hazard Diagnostics
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="hazard-function-verification" class="level2">
+<h2 class="anchored" data-anchor-id="hazard-function-verification">Hazard Function Verification</h2>
+<p>The CDF plots above implicitly verify hazard function correctness - if the hazard functions were wrong, the simulated CDFs would not match the theoretical CDFs.</p>
+<p>For explicit verification, the hazard functions use the following formulas:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 38%">
+<col style="width: 41%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Family</th>
+<th>Hazard <span class="math inline">\(h(t)\)</span></th>
+<th>Implementation</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Exponential</td>
+<td><span class="math inline">\(\lambda\)</span></td>
+<td><code>rate</code></td>
+</tr>
+<tr class="even">
+<td>Weibull</td>
+<td><span class="math inline">\(\frac{a}{b}\left(\frac{t}{b}\right)^{a-1}\)</span></td>
+<td><code>shape/scale * (t/scale)^(shape-1)</code></td>
+</tr>
+<tr class="odd">
+<td>Gompertz</td>
+<td><span class="math inline">\(b \cdot e^{at}\)</span></td>
+<td><code>rate * exp(shape * t)</code></td>
+</tr>
+</tbody>
+</table>
+<p>Where <code>shape</code> and <code>scale</code> (or <code>rate</code>) are the distribution parameters. The Gompertz uses the flexsurv parameterization.</p>
+</section>
+<section id="summary" class="level2">
+<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<p>All simulation diagnostics pass:</p>
+<ul>
+<li><strong>Exponential</strong>: PH and AFT baseline and with covariates ✅</li>
+<li><strong>Weibull</strong>: PH and AFT baseline and with covariates ✅</li>
+<li><strong>Gompertz</strong>: PH and AFT baseline and with covariates ✅</li>
+</ul>
+<p>The maximum CDF differences are all essentially zero (within Monte Carlo error), confirming that:</p>
+<ol type="1">
+<li>Event time simulation is statistically correct</li>
+<li>Hazard functions are implemented correctly</li>
+<li>Covariate effects (PH and AFT) work as expected</li>
+<li>The flexsurv Gompertz parameterization is correctly implemented</li>
+</ol>
+</section>
+<section id="technical-notes" class="level2">
+<h2 class="anchored" data-anchor-id="technical-notes">Technical Notes</h2>
+<section id="gompertz-parameterization" class="level3">
+<h3 class="anchored" data-anchor-id="gompertz-parameterization">Gompertz Parameterization</h3>
+<p>MultistateModels.jl uses the <strong>flexsurv</strong> Gompertz parameterization: - <code>shape</code> (<span class="math inline">\(a\)</span>): Rate of hazard increase (can be negative for decreasing hazard) - <code>rate</code> (<span class="math inline">\(b\)</span>): Initial hazard at <span class="math inline">\(t=0\)</span></p>
+<p>This differs from some other parameterizations. The hazard is: <span class="math display">\[h(t) = b \cdot e^{at}\]</span></p>
+</section>
+<section id="simulation-strategy" class="level3">
+<h3 class="anchored" data-anchor-id="simulation-strategy">Simulation Strategy</h3>
+<p>The diagnostics use <code>CachedTransformStrategy()</code> which caches inverse CDF computations for efficiency. The <code>DirectTransformStrategy()</code> computes inversions fresh each time. Both should produce identical results.</p>
+</section>
+<section id="monte-carlo-error" class="level3">
+<h3 class="anchored" data-anchor-id="monte-carlo-error">Monte Carlo Error</h3>
+<p>With 40,000 samples, the expected maximum CDF error from Monte Carlo is approximately: <span class="math display">\[\sqrt{\frac{\log(n)}{2n}} \approx 0.007\]</span></p>
+<p>So maximum differences &lt; 0.02 are consistent with simulation being correct.</p>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>© 2025 MultistateModels.jl</p>
+</div>   
+    <div class="nav-footer-center">
+      &nbsp;
+    <div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/fintzij/MultistateModels.jl/blob/main/simulation_diagnostics.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/fintzij/MultistateModels.jl/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div>
+    <div class="nav-footer-right">
+<p>Built with <a href="https://quarto.org/">Quarto</a></p>
+</div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

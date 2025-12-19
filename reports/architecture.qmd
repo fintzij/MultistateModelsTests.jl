@@ -1,0 +1,564 @@
+---
+title: "MultistateModels.jl Architecture"
+subtitle: "Package Structure, Design Patterns, and Implementation Details"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    toc-expand: 2
+    code-fold: true
+    code-summary: "Show code"
+execute:
+  echo: true
+  warning: false
+  freeze: auto
+---
+
+```{julia}
+#| echo: false
+#| output: false
+using Pkg
+Pkg.activate(joinpath(@__DIR__, ".."))
+using MultistateModels
+using DataFrames
+using CairoMakie
+```
+
+## Overview
+
+MultistateModels.jl is a Julia package for fitting and simulating continuous-time multistate models. This document provides a comprehensive architectural overview, covering the package structure, type hierarchy, and key implementation patterns.
+
+## Package Structure
+
+The package is organized into the following directories:
+
+```
+src/
+├── MultistateModels.jl      # Main module, exports, includes
+├── construction/            # Model construction (multistatemodel function)
+├── hazard/                  # Hazard functions and evaluation
+├── inference/               # MCEM, SIR, fitting algorithms
+├── likelihood/              # Log-likelihood computation
+├── output/                  # Model accessors and variance estimation
+├── phasetype/               # Phase-type distributions and FFBS
+├── simulation/              # Path simulation
+├── surrogate/               # Markov surrogates
+├── types/                   # Type definitions
+└── utilities/               # Parameter handling, validation, misc
+```
+
+## Type Hierarchy
+
+### Internal Hazard Types
+
+The package uses an internal type hierarchy for hazard functions that distinguishes between **Markov** (time-homogeneous) and **semi-Markov** (sojourn-time-dependent) hazards:
+
+```{julia}
+#| echo: false
+#| fig-width: 12
+#| fig-height: 8
+# Visualize the ACTUAL type hierarchy
+fig = Figure(size=(1100, 700))
+ax = Axis(fig[1, 1], 
+    title="Internal Hazard Type Hierarchy",
+    aspect=DataAspect(),
+    limits=(0, 16, 0, 11))
+hidedecorations!(ax)
+hidespines!(ax)
+
+# Draw type boxes with CORRECT hierarchy
+boxes = [
+    # (x, y, label, width, abstract?)
+    (8, 10, "_Hazard", 1.2, true),
+    (4, 8, "_MarkovHazard", 1.8, true),
+    (12, 8, "_SemiMarkovHazard", 2.2, true),
+    (2.5, 6, "MarkovHazard", 1.6, false),
+    (5.5, 6, "PhaseTypeCoxianHazard", 2.4, false),
+    (10, 6, "SemiMarkovHazard", 2.0, false),
+    (14, 6, "_SplineHazard", 1.6, true),
+    (14, 4, "RuntimeSplineHazard", 2.2, false),
+]
+
+for (x, y, label, w, is_abstract) in boxes
+    col = is_abstract ? (:gray70, 0.3) : (:steelblue, 0.2)
+    strokecol = is_abstract ? :gray50 : :steelblue
+    text!(ax, x, y, text=label, fontsize=10, align=(:center, :center),
+          color=:black, font=is_abstract ? :italic : :regular)
+    poly!(ax, 
+        Point2f[(x-w, y-0.4), (x+w, y-0.4), (x+w, y+0.4), (x-w, y+0.4)],
+        color=col, strokecolor=strokecol, strokewidth=is_abstract ? 2 : 1,
+        linestyle=is_abstract ? :dash : :solid)
+end
+
+# Family labels under concrete types
+families = [
+    (2.5, 5.2, "(:exp)", :gray50),
+    (5.5, 5.2, "(:pt)", :gray50),
+    (10, 5.2, "(:wei, :gom)", :gray50),
+    (14, 3.2, "(:sp)", :gray50),
+]
+for (x, y, label, col) in families
+    text!(ax, x, y, text=label, fontsize=9, align=(:center, :center), color=col)
+end
+
+# Draw inheritance arrows
+arrow_coords = [
+    (8, 9.6, 4, 8.4),       # _Hazard -> _MarkovHazard
+    (8, 9.6, 12, 8.4),      # _Hazard -> _SemiMarkovHazard
+    (4, 7.6, 2.5, 6.4),     # _MarkovHazard -> MarkovHazard
+    (4, 7.6, 5.5, 6.4),     # _MarkovHazard -> PhaseTypeCoxianHazard
+    (12, 7.6, 10, 6.4),     # _SemiMarkovHazard -> SemiMarkovHazard
+    (12, 7.6, 14, 6.4),     # _SemiMarkovHazard -> _SplineHazard
+    (14, 5.6, 14, 4.4),     # _SplineHazard -> RuntimeSplineHazard
+]
+
+for (x1, y1, x2, y2) in arrow_coords
+    lines!(ax, [x1, x2], [y1, y2], color=:gray60, linewidth=1.5)
+    scatter!(ax, [x2], [y2], marker=:dtriangle, markersize=8, color=:gray60)
+end
+
+# Legend
+text!(ax, 1, 1.5, text="Abstract types (dashed)", fontsize=9, color=:gray50, align=(:left, :center))
+text!(ax, 1, 0.8, text="Concrete types (solid)", fontsize=9, color=:steelblue, align=(:left, :center))
+
+fig
+```
+
+**Key insight:** `PhaseTypeCoxianHazard` inherits from `_MarkovHazard` because the expanded state space (with latent phases) is Markovian—each phase transition is exponential. The non-exponential sojourn time arises from the *mixture* over paths through phases, not from any single transition.
+
+### Model Types
+
+```{julia}
+#| echo: false
+#| fig-width: 10
+#| fig-height: 4
+# Model type hierarchy
+fig = Figure(size=(900, 350))
+ax = Axis(fig[1, 1], 
+    title="Model Type Hierarchy",
+    aspect=DataAspect(),
+    limits=(0, 12, 0, 5))
+hidedecorations!(ax)
+hidespines!(ax)
+
+boxes = [
+    (6, 4, "MultistateProcess", 2.2, true),
+    (3, 2, "MultistateModel", 2.0, false),
+    (9, 2, "MultistateModelFitted", 2.5, false),
+]
+
+for (x, y, label, w, is_abstract) in boxes
+    col = is_abstract ? (:gray70, 0.3) : (:steelblue, 0.2)
+    strokecol = is_abstract ? :gray50 : :steelblue
+    text!(ax, x, y, text=label, fontsize=11, align=(:center, :center),
+          color=:black, font=is_abstract ? :italic : :regular)
+    poly!(ax, 
+        Point2f[(x-w, y-0.4), (x+w, y-0.4), (x+w, y+0.4), (x-w, y+0.4)],
+        color=col, strokecolor=strokecol, strokewidth=is_abstract ? 2 : 1,
+        linestyle=is_abstract ? :dash : :solid)
+end
+
+# Subtitles
+text!(ax, 3, 1.2, text="(unfitted)", fontsize=9, color=:gray50, align=(:center, :center))
+text!(ax, 9, 1.2, text="(fitted)", fontsize=9, color=:gray50, align=(:center, :center))
+
+# Arrows
+lines!(ax, [6, 3], [3.6, 2.4], color=:gray60, linewidth=1.5)
+scatter!(ax, [3], [2.4], marker=:dtriangle, markersize=8, color=:gray60)
+lines!(ax, [6, 9], [3.6, 2.4], color=:gray60, linewidth=1.5)
+scatter!(ax, [9], [2.4], marker=:dtriangle, markersize=8, color=:gray60)
+
+fig
+```
+
+### User-Facing Hazard Specifications
+
+Users specify hazards via `HazardFunction` subtypes, which are converted to internal types during model construction:
+
+| User Specification | Internal Type | Description |
+|-------------------|---------------|-------------|
+| `ParametricHazard` (`:exp`) | `MarkovHazard` | Exponential (constant hazard) |
+| `ParametricHazard` (`:wei`, `:gom`) | `SemiMarkovHazard` | Weibull, Gompertz |
+| `SplineHazard` (`:sp`) | `RuntimeSplineHazard` | B-spline hazard |
+| `PhaseTypeHazardSpec` (`:pt`) | `PhaseTypeCoxianHazard` | Phase-type (Coxian) |
+
+### Trait-Based Dispatch
+
+Rather than using the type hierarchy directly, model behavior is determined by **trait functions**:
+
+```julia
+is_markov(model)              # All hazards are _MarkovHazard?
+is_panel_data(model)          # Any obstype ≥ 2?
+has_phasetype_expansion(model) # Model has phase-type hazards?
+```
+
+These traits determine which fitting algorithm is used:
+- `is_panel_data=false` → Direct MLE (exact data)
+- `is_panel_data=true && is_markov=true` → Matrix exponential MLE
+- `is_panel_data=true && is_markov=false` → MCEM
+
+## Data Handling
+
+### Required Data Format
+
+Data must be a `DataFrame` with the following columns:
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | Int/String | Subject identifier |
+| `tstart` | Float64 | Interval start time |
+| `tstop` | Float64 | Interval end time |
+| `statefrom` | Int | State at `tstart` |
+| `stateto` | Int | State at `tstop` |
+| `obstype` | Int | Observation type code |
+| *covariates* | Any | Model-specific covariates |
+
+### Observation Types (`obstype`)
+
+The `obstype` column controls how each observation contributes to the likelihood:
+
+| Code | Name | Description | Likelihood Contribution |
+|------|------|-------------|------------------------|
+| 1 | Exact | Transition time and state observed exactly | Transition density |
+| 2 | Panel | State known at `tstop`, transition time unknown | TPM entry |
+| 0 | Fully censored | State unknown at `tstop` | Sum over all states |
+| ≥3 | Partially censored | State partially known (see CensoringPatterns) | Weighted sum |
+
+### CensoringPatterns
+
+For `obstype ≥ 3`, you must provide a `CensoringPatterns` matrix specifying which states are compatible with each censoring code:
+
+```julia
+# 3-state model with two censoring patterns
+# obstype=3: states 1 or 2 possible (not 3)
+# obstype=4: states 2 or 3 possible (not 1)
+CensoringPatterns = [
+    # code  state1  state2  state3
+    3       1.0     1.0     0.0;
+    4       0.0     1.0     1.0
+]
+
+model = multistatemodel(h12, h23; data=dat, CensoringPatterns=CensoringPatterns)
+```
+
+### EmissionMatrix
+
+For maximum flexibility, you can provide an observation-specific `EmissionMatrix` directly. This is an $(n_{\text{obs}} \times n_{\text{states}})$ matrix where entry $(i, s)$ gives $P(\text{observation } i \mid \text{state } s)$.
+
+## Hazard Families
+
+### Parametric Distributions
+
+| Family | Symbol | Parameters | Hazard $h(t)$ | Markov? |
+|--------|--------|------------|---------------|---------|
+| **Exponential** | `:exp` | `rate` $(\lambda)$ | $\lambda$ | ✓ |
+| **Weibull** | `:wei` | `shape` $(a)$, `scale` $(b)$ | $\displaystyle\frac{a}{b}\left(\frac{t}{b}\right)^{a-1}$ | ✗ |
+| **Gompertz** | `:gom` | `shape` $(a)$, `rate` $(b)$ | $b \cdot e^{at}$ | ✗ |
+| **B-Spline** | `:sp` | `coefs` $(\boldsymbol{\beta})$ | $e^{B(t)'\boldsymbol{\beta}}$ | ✗ (degree>0) |
+
+::: {.callout-note}
+**Gompertz Parameterization:** MultistateModels.jl uses the *flexsurv* parameterization where `shape` ($a$) is the rate of hazard increase and `rate` ($b$) is the initial hazard at $t=0$.
+:::
+
+### Phase-Type Distributions
+
+Phase-type hazards (`:pt`) use a Coxian structure with latent phases:
+
+```{julia}
+#| echo: false
+#| fig-width: 10
+#| fig-height: 3.5
+# Visualize Coxian phase-type structure
+fig = Figure(size=(900, 300))
+ax = Axis(fig[1, 1], limits=(0, 12, 0, 4))
+hidedecorations!(ax)
+hidespines!(ax)
+
+# States
+states = [(2, 2, "1₁"), (4, 2, "1₂"), (6, 2, "1₃"), (9, 2, "2")]
+for (x, y, label) in states
+    poly!(ax, Circle(Point2f(x, y), 0.45), 
+          color=label == "2" ? (:orange, 0.3) : (:steelblue, 0.3),
+          strokecolor=label == "2" ? :orange : :steelblue, strokewidth=2)
+    text!(ax, x, y, text=label, fontsize=14, align=(:center, :center))
+end
+
+# Phase transitions (horizontal)
+for (x1, x2) in [(2.45, 3.55), (4.45, 5.55)]
+    lines!(ax, [x1, x2], [2, 2], color=:gray60, linewidth=1.5)
+    scatter!(ax, [x2], [2], marker=:rtriangle, markersize=10, color=:gray60)
+end
+
+# Exit transitions to state 2
+for x in [2, 4, 6]
+    lines!(ax, [x+0.35, 8.55], [2.35, 2], color=:orange, linewidth=1.5, linestyle=:dash)
+end
+scatter!(ax, [8.55], [2], marker=:rtriangle, markersize=10, color=:orange)
+
+# Last phase to state 2
+lines!(ax, [6.45, 8.55], [2, 2], color=:orange, linewidth=1.5, linestyle=:dash)
+
+text!(ax, 6, 0.6, 
+    text="Coxian structure: phases 1₁→1₂→1₃ with exit to state 2 from any phase",
+    fontsize=11, align=(:center, :center), color=:gray40)
+
+text!(ax, 3, 3.2, text="λ₁", fontsize=10, color=:gray60)
+text!(ax, 5, 3.2, text="λ₂", fontsize=10, color=:gray60)
+text!(ax, 4, 2.8, text="μ₁", fontsize=10, color=:orange)
+text!(ax, 5.3, 2.5, text="μ₂", fontsize=10, color=:orange)
+text!(ax, 7.2, 2.2, text="μ₃", fontsize=10, color=:orange)
+
+fig
+```
+
+**Key properties:**
+
+- Approximate any non-negative distribution arbitrarily well
+- **The expanded state space is Markovian** — hence `PhaseTypeCoxianHazard <: _MarkovHazard`
+- Non-exponential sojourn times arise from the mixture over phase paths
+- Parameters: $\lambda_1, \ldots, \lambda_{n-1}$ (progression), $\mu_1, \ldots, \mu_n$ (exit)
+
+### Covariate Effects
+
+Two covariate effect types are supported:
+
+**Proportional Hazards (PH):**
+$$h(t|\mathbf{x}) = h_0(t) \exp(\mathbf{x}'\boldsymbol{\beta})$$
+
+**Accelerated Failure Time (AFT):**
+$$h(t|\mathbf{x}) = h_0(t \cdot e^{\mathbf{x}'\boldsymbol{\beta}}) \cdot e^{\mathbf{x}'\boldsymbol{\beta}}$$
+
+```julia
+# Specify effect type when creating hazards
+h12_ph = Hazard(@formula(0 ~ 1 + age), "wei", 1, 2; linpred_effect=:ph)
+h12_aft = Hazard(@formula(0 ~ 1 + age), "wei", 1, 2; linpred_effect=:aft)
+```
+
+::: {.callout-warning}
+The covariate effect types (`:ph` and `:aft`) are built into the package. Adding custom effect types requires modifying the hazard generation code—this is **not user-extensible**.
+:::
+
+## Parameter Handling
+
+### Parameter Structure
+
+Parameters are stored as **NamedTuples** with multiple representations:
+
+```julia
+model.parameters = (
+    flat = [...],           # Flat vector on estimation (log) scale
+    nested = (...),         # Nested NamedTuple by hazard
+    natural = (...),        # Natural scale values by hazard
+    reconstructor = ...     # Function to unflatten
+)
+```
+
+Each hazard's parameters include:
+- Baseline parameters (`shape`, `scale`, `rate`, `coefs`, etc.)
+- Regression coefficients (if covariates specified)
+
+### Scale Transformations
+
+Parameters are estimated on transformed scales for numerical stability:
+
+| Parameter Type | Natural Scale | Estimation Scale | Transformation |
+|---------------|---------------|------------------|----------------|
+| Rates, shapes, scales | $(0, \infty)$ | $(-\infty, \infty)$ | $\log$ |
+| Spline coefficients | $(-\infty, \infty)$ | $(-\infty, \infty)$ | Identity |
+| Regression $\beta$ | $(-\infty, \infty)$ | $(-\infty, \infty)$ | Identity |
+
+**Transformation by family:**
+
+| Family | Parameter | Natural | Estimation | Transform |
+|--------|-----------|---------|------------|-----------|
+| Exponential | `rate` | $\lambda > 0$ | $\theta \in \mathbb{R}$ | $\lambda = e^\theta$ |
+| Weibull | `shape` | $a > 0$ | $\theta_a \in \mathbb{R}$ | $a = e^{\theta_a}$ |
+| Weibull | `scale` | $b > 0$ | $\theta_b \in \mathbb{R}$ | $b = e^{\theta_b}$ |
+| Gompertz | `shape` | $a \in \mathbb{R}$ | $a$ | Identity |
+| Gompertz | `rate` | $b > 0$ | $\theta_b \in \mathbb{R}$ | $b = e^{\theta_b}$ |
+| Spline | `coefs` | $\boldsymbol{\beta}$ | $\boldsymbol{\beta}$ | Identity |
+
+```julia
+# Access parameters in different scales
+p_natural = model.parameters.natural   # Interpretable values
+p_flat = model.parameters.flat         # For optimization (log scale)
+```
+
+## Inference Methods
+
+### Fitting Strategy Selection
+
+The `fit()` function automatically selects the appropriate method based on data and hazard types:
+
+```{julia}
+#| echo: false
+#| fig-width: 10
+#| fig-height: 5
+# Flowchart of fitting method selection
+fig = Figure(size=(900, 450))
+ax = Axis(fig[1, 1], limits=(0, 12, 0, 8))
+hidedecorations!(ax)
+hidespines!(ax)
+
+# Decision nodes (diamonds)
+diamonds = [
+    (3, 6.5, "is_panel_data?"),
+    (7, 6.5, "is_markov?"),
+]
+
+for (x, y, label) in diamonds
+    # Draw diamond
+    pts = Point2f[(x, y+0.7), (x+1.2, y), (x, y-0.7), (x-1.2, y)]
+    poly!(ax, pts, color=(:gold, 0.3), strokecolor=:goldenrod, strokewidth=2)
+    text!(ax, x, y, text=label, fontsize=9, align=(:center, :center))
+end
+
+# Terminal nodes (rectangles)
+terminals = [
+    (1, 4, "Direct MLE\n(Exact)", :steelblue),
+    (5, 4, "Matrix Exp\nMLE", :steelblue),
+    (9, 4, "MCEM", :orange),
+]
+
+for (x, y, label, col) in terminals
+    poly!(ax, 
+        Point2f[(x-1.1, y-0.55), (x+1.1, y-0.55), (x+1.1, y+0.55), (x-1.1, y+0.55)],
+        color=(col, 0.2), strokecolor=col, strokewidth=2)
+    text!(ax, x, y, text=label, fontsize=10, align=(:center, :center))
+end
+
+# Input
+text!(ax, 3, 7.8, text="fit(model)", fontsize=12, align=(:center, :center), font=:bold)
+lines!(ax, [3, 3], [7.5, 7.2], color=:gray50, linewidth=1.5)
+scatter!(ax, [3], [7.2], marker=:dtriangle, markersize=8, color=:gray50)
+
+# Arrows from first diamond
+text!(ax, 1.5, 5.5, text="No", fontsize=9, color=:gray50)
+lines!(ax, [2, 1], [6.5, 4.55], color=:gray50, linewidth=1.5)
+scatter!(ax, [1], [4.55], marker=:dtriangle, markersize=8, color=:gray50)
+
+text!(ax, 5, 6.8, text="Yes", fontsize=9, color=:gray50)
+lines!(ax, [4.2, 5.8], [6.5, 6.5], color=:gray50, linewidth=1.5)
+scatter!(ax, [5.8], [6.5], marker=:ltriangle, markersize=8, color=:gray50)
+
+# Arrows from second diamond
+text!(ax, 5.5, 5.5, text="Yes", fontsize=9, color=:gray50)
+lines!(ax, [6, 5], [6.5, 4.55], color=:gray50, linewidth=1.5)
+scatter!(ax, [5], [4.55], marker=:dtriangle, markersize=8, color=:gray50)
+
+text!(ax, 8.5, 5.5, text="No", fontsize=9, color=:gray50)
+lines!(ax, [8.2, 9], [6.5, 4.55], color=:gray50, linewidth=1.5)
+scatter!(ax, [9], [4.55], marker=:dtriangle, markersize=8, color=:gray50)
+
+# Add descriptions
+text!(ax, 1, 2.9, text="Transition densities", fontsize=8, color=:gray40, align=(:center, :center))
+text!(ax, 5, 2.9, text="TPM via expm(Q·Δt)", fontsize=8, color=:gray40, align=(:center, :center))
+text!(ax, 9, 2.9, text="Monte Carlo EM", fontsize=8, color=:gray40, align=(:center, :center))
+
+fig
+```
+
+### Direct MLE (Exact Data)
+
+For exactly observed data (`obstype=1`), the likelihood factorizes into transition densities:
+
+$$\mathcal{L}(\boldsymbol{\theta}) = \prod_{i} \prod_{j} h_{s_j \to s_{j+1}}(t_j) \cdot S_{s_j}(t_j - t_{j-1})$$
+
+where $S_s(t) = \exp(-H_s(t))$ is the survival probability in state $s$.
+
+### Matrix Exponential MLE (Markov Panel)
+
+For panel data with Markov hazards (exponential or phase-type), the likelihood uses transition probability matrices:
+
+$$P(t_0, t_1) = \exp(\mathbf{Q} \cdot (t_1 - t_0))$$
+
+where $\mathbf{Q}$ is the generator matrix.
+
+### Monte Carlo EM (Semi-Markov Panel)
+
+For panel data with semi-Markov hazards (Weibull, Gompertz, degree>0 splines), MCEM is used:
+
+**E-step:** Sample latent paths via importance sampling using a Markov surrogate
+
+**M-step:** Maximize expected complete-data log-likelihood with importance weights
+
+**Features:**
+- SQUAREM acceleration
+- Adaptive ESS targeting
+- Latin Hypercube Sampling (LHS) for variance-reduced resampling
+
+### Forward-Filtering Backward-Sampling (FFBS)
+
+FFBS samples latent state sequences given observations. For phase-type models, FFBS operates on the expanded Markov state space, then collapses sampled phases back to observed states.
+
+See the [Phase-Type FFBS documentation](https://fintzij.github.io/MultistateModels.jl/phasetype_ffbs) for details.
+
+## Variance Estimation
+
+Three variance estimation approaches are available:
+
+| Method | Description | Pros | Cons |
+|--------|-------------|------|------|
+| **Model-based** | Inverse Hessian at MLE | Fast, standard | Assumes correct model |
+| **Sandwich (IJ)** | Infinitesimal jackknife | Robust to misspecification | Requires more computation |
+| **Jackknife** | Leave-one-out refitting | Nonparametric | Computationally expensive |
+
+```julia
+fitted = fit(model; 
+    compute_vcov=true,      # Model-based (default)
+    compute_ij_vcov=true,   # Sandwich estimator
+    compute_jk_vcov=false   # Jackknife (slow)
+)
+```
+
+## Custom Constraints
+
+Users can specify parameter constraints using expressions that reference parameter names:
+
+```julia
+# Constraint: shape parameter must be ≥ 1
+# Constraint: two hazards share the same rate
+constraints = make_constraints(
+    cons = [
+        :(h1_2_shape - 1),           # shape ≥ 1 → (shape - 1) ≥ 0
+        :(h1_2_rate - h2_3_rate)     # Equal rates → difference = 0
+    ],
+    lcons = [0.0, 0.0],   # Lower bounds
+    ucons = [Inf, 0.0]    # Upper bounds
+)
+
+fitted = fit(model; constraints=constraints)
+```
+
+**Parameter naming:** `h{from}_{to}_{param}` (e.g., `h1_2_shape`, `h2_3_rate`)
+
+::: {.callout-warning}
+Variance-covariance matrices are not computed when constraints are active, as the constrained MLE may lie on the boundary of the parameter space.
+:::
+
+## Simulation Engine
+
+The simulation engine samples complete state trajectories:
+
+1. **Initialize** at starting state and time
+2. **Compute** total hazard from current state
+3. **Sample** waiting time via inverse CDF
+4. **Sample** destination state proportional to hazard rates
+5. **Update** state and time
+6. **Repeat** until absorbing state or end time
+
+```julia
+paths = simulate(model; nsim=1000, tmax=10.0)
+```
+
+## Summary
+
+MultistateModels.jl provides a flexible framework for multistate modeling:
+
+1. **Type hierarchy:** `_MarkovHazard` vs `_SemiMarkovHazard` governs fitting method selection
+2. **Phase-type hazards** are Markovian on the expanded space (not semi-Markov!)
+3. **Trait-based dispatch** via `is_markov()`, `is_panel_data()`, `has_phasetype_expansion()`
+4. **Parameters as NamedTuples** with flat/nested/natural representations
+5. **Flexible observation handling** via `obstype`, `CensoringPatterns`, `EmissionMatrix`
+6. **Three fitting algorithms:** Direct MLE, Matrix Exp MLE, MCEM (auto-selected)
+7. **LHS resampling** for variance-reduced importance sampling in MCEM

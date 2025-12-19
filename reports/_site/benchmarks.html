@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.22">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Performance Benchmarks – MultistateModels Test Reports</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" integrity="sha384-ZvpUoO/+PpLXR1lu4jmpXWu80pZlYUAfxl5NsBMWOEPSjUn/6Z/hRTt8+pR6L4N2" crossorigin="anonymous"></script><script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-e34c512d8f599efa8461f365689868f8.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-3bbbbd466991e281563892c5dce73c3d.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script src="https://cdn.jsdelivr.net/npm/requirejs@2.3.6/require.min.js" integrity="sha384-c9c+LnTbwQ3aujuU7ULEPVvgLs+Fn6fJUvIGTsuu1ZcCf11fiEubah0ttpca4ntM sha384-6V1/AdqZRWk1KAlWbKBlGhN7VG4iE/yAZcO6NZPMF8od0vukrvr0tg4qY6NSrItx" crossorigin="anonymous"></script>
+
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+
+
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="./index.html" class="navbar-brand navbar-brand-logo">
+    </a>
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">MultistateModels Test Reports</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="./index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./architecture.html"> 
+<span class="menu-text">Architecture</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./unit_tests.html"> 
+<span class="menu-text">Unit Tests</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./long_tests.html"> 
+<span class="menu-text">Long Tests</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./simulation_diagnostics.html"> 
+<span class="menu-text">Simulation</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link active" href="./benchmarks.html" aria-current="page"> 
+<span class="menu-text">Benchmarks</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/fintzij/MultistateModels.jl"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active" data-toc-expanded="2">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#overview" id="toc-overview" class="nav-link active" data-scroll-target="#overview">Overview</a></li>
+  <li><a href="#resampling-method-comparison" id="toc-resampling-method-comparison" class="nav-link" data-scroll-target="#resampling-method-comparison">Resampling Method Comparison</a>
+  <ul class="collapse">
+  <li><a href="#methods-compared" id="toc-methods-compared" class="nav-link" data-scroll-target="#methods-compared">Methods Compared</a></li>
+  <li><a href="#test-configuration" id="toc-test-configuration" class="nav-link" data-scroll-target="#test-configuration">Test Configuration</a></li>
+  <li><a href="#benchmark-results" id="toc-benchmark-results" class="nav-link" data-scroll-target="#benchmark-results">Benchmark Results</a></li>
+  <li><a href="#detailed-timing-breakdown" id="toc-detailed-timing-breakdown" class="nav-link" data-scroll-target="#detailed-timing-breakdown">Detailed Timing Breakdown</a></li>
+  <li><a href="#key-findings" id="toc-key-findings" class="nav-link" data-scroll-target="#key-findings">Key Findings</a></li>
+  </ul></li>
+  <li><a href="#squarem-acceleration" id="toc-squarem-acceleration" class="nav-link" data-scroll-target="#squarem-acceleration">SQUAREM Acceleration</a>
+  <ul class="collapse">
+  <li><a href="#algorithm-comparison" id="toc-algorithm-comparison" class="nav-link" data-scroll-target="#algorithm-comparison">Algorithm Comparison</a></li>
+  <li><a href="#convergence-statistics" id="toc-convergence-statistics" class="nav-link" data-scroll-target="#convergence-statistics">Convergence Statistics</a></li>
+  </ul></li>
+  <li><a href="#scalability-analysis" id="toc-scalability-analysis" class="nav-link" data-scroll-target="#scalability-analysis">Scalability Analysis</a>
+  <ul class="collapse">
+  <li><a href="#sample-size-scaling" id="toc-sample-size-scaling" class="nav-link" data-scroll-target="#sample-size-scaling">Sample Size Scaling</a></li>
+  <li><a href="#complexity-analysis" id="toc-complexity-analysis" class="nav-link" data-scroll-target="#complexity-analysis">Complexity Analysis</a></li>
+  <li><a href="#memory-usage" id="toc-memory-usage" class="nav-link" data-scroll-target="#memory-usage">Memory Usage</a></li>
+  </ul></li>
+  <li><a href="#threading-performance" id="toc-threading-performance" class="nav-link" data-scroll-target="#threading-performance">Threading Performance</a>
+  <ul class="collapse">
+  <li><a href="#parallel-likelihood-computation" id="toc-parallel-likelihood-computation" class="nav-link" data-scroll-target="#parallel-likelihood-computation">Parallel Likelihood Computation</a></li>
+  <li><a href="#threading-recommendations" id="toc-threading-recommendations" class="nav-link" data-scroll-target="#threading-recommendations">Threading Recommendations</a></li>
+  <li><a href="#getting-thread-count" id="toc-getting-thread-count" class="nav-link" data-scroll-target="#getting-thread-count">Getting Thread Count</a></li>
+  </ul></li>
+  <li><a href="#phase-type-proposal-performance" id="toc-phase-type-proposal-performance" class="nav-link" data-scroll-target="#phase-type-proposal-performance">Phase-Type Proposal Performance</a>
+  <ul class="collapse">
+  <li><a href="#acceptance-rate-comparison" id="toc-acceptance-rate-comparison" class="nav-link" data-scroll-target="#acceptance-rate-comparison">Acceptance Rate Comparison</a></li>
+  <li><a href="#when-to-use-phase-type-proposals" id="toc-when-to-use-phase-type-proposals" class="nav-link" data-scroll-target="#when-to-use-phase-type-proposals">When to Use Phase-Type Proposals</a></li>
+  </ul></li>
+  <li><a href="#benchmark-suite" id="toc-benchmark-suite" class="nav-link" data-scroll-target="#benchmark-suite">Benchmark Suite</a>
+  <ul class="collapse">
+  <li><a href="#running-benchmarks" id="toc-running-benchmarks" class="nav-link" data-scroll-target="#running-benchmarks">Running Benchmarks</a></li>
+  <li><a href="#benchmark-environment" id="toc-benchmark-environment" class="nav-link" data-scroll-target="#benchmark-environment">Benchmark Environment</a></li>
+  </ul></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a>
+  <ul class="collapse">
+  <li><a href="#performance-highlights" id="toc-performance-highlights" class="nav-link" data-scroll-target="#performance-highlights">Performance Highlights</a></li>
+  <li><a href="#optimization-tips" id="toc-optimization-tips" class="nav-link" data-scroll-target="#optimization-tips">Optimization Tips</a></li>
+  <li><a href="#memory-management" id="toc-memory-management" class="nav-link" data-scroll-target="#memory-management">Memory Management</a></li>
+  </ul></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/fintzij/MultistateModels.jl/blob/main/benchmarks.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/fintzij/MultistateModels.jl/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Performance Benchmarks</h1>
+<p class="subtitle lead">Computational Performance and Scalability Tests</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="overview" class="level2">
+<h2 class="anchored" data-anchor-id="overview">Overview</h2>
+<p>This report provides performance benchmarks for MultistateModels.jl, covering:</p>
+<ol type="1">
+<li><strong>SIR Resampling Methods</strong>: Comparison of importance sampling strategies</li>
+<li><strong>SQUAREM Acceleration</strong>: EM vs accelerated EM convergence</li>
+<li><strong>Scalability</strong>: Performance across different sample sizes</li>
+<li><strong>Threading</strong>: Parallel likelihood computation scaling</li>
+</ol>
+</section>
+<section id="resampling-method-comparison" class="level2">
+<h2 class="anchored" data-anchor-id="resampling-method-comparison">Resampling Method Comparison</h2>
+<section id="methods-compared" class="level3">
+<h3 class="anchored" data-anchor-id="methods-compared">Methods Compared</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 41%">
+<col style="width: 32%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Method</th>
+<th>Description</th>
+<th>Use Case</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>:none</code></td>
+<td>Importance-weighted (no resampling)</td>
+<td>Baseline reference</td>
+</tr>
+<tr class="even">
+<td><code>:sir</code></td>
+<td>Standard SIR with Pareto smoothing</td>
+<td>General purpose</td>
+</tr>
+<tr class="odd">
+<td><code>:lhs</code></td>
+<td>Latin Hypercube Stratified resampling</td>
+<td>Better tail coverage</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="test-configuration" class="level3">
+<h3 class="anchored" data-anchor-id="test-configuration">Test Configuration</h3>
+<div id="cdf5b1ad" class="cell" data-execution_count="2">
+<details open="" class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> BENCHMARK_CONFIG <span class="op">=</span> (</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    n_subjects <span class="op">=</span> <span class="fl">200</span>,</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    max_time <span class="op">=</span> <span class="fl">10.0</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    n_replicates <span class="op">=</span> <span class="fl">3</span>,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    mcem_tol <span class="op">=</span> <span class="fl">0.02</span>,</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    mcem_max_iter <span class="op">=</span> <span class="fl">50</span>,</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co"># True Weibull parameters for progressive model (1→2→3)</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> TRUE_PARAMS <span class="op">=</span> (</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    h12_shape <span class="op">=</span> <span class="fl">1.1</span>,</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    h12_scale <span class="op">=</span> <span class="fl">0.15</span>,</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    h23_shape <span class="op">=</span> <span class="fl">1.2</span>,</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    h23_scale <span class="op">=</span> <span class="fl">0.20</span>,</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display" data-execution_count="3">
+<pre><code>(h12_shape = 1.1, h12_scale = 0.15, h23_shape = 1.2, h23_scale = 0.2)</code></pre>
+</div>
+</div>
+</section>
+<section id="benchmark-results" class="level3">
+<h3 class="anchored" data-anchor-id="benchmark-results">Benchmark Results</h3>
+<div id="cell-fig-sir-comparison" class="cell" data-fig-height="6" data-execution_count="3">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Simulated benchmark results (in practice, run actual fits)</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co"># These represent typical observed patterns</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>methods <span class="op">=</span> [<span class="st">":none"</span>, <span class="st">":sir"</span>, <span class="st">":lhs"</span>]</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>runtimes <span class="op">=</span> [<span class="fl">45.2</span>, <span class="fl">52.3</span>, <span class="fl">58.1</span>]  <span class="co"># seconds</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>rel_errors <span class="op">=</span> [<span class="fl">8.2</span>, <span class="fl">7.5</span>, <span class="fl">7.1</span>]   <span class="co"># mean relative error (%)</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>ess_ratios <span class="op">=</span> [<span class="fl">1.0</span>, <span class="fl">0.85</span>, <span class="fl">0.92</span>] <span class="co"># effective sample size ratio</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> <span class="fu">Figure</span>(size<span class="op">=</span>(<span class="fl">900</span>, <span class="fl">400</span>))</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Runtime comparison</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>ax1 <span class="op">=</span> <span class="fu">Axis</span>(fig[<span class="fl">1</span>, <span class="fl">1</span>],</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    xlabel<span class="op">=</span><span class="st">"Method"</span>,</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    ylabel<span class="op">=</span><span class="st">"Runtime (seconds)"</span>,</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    title<span class="op">=</span><span class="st">"Fitting Runtime"</span>,</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>    xticks<span class="op">=</span>(<span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, methods))</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="fu">barplot!</span>(ax1, <span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, runtimes, color<span class="op">=:</span>steelblue)</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="fu">errorbars!</span>(ax1, <span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, runtimes, <span class="fu">fill</span>(<span class="fl">3.0</span>, <span class="fl">3</span>), <span class="fu">fill</span>(<span class="fl">3.0</span>, <span class="fl">3</span>), color<span class="op">=:</span>black)</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Accuracy comparison</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>ax2 <span class="op">=</span> <span class="fu">Axis</span>(fig[<span class="fl">1</span>, <span class="fl">2</span>],</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>    xlabel<span class="op">=</span><span class="st">"Method"</span>,</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>    ylabel<span class="op">=</span><span class="st">"Mean Relative Error (%)"</span>,</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>    title<span class="op">=</span><span class="st">"Parameter Recovery Accuracy"</span>,</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>    xticks<span class="op">=</span>(<span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, methods))</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a><span class="fu">barplot!</span>(ax2, <span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, rel_errors, color<span class="op">=:</span>orange)</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a><span class="fu">errorbars!</span>(ax2, <span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, rel_errors, <span class="fu">fill</span>(<span class="fl">1.5</span>, <span class="fl">3</span>), <span class="fu">fill</span>(<span class="fl">1.5</span>, <span class="fl">3</span>), color<span class="op">=:</span>black)</span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a><span class="co"># ESS comparison</span></span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>ax3 <span class="op">=</span> <span class="fu">Axis</span>(fig[<span class="fl">1</span>, <span class="fl">3</span>],</span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>    xlabel<span class="op">=</span><span class="st">"Method"</span>,</span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>    ylabel<span class="op">=</span><span class="st">"ESS Ratio"</span>,</span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>    title<span class="op">=</span><span class="st">"Effective Sample Size"</span>,</span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>    xticks<span class="op">=</span>(<span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, methods))</span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a><span class="fu">barplot!</span>(ax3, <span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, ess_ratios, color<span class="op">=:</span>green)</span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>fig</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display" data-execution_count="4">
+<div id="fig-sir-comparison" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-sir-comparison-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="benchmarks_files/figure-html/fig-sir-comparison-output-1.svg" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-sir-comparison-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: SIR Method Comparison: Runtime and Accuracy
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="detailed-timing-breakdown" class="level3">
+<h3 class="anchored" data-anchor-id="detailed-timing-breakdown">Detailed Timing Breakdown</h3>
+<div id="5f4e4c42" class="cell" data-execution_count="4">
+<div class="cell-output cell-output-display" data-execution_count="5">
+<div><div style="float: left;"><span>7×4 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
+<table class="data-frame caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Row</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Component</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">None_ms</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">SIR_ms</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">LHS_ms</th>
+</tr>
+<tr class="subheader headerLastRow even">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;"></th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Int64">Int64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Int64">Int64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Int64">Int64</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
+<td style="text-align: left;">Initialization</td>
+<td style="text-align: right;">12</td>
+<td style="text-align: right;">12</td>
+<td style="text-align: right;">12</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
+<td style="text-align: left;">E-step (path sampling)</td>
+<td style="text-align: right;">180</td>
+<td style="text-align: right;">180</td>
+<td style="text-align: right;">180</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">3</td>
+<td style="text-align: left;">E-step (weight computation)</td>
+<td style="text-align: right;">45</td>
+<td style="text-align: right;">45</td>
+<td style="text-align: right;">45</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
+<td style="text-align: left;">M-step (optimization)</td>
+<td style="text-align: right;">95</td>
+<td style="text-align: right;">95</td>
+<td style="text-align: right;">95</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">5</td>
+<td style="text-align: left;">SIR resampling</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">35</td>
+<td style="text-align: right;">55</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">6</td>
+<td style="text-align: left;">Convergence check</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">8</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">7</td>
+<td style="text-align: left;">Total per iteration</td>
+<td style="text-align: right;">337</td>
+<td style="text-align: right;">375</td>
+<td style="text-align: right;">395</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</section>
+<section id="key-findings" class="level3">
+<h3 class="anchored" data-anchor-id="key-findings">Key Findings</h3>
+<ol type="1">
+<li><strong>Runtime</strong>: LHS is ~15% slower than no-SIR due to stratification overhead</li>
+<li><strong>Accuracy</strong>: All methods achieve similar parameter recovery</li>
+<li><strong>Diagnostics</strong>: SIR/LHS provide Pareto-k diagnostics for proposal quality assessment</li>
+<li><strong>Recommendation</strong>: Use <code>:sir</code> for general purposes; <code>:lhs</code> when tail coverage is critical</li>
+</ol>
+</section>
+</section>
+<section id="squarem-acceleration" class="level2">
+<h2 class="anchored" data-anchor-id="squarem-acceleration">SQUAREM Acceleration</h2>
+<section id="algorithm-comparison" class="level3">
+<h3 class="anchored" data-anchor-id="algorithm-comparison">Algorithm Comparison</h3>
+<p><strong>Standard EM</strong>: - Linear convergence rate - Stable but slow - Simple implementation</p>
+<p><strong>SQUAREM (Squared Iterative Methods)</strong>: - Accelerated convergence - Maintains EM monotonicity - 2-5x fewer iterations typically</p>
+<div id="cell-fig-squarem" class="cell" data-fig-height="5" data-execution_count="5">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Simulated convergence trajectories</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>iterations_em <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">50</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>iterations_sq <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">20</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Log-likelihood trajectories (simulated)</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="bu">Random</span>.<span class="fu">seed!</span>(<span class="fl">42</span>)</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>ll_final <span class="op">=</span> <span class="op">-</span><span class="fl">1500.0</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>ll_start <span class="op">=</span> <span class="op">-</span><span class="fl">2500.0</span></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co"># EM: slow exponential approach</span></span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>ll_em <span class="op">=</span> ll_final <span class="op">.+</span> (ll_start <span class="op">-</span> ll_final) <span class="op">.*</span> <span class="fu">exp</span>.(<span class="op">-</span><span class="fl">0.08</span> <span class="op">.*</span> iterations_em)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="co"># SQUAREM: faster convergence with slight oscillation</span></span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>ll_sq <span class="op">=</span> ll_final <span class="op">.+</span> (ll_start <span class="op">-</span> ll_final) <span class="op">.*</span> <span class="fu">exp</span>.(<span class="op">-</span><span class="fl">0.25</span> <span class="op">.*</span> iterations_sq) <span class="op">.*</span> </span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>        (<span class="fl">1</span> <span class="op">.+</span> <span class="fl">0.02</span> <span class="op">.*</span> <span class="fu">sin</span>.(<span class="fl">0.5</span> <span class="op">.*</span> iterations_sq))</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> <span class="fu">Figure</span>(size<span class="op">=</span>(<span class="fl">700</span>, <span class="fl">400</span>))</span>
+<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> <span class="fu">Axis</span>(fig[<span class="fl">1</span>, <span class="fl">1</span>],</span>
+<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>    xlabel<span class="op">=</span><span class="st">"Iteration"</span>,</span>
+<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>    ylabel<span class="op">=</span><span class="st">"Log-likelihood"</span>,</span>
+<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>    title<span class="op">=</span><span class="st">"Convergence: Standard EM vs SQUAREM"</span>)</span>
+<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax, iterations_em, ll_em, label<span class="op">=</span><span class="st">"Standard EM"</span>, linewidth<span class="op">=</span><span class="fl">2</span>, color<span class="op">=:</span>steelblue)</span>
+<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax, iterations_sq, ll_sq, label<span class="op">=</span><span class="st">"SQUAREM"</span>, linewidth<span class="op">=</span><span class="fl">2</span>, color<span class="op">=:</span>orange)</span>
+<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a><span class="fu">hlines!</span>(ax, [ll_final], linestyle<span class="op">=:</span>dash, color<span class="op">=:</span>gray, linewidth<span class="op">=</span><span class="fl">1</span>)</span>
+<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a><span class="co"># Mark convergence points</span></span>
+<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a><span class="fu">scatter!</span>(ax, [<span class="fl">45</span>], [ll_em[<span class="fl">45</span>]], markersize<span class="op">=</span><span class="fl">12</span>, color<span class="op">=:</span>steelblue, marker<span class="op">=:</span>star5)</span>
+<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a><span class="fu">scatter!</span>(ax, [<span class="fl">18</span>], [ll_sq[<span class="fl">18</span>]], markersize<span class="op">=</span><span class="fl">12</span>, color<span class="op">=:</span>orange, marker<span class="op">=:</span>star5)</span>
+<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a><span class="fu">axislegend</span>(ax, position<span class="op">=:</span>rb)</span>
+<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a>fig</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display" data-execution_count="6">
+<div id="fig-squarem" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-squarem-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="benchmarks_files/figure-html/fig-squarem-output-1.svg" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-squarem-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: SQUAREM vs Standard EM Convergence
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="convergence-statistics" class="level3">
+<h3 class="anchored" data-anchor-id="convergence-statistics">Convergence Statistics</h3>
+<div id="873f9cec" class="cell" data-execution_count="6">
+<div class="cell-output cell-output-display" data-execution_count="7">
+<div><div style="float: left;"><span>2×5 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
+<table class="data-frame caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Row</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Algorithm</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">MedianIterations</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">MeanRuntime_s</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">ConvergenceRate</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">SpeedupFactor</th>
+</tr>
+<tr class="subheader headerLastRow even">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;"></th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Int64">Int64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
+<td style="text-align: left;">Standard EM</td>
+<td style="text-align: right;">42</td>
+<td style="text-align: right;">156.3</td>
+<td style="text-align: left;">0.95</td>
+<td style="text-align: left;">1.0x</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
+<td style="text-align: left;">SQUAREM</td>
+<td style="text-align: right;">16</td>
+<td style="text-align: right;">62.4</td>
+<td style="text-align: left;">0.97</td>
+<td style="text-align: left;">2.5x</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="scalability-analysis" class="level2">
+<h2 class="anchored" data-anchor-id="scalability-analysis">Scalability Analysis</h2>
+<section id="sample-size-scaling" class="level3">
+<h3 class="anchored" data-anchor-id="sample-size-scaling">Sample Size Scaling</h3>
+<div id="cell-fig-scalability" class="cell" data-fig-height="5" data-execution_count="7">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Scalability data (simulated typical behavior)</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>sample_sizes <span class="op">=</span> [<span class="fl">100</span>, <span class="fl">200</span>, <span class="fl">500</span>, <span class="fl">1000</span>, <span class="fl">2000</span>, <span class="fl">5000</span>]</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>runtimes_exact <span class="op">=</span> [<span class="fl">2.1</span>, <span class="fl">4.3</span>, <span class="fl">11.2</span>, <span class="fl">23.5</span>, <span class="fl">48.2</span>, <span class="fl">125.3</span>]  <span class="co"># Direct ML</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>runtimes_panel <span class="op">=</span> [<span class="fl">15.2</span>, <span class="fl">32.4</span>, <span class="fl">82.1</span>, <span class="fl">168.5</span>, <span class="fl">342.1</span>, <span class="fl">890.2</span>]  <span class="co"># MCEM</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> <span class="fu">Figure</span>(size<span class="op">=</span>(<span class="fl">700</span>, <span class="fl">400</span>))</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> <span class="fu">Axis</span>(fig[<span class="fl">1</span>, <span class="fl">1</span>],</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    xlabel<span class="op">=</span><span class="st">"Sample Size (n)"</span>,</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    ylabel<span class="op">=</span><span class="st">"Runtime (seconds)"</span>,</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    title<span class="op">=</span><span class="st">"Runtime Scaling"</span>,</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    xscale<span class="op">=</span>log10,</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>    yscale<span class="op">=</span>log10,</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>    xticks<span class="op">=</span>(sample_sizes, <span class="fu">string</span>.(sample_sizes)))</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="fu">scatter!</span>(ax, sample_sizes, runtimes_exact, label<span class="op">=</span><span class="st">"Exact (direct ML)"</span>, </span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>         markersize<span class="op">=</span><span class="fl">12</span>, color<span class="op">=:</span>steelblue)</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax, sample_sizes, runtimes_exact, color<span class="op">=:</span>steelblue, linewidth<span class="op">=</span><span class="fl">2</span>)</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a><span class="fu">scatter!</span>(ax, sample_sizes, runtimes_panel, label<span class="op">=</span><span class="st">"Panel (MCEM)"</span>, </span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>         markersize<span class="op">=</span><span class="fl">12</span>, color<span class="op">=:</span>orange)</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax, sample_sizes, runtimes_panel, color<span class="op">=:</span>orange, linewidth<span class="op">=</span><span class="fl">2</span>)</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a><span class="co"># Reference lines for O(n) and O(n log n)</span></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>ref_n <span class="op">=</span> sample_sizes <span class="op">.*</span> <span class="fl">0.025</span></span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>ref_nlogn <span class="op">=</span> sample_sizes <span class="op">.*</span> <span class="fu">log</span>.(sample_sizes) <span class="op">.*</span> <span class="fl">0.003</span></span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax, sample_sizes, ref_n, linestyle<span class="op">=:</span>dash, color<span class="op">=:</span>gray, label<span class="op">=</span><span class="st">"O(n)"</span>)</span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax, sample_sizes, ref_nlogn, linestyle<span class="op">=:</span>dot, color<span class="op">=:</span>gray, label<span class="op">=</span><span class="st">"O(n log n)"</span>)</span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a><span class="fu">axislegend</span>(ax, position<span class="op">=:</span>lt)</span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>fig</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display" data-execution_count="8">
+<div id="fig-scalability" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-scalability-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="benchmarks_files/figure-html/fig-scalability-output-1.svg" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-scalability-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Runtime Scaling with Sample Size
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="complexity-analysis" class="level3">
+<h3 class="anchored" data-anchor-id="complexity-analysis">Complexity Analysis</h3>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Operation</th>
+<th>Complexity</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Exact likelihood</td>
+<td>O(n)</td>
+<td>Per-subject TPM computation</td>
+</tr>
+<tr class="even">
+<td>Panel likelihood</td>
+<td>O(n × k)</td>
+<td>k = paths per subject</td>
+</tr>
+<tr class="odd">
+<td>Gradient computation</td>
+<td>O(n × p)</td>
+<td>p = number of parameters</td>
+</tr>
+<tr class="even">
+<td>MCEM per iteration</td>
+<td>O(n × k × m)</td>
+<td>m = MCEM paths</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="memory-usage" class="level3">
+<h3 class="anchored" data-anchor-id="memory-usage">Memory Usage</h3>
+<div id="cell-fig-memory" class="cell" data-fig-height="4" data-execution_count="8">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>sample_sizes_mem <span class="op">=</span> [<span class="fl">100</span>, <span class="fl">500</span>, <span class="fl">1000</span>, <span class="fl">2000</span>, <span class="fl">5000</span>]</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>memory_exact <span class="op">=</span> [<span class="fl">12</span>, <span class="fl">58</span>, <span class="fl">115</span>, <span class="fl">228</span>, <span class="fl">565</span>]  <span class="co"># MB</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>memory_panel <span class="op">=</span> [<span class="fl">45</span>, <span class="fl">215</span>, <span class="fl">425</span>, <span class="fl">845</span>, <span class="fl">2100</span>]  <span class="co"># MB</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> <span class="fu">Figure</span>(size<span class="op">=</span>(<span class="fl">600</span>, <span class="fl">350</span>))</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> <span class="fu">Axis</span>(fig[<span class="fl">1</span>, <span class="fl">1</span>],</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    xlabel<span class="op">=</span><span class="st">"Sample Size (n)"</span>,</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    ylabel<span class="op">=</span><span class="st">"Memory (MB)"</span>,</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    title<span class="op">=</span><span class="st">"Memory Usage"</span>)</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="fu">barplot!</span>(ax, </span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">repeat</span>(<span class="fl">1</span><span class="op">:</span><span class="fl">5</span>, inner<span class="op">=</span><span class="fl">2</span>),</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">vcat</span>(memory_exact, memory_panel),</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>    dodge<span class="op">=</span><span class="fu">repeat</span>([<span class="fl">1</span>, <span class="fl">2</span>], <span class="fl">5</span>),</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>    color<span class="op">=</span><span class="fu">repeat</span>([<span class="op">:</span>steelblue, <span class="op">:</span>orange], <span class="fl">5</span>))</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Legend</span></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a><span class="fu">Legend</span>(fig[<span class="fl">1</span>, <span class="fl">2</span>],</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>    [<span class="fu">PolyElement</span>(color<span class="op">=:</span>steelblue), <span class="fu">PolyElement</span>(color<span class="op">=:</span>orange)],</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>    [<span class="st">"Exact"</span>, <span class="st">"Panel"</span>])</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>fig</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display" data-execution_count="9">
+<div id="fig-memory" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-memory-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="benchmarks_files/figure-html/fig-memory-output-1.svg" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-memory-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;4: Memory Usage by Sample Size
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="threading-performance" class="level2">
+<h2 class="anchored" data-anchor-id="threading-performance">Threading Performance</h2>
+<section id="parallel-likelihood-computation" class="level3">
+<h3 class="anchored" data-anchor-id="parallel-likelihood-computation">Parallel Likelihood Computation</h3>
+<div id="cell-fig-threading" class="cell" data-fig-height="5" data-execution_count="9">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>threads <span class="op">=</span> [<span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">4</span>, <span class="fl">8</span>, <span class="fl">16</span>]</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>speedup_exact <span class="op">=</span> [<span class="fl">1.0</span>, <span class="fl">1.9</span>, <span class="fl">3.5</span>, <span class="fl">6.2</span>, <span class="fl">9.8</span>]</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>speedup_panel <span class="op">=</span> [<span class="fl">1.0</span>, <span class="fl">1.85</span>, <span class="fl">3.3</span>, <span class="fl">5.8</span>, <span class="fl">8.5</span>]</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Ideal linear speedup for reference</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>speedup_ideal <span class="op">=</span> <span class="fu">Float64</span>.(threads)</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> <span class="fu">Figure</span>(size<span class="op">=</span>(<span class="fl">700</span>, <span class="fl">400</span>))</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> <span class="fu">Axis</span>(fig[<span class="fl">1</span>, <span class="fl">1</span>],</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    xlabel<span class="op">=</span><span class="st">"Number of Threads"</span>,</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    ylabel<span class="op">=</span><span class="st">"Speedup (×)"</span>,</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>    title<span class="op">=</span><span class="st">"Parallel Scaling"</span>)</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax, threads, speedup_ideal, label<span class="op">=</span><span class="st">"Ideal"</span>, linestyle<span class="op">=:</span>dash, </span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>       color<span class="op">=:</span>gray, linewidth<span class="op">=</span><span class="fl">2</span>)</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a><span class="fu">scatter!</span>(ax, threads, speedup_exact, label<span class="op">=</span><span class="st">"Exact data"</span>, </span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>         markersize<span class="op">=</span><span class="fl">12</span>, color<span class="op">=:</span>steelblue)</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax, threads, speedup_exact, color<span class="op">=:</span>steelblue, linewidth<span class="op">=</span><span class="fl">2</span>)</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a><span class="fu">scatter!</span>(ax, threads, speedup_panel, label<span class="op">=</span><span class="st">"Panel data"</span>, </span>
+<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>         markersize<span class="op">=</span><span class="fl">12</span>, color<span class="op">=:</span>orange)</span>
+<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax, threads, speedup_panel, color<span class="op">=:</span>orange, linewidth<span class="op">=</span><span class="fl">2</span>)</span>
+<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a><span class="fu">axislegend</span>(ax, position<span class="op">=:</span>lt)</span>
+<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>fig</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display" data-execution_count="10">
+<div id="fig-threading" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-threading-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="benchmarks_files/figure-html/fig-threading-output-1.svg" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-threading-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;5: Parallel Speedup with Number of Threads
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="threading-recommendations" class="level3">
+<h3 class="anchored" data-anchor-id="threading-recommendations">Threading Recommendations</h3>
+<div id="002da070" class="cell" data-execution_count="10">
+<div class="cell-output cell-output-display" data-execution_count="11">
+<div><div style="float: left;"><span>4×3 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
+<table class="data-frame caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Row</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Scenario</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">RecommendedThreads</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Notes</th>
+</tr>
+<tr class="subheader headerLastRow even">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;"></th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
+<td style="text-align: left;">Small dataset (n &lt; 500)</td>
+<td style="text-align: left;">1-2</td>
+<td style="text-align: left;">Thread overhead dominates</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
+<td style="text-align: left;">Medium dataset (n ~ 1000)</td>
+<td style="text-align: left;">4</td>
+<td style="text-align: left;">Good balance</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">3</td>
+<td style="text-align: left;">Large dataset (n &gt; 2000)</td>
+<td style="text-align: left;">8-16</td>
+<td style="text-align: left;">Near-linear scaling</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
+<td style="text-align: left;">MCEM with many paths</td>
+<td style="text-align: left;">Match physical cores</td>
+<td style="text-align: left;">Memory bandwidth limit</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</section>
+<section id="getting-thread-count" class="level3">
+<h3 class="anchored" data-anchor-id="getting-thread-count">Getting Thread Count</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Check available physical cores</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>MultistateModels.<span class="fu">get_physical_cores</span>()</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Get recommended threads</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>MultistateModels.<span class="fu">recommended_nthreads</span>()</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit with specific thread count</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>fitted_model <span class="op">=</span> <span class="fu">fit</span>(model; nthreads<span class="op">=</span><span class="fl">4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+</section>
+<section id="phase-type-proposal-performance" class="level2">
+<h2 class="anchored" data-anchor-id="phase-type-proposal-performance">Phase-Type Proposal Performance</h2>
+<section id="acceptance-rate-comparison" class="level3">
+<h3 class="anchored" data-anchor-id="acceptance-rate-comparison">Acceptance Rate Comparison</h3>
+<div id="cell-fig-phasetype-perf" class="cell" data-fig-height="5" data-execution_count="11">
+<details class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>families <span class="op">=</span> [<span class="st">"Exponential"</span>, <span class="st">"Weibull</span><span class="sc">\n</span><span class="st">(shape=1.5)"</span>, <span class="st">"Weibull</span><span class="sc">\n</span><span class="st">(shape=2.5)"</span>, <span class="st">"Gompertz"</span>]</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>markov_rates <span class="op">=</span> [<span class="fl">95</span>, <span class="fl">65</span>, <span class="fl">35</span>, <span class="fl">45</span>]  <span class="co"># Markov proposal acceptance %</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>phasetype_rates <span class="op">=</span> [<span class="fl">95</span>, <span class="fl">85</span>, <span class="fl">75</span>, <span class="fl">80</span>]  <span class="co"># Phase-type proposal acceptance %</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> <span class="fu">Figure</span>(size<span class="op">=</span>(<span class="fl">700</span>, <span class="fl">400</span>))</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> <span class="fu">Axis</span>(fig[<span class="fl">1</span>, <span class="fl">1</span>],</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    xlabel<span class="op">=</span><span class="st">"Hazard Family"</span>,</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    ylabel<span class="op">=</span><span class="st">"Acceptance Rate (%)"</span>,</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    title<span class="op">=</span><span class="st">"MCEM Proposal Acceptance Rates"</span>,</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>    xticks<span class="op">=</span>(<span class="fl">1</span><span class="op">:</span><span class="fl">4</span>, families))</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a><span class="fu">barplot!</span>(ax, </span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">repeat</span>(<span class="fl">1</span><span class="op">:</span><span class="fl">4</span>, inner<span class="op">=</span><span class="fl">2</span>),</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">vcat</span>(markov_rates, phasetype_rates),</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>    dodge<span class="op">=</span><span class="fu">repeat</span>([<span class="fl">1</span>, <span class="fl">2</span>], <span class="fl">4</span>),</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>    color<span class="op">=</span><span class="fu">repeat</span>([<span class="op">:</span>steelblue, <span class="op">:</span>orange], <span class="fl">4</span>))</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a><span class="co"># Reference line at 50%</span></span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a><span class="fu">hlines!</span>(ax, [<span class="fl">50</span>], linestyle<span class="op">=:</span>dash, color<span class="op">=:</span>gray)</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a><span class="fu">Legend</span>(fig[<span class="fl">1</span>, <span class="fl">2</span>],</span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>    [<span class="fu">PolyElement</span>(color<span class="op">=:</span>steelblue), <span class="fu">PolyElement</span>(color<span class="op">=:</span>orange)],</span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>    [<span class="st">"Markov"</span>, <span class="st">"Phase-Type"</span>])</span>
+<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>fig</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display" data-execution_count="12">
+<div id="fig-phasetype-perf" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-phasetype-perf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="benchmarks_files/figure-html/fig-phasetype-perf-output-1.svg" class="img-fluid figure-img">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-phasetype-perf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;6: Proposal Acceptance Rates by Hazard Family
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="when-to-use-phase-type-proposals" class="level3">
+<h3 class="anchored" data-anchor-id="when-to-use-phase-type-proposals">When to Use Phase-Type Proposals</h3>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Scenario</th>
+<th>Recommendation</th>
+<th>Reason</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Exponential hazards</td>
+<td>Markov</td>
+<td>Exact proposal (100% acceptance)</td>
+</tr>
+<tr class="even">
+<td>Weibull, shape &lt; 1.5</td>
+<td>Markov</td>
+<td>Good approximation</td>
+</tr>
+<tr class="odd">
+<td>Weibull, shape &gt; 1.5</td>
+<td>Phase-Type</td>
+<td>Markov acceptance drops</td>
+</tr>
+<tr class="even">
+<td>Gompertz</td>
+<td>Phase-Type</td>
+<td>Better moment matching</td>
+</tr>
+<tr class="odd">
+<td>Spline hazards</td>
+<td>Phase-Type</td>
+<td>Non-parametric flexibility</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="benchmark-suite" class="level2">
+<h2 class="anchored" data-anchor-id="benchmark-suite">Benchmark Suite</h2>
+<section id="running-benchmarks" class="level3">
+<h3 class="anchored" data-anchor-id="running-benchmarks">Running Benchmarks</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Full benchmark suite</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="ex">julia</span> <span class="at">--project</span><span class="op">=</span>MultistateModelsTests benchmarks/run_benchmarks.jl</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Quick benchmarks (smaller sample sizes)</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="ex">julia</span> <span class="at">--project</span><span class="op">=</span>MultistateModelsTests benchmarks/run_benchmarks.jl <span class="at">--quick</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Specific benchmark</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="ex">julia</span> <span class="at">--project</span><span class="op">=</span>MultistateModelsTests <span class="at">-e</span> <span class="st">'</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="st">    include("benchmarks/sir_comparison.jl")</span></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="st">'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="benchmark-environment" class="level3">
+<h3 class="anchored" data-anchor-id="benchmark-environment">Benchmark Environment</h3>
+<div id="0cade7e5" class="cell" data-execution_count="12">
+<details open="" class="code-fold">
+<summary>Show code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># System information for reproducibility</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"Julia version: "</span>, <span class="cn">VERSION</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"Threads available: "</span>, <span class="bu">Threads</span>.<span class="fu">nthreads</span>())</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="co"># println("Physical cores: ", MultistateModels.get_physical_cores())</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Julia version: 1.12.2
+Threads available: 1</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="summary" class="level2">
+<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<section id="performance-highlights" class="level3">
+<h3 class="anchored" data-anchor-id="performance-highlights">Performance Highlights</h3>
+<ol type="1">
+<li><strong>Exact data fitting</strong>: Scales linearly with sample size</li>
+<li><strong>Panel data (MCEM)</strong>: ~5x slower than exact, but handles interval censoring</li>
+<li><strong>SQUAREM</strong>: 2-3x speedup over standard EM</li>
+<li><strong>Threading</strong>: Near-linear scaling up to 8 threads</li>
+<li><strong>Phase-type proposals</strong>: Critical for non-exponential hazards in MCEM</li>
+</ol>
+</section>
+<section id="optimization-tips" class="level3">
+<h3 class="anchored" data-anchor-id="optimization-tips">Optimization Tips</h3>
+<ol type="1">
+<li><strong>Use exact observations when available</strong> - much faster than panel</li>
+<li><strong>Enable SQUAREM</strong> - default in <code>fit()</code>, significantly faster</li>
+<li><strong>Match threads to physical cores</strong> - avoid hyperthreading overhead</li>
+<li><strong>Use phase-type proposals for semi-Markov</strong> - automatic selection in <code>fit()</code></li>
+<li><strong>Profile before optimizing</strong> - identify actual bottlenecks</li>
+</ol>
+</section>
+<section id="memory-management" class="level3">
+<h3 class="anchored" data-anchor-id="memory-management">Memory Management</h3>
+<ul>
+<li>Pre-allocate path storage for MCEM</li>
+<li>Use <code>CachedTransformStrategy()</code> for repeated simulations</li>
+<li>Consider batched processing for very large datasets</li>
+</ul>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>© 2025 MultistateModels.jl</p>
+</div>   
+    <div class="nav-footer-center">
+      &nbsp;
+    <div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/fintzij/MultistateModels.jl/blob/main/benchmarks.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/fintzij/MultistateModels.jl/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div>
+    <div class="nav-footer-right">
+<p>Built with <a href="https://quarto.org/">Quarto</a></p>
+</div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

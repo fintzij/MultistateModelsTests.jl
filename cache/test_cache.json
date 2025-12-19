@@ -1,0 +1,40 @@
+{
+    "test_results": {
+        "initialization": {
+            "passed": 5,
+            "timestamp": "2025-12-19T10:47:02.149",
+            "failed": 0,
+            "git_commit": "0da744c",
+            "errors": 0
+        },
+        "hazards": {
+            "errors": 0,
+            "timestamp": "2025-12-19T10:47:01.501",
+            "failed": 0,
+            "git_commit": "0da744c",
+            "passed": 15
+        },
+        "simulation": {
+            "errors": 0,
+            "timestamp": "2025-12-19T10:47:01.949",
+            "failed": 0,
+            "git_commit": "0da744c",
+            "passed": 8
+        }
+    },
+    "last_updated": "2025-12-19T10:47:02.164",
+    "git_commit": "0da744c",
+    "git_branch": "penalized_splines",
+    "source_hashes": {
+        "src/output/": "7f2c2002c2d6c933b51b817727ad9357f2dfcaa6",
+        "src/simulation/": "bec8709020c18fc1d2cdbc2bb3a4780f9641357d",
+        "src/likelihood/": "037911a34e4d7776f119e90fe74de36d9b380148",
+        "src/utilities/": "1fcfaf9337c95a1df144e058b66acb98263d988e",
+        "src/surrogate/": "149c2b390b281e318972e93212644d4bb09fc597",
+        "src/construction/": "54ed9b9620cb7eff89412fae4b0364b0a865212b",
+        "src/hazard/": "aeb23350354c872c9084d802a9fec63d619dd3ef",
+        "src/types/": "2b8d7f8f527a2eaca3e39689900741c58266b5af",
+        "src/inference/": "065f751eb6bdb0e80ef9b3c6aadf74bd23b6219a",
+        "src/phasetype/": "20e07f08e32a415a4def8a31c49ffa0b8f9f2a9e"
+    }
+}

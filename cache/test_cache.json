@@ -1,40 +1,103 @@
 {
     "test_results": {
-        "initialization": {
-            "passed": 5,
-            "timestamp": "2025-12-19T10:47:02.149",
-            "failed": 0,
-            "git_commit": "0da744c",
-            "errors": 0
-        },
-        "hazards": {
+        "surrogates": {
             "errors": 0,
-            "timestamp": "2025-12-19T10:47:01.501",
+            "timestamp": "2025-12-20T08:48:04.947",
             "failed": 0,
-            "git_commit": "0da744c",
-            "passed": 15
+            "git_commit": "d6ee7ab",
+            "passed": 58
         },
         "simulation": {
             "errors": 0,
-            "timestamp": "2025-12-19T10:47:01.949",
+            "timestamp": "2025-12-20T08:48:05.434",
             "failed": 0,
-            "git_commit": "0da744c",
-            "passed": 8
+            "git_commit": "d6ee7ab",
+            "passed": 39
+        },
+        "mcem": {
+            "errors": 0,
+            "timestamp": "2025-12-20T08:48:05.626",
+            "failed": 0,
+            "git_commit": "d6ee7ab",
+            "passed": 23
+        },
+        "splines": {
+            "errors": 0,
+            "timestamp": "2025-12-20T08:48:05.804",
+            "failed": 0,
+            "git_commit": "d6ee7ab",
+            "passed": 152
+        },
+        "modelgeneration": {
+            "errors": 0,
+            "timestamp": "2025-12-20T08:48:05.981",
+            "failed": 0,
+            "git_commit": "d6ee7ab",
+            "passed": 5
+        },
+        "helpers": {
+            "errors": 0,
+            "timestamp": "2025-12-20T08:48:06.162",
+            "failed": 0,
+            "git_commit": "d6ee7ab",
+            "passed": 53
+        },
+        "reconstructor": {
+            "errors": 0,
+            "timestamp": "2025-12-20T08:48:06.351",
+            "failed": 0,
+            "git_commit": "d6ee7ab",
+            "passed": 79
+        },
+        "initialization": {
+            "errors": 0,
+            "timestamp": "2025-12-20T08:48:06.546",
+            "failed": 0,
+            "git_commit": "d6ee7ab",
+            "passed": 59
+        },
+        "hazards": {
+            "errors": 0,
+            "timestamp": "2025-12-20T08:48:06.745",
+            "failed": 0,
+            "git_commit": "d6ee7ab",
+            "passed": 163
+        },
+        "sir": {
+            "errors": 0,
+            "timestamp": "2025-12-20T08:48:06.978",
+            "failed": 0,
+            "git_commit": "d6ee7ab",
+            "passed": 38
+        },
+        "phasetype": {
+            "errors": 0,
+            "timestamp": "2025-12-20T08:48:07.161",
+            "failed": 0,
+            "git_commit": "d6ee7ab",
+            "passed": 505
+        },
+        "variance": {
+            "passed": 18,
+            "timestamp": "2025-12-20T08:48:07.341",
+            "failed": 0,
+            "git_commit": "d6ee7ab",
+            "errors": 0
         }
     },
-    "last_updated": "2025-12-19T10:47:02.164",
-    "git_commit": "0da744c",
+    "last_updated": "2025-12-20T08:48:07.355",
+    "git_commit": "d6ee7ab",
     "git_branch": "penalized_splines",
     "source_hashes": {
-        "src/output/": "7f2c2002c2d6c933b51b817727ad9357f2dfcaa6",
+        "src/output/": "c2ed12f2b1dd8b2d5f995a8cf30a1d0b07717969",
         "src/simulation/": "bec8709020c18fc1d2cdbc2bb3a4780f9641357d",
         "src/likelihood/": "037911a34e4d7776f119e90fe74de36d9b380148",
-        "src/utilities/": "1fcfaf9337c95a1df144e058b66acb98263d988e",
-        "src/surrogate/": "149c2b390b281e318972e93212644d4bb09fc597",
-        "src/construction/": "54ed9b9620cb7eff89412fae4b0364b0a865212b",
-        "src/hazard/": "aeb23350354c872c9084d802a9fec63d619dd3ef",
-        "src/types/": "2b8d7f8f527a2eaca3e39689900741c58266b5af",
-        "src/inference/": "065f751eb6bdb0e80ef9b3c6aadf74bd23b6219a",
-        "src/phasetype/": "20e07f08e32a415a4def8a31c49ffa0b8f9f2a9e"
+        "src/utilities/": "69f4dad40b54d45f4eef7567cb79a4a1c1e6c00c",
+        "src/surrogate/": "e68485f95a925b71e6cb443332a397ae167f800b",
+        "src/construction/": "c85284fb377bedf368965e9972ca62a2fb457822",
+        "src/hazard/": "839bd1a37059ca056d294bee52e5fe3883fb2c73",
+        "src/types/": "1b24bf504d829329ef9b603e54a1d941419e72b5",
+        "src/inference/": "6f73fac96153a21349f25672fb915c28ace66448",
+        "src/phasetype/": "5c136192486c7d244366d2866a310c9198eab1e8"
     }
 }

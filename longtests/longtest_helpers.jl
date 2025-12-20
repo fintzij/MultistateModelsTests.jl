@@ -8,6 +8,19 @@
 # Random, and Statistics via the module's imports.
 # =============================================================================
 
+mutable struct TestResult
+    test_name::String
+    rel_errors::Dict{Symbol, Float64}
+    max_rel_error::Float64
+    passed::Bool
+    
+    function TestResult(test_name::String)
+        new(test_name, Dict{Symbol, Float64}(), NaN, false)
+    end
+end
+
+const PASS_THRESHOLD = 0.15
+
 # =============================================================================
 # Relative Error Computation
 # =============================================================================
@@ -581,14 +594,4 @@ function finalize_result!(result::TestResult)
         result.passed = result.max_rel_error <= PASS_THRESHOLD
     end
     return result
-end
-
-"""
-    get_parameters_flat(fitted)
-
-Extract flattened parameter vector from fitted model.
-"""
-function get_parameters_flat(fitted)
-    params = get_parameters(fitted)
-    return vcat([p for p in values(params)]...)
 end

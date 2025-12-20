@@ -3,12 +3,14 @@
 # =============================================================================
 #
 # Tests for:
+# - AbstractSurrogate type hierarchy and is_fitted() interface
 # - Markov surrogate Q-matrix validity (negative diagonals, row sum = 0)
 # - Phase-type surrogate Q-matrix validity
 # - MLE produces non-negative rates
 # - MLE log-likelihood >= heuristic log-likelihood
-# - `fit_surrogate` keyword argument behavior
+# - `fit_surrogate` always returns lightweight surrogate types
 # - `is_surrogate_fitted` function
+# - Deprecation warnings
 using Test
 using MultistateModels
 using Random
@@ -30,6 +32,97 @@ using Statistics
         )
         return dat
     end
+    
+    # =========================================================================
+    # AbstractSurrogate Type Hierarchy Tests
+    # =========================================================================
+    
+    @testset "AbstractSurrogate type hierarchy" begin
+        dat = create_test_data()
+        h12 = Hazard(@formula(0 ~ 1), "wei", 1, 2)
+        model = multistatemodel(h12; data = dat)
+        
+        # MarkovSurrogate inherits from AbstractSurrogate
+        surrogate_markov = MultistateModels.fit_surrogate(model; method = :mle, verbose = false)
+        @test surrogate_markov isa AbstractSurrogate
+        @test surrogate_markov isa MarkovSurrogate
+        
+        # PhaseTypeSurrogate inherits from AbstractSurrogate
+        surrogate_pt = MultistateModels.fit_surrogate(model; type = :phasetype, n_phases = 2, verbose = false)
+        @test surrogate_pt isa AbstractSurrogate
+        @test surrogate_pt isa PhaseTypeSurrogate
+        
+        # is_fitted works on both types via AbstractSurrogate dispatch
+        @test is_fitted(surrogate_markov)
+        @test is_fitted(surrogate_pt)
+    end
+    
+    @testset "is_fitted generic function" begin
+        dat = create_test_data()
+        h12 = Hazard(@formula(0 ~ 1), "wei", 1, 2)
+        
+        # Unfitted MarkovSurrogate (from model creation with fit_surrogate=false)
+        model_unfitted = multistatemodel(h12; data = dat, surrogate = :markov, fit_surrogate = false)
+        @test !is_fitted(model_unfitted.markovsurrogate)
+        
+        # Fitted MarkovSurrogate
+        model_fitted = multistatemodel(h12; data = dat, surrogate = :markov, fit_surrogate = true)
+        @test is_fitted(model_fitted.markovsurrogate)
+        
+        # PhaseTypeSurrogate is always fitted (built from fitted Markov)
+        model = multistatemodel(h12; data = dat)
+        surrogate_pt = MultistateModels.fit_surrogate(model; type = :phasetype, verbose = false)
+        @test is_fitted(surrogate_pt)
+        @test surrogate_pt.fitted == true  # Direct field access
+    end
+    
+    # =========================================================================
+    # fit_surrogate Return Type Consistency Tests
+    # =========================================================================
+    
+    @testset "fit_surrogate always returns lightweight types" begin
+        dat = create_test_data()
+        h12 = Hazard(@formula(0 ~ 1), "wei", 1, 2)
+        model = multistatemodel(h12; data = dat)
+        
+        # All Markov variations return MarkovSurrogate (never MultistateModelFitted)
+        s1 = MultistateModels.fit_surrogate(model; verbose = false)
+        s2 = MultistateModels.fit_surrogate(model; method = :mle, verbose = false)
+        s3 = MultistateModels.fit_surrogate(model; method = :heuristic, verbose = false)
+        s4 = MultistateModels.fit_surrogate(model; type = :markov, verbose = false)
+        s5 = MultistateModels.fit_surrogate(model; type = :markov, method = :mle, verbose = false)
+        
+        for s in [s1, s2, s3, s4, s5]
+            @test s isa MarkovSurrogate
+            @test !(s isa MultistateModels.MultistateModelFitted)
+        end
+        
+        # Phase-type returns PhaseTypeSurrogate
+        s_pt = MultistateModels.fit_surrogate(model; type = :phasetype, verbose = false)
+        @test s_pt isa PhaseTypeSurrogate
+    end
+    
+    @testset "fit_surrogate with surrogate_parameters" begin
+        dat = create_test_data()
+        h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
+        model = multistatemodel(h12; data = dat)
+        
+        # Providing fixed parameters should still return MarkovSurrogate
+        fixed_params = (h12 = [log(0.3)],)
+        surrogate = MultistateModels.fit_surrogate(model; 
+            surrogate_parameters = fixed_params, verbose = false)
+        
+        @test surrogate isa MarkovSurrogate
+        @test is_fitted(surrogate)
+        
+        # Verify the parameter was set correctly
+        rate = first(values(surrogate.parameters.natural))[1]
+        @test isapprox(rate, 0.3, rtol = 1e-6)
+    end
+    
+    # =========================================================================
+    # Original Tests (retained)
+    # =========================================================================
     
     @testset "fit_surrogate default behavior" begin
         dat = create_test_data()
@@ -103,6 +196,10 @@ using Statistics
         for i in 1:size(Q, 1)
             @test isapprox(sum(Q[i, :]), 0.0, atol = 1e-10)
         end
+        
+        # PhaseTypeSurrogate should have fitted=true
+        @test surrogate.fitted == true
+        @test is_fitted(surrogate)
     end
     
     @testset "MLE >= heuristic log-likelihood" begin
@@ -156,6 +253,24 @@ using Statistics
         
         @test_throws ErrorException MultistateModels._validate_surrogate_inputs(:invalid, :mle)
         @test_throws ErrorException MultistateModels._validate_surrogate_inputs(:markov, :invalid)
+    end
+    
+    # =========================================================================
+    # Deprecation Warning Tests
+    # =========================================================================
+    
+    @testset "crude_inits deprecation warning" begin
+        dat = create_test_data()
+        h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
+        model = multistatemodel(h12; data = dat)
+        
+        # crude_inits should emit a deprecation warning but still work
+        # The warning is maxlog=1, so we just test that it doesn't error
+        @test_logs (:warn, "crude_inits is deprecated and ignored. Use method=:heuristic for crude initialization.") begin
+            surrogate = MultistateModels.fit_surrogate(model; crude_inits = true, verbose = false)
+            @test surrogate isa MarkovSurrogate
+            @test is_fitted(surrogate)
+        end
     end
 
 end

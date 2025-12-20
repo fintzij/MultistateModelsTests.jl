@@ -31,7 +31,7 @@ import MultistateModels: Hazard, multistatemodel, fit, set_parameters!, simulate
     fit_surrogate, build_tpm_mapping, build_phasetype_surrogate, PhaseTypeConfig,
     build_phasetype_emat_expanded, build_phasetype_tpm_book, build_fbmats_phasetype,
     compute_phasetype_marginal_loglik, draw_samplepath_phasetype, loglik,
-    loglik_phasetype_expanded
+    loglik_phasetype_expanded_path
 
 # =============================================================================
 # CONSTANTS
@@ -230,7 +230,7 @@ end
         # Use flat params - loglik will unflatten with exp transform for baseline params
         params = get_parameters_flat(model)
         ll_target = loglik(params, path_result.collapsed, model.hazards, model)
-        ll_surrog = loglik_phasetype_expanded(path_result.expanded, surrogate)
+        ll_surrog = loglik_phasetype_expanded_path(path_result.expanded, surrogate)
         
         log_weight = ll_target - ll_surrog
         weight = exp(log_weight)
@@ -291,7 +291,7 @@ end
         # Use flat params - loglik will unflatten with exp transform for baseline params
         params = get_parameters_flat(model)
         ll_target = loglik(params, result.collapsed, model.hazards, model)
-        ll_surrog = loglik_phasetype_expanded(result.expanded, surrogate)
+        ll_surrog = loglik_phasetype_expanded_path(result.expanded, surrogate)
         push!(log_weights, ll_target - ll_surrog)
     end
     
@@ -429,8 +429,8 @@ end
     true_shape_13, true_scale_13 = 0.10, 0.12
     
     true_params = (
-        h12 = [log(true_shape_12), log(true_scale_12)],
-        h13 = [log(true_shape_13), log(true_scale_13)]
+        h12 = [true_shape_12, log(true_scale_12)],
+        h13 = [true_shape_13, log(true_scale_13)]
     )
     
     h12 = Hazard(@formula(0 ~ 1), "gom", 1, 2)
@@ -486,9 +486,17 @@ end
     
     model = multistatemodel(h12, h23, h13; data=panel_data)
     
+    # After refactoring, fit_surrogate always returns MarkovSurrogate
     surrogate_mle = fit_surrogate(model; method=:mle, verbose=false)
     surrogate_heur = fit_surrogate(model; method=:heuristic, verbose=false)
     
+    # Both are MarkovSurrogate - verify type consistency
+    @test surrogate_mle isa MultistateModels.MarkovSurrogate
+    @test surrogate_heur isa MultistateModels.MarkovSurrogate
+    @test is_fitted(surrogate_mle)
+    @test is_fitted(surrogate_heur)
+
+    # Compute log-likelihoods directly (no type conversion needed)
     ll_mle = MultistateModels.compute_markov_marginal_loglik(model, surrogate_mle)
     ll_heur = MultistateModels.compute_markov_marginal_loglik(model, surrogate_heur)
     

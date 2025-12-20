@@ -178,11 +178,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#quick-start" id="toc-quick-start" class="nav-link" data-scroll-target="#quick-start">Quick Start</a>
   <ul class="collapse">
   <li><a href="#building-reports-locally" id="toc-building-reports-locally" class="nav-link" data-scroll-target="#building-reports-locally">Building Reports Locally</a></li>
-  <li><a href="#recording-test-results" id="toc-recording-test-results" class="nav-link" data-scroll-target="#recording-test-results">Recording Test Results</a></li>
+  <li><a href="#running-tests-and-recording-results" id="toc-running-tests-and-recording-results" class="nav-link" data-scroll-target="#running-tests-and-recording-results">Running Tests and Recording Results</a></li>
   <li><a href="#checking-cache-status" id="toc-checking-cache-status" class="nav-link" data-scroll-target="#checking-cache-status">Checking Cache Status</a></li>
   </ul></li>
   </ul>
-<div class="toc-actions"><ul><li><a href="https://github.com/fintzij/MultistateModels.jl/blob/main/index.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/fintzij/MultistateModels.jl/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+<div class="toc-actions"><ul><li><a href="https://github.com/fintzij/MultistateModelsTests.jl/blob/main/index.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/fintzij/MultistateModelsTests.jl/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
     </div>
 <!-- main -->
 <main class="content column-page-left" id="quarto-document-content">
@@ -213,7 +213,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <i class="callout-icon no-icon"></i>
 </div>
 <div class="callout-body-container">
-<p><img src="https://img.shields.io/badge/tests-passing-brightgreen.png" class="img-fluid" alt="Tests"> &nbsp; <strong>Branch:</strong> <code>penalized_splines</code> &nbsp; <strong>Commit:</strong> <code>0da744c</code></p>
+<p><img src="https://img.shields.io/badge/tests-passing-brightgreen.png" class="img-fluid" alt="Tests"> &nbsp; <strong>Branch:</strong> <code>penalized_splines</code> &nbsp; <strong>Commit:</strong> <code>d6ee7ab</code></p>
 </div>
 </div>
 </div>
@@ -259,7 +259,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td><strong>Passed</strong></td>
-<td>28</td>
+<td>1192</td>
 </tr>
 <tr class="even">
 <td><strong>Failed</strong></td>
@@ -275,11 +275,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td><strong>Categories</strong></td>
-<td>3</td>
+<td>12</td>
 </tr>
 <tr class="even">
 <td><strong>Last Updated</strong></td>
-<td>2025-12-19T10:47:02.164</td>
+<td>2025-12-20T08:48:07.355</td>
 </tr>
 </tbody>
 </table>
@@ -291,12 +291,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> MultistateModelsTests/reports</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">quarto</span> render</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
-<section id="recording-test-results" class="level3">
-<h3 class="anchored" data-anchor-id="recording-test-results">Recording Test Results</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># After running tests manually</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">include</span>(<span class="st">"scripts/test_cache.jl"</span>)</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="fu">record_test_result</span>(<span class="op">:</span>hazards, passed<span class="op">=</span><span class="fl">15</span>, failed<span class="op">=</span><span class="fl">0</span>, errors<span class="op">=</span><span class="fl">0</span>)</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="fu">record_test_result</span>(<span class="op">:</span>simulation, passed<span class="op">=</span><span class="fl">8</span>, failed<span class="op">=</span><span class="fl">0</span>, errors<span class="op">=</span><span class="fl">0</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="running-tests-and-recording-results" class="level3">
+<h3 class="anchored" data-anchor-id="running-tests-and-recording-results">Running Tests and Recording Results</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Run full test suite with automatic cache recording</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">julia</span> <span class="at">--project</span><span class="op">=</span>. <span class="at">-e</span> <span class="st">'using MultistateModelsTests; MultistateModelsTests.runtests()'</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Or run with the dedicated script</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="ex">julia</span> <span class="at">--project</span><span class="op">=</span>. scripts/run_all_tests.jl</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Test results are automatically cached when running via <code>runtests()</code>.</p>
 </section>
 <section id="checking-cache-status" class="level3">
 <h3 class="anchored" data-anchor-id="checking-cache-status">Checking Cache Status</h3>
@@ -714,7 +716,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>   
     <div class="nav-footer-center">
       &nbsp;
-    <div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/fintzij/MultistateModels.jl/blob/main/index.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/fintzij/MultistateModels.jl/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div>
+    <div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/fintzij/MultistateModelsTests.jl/blob/main/index.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/fintzij/MultistateModelsTests.jl/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div>
     <div class="nav-footer-right">
 <p>Built with <a href="https://quarto.org/">Quarto</a></p>
 </div>

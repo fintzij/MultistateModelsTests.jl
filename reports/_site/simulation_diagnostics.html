@@ -231,7 +231,7 @@ window.Quarto = {
   <li><a href="#monte-carlo-error" id="toc-monte-carlo-error" class="nav-link" data-scroll-target="#monte-carlo-error">Monte Carlo Error</a></li>
   </ul></li>
   </ul>
-<div class="toc-actions"><ul><li><a href="https://github.com/fintzij/MultistateModels.jl/blob/main/simulation_diagnostics.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/fintzij/MultistateModels.jl/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+<div class="toc-actions"><ul><li><a href="https://github.com/fintzij/MultistateModelsTests.jl/blob/main/simulation_diagnostics.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/fintzij/MultistateModelsTests.jl/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
@@ -268,7 +268,7 @@ window.Quarto = {
 </section>
 <section id="configuration" class="level2">
 <h2 class="anchored" data-anchor-id="configuration">Configuration</h2>
-<div id="0a058ac1" class="cell" data-execution_count="2">
+<div id="774044c0" class="cell" data-execution_count="2">
 <details class="code-fold">
 <summary>Show code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> COVARIATE_VALUE <span class="op">=</span> <span class="fl">1.5</span></span>
@@ -323,7 +323,7 @@ window.Quarto = {
 </section>
 <section id="helper-functions" class="level2">
 <h2 class="anchored" data-anchor-id="helper-functions">Helper Functions</h2>
-<div id="aa481497" class="cell" data-execution_count="3">
+<div id="452bc901" class="cell" data-execution_count="3">
 <details class="code-fold">
 <summary>Show code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a 2-state model for a given scenario</span></span>
@@ -837,11 +837,6 @@ Figure&nbsp;3: Gompertz Hazard Diagnostics
 <p>The CDF plots above implicitly verify hazard function correctness - if the hazard functions were wrong, the simulated CDFs would not match the theoretical CDFs.</p>
 <p>For explicit verification, the hazard functions use the following formulas:</p>
 <table class="caption-top table">
-<colgroup>
-<col style="width: 20%">
-<col style="width: 38%">
-<col style="width: 41%">
-</colgroup>
 <thead>
 <tr class="header">
 <th>Family</th>
@@ -857,8 +852,8 @@ Figure&nbsp;3: Gompertz Hazard Diagnostics
 </tr>
 <tr class="even">
 <td>Weibull</td>
-<td><span class="math inline">\(\frac{a}{b}\left(\frac{t}{b}\right)^{a-1}\)</span></td>
-<td><code>shape/scale * (t/scale)^(shape-1)</code></td>
+<td><span class="math inline">\(a \cdot b \cdot t^{a-1}\)</span></td>
+<td><code>shape * scale * t^(shape-1)</code></td>
 </tr>
 <tr class="odd">
 <td>Gompertz</td>
@@ -1313,7 +1308,7 @@ Figure&nbsp;3: Gompertz Hazard Diagnostics
 </div>   
     <div class="nav-footer-center">
       &nbsp;
-    <div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/fintzij/MultistateModels.jl/blob/main/simulation_diagnostics.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/fintzij/MultistateModels.jl/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div>
+    <div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/fintzij/MultistateModelsTests.jl/blob/main/simulation_diagnostics.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/fintzij/MultistateModelsTests.jl/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div>
     <div class="nav-footer-right">
 <p>Built with <a href="https://quarto.org/">Quarto</a></p>
 </div>

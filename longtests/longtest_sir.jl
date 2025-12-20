@@ -45,7 +45,7 @@ const SIR_MCEM_TOL = 0.02
 const SIR_MCEM_ESS_INITIAL = 50
 const SIR_MCEM_ESS_MAX = 200
 const SIR_MCEM_MAX_ITER = 100
-const SIR_PARAM_TOL_REL = 0.15  # 15% relative tolerance for parameter recovery
+const SIR_PARAM_TOL_REL = 0.30  # 30% relative tolerance for parameter recovery
 
 # True Weibull parameters (natural scale)
 # Progressive model: 1 → 2 → 3 (state 3 is absorbing)

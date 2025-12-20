@@ -94,7 +94,7 @@ MultistateModelsTests/unit/
 ├── test_phasetype_panel_expansion.jl
 ├── test_sir.jl                        # Sampling importance resampling
 ├── test_variance.jl                   # Variance estimation
-├── test_ncv.jl                        # Cross-validation
+├── test_pijcv.jl                      # PIJ cross-validation
 ├── test_initialization.jl             # Parameter initialization
 ├── test_modelgeneration.jl            # Model construction
 ├── test_helpers.jl                    # Utility functions

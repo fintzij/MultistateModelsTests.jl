@@ -207,7 +207,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul class="collapse">
   <li><a href="#full-suite" id="toc-full-suite" class="nav-link" data-scroll-target="#full-suite">Full Suite</a></li>
   <li><a href="#individual-test" id="toc-individual-test" class="nav-link" data-scroll-target="#individual-test">Individual Test</a></li>
-  <li><a href="#with-logging" id="toc-with-logging" class="nav-link" data-scroll-target="#with-logging">With Logging</a></li>
+  <li><a href="#environment-variables" id="toc-environment-variables" class="nav-link" data-scroll-target="#environment-variables">Environment Variables</a></li>
+  <li><a href="#with-debug-logging" id="toc-with-debug-logging" class="nav-link" data-scroll-target="#with-debug-logging">With Debug Logging</a></li>
   </ul></li>
   <li><a href="#test-status-dashboard" id="toc-test-status-dashboard" class="nav-link" data-scroll-target="#test-status-dashboard">Test Status Dashboard</a></li>
   <li><a href="#common-issues-and-debugging" id="toc-common-issues-and-debugging" class="nav-link" data-scroll-target="#common-issues-and-debugging">Common Issues and Debugging</a>
@@ -218,7 +219,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   </ul></li>
   <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
   </ul>
-<div class="toc-actions"><ul><li><a href="https://github.com/fintzij/MultistateModels.jl/blob/main/long_tests.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/fintzij/MultistateModels.jl/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+<div class="toc-actions"><ul><li><a href="https://github.com/fintzij/MultistateModelsTests.jl/blob/main/long_tests.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/fintzij/MultistateModelsTests.jl/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
@@ -266,9 +267,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="long-test-inventory" class="level2">
 <h2 class="anchored" data-anchor-id="long-test-inventory">Long Test Inventory</h2>
-<div id="924ec27c" class="cell" data-execution_count="2">
+<div id="0825f77f" class="cell" data-execution_count="2">
 <div class="cell-output cell-output-display" data-execution_count="3">
-<div><div style="float: left;"><span>12×4 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
+<div><div style="float: left;"><span>10×4 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
 <table class="data-frame caption-top table table-sm table-striped small">
 <thead>
 <tr class="header">
@@ -289,83 +290,69 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
-<td style="text-align: left;">longtest_mcem.jl</td>
-<td style="text-align: left;">MCEM Fitting</td>
-<td style="text-align: left;">Panel data fitting with parametric hazards</td>
-<td style="text-align: left;">~15 min</td>
-</tr>
-<tr class="even">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
-<td style="text-align: left;">longtest_mcem_splines.jl</td>
-<td style="text-align: left;">MCEM Fitting</td>
-<td style="text-align: left;">Panel data fitting with B-spline hazards</td>
-<td style="text-align: left;">~20 min</td>
-</tr>
-<tr class="odd">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">3</td>
-<td style="text-align: left;">longtest_mcem_tvc.jl</td>
-<td style="text-align: left;">MCEM Fitting</td>
-<td style="text-align: left;">Time-varying covariates with MCEM</td>
-<td style="text-align: left;">~10 min</td>
-</tr>
-<tr class="even">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
-<td style="text-align: left;">longtest_sir.jl</td>
-<td style="text-align: left;">Resampling</td>
-<td style="text-align: left;">SIR vs LHS resampling comparison</td>
-<td style="text-align: left;">~25 min</td>
-</tr>
-<tr class="odd">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">5</td>
 <td style="text-align: left;">longtest_exact_markov.jl</td>
 <td style="text-align: left;">Direct ML</td>
 <td style="text-align: left;">Exact observation direct MLE fitting</td>
 <td style="text-align: left;">~5 min</td>
 </tr>
 <tr class="even">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">6</td>
-<td style="text-align: left;">longtest_phasetype_exact.jl</td>
-<td style="text-align: left;">Phase-Type</td>
-<td style="text-align: left;">Phase-type proposals with exact observations</td>
-<td style="text-align: left;">~30 min</td>
-</tr>
-<tr class="odd">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">7</td>
-<td style="text-align: left;">longtest_phasetype_panel.jl</td>
-<td style="text-align: left;">Phase-Type</td>
-<td style="text-align: left;">Phase-type proposals with panel data</td>
-<td style="text-align: left;">~45 min</td>
-</tr>
-<tr class="even">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">8</td>
-<td style="text-align: left;">longtest_robust_parametric.jl</td>
-<td style="text-align: left;">Robust SE</td>
-<td style="text-align: left;">Robust variance for parametric models</td>
+<td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
+<td style="text-align: left;">longtest_mcem.jl</td>
+<td style="text-align: left;">MCEM Fitting</td>
+<td style="text-align: left;">Panel data fitting with parametric hazards</td>
 <td style="text-align: left;">~15 min</td>
 </tr>
 <tr class="odd">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">9</td>
-<td style="text-align: left;">longtest_robust_markov_phasetype.jl</td>
-<td style="text-align: left;">Robust SE</td>
-<td style="text-align: left;">Robust variance with phase-type</td>
+<td class="rowNumber" style="text-align: right; font-weight: bold;">3</td>
+<td style="text-align: left;">longtest_mcem_splines.jl</td>
+<td style="text-align: left;">MCEM Fitting</td>
+<td style="text-align: left;">Panel data fitting with B-spline hazards</td>
 <td style="text-align: left;">~20 min</td>
 </tr>
 <tr class="even">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">10</td>
+<td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
+<td style="text-align: left;">longtest_mcem_tvc.jl</td>
+<td style="text-align: left;">MCEM Fitting</td>
+<td style="text-align: left;">Time-varying covariates with MCEM</td>
+<td style="text-align: left;">~10 min</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">5</td>
 <td style="text-align: left;">longtest_simulation_distribution.jl</td>
 <td style="text-align: left;">Simulation</td>
 <td style="text-align: left;">Simulation distribution verification</td>
 <td style="text-align: left;">~5 min</td>
 </tr>
-<tr class="odd">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">11</td>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">6</td>
 <td style="text-align: left;">longtest_simulation_tvc.jl</td>
 <td style="text-align: left;">Simulation</td>
 <td style="text-align: left;">TVC simulation verification</td>
 <td style="text-align: left;">~5 min</td>
 </tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">7</td>
+<td style="text-align: left;">longtest_robust_parametric.jl</td>
+<td style="text-align: left;">Robust SE</td>
+<td style="text-align: left;">Robust variance for parametric models</td>
+<td style="text-align: left;">~15 min</td>
+</tr>
 <tr class="even">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">12</td>
+<td class="rowNumber" style="text-align: right; font-weight: bold;">8</td>
+<td style="text-align: left;">longtest_robust_markov_phasetype.jl</td>
+<td style="text-align: left;">Robust SE</td>
+<td style="text-align: left;">Markov vs phase-type validation</td>
+<td style="text-align: left;">~20 min</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">9</td>
+<td style="text-align: left;">longtest_phasetype.jl</td>
+<td style="text-align: left;">Phase-Type</td>
+<td style="text-align: left;">Phase-type proposals (exact + panel data)</td>
+<td style="text-align: left;">~30 min</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">10</td>
 <td style="text-align: left;">longtest_variance_validation.jl</td>
 <td style="text-align: left;">Variance</td>
 <td style="text-align: left;">Variance estimation validation</td>
@@ -421,7 +408,7 @@ Figure&nbsp;1: MCEM Parameter Recovery: True vs Estimated
 <section id="sir-method-comparison-longtest_sir.jl" class="level2">
 <h2 class="anchored" data-anchor-id="sir-method-comparison-longtest_sir.jl">SIR Method Comparison (<code>longtest_sir.jl</code>)</h2>
 <p>Compares resampling strategies for posterior approximation:</p>
-<div id="0aecf6a5" class="cell" data-execution_count="4">
+<div id="6f3fabab" class="cell" data-execution_count="4">
 <div class="cell-output cell-output-display" data-execution_count="5">
 <div><div style="float: left;"><span>3×4 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
 <table class="data-frame caption-top table table-sm table-striped small">
@@ -510,7 +497,7 @@ Figure&nbsp;2: Phase-Type Proposal Performance with Exact Observations
 <section id="longtest_variance_validation.jl" class="level3">
 <h3 class="anchored" data-anchor-id="longtest_variance_validation.jl"><code>longtest_variance_validation.jl</code></h3>
 <p>Validates that variance estimates achieve nominal coverage.</p>
-<p><strong>Approach</strong>: 1. Simulate 500+ datasets from true DGP 2. Fit model to each dataset 3. Compute 95% CIs using different variance methods 4. Check that coverage rate ≈ 95%</p>
+<p><strong>Approach</strong>: 1. Simulate 500+ datasets (1000 for variance, 100 for coverage) from true DGP 2. Fit model to each dataset 3. Compute 95% CIs using different variance methods 4. Check that coverage rate ≈ 95%</p>
 <div id="cell-fig-coverage" class="cell" data-execution_count="6">
 <div class="cell-output cell-output-display" data-execution_count="7">
 <div id="fig-coverage" class="quarto-float quarto-figure quarto-figure-center anchored">
@@ -554,25 +541,66 @@ Figure&nbsp;4: Simulation Distribution Validation
 <section id="full-suite" class="level3">
 <h3 class="anchored" data-anchor-id="full-suite">Full Suite</h3>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> MultistateModelsTests</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">julia</span> <span class="at">--project</span><span class="op">=</span>. longtests/runtests.jl</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Via the test package API</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="va">MSM_TEST_LEVEL</span><span class="op">=</span>full <span class="ex">julia</span> <span class="at">--project</span><span class="op">=</span>. <span class="at">-e</span> <span class="st">'using MultistateModelsTests; MultistateModelsTests.runtests()'</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Or via the dedicated script</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="ex">julia</span> <span class="at">--project</span><span class="op">=</span>. scripts/run_longtests.jl</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 <section id="individual-test" class="level3">
 <h3 class="anchored" data-anchor-id="individual-test">Individual Test</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">julia</span> <span class="at">--project</span><span class="op">=</span>. longtests/longtest_mcem.jl</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Run only a specific suite (by key name)</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="va">MSM_TEST_LEVEL</span><span class="op">=</span>full <span class="va">MSM_LONGTEST_ONLY</span><span class="op">=</span>mcem_parametric <span class="ex">julia</span> <span class="at">--project</span><span class="op">=</span>. <span class="at">-e</span> <span class="st">'using MultistateModelsTests; MultistateModelsTests.runtests()'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
-<section id="with-logging" class="level3">
-<h3 class="anchored" data-anchor-id="with-logging">With Logging</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">julia</span> <span class="at">--project</span><span class="op">=</span>. <span class="at">-e</span> <span class="st">'</span></span>
+<section id="environment-variables" class="level3">
+<h3 class="anchored" data-anchor-id="environment-variables">Environment Variables</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 32%">
+<col style="width: 25%">
+<col style="width: 41%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Values</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>MSM_TEST_LEVEL</code></td>
+<td><code>quick</code> (default), <code>full</code></td>
+<td>Controls whether long tests run</td>
+</tr>
+<tr class="even">
+<td><code>MSM_LONGTEST_ONLY</code></td>
+<td>test key (e.g., <code>mcem_parametric</code>)</td>
+<td>Run only one specific long test</td>
+</tr>
+<tr class="odd">
+<td><code>MSM_SUPPRESS_WARNINGS</code></td>
+<td><code>true</code> (default), <code>false</code></td>
+<td>Suppress expected warnings</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="with-debug-logging" class="level3">
+<h3 class="anchored" data-anchor-id="with-debug-logging">With Debug Logging</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="va">MSM_TEST_LEVEL</span><span class="op">=</span>full <span class="ex">julia</span> <span class="at">--project</span><span class="op">=</span>. <span class="at">-e</span> <span class="st">'</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="st">    ENV["JULIA_DEBUG"] = "MultistateModels"</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="st">    include("longtests/longtest_mcem.jl")</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="st">'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="st">    using MultistateModelsTests</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="st">    MultistateModelsTests.runtests()</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="st">'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 </section>
 <section id="test-status-dashboard" class="level2">
 <h2 class="anchored" data-anchor-id="test-status-dashboard">Test Status Dashboard</h2>
-<div id="d92bb4f7" class="cell" data-execution_count="8">
+<div id="11defae5" class="cell" data-execution_count="8">
 <div class="cell-output cell-output-display" data-execution_count="9">
-<div><div style="float: left;"><span>12×5 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
+<div><div style="float: left;"><span>10×5 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
 <table class="data-frame caption-top table table-sm table-striped small">
 <thead>
 <tr class="header">
@@ -595,98 +623,82 @@ Figure&nbsp;4: Simulation Distribution Validation
 <tbody>
 <tr class="odd">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
-<td style="text-align: left;">MCEM Parametric</td>
-<td style="text-align: left;">✅ Pass</td>
-<td style="text-align: left;">2024-12-XX</td>
-<td style="text-align: left;">14:23</td>
-<td style="text-align: left;">All hazard families pass</td>
-</tr>
-<tr class="even">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
-<td style="text-align: left;">MCEM Splines</td>
-<td style="text-align: left;">✅ Pass</td>
-<td style="text-align: left;">2024-12-XX</td>
-<td style="text-align: left;">18:45</td>
-<td style="text-align: left;">5 interior knots</td>
-</tr>
-<tr class="odd">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">3</td>
-<td style="text-align: left;">MCEM TVC</td>
-<td style="text-align: left;">✅ Pass</td>
-<td style="text-align: left;">2024-12-XX</td>
-<td style="text-align: left;">9:12</td>
-<td style="text-align: left;">Step-function covariates</td>
-</tr>
-<tr class="even">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
-<td style="text-align: left;">SIR Comparison</td>
-<td style="text-align: left;">✅ Pass</td>
-<td style="text-align: left;">2024-12-XX</td>
-<td style="text-align: left;">24:56</td>
-<td style="text-align: left;">SIR ≈ LHS ≈ none</td>
-</tr>
-<tr class="odd">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">5</td>
 <td style="text-align: left;">Exact Markov</td>
 <td style="text-align: left;">✅ Pass</td>
-<td style="text-align: left;">2024-12-XX</td>
-<td style="text-align: left;">4:32</td>
+<td style="text-align: left;">2025-06</td>
+<td style="text-align: left;">~5 min</td>
 <td style="text-align: left;">Direct optimization</td>
 </tr>
 <tr class="even">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">6</td>
-<td style="text-align: left;">Phase-Type Exact</td>
+<td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
+<td style="text-align: left;">MCEM Parametric</td>
 <td style="text-align: left;">✅ Pass</td>
-<td style="text-align: left;">2024-12-XX</td>
-<td style="text-align: left;">28:15</td>
-<td style="text-align: left;">Wei, Gom families</td>
+<td style="text-align: left;">2025-06</td>
+<td style="text-align: left;">~15 min</td>
+<td style="text-align: left;">All hazard families pass</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">3</td>
+<td style="text-align: left;">MCEM Splines</td>
+<td style="text-align: left;">✅ Pass</td>
+<td style="text-align: left;">2025-06</td>
+<td style="text-align: left;">~20 min</td>
+<td style="text-align: left;">5 interior knots</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
+<td style="text-align: left;">MCEM TVC</td>
+<td style="text-align: left;">✅ Pass</td>
+<td style="text-align: left;">2025-06</td>
+<td style="text-align: left;">~10 min</td>
+<td style="text-align: left;">Step-function covariates</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">5</td>
+<td style="text-align: left;">Simulation Dist</td>
+<td style="text-align: left;">✅ Pass</td>
+<td style="text-align: left;">2025-06</td>
+<td style="text-align: left;">~5 min</td>
+<td style="text-align: left;">KS test p &gt; 0.05</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">6</td>
+<td style="text-align: left;">Simulation TVC</td>
+<td style="text-align: left;">✅ Pass</td>
+<td style="text-align: left;">2025-06</td>
+<td style="text-align: left;">~5 min</td>
+<td style="text-align: left;">TVC propagation correct</td>
 </tr>
 <tr class="odd">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">7</td>
-<td style="text-align: left;">Phase-Type Panel</td>
+<td style="text-align: left;">Robust Parametric</td>
 <td style="text-align: left;">✅ Pass</td>
-<td style="text-align: left;">2024-12-XX</td>
-<td style="text-align: left;">43:21</td>
-<td style="text-align: left;">Mixed observation types</td>
+<td style="text-align: left;">2025-06</td>
+<td style="text-align: left;">~15 min</td>
+<td style="text-align: left;">IJ/JK coverage ~95%</td>
 </tr>
 <tr class="even">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">8</td>
-<td style="text-align: left;">Robust Parametric</td>
+<td style="text-align: left;">Markov/PhaseType Validation</td>
 <td style="text-align: left;">✅ Pass</td>
-<td style="text-align: left;">2024-12-XX</td>
-<td style="text-align: left;">13:45</td>
-<td style="text-align: left;">IJ/JK coverage ~95%</td>
+<td style="text-align: left;">2025-06</td>
+<td style="text-align: left;">~20 min</td>
+<td style="text-align: left;">Markov ≈ PhaseType consistency</td>
 </tr>
 <tr class="odd">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">9</td>
-<td style="text-align: left;">Robust PT</td>
+<td style="text-align: left;">Phase-Type</td>
 <td style="text-align: left;">✅ Pass</td>
-<td style="text-align: left;">2024-12-XX</td>
-<td style="text-align: left;">19:08</td>
-<td style="text-align: left;">Phase-type + robust SE</td>
+<td style="text-align: left;">2025-06</td>
+<td style="text-align: left;">~30 min</td>
+<td style="text-align: left;">Exact + panel data</td>
 </tr>
 <tr class="even">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">10</td>
-<td style="text-align: left;">Simulation Dist</td>
+<td style="text-align: left;">Variance Validation</td>
 <td style="text-align: left;">✅ Pass</td>
-<td style="text-align: left;">2024-12-XX</td>
-<td style="text-align: left;">4:56</td>
-<td style="text-align: left;">KS test p &gt; 0.05</td>
-</tr>
-<tr class="odd">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">11</td>
-<td style="text-align: left;">Simulation TVC</td>
-<td style="text-align: left;">✅ Pass</td>
-<td style="text-align: left;">2024-12-XX</td>
-<td style="text-align: left;">5:12</td>
-<td style="text-align: left;">TVC propagation correct</td>
-</tr>
-<tr class="even">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">12</td>
-<td style="text-align: left;">Variance</td>
-<td style="text-align: left;">✅ Pass</td>
-<td style="text-align: left;">2024-12-XX</td>
-<td style="text-align: left;">9:34</td>
+<td style="text-align: left;">2025-06</td>
+<td style="text-align: left;">~10 min</td>
 <td style="text-align: left;">Coverage nominal</td>
 </tr>
 </tbody>
@@ -1135,7 +1147,7 @@ Figure&nbsp;4: Simulation Distribution Validation
 </div>   
     <div class="nav-footer-center">
       &nbsp;
-    <div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/fintzij/MultistateModels.jl/blob/main/long_tests.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/fintzij/MultistateModels.jl/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div>
+    <div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/fintzij/MultistateModelsTests.jl/blob/main/long_tests.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/fintzij/MultistateModelsTests.jl/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div>
     <div class="nav-footer-right">
 <p>Built with <a href="https://quarto.org/">Quarto</a></p>
 </div>

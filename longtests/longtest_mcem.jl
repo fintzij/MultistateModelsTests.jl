@@ -36,7 +36,8 @@ import MultistateModels: Hazard, multistatemodel, fit, set_parameters!, simulate
     get_parameters_flat, get_parameters, MarkovProposal, PhaseTypeProposal,
     fit_surrogate, build_tpm_mapping, build_hazmat_book, build_tpm_book,
     compute_hazmat!, compute_tmat!, ExpMethodGeneric, ExponentialUtilities,
-    needs_phasetype_proposal, resolve_proposal_config, SamplePath, @formula
+    needs_phasetype_proposal, resolve_proposal_config, SamplePath, @formula,
+    MarkovSurrogate
 
 const RNG_SEED = 0xABCD1234
 const N_SUBJECTS = 1000          # Sample size for fitting
@@ -865,10 +866,12 @@ end
     surrogate_fitted = fit_surrogate(model; verbose=true)
     
     @testset "Surrogate validity" begin
-        @test isfinite(surrogate_fitted.loglik.loglik)
-        @test surrogate_fitted.loglik.loglik < 0
+        # MarkovSurrogate returns a surrogate object with hazards and parameters
+        @test surrogate_fitted isa MarkovSurrogate
+        @test surrogate_fitted.fitted == true
         
-        surrogate_params = get_parameters_flat(surrogate_fitted)
+        # Get parameters from the surrogate's parameters field (flat vector)
+        surrogate_params = surrogate_fitted.parameters.flat
         @test all(isfinite.(surrogate_params))
         
         # Surrogate should have exponential hazards (Markov)

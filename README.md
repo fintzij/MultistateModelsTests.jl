@@ -83,14 +83,16 @@ MultistateModelsTests/
     ├── longtest_mcem.jl
     ├── longtest_mcem_splines.jl
     ├── longtest_mcem_tvc.jl
-    ├── longtest_phasetype.jl
+    ├── longtest_phasetype.jl       # Includes _exact and _panel
     ├── longtest_phasetype_exact.jl
     ├── longtest_phasetype_panel.jl
     ├── longtest_robust_markov_phasetype.jl
     ├── longtest_robust_parametric.jl
     ├── longtest_simulation_distribution.jl
     ├── longtest_simulation_tvc.jl
-    └── longtest_variance_validation.jl  # IJ/JK variance validation
+    ├── longtest_sir.jl             # SIR/LHS comparison (optional)
+    ├── longtest_variance_validation.jl
+    └── phasetype_longtest_helpers.jl
 ```
 
 ## Running Tests
@@ -99,40 +101,43 @@ MultistateModelsTests/
 
 ```julia
 using MultistateModelsTests
-MultistateModelsTests.runtests()  # Run unit tests
-MultistateModelsTests.runtests(include_long=true)  # Include long tests
+MultistateModelsTests.runtests()  # Run unit tests only
 ```
 
-### Via Environment Variables
-
-Set `MSM_TEST_LEVEL=full` to include long-running statistical validation tests:
+### Full Test Suite (Unit + Long Tests)
 
 ```bash
-MSM_TEST_LEVEL=full julia --project=. -e 'using Pkg; Pkg.test()'
+MSM_TEST_LEVEL=full julia --project=. -e 'using MultistateModelsTests; MultistateModelsTests.runtests()'
 ```
 
 ### Selective Long Tests
 
-Run specific long tests by setting environment variables:
+Run a specific long test suite by setting `MSM_LONGTEST_ONLY`:
 
 ```bash
-# Run only phase-type long tests
-MSM_LONGTEST_PHASETYPE=1 MSM_TEST_LEVEL=full julia --project=. -e 'using Pkg; Pkg.test()'
+# Run only phasetype long tests
+MSM_LONGTEST_ONLY=phasetype MSM_TEST_LEVEL=full julia --project=. -e 'using MultistateModelsTests; MultistateModelsTests.runtests()'
 
-# Run only MCEM long tests  
-MSM_LONGTEST_MCEM=1 MSM_TEST_LEVEL=full julia --project=. -e 'using Pkg; Pkg.test()'
+# Run only MCEM parametric long tests  
+MSM_LONGTEST_ONLY=mcem_parametric MSM_TEST_LEVEL=full julia --project=. -e 'using MultistateModelsTests; MultistateModelsTests.runtests()'
 ```
 
-Available toggles:
-- `MSM_LONGTEST_PHASETYPE` - Phase-type importance sampling validation
-- `MSM_LONGTEST_MCEM` - MCEM fitting validation
-- `MSM_LONGTEST_SIMULATION` - Simulation distribution tests
-- `MSM_LONGTEST_VARIANCE_VALIDATION` - Variance estimation validation
+Available test keys:
+- `exact_data` - Exact data direct MLE
+- `mcem_parametric` - MCEM with parametric hazards
+- `mcem_splines` - MCEM with spline hazards
+- `mcem_tvc` - MCEM with time-varying covariates
+- `sim_dist` - Simulation distribution fidelity
+- `sim_tvc` - Simulation with TVCs
+- `robust_exact` - Robust variance (parametric)
+- `markov_phasetype_validation` - Markov/PhaseType consistency
+- `phasetype` - Phase-type proposals (exact + panel)
+- `variance_validation` - Variance estimation validation
 
-### Long Tests Only
+### Long Tests Only (via scripts)
 
 ```bash
-MSM_LONGTEST_ONLY=1 MSM_TEST_LEVEL=full julia --project=. -e 'using Pkg; Pkg.test()'
+julia --project=. scripts/run_longtests.jl
 ```
 
 ## Test Categories

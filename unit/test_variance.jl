@@ -10,6 +10,7 @@
 
 using .TestFixtures
 using LinearAlgebra
+using Logging
 
 @testset "get_vcov API" begin
     using MultistateModels: get_vcov
@@ -59,8 +60,12 @@ using LinearAlgebra
         fitted = fit(model; verbose=false, compute_vcov=true, compute_ij_vcov=false, compute_jk_vcov=false)
         
         @test !isnothing(get_vcov(fitted; type=:model))
-        @test isnothing(get_vcov(fitted; type=:ij))
-        @test isnothing(get_vcov(fitted; type=:jk))
+        
+        # Suppress warnings about missing variance matrices
+        with_logger(NullLogger()) do
+            @test isnothing(get_vcov(fitted; type=:ij))
+            @test isnothing(get_vcov(fitted; type=:jk))
+        end
     end
 end
 

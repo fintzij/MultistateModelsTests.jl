@@ -96,14 +96,17 @@ cd MultistateModelsTests/reports
 quarto render
 ```
 
-### Recording Test Results
+### Running Tests and Recording Results
 
-```julia
-# After running tests manually
-include("scripts/test_cache.jl")
-record_test_result(:hazards, passed=15, failed=0, errors=0)
-record_test_result(:simulation, passed=8, failed=0, errors=0)
+```bash
+# Run full test suite with automatic cache recording
+julia --project=. -e 'using MultistateModelsTests; MultistateModelsTests.runtests()'
+
+# Or run with the dedicated script
+julia --project=. scripts/run_all_tests.jl
 ```
+
+Test results are automatically cached when running via `runtests()`.
 
 ### Checking Cache Status
 

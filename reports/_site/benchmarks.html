@@ -176,40 +176,20 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#overview" id="toc-overview" class="nav-link active" data-scroll-target="#overview">Overview</a></li>
-  <li><a href="#resampling-method-comparison" id="toc-resampling-method-comparison" class="nav-link" data-scroll-target="#resampling-method-comparison">Resampling Method Comparison</a>
-  <ul class="collapse">
-  <li><a href="#methods-compared" id="toc-methods-compared" class="nav-link" data-scroll-target="#methods-compared">Methods Compared</a></li>
-  <li><a href="#test-configuration" id="toc-test-configuration" class="nav-link" data-scroll-target="#test-configuration">Test Configuration</a></li>
-  <li><a href="#benchmark-results" id="toc-benchmark-results" class="nav-link" data-scroll-target="#benchmark-results">Benchmark Results</a></li>
-  <li><a href="#detailed-timing-breakdown" id="toc-detailed-timing-breakdown" class="nav-link" data-scroll-target="#detailed-timing-breakdown">Detailed Timing Breakdown</a></li>
-  <li><a href="#key-findings" id="toc-key-findings" class="nav-link" data-scroll-target="#key-findings">Key Findings</a></li>
-  </ul></li>
-  <li><a href="#squarem-acceleration" id="toc-squarem-acceleration" class="nav-link" data-scroll-target="#squarem-acceleration">SQUAREM Acceleration</a>
-  <ul class="collapse">
-  <li><a href="#algorithm-comparison" id="toc-algorithm-comparison" class="nav-link" data-scroll-target="#algorithm-comparison">Algorithm Comparison</a></li>
-  <li><a href="#convergence-statistics" id="toc-convergence-statistics" class="nav-link" data-scroll-target="#convergence-statistics">Convergence Statistics</a></li>
-  </ul></li>
+  <li><a href="#benchmark-results" id="toc-benchmark-results" class="nav-link active" data-scroll-target="#benchmark-results">Benchmark Results</a></li>
   <li><a href="#scalability-analysis" id="toc-scalability-analysis" class="nav-link" data-scroll-target="#scalability-analysis">Scalability Analysis</a>
   <ul class="collapse">
   <li><a href="#sample-size-scaling" id="toc-sample-size-scaling" class="nav-link" data-scroll-target="#sample-size-scaling">Sample Size Scaling</a></li>
-  <li><a href="#complexity-analysis" id="toc-complexity-analysis" class="nav-link" data-scroll-target="#complexity-analysis">Complexity Analysis</a></li>
-  <li><a href="#memory-usage" id="toc-memory-usage" class="nav-link" data-scroll-target="#memory-usage">Memory Usage</a></li>
   </ul></li>
+  <li><a href="#squarem-acceleration" id="toc-squarem-acceleration" class="nav-link" data-scroll-target="#squarem-acceleration">SQUAREM Acceleration</a></li>
   <li><a href="#threading-performance" id="toc-threading-performance" class="nav-link" data-scroll-target="#threading-performance">Threading Performance</a>
   <ul class="collapse">
-  <li><a href="#parallel-likelihood-computation" id="toc-parallel-likelihood-computation" class="nav-link" data-scroll-target="#parallel-likelihood-computation">Parallel Likelihood Computation</a></li>
+  <li><a href="#complexity-analysis" id="toc-complexity-analysis" class="nav-link" data-scroll-target="#complexity-analysis">Complexity Analysis</a></li>
   <li><a href="#threading-recommendations" id="toc-threading-recommendations" class="nav-link" data-scroll-target="#threading-recommendations">Threading Recommendations</a></li>
-  <li><a href="#getting-thread-count" id="toc-getting-thread-count" class="nav-link" data-scroll-target="#getting-thread-count">Getting Thread Count</a></li>
   </ul></li>
-  <li><a href="#phase-type-proposal-performance" id="toc-phase-type-proposal-performance" class="nav-link" data-scroll-target="#phase-type-proposal-performance">Phase-Type Proposal Performance</a>
+  <li><a href="#phase-type-proposal-performance" id="toc-phase-type-proposal-performance" class="nav-link" data-scroll-target="#phase-type-proposal-performance">Phase-Type Proposal Performance</a></li>
+  <li><a href="#running-benchmarks" id="toc-running-benchmarks" class="nav-link" data-scroll-target="#running-benchmarks">Running Benchmarks</a>
   <ul class="collapse">
-  <li><a href="#acceptance-rate-comparison" id="toc-acceptance-rate-comparison" class="nav-link" data-scroll-target="#acceptance-rate-comparison">Acceptance Rate Comparison</a></li>
-  <li><a href="#when-to-use-phase-type-proposals" id="toc-when-to-use-phase-type-proposals" class="nav-link" data-scroll-target="#when-to-use-phase-type-proposals">When to Use Phase-Type Proposals</a></li>
-  </ul></li>
-  <li><a href="#benchmark-suite" id="toc-benchmark-suite" class="nav-link" data-scroll-target="#benchmark-suite">Benchmark Suite</a>
-  <ul class="collapse">
-  <li><a href="#running-benchmarks" id="toc-running-benchmarks" class="nav-link" data-scroll-target="#running-benchmarks">Running Benchmarks</a></li>
   <li><a href="#benchmark-environment" id="toc-benchmark-environment" class="nav-link" data-scroll-target="#benchmark-environment">Benchmark Environment</a></li>
   </ul></li>
   <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a>
@@ -219,7 +199,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#memory-management" id="toc-memory-management" class="nav-link" data-scroll-target="#memory-management">Memory Management</a></li>
   </ul></li>
   </ul>
-<div class="toc-actions"><ul><li><a href="https://github.com/fintzij/MultistateModels.jl/blob/main/benchmarks.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/fintzij/MultistateModels.jl/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+<div class="toc-actions"><ul><li><a href="https://github.com/fintzij/MultistateModelsTests.jl/blob/main/benchmarks.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/fintzij/MultistateModelsTests.jl/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
@@ -244,383 +224,95 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="overview" class="level2">
-<h2 class="anchored" data-anchor-id="overview">Overview</h2>
-<p>This report provides performance benchmarks for MultistateModels.jl, covering:</p>
-<ol type="1">
-<li><strong>SIR Resampling Methods</strong>: Comparison of importance sampling strategies</li>
-<li><strong>SQUAREM Acceleration</strong>: EM vs accelerated EM convergence</li>
-<li><strong>Scalability</strong>: Performance across different sample sizes</li>
-<li><strong>Threading</strong>: Parallel likelihood computation scaling</li>
-</ol>
-</section>
-<section id="resampling-method-comparison" class="level2">
-<h2 class="anchored" data-anchor-id="resampling-method-comparison">Resampling Method Comparison</h2>
-<section id="methods-compared" class="level3">
-<h3 class="anchored" data-anchor-id="methods-compared">Methods Compared</h3>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 25%">
-<col style="width: 41%">
-<col style="width: 32%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Method</th>
-<th>Description</th>
-<th>Use Case</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><code>:none</code></td>
-<td>Importance-weighted (no resampling)</td>
-<td>Baseline reference</td>
-</tr>
-<tr class="even">
-<td><code>:sir</code></td>
-<td>Standard SIR with Pareto smoothing</td>
-<td>General purpose</td>
-</tr>
-<tr class="odd">
-<td><code>:lhs</code></td>
-<td>Latin Hypercube Stratified resampling</td>
-<td>Better tail coverage</td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="test-configuration" class="level3">
-<h3 class="anchored" data-anchor-id="test-configuration">Test Configuration</h3>
-<div id="cdf5b1ad" class="cell" data-execution_count="2">
-<details open="" class="code-fold">
-<summary>Show code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> BENCHMARK_CONFIG <span class="op">=</span> (</span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    n_subjects <span class="op">=</span> <span class="fl">200</span>,</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    max_time <span class="op">=</span> <span class="fl">10.0</span>,</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    n_replicates <span class="op">=</span> <span class="fl">3</span>,</span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    mcem_tol <span class="op">=</span> <span class="fl">0.02</span>,</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    mcem_max_iter <span class="op">=</span> <span class="fl">50</span>,</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co"># True Weibull parameters for progressive model (1→2→3)</span></span>
-<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> TRUE_PARAMS <span class="op">=</span> (</span>
-<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    h12_shape <span class="op">=</span> <span class="fl">1.1</span>,</span>
-<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    h12_scale <span class="op">=</span> <span class="fl">0.15</span>,</span>
-<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    h23_shape <span class="op">=</span> <span class="fl">1.2</span>,</span>
-<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    h23_scale <span class="op">=</span> <span class="fl">0.20</span>,</span>
-<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
+<section id="benchmark-results" class="level2">
+<h2 class="anchored" data-anchor-id="benchmark-results">Benchmark Results</h2>
+<p><strong>Note</strong>: These results are generated from <code>MultistateModelsTests/benchmarks/run_benchmarks.jl</code>. Last run: December 2025.</p>
+<div id="de2dbe08" class="cell" data-execution_count="2">
 <div class="cell-output cell-output-display" data-execution_count="3">
-<pre><code>(h12_shape = 1.1, h12_scale = 0.15, h23_shape = 1.2, h23_scale = 0.2)</code></pre>
-</div>
-</div>
-</section>
-<section id="benchmark-results" class="level3">
-<h3 class="anchored" data-anchor-id="benchmark-results">Benchmark Results</h3>
-<div id="cell-fig-sir-comparison" class="cell" data-fig-height="6" data-execution_count="3">
-<details class="code-fold">
-<summary>Show code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Simulated benchmark results (in practice, run actual fits)</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="co"># These represent typical observed patterns</span></span>
-<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>methods <span class="op">=</span> [<span class="st">":none"</span>, <span class="st">":sir"</span>, <span class="st">":lhs"</span>]</span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>runtimes <span class="op">=</span> [<span class="fl">45.2</span>, <span class="fl">52.3</span>, <span class="fl">58.1</span>]  <span class="co"># seconds</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>rel_errors <span class="op">=</span> [<span class="fl">8.2</span>, <span class="fl">7.5</span>, <span class="fl">7.1</span>]   <span class="co"># mean relative error (%)</span></span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>ess_ratios <span class="op">=</span> [<span class="fl">1.0</span>, <span class="fl">0.85</span>, <span class="fl">0.92</span>] <span class="co"># effective sample size ratio</span></span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> <span class="fu">Figure</span>(size<span class="op">=</span>(<span class="fl">900</span>, <span class="fl">400</span>))</span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Runtime comparison</span></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>ax1 <span class="op">=</span> <span class="fu">Axis</span>(fig[<span class="fl">1</span>, <span class="fl">1</span>],</span>
-<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    xlabel<span class="op">=</span><span class="st">"Method"</span>,</span>
-<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    ylabel<span class="op">=</span><span class="st">"Runtime (seconds)"</span>,</span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    title<span class="op">=</span><span class="st">"Fitting Runtime"</span>,</span>
-<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>    xticks<span class="op">=</span>(<span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, methods))</span>
-<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="fu">barplot!</span>(ax1, <span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, runtimes, color<span class="op">=:</span>steelblue)</span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="fu">errorbars!</span>(ax1, <span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, runtimes, <span class="fu">fill</span>(<span class="fl">3.0</span>, <span class="fl">3</span>), <span class="fu">fill</span>(<span class="fl">3.0</span>, <span class="fl">3</span>), color<span class="op">=:</span>black)</span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Accuracy comparison</span></span>
-<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>ax2 <span class="op">=</span> <span class="fu">Axis</span>(fig[<span class="fl">1</span>, <span class="fl">2</span>],</span>
-<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>    xlabel<span class="op">=</span><span class="st">"Method"</span>,</span>
-<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>    ylabel<span class="op">=</span><span class="st">"Mean Relative Error (%)"</span>,</span>
-<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>    title<span class="op">=</span><span class="st">"Parameter Recovery Accuracy"</span>,</span>
-<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>    xticks<span class="op">=</span>(<span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, methods))</span>
-<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a><span class="fu">barplot!</span>(ax2, <span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, rel_errors, color<span class="op">=:</span>orange)</span>
-<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a><span class="fu">errorbars!</span>(ax2, <span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, rel_errors, <span class="fu">fill</span>(<span class="fl">1.5</span>, <span class="fl">3</span>), <span class="fu">fill</span>(<span class="fl">1.5</span>, <span class="fl">3</span>), color<span class="op">=:</span>black)</span>
-<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a><span class="co"># ESS comparison</span></span>
-<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>ax3 <span class="op">=</span> <span class="fu">Axis</span>(fig[<span class="fl">1</span>, <span class="fl">3</span>],</span>
-<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>    xlabel<span class="op">=</span><span class="st">"Method"</span>,</span>
-<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>    ylabel<span class="op">=</span><span class="st">"ESS Ratio"</span>,</span>
-<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>    title<span class="op">=</span><span class="st">"Effective Sample Size"</span>,</span>
-<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>    xticks<span class="op">=</span>(<span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, methods))</span>
-<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a><span class="fu">barplot!</span>(ax3, <span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, ess_ratios, color<span class="op">=:</span>green)</span>
-<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>fig</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
-<div class="cell-output cell-output-display" data-execution_count="4">
-<div id="fig-sir-comparison" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-sir-comparison-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="benchmarks_files/figure-html/fig-sir-comparison-output-1.svg" class="img-fluid figure-img">
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-sir-comparison-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;1: SIR Method Comparison: Runtime and Accuracy
-</figcaption>
-</figure>
-</div>
-</div>
-</div>
-</section>
-<section id="detailed-timing-breakdown" class="level3">
-<h3 class="anchored" data-anchor-id="detailed-timing-breakdown">Detailed Timing Breakdown</h3>
-<div id="5f4e4c42" class="cell" data-execution_count="4">
-<div class="cell-output cell-output-display" data-execution_count="5">
-<div><div style="float: left;"><span>7×4 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
+<div><div style="float: left;"><span>1×2 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
 <table class="data-frame caption-top table table-sm table-striped small">
 <thead>
 <tr class="header">
 <th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Row</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">Component</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">None_ms</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">SIR_ms</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">LHS_ms</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Threads</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Runtime</th>
 </tr>
 <tr class="subheader headerLastRow even">
 <th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;"></th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="Int64">Int64</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="Int64">Int64</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="Int64">Int64</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
-<td style="text-align: left;">Initialization</td>
-<td style="text-align: right;">12</td>
-<td style="text-align: right;">12</td>
-<td style="text-align: right;">12</td>
-</tr>
-<tr class="even">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
-<td style="text-align: left;">E-step (path sampling)</td>
-<td style="text-align: right;">180</td>
-<td style="text-align: right;">180</td>
-<td style="text-align: right;">180</td>
-</tr>
-<tr class="odd">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">3</td>
-<td style="text-align: left;">E-step (weight computation)</td>
-<td style="text-align: right;">45</td>
-<td style="text-align: right;">45</td>
-<td style="text-align: right;">45</td>
-</tr>
-<tr class="even">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
-<td style="text-align: left;">M-step (optimization)</td>
-<td style="text-align: right;">95</td>
-<td style="text-align: right;">95</td>
-<td style="text-align: right;">95</td>
-</tr>
-<tr class="odd">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">5</td>
-<td style="text-align: left;">SIR resampling</td>
-<td style="text-align: right;">0</td>
-<td style="text-align: right;">35</td>
-<td style="text-align: right;">55</td>
-</tr>
-<tr class="even">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">6</td>
-<td style="text-align: left;">Convergence check</td>
-<td style="text-align: right;">5</td>
-<td style="text-align: right;">8</td>
-<td style="text-align: right;">8</td>
-</tr>
-<tr class="odd">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">7</td>
-<td style="text-align: left;">Total per iteration</td>
-<td style="text-align: right;">337</td>
-<td style="text-align: right;">375</td>
-<td style="text-align: right;">395</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-</div>
-</section>
-<section id="key-findings" class="level3">
-<h3 class="anchored" data-anchor-id="key-findings">Key Findings</h3>
-<ol type="1">
-<li><strong>Runtime</strong>: LHS is ~15% slower than no-SIR due to stratification overhead</li>
-<li><strong>Accuracy</strong>: All methods achieve similar parameter recovery</li>
-<li><strong>Diagnostics</strong>: SIR/LHS provide Pareto-k diagnostics for proposal quality assessment</li>
-<li><strong>Recommendation</strong>: Use <code>:sir</code> for general purposes; <code>:lhs</code> when tail coverage is critical</li>
-</ol>
-</section>
-</section>
-<section id="squarem-acceleration" class="level2">
-<h2 class="anchored" data-anchor-id="squarem-acceleration">SQUAREM Acceleration</h2>
-<section id="algorithm-comparison" class="level3">
-<h3 class="anchored" data-anchor-id="algorithm-comparison">Algorithm Comparison</h3>
-<p><strong>Standard EM</strong>: - Linear convergence rate - Stable but slow - Simple implementation</p>
-<p><strong>SQUAREM (Squared Iterative Methods)</strong>: - Accelerated convergence - Maintains EM monotonicity - 2-5x fewer iterations typically</p>
-<div id="cell-fig-squarem" class="cell" data-fig-height="5" data-execution_count="5">
-<details class="code-fold">
-<summary>Show code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Simulated convergence trajectories</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>iterations_em <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">50</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>iterations_sq <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fl">20</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Log-likelihood trajectories (simulated)</span></span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="bu">Random</span>.<span class="fu">seed!</span>(<span class="fl">42</span>)</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>ll_final <span class="op">=</span> <span class="op">-</span><span class="fl">1500.0</span></span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>ll_start <span class="op">=</span> <span class="op">-</span><span class="fl">2500.0</span></span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="co"># EM: slow exponential approach</span></span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>ll_em <span class="op">=</span> ll_final <span class="op">.+</span> (ll_start <span class="op">-</span> ll_final) <span class="op">.*</span> <span class="fu">exp</span>.(<span class="op">-</span><span class="fl">0.08</span> <span class="op">.*</span> iterations_em)</span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="co"># SQUAREM: faster convergence with slight oscillation</span></span>
-<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>ll_sq <span class="op">=</span> ll_final <span class="op">.+</span> (ll_start <span class="op">-</span> ll_final) <span class="op">.*</span> <span class="fu">exp</span>.(<span class="op">-</span><span class="fl">0.25</span> <span class="op">.*</span> iterations_sq) <span class="op">.*</span> </span>
-<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>        (<span class="fl">1</span> <span class="op">.+</span> <span class="fl">0.02</span> <span class="op">.*</span> <span class="fu">sin</span>.(<span class="fl">0.5</span> <span class="op">.*</span> iterations_sq))</span>
-<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> <span class="fu">Figure</span>(size<span class="op">=</span>(<span class="fl">700</span>, <span class="fl">400</span>))</span>
-<span id="cb4-18"><a href="#cb4-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-19"><a href="#cb4-19" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> <span class="fu">Axis</span>(fig[<span class="fl">1</span>, <span class="fl">1</span>],</span>
-<span id="cb4-20"><a href="#cb4-20" aria-hidden="true" tabindex="-1"></a>    xlabel<span class="op">=</span><span class="st">"Iteration"</span>,</span>
-<span id="cb4-21"><a href="#cb4-21" aria-hidden="true" tabindex="-1"></a>    ylabel<span class="op">=</span><span class="st">"Log-likelihood"</span>,</span>
-<span id="cb4-22"><a href="#cb4-22" aria-hidden="true" tabindex="-1"></a>    title<span class="op">=</span><span class="st">"Convergence: Standard EM vs SQUAREM"</span>)</span>
-<span id="cb4-23"><a href="#cb4-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-24"><a href="#cb4-24" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax, iterations_em, ll_em, label<span class="op">=</span><span class="st">"Standard EM"</span>, linewidth<span class="op">=</span><span class="fl">2</span>, color<span class="op">=:</span>steelblue)</span>
-<span id="cb4-25"><a href="#cb4-25" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax, iterations_sq, ll_sq, label<span class="op">=</span><span class="st">"SQUAREM"</span>, linewidth<span class="op">=</span><span class="fl">2</span>, color<span class="op">=:</span>orange)</span>
-<span id="cb4-26"><a href="#cb4-26" aria-hidden="true" tabindex="-1"></a><span class="fu">hlines!</span>(ax, [ll_final], linestyle<span class="op">=:</span>dash, color<span class="op">=:</span>gray, linewidth<span class="op">=</span><span class="fl">1</span>)</span>
-<span id="cb4-27"><a href="#cb4-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-28"><a href="#cb4-28" aria-hidden="true" tabindex="-1"></a><span class="co"># Mark convergence points</span></span>
-<span id="cb4-29"><a href="#cb4-29" aria-hidden="true" tabindex="-1"></a><span class="fu">scatter!</span>(ax, [<span class="fl">45</span>], [ll_em[<span class="fl">45</span>]], markersize<span class="op">=</span><span class="fl">12</span>, color<span class="op">=:</span>steelblue, marker<span class="op">=:</span>star5)</span>
-<span id="cb4-30"><a href="#cb4-30" aria-hidden="true" tabindex="-1"></a><span class="fu">scatter!</span>(ax, [<span class="fl">18</span>], [ll_sq[<span class="fl">18</span>]], markersize<span class="op">=</span><span class="fl">12</span>, color<span class="op">=:</span>orange, marker<span class="op">=:</span>star5)</span>
-<span id="cb4-31"><a href="#cb4-31" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-32"><a href="#cb4-32" aria-hidden="true" tabindex="-1"></a><span class="fu">axislegend</span>(ax, position<span class="op">=:</span>rb)</span>
-<span id="cb4-33"><a href="#cb4-33" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-34"><a href="#cb4-34" aria-hidden="true" tabindex="-1"></a>fig</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
-<div class="cell-output cell-output-display" data-execution_count="6">
-<div id="fig-squarem" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-squarem-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="benchmarks_files/figure-html/fig-squarem-output-1.svg" class="img-fluid figure-img">
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-squarem-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;2: SQUAREM vs Standard EM Convergence
-</figcaption>
-</figure>
-</div>
-</div>
-</div>
-</section>
-<section id="convergence-statistics" class="level3">
-<h3 class="anchored" data-anchor-id="convergence-statistics">Convergence Statistics</h3>
-<div id="873f9cec" class="cell" data-execution_count="6">
-<div class="cell-output cell-output-display" data-execution_count="7">
-<div><div style="float: left;"><span>2×5 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
-<table class="data-frame caption-top table table-sm table-striped small">
-<thead>
-<tr class="header">
-<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Row</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">Algorithm</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">MedianIterations</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">MeanRuntime_s</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">ConvergenceRate</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">SpeedupFactor</th>
-</tr>
-<tr class="subheader headerLastRow even">
-<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;"></th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
 <th style="text-align: left;" data-quarto-table-cell-role="th" title="Int64">Int64</th>
 <th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
-<td style="text-align: left;">Standard EM</td>
-<td style="text-align: right;">42</td>
-<td style="text-align: right;">156.3</td>
-<td style="text-align: left;">0.95</td>
-<td style="text-align: left;">1.0x</td>
-</tr>
-<tr class="even">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
-<td style="text-align: left;">SQUAREM</td>
-<td style="text-align: right;">16</td>
-<td style="text-align: right;">62.4</td>
-<td style="text-align: left;">0.97</td>
-<td style="text-align: left;">2.5x</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0.012526</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
 </div>
-</section>
 </section>
 <section id="scalability-analysis" class="level2">
 <h2 class="anchored" data-anchor-id="scalability-analysis">Scalability Analysis</h2>
 <section id="sample-size-scaling" class="level3">
 <h3 class="anchored" data-anchor-id="sample-size-scaling">Sample Size Scaling</h3>
-<div id="cell-fig-scalability" class="cell" data-fig-height="5" data-execution_count="7">
+<div id="cell-fig-scalability" class="cell" data-fig-height="5" data-execution_count="3">
 <details class="code-fold">
 <summary>Show code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Scalability data (simulated typical behavior)</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>sample_sizes <span class="op">=</span> [<span class="fl">100</span>, <span class="fl">200</span>, <span class="fl">500</span>, <span class="fl">1000</span>, <span class="fl">2000</span>, <span class="fl">5000</span>]</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>runtimes_exact <span class="op">=</span> [<span class="fl">2.1</span>, <span class="fl">4.3</span>, <span class="fl">11.2</span>, <span class="fl">23.5</span>, <span class="fl">48.2</span>, <span class="fl">125.3</span>]  <span class="co"># Direct ML</span></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>runtimes_panel <span class="op">=</span> [<span class="fl">15.2</span>, <span class="fl">32.4</span>, <span class="fl">82.1</span>, <span class="fl">168.5</span>, <span class="fl">342.1</span>, <span class="fl">890.2</span>]  <span class="co"># MCEM</span></span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> <span class="fu">Figure</span>(size<span class="op">=</span>(<span class="fl">700</span>, <span class="fl">400</span>))</span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> <span class="fu">Axis</span>(fig[<span class="fl">1</span>, <span class="fl">1</span>],</span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    xlabel<span class="op">=</span><span class="st">"Sample Size (n)"</span>,</span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    ylabel<span class="op">=</span><span class="st">"Runtime (seconds)"</span>,</span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    title<span class="op">=</span><span class="st">"Runtime Scaling"</span>,</span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    xscale<span class="op">=</span>log10,</span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>    yscale<span class="op">=</span>log10,</span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>    xticks<span class="op">=</span>(sample_sizes, <span class="fu">string</span>.(sample_sizes)))</span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="fu">scatter!</span>(ax, sample_sizes, runtimes_exact, label<span class="op">=</span><span class="st">"Exact (direct ML)"</span>, </span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>         markersize<span class="op">=</span><span class="fl">12</span>, color<span class="op">=:</span>steelblue)</span>
-<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax, sample_sizes, runtimes_exact, color<span class="op">=:</span>steelblue, linewidth<span class="op">=</span><span class="fl">2</span>)</span>
-<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a><span class="fu">scatter!</span>(ax, sample_sizes, runtimes_panel, label<span class="op">=</span><span class="st">"Panel (MCEM)"</span>, </span>
-<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>         markersize<span class="op">=</span><span class="fl">12</span>, color<span class="op">=:</span>orange)</span>
-<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax, sample_sizes, runtimes_panel, color<span class="op">=:</span>orange, linewidth<span class="op">=</span><span class="fl">2</span>)</span>
-<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a><span class="co"># Reference lines for O(n) and O(n log n)</span></span>
-<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>ref_n <span class="op">=</span> sample_sizes <span class="op">.*</span> <span class="fl">0.025</span></span>
-<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>ref_nlogn <span class="op">=</span> sample_sizes <span class="op">.*</span> <span class="fu">log</span>.(sample_sizes) <span class="op">.*</span> <span class="fl">0.003</span></span>
-<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax, sample_sizes, ref_n, linestyle<span class="op">=:</span>dash, color<span class="op">=:</span>gray, label<span class="op">=</span><span class="st">"O(n)"</span>)</span>
-<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax, sample_sizes, ref_nlogn, linestyle<span class="op">=:</span>dot, color<span class="op">=:</span>gray, label<span class="op">=</span><span class="st">"O(n log n)"</span>)</span>
-<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a><span class="fu">axislegend</span>(ax, position<span class="op">=:</span>lt)</span>
-<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-32"><a href="#cb5-32" aria-hidden="true" tabindex="-1"></a>fig</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> !<span class="fu">isempty</span>(scalability_df)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    fig <span class="op">=</span> <span class="fu">Figure</span>(size<span class="op">=</span>(<span class="fl">700</span>, <span class="fl">400</span>))</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    ax <span class="op">=</span> <span class="fu">Axis</span>(fig[<span class="fl">1</span>, <span class="fl">1</span>],</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>        xlabel<span class="op">=</span><span class="st">"Sample Size (n)"</span>,</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>        ylabel<span class="op">=</span><span class="st">"Runtime (seconds)"</span>,</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>        title<span class="op">=</span><span class="st">"Runtime Scaling"</span>,</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>        xscale<span class="op">=</span>log10,</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>        yscale<span class="op">=</span>log10,</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>        xticks<span class="op">=</span>(scalability_df.N, <span class="fu">string</span>.(scalability_df.N)))</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    <span class="fu">scatter!</span>(ax, scalability_df.N, scalability_df.Runtime, label<span class="op">=</span><span class="st">"Panel (MCEM)"</span>, </span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>             markersize<span class="op">=</span><span class="fl">12</span>, color<span class="op">=:</span>orange)</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">lines!</span>(ax, scalability_df.N, scalability_df.Runtime, color<span class="op">=:</span>orange, linewidth<span class="op">=</span><span class="fl">2</span>)</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    <span class="fu">axislegend</span>(ax, position<span class="op">=:</span>lt)</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    fig</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    <span class="fu">println</span>(<span class="st">"No scalability data available."</span>)</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="cf">end</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
-<div class="cell-output cell-output-display" data-execution_count="8">
+<div class="cell-output cell-output-display" data-execution_count="4">
 <div id="fig-scalability" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
 <div aria-describedby="fig-scalability-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
 <img src="benchmarks_files/figure-html/fig-scalability-output-1.svg" class="img-fluid figure-img">
 </div>
 <figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-scalability-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;3: Runtime Scaling with Sample Size
+Figure&nbsp;1: Runtime Scaling with Sample Size
 </figcaption>
 </figure>
 </div>
 </div>
 </div>
 </section>
+</section>
+<section id="squarem-acceleration" class="level2">
+<h2 class="anchored" data-anchor-id="squarem-acceleration">SQUAREM Acceleration</h2>
+<div id="288aefcc" class="cell" data-execution_count="4">
+<div class="cell-output cell-output-stdout">
+<pre><code>SQUAREM Runtime (N=200): 0.0104 seconds</code></pre>
+</div>
+</div>
+</section>
+<section id="threading-performance" class="level2">
+<h2 class="anchored" data-anchor-id="threading-performance">Threading Performance</h2>
+<div id="b216dc5a" class="cell" data-execution_count="5">
+<div class="cell-output cell-output-stdout">
+<pre><code>Threading Runtime (Threads=1): 0.0125 seconds</code></pre>
+</div>
+</div>
 <section id="complexity-analysis" class="level3">
 <h3 class="anchored" data-anchor-id="complexity-analysis">Complexity Analysis</h3>
 <table class="caption-top table">
@@ -655,102 +347,10 @@ Figure&nbsp;3: Runtime Scaling with Sample Size
 </tbody>
 </table>
 </section>
-<section id="memory-usage" class="level3">
-<h3 class="anchored" data-anchor-id="memory-usage">Memory Usage</h3>
-<div id="cell-fig-memory" class="cell" data-fig-height="4" data-execution_count="8">
-<details class="code-fold">
-<summary>Show code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>sample_sizes_mem <span class="op">=</span> [<span class="fl">100</span>, <span class="fl">500</span>, <span class="fl">1000</span>, <span class="fl">2000</span>, <span class="fl">5000</span>]</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>memory_exact <span class="op">=</span> [<span class="fl">12</span>, <span class="fl">58</span>, <span class="fl">115</span>, <span class="fl">228</span>, <span class="fl">565</span>]  <span class="co"># MB</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>memory_panel <span class="op">=</span> [<span class="fl">45</span>, <span class="fl">215</span>, <span class="fl">425</span>, <span class="fl">845</span>, <span class="fl">2100</span>]  <span class="co"># MB</span></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> <span class="fu">Figure</span>(size<span class="op">=</span>(<span class="fl">600</span>, <span class="fl">350</span>))</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> <span class="fu">Axis</span>(fig[<span class="fl">1</span>, <span class="fl">1</span>],</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    xlabel<span class="op">=</span><span class="st">"Sample Size (n)"</span>,</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    ylabel<span class="op">=</span><span class="st">"Memory (MB)"</span>,</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    title<span class="op">=</span><span class="st">"Memory Usage"</span>)</span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="fu">barplot!</span>(ax, </span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>    <span class="fu">repeat</span>(<span class="fl">1</span><span class="op">:</span><span class="fl">5</span>, inner<span class="op">=</span><span class="fl">2</span>),</span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">vcat</span>(memory_exact, memory_panel),</span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>    dodge<span class="op">=</span><span class="fu">repeat</span>([<span class="fl">1</span>, <span class="fl">2</span>], <span class="fl">5</span>),</span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>    color<span class="op">=</span><span class="fu">repeat</span>([<span class="op">:</span>steelblue, <span class="op">:</span>orange], <span class="fl">5</span>))</span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Legend</span></span>
-<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a><span class="fu">Legend</span>(fig[<span class="fl">1</span>, <span class="fl">2</span>],</span>
-<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>    [<span class="fu">PolyElement</span>(color<span class="op">=:</span>steelblue), <span class="fu">PolyElement</span>(color<span class="op">=:</span>orange)],</span>
-<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>    [<span class="st">"Exact"</span>, <span class="st">"Panel"</span>])</span>
-<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>fig</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
-<div class="cell-output cell-output-display" data-execution_count="9">
-<div id="fig-memory" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-memory-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="benchmarks_files/figure-html/fig-memory-output-1.svg" class="img-fluid figure-img">
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-memory-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;4: Memory Usage by Sample Size
-</figcaption>
-</figure>
-</div>
-</div>
-</div>
-</section>
-</section>
-<section id="threading-performance" class="level2">
-<h2 class="anchored" data-anchor-id="threading-performance">Threading Performance</h2>
-<section id="parallel-likelihood-computation" class="level3">
-<h3 class="anchored" data-anchor-id="parallel-likelihood-computation">Parallel Likelihood Computation</h3>
-<div id="cell-fig-threading" class="cell" data-fig-height="5" data-execution_count="9">
-<details class="code-fold">
-<summary>Show code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>threads <span class="op">=</span> [<span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">4</span>, <span class="fl">8</span>, <span class="fl">16</span>]</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>speedup_exact <span class="op">=</span> [<span class="fl">1.0</span>, <span class="fl">1.9</span>, <span class="fl">3.5</span>, <span class="fl">6.2</span>, <span class="fl">9.8</span>]</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>speedup_panel <span class="op">=</span> [<span class="fl">1.0</span>, <span class="fl">1.85</span>, <span class="fl">3.3</span>, <span class="fl">5.8</span>, <span class="fl">8.5</span>]</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Ideal linear speedup for reference</span></span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>speedup_ideal <span class="op">=</span> <span class="fu">Float64</span>.(threads)</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> <span class="fu">Figure</span>(size<span class="op">=</span>(<span class="fl">700</span>, <span class="fl">400</span>))</span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> <span class="fu">Axis</span>(fig[<span class="fl">1</span>, <span class="fl">1</span>],</span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    xlabel<span class="op">=</span><span class="st">"Number of Threads"</span>,</span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    ylabel<span class="op">=</span><span class="st">"Speedup (×)"</span>,</span>
-<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>    title<span class="op">=</span><span class="st">"Parallel Scaling"</span>)</span>
-<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax, threads, speedup_ideal, label<span class="op">=</span><span class="st">"Ideal"</span>, linestyle<span class="op">=:</span>dash, </span>
-<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>       color<span class="op">=:</span>gray, linewidth<span class="op">=</span><span class="fl">2</span>)</span>
-<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a><span class="fu">scatter!</span>(ax, threads, speedup_exact, label<span class="op">=</span><span class="st">"Exact data"</span>, </span>
-<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>         markersize<span class="op">=</span><span class="fl">12</span>, color<span class="op">=:</span>steelblue)</span>
-<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax, threads, speedup_exact, color<span class="op">=:</span>steelblue, linewidth<span class="op">=</span><span class="fl">2</span>)</span>
-<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a><span class="fu">scatter!</span>(ax, threads, speedup_panel, label<span class="op">=</span><span class="st">"Panel data"</span>, </span>
-<span id="cb7-21"><a href="#cb7-21" aria-hidden="true" tabindex="-1"></a>         markersize<span class="op">=</span><span class="fl">12</span>, color<span class="op">=:</span>orange)</span>
-<span id="cb7-22"><a href="#cb7-22" aria-hidden="true" tabindex="-1"></a><span class="fu">lines!</span>(ax, threads, speedup_panel, color<span class="op">=:</span>orange, linewidth<span class="op">=</span><span class="fl">2</span>)</span>
-<span id="cb7-23"><a href="#cb7-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-24"><a href="#cb7-24" aria-hidden="true" tabindex="-1"></a><span class="fu">axislegend</span>(ax, position<span class="op">=:</span>lt)</span>
-<span id="cb7-25"><a href="#cb7-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-26"><a href="#cb7-26" aria-hidden="true" tabindex="-1"></a>fig</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
-<div class="cell-output cell-output-display" data-execution_count="10">
-<div id="fig-threading" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-threading-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="benchmarks_files/figure-html/fig-threading-output-1.svg" class="img-fluid figure-img">
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-threading-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;5: Parallel Speedup with Number of Threads
-</figcaption>
-</figure>
-</div>
-</div>
-</div>
-</section>
 <section id="threading-recommendations" class="level3">
 <h3 class="anchored" data-anchor-id="threading-recommendations">Threading Recommendations</h3>
-<div id="002da070" class="cell" data-execution_count="10">
-<div class="cell-output cell-output-display" data-execution_count="11">
+<div id="428a6f23" class="cell" data-execution_count="6">
+<div class="cell-output cell-output-display" data-execution_count="7">
 <div><div style="float: left;"><span>4×3 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
 <table class="data-frame caption-top table table-sm table-striped small">
 <thead>
@@ -798,130 +398,24 @@ Figure&nbsp;5: Parallel Speedup with Number of Threads
 </div>
 </div>
 </section>
-<section id="getting-thread-count" class="level3">
-<h3 class="anchored" data-anchor-id="getting-thread-count">Getting Thread Count</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Check available physical cores</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>MultistateModels.<span class="fu">get_physical_cores</span>()</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Get recommended threads</span></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>MultistateModels.<span class="fu">recommended_nthreads</span>()</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit with specific thread count</span></span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>fitted_model <span class="op">=</span> <span class="fu">fit</span>(model; nthreads<span class="op">=</span><span class="fl">4</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</section>
 </section>
 <section id="phase-type-proposal-performance" class="level2">
 <h2 class="anchored" data-anchor-id="phase-type-proposal-performance">Phase-Type Proposal Performance</h2>
-<section id="acceptance-rate-comparison" class="level3">
-<h3 class="anchored" data-anchor-id="acceptance-rate-comparison">Acceptance Rate Comparison</h3>
-<div id="cell-fig-phasetype-perf" class="cell" data-fig-height="5" data-execution_count="11">
-<details class="code-fold">
-<summary>Show code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>families <span class="op">=</span> [<span class="st">"Exponential"</span>, <span class="st">"Weibull</span><span class="sc">\n</span><span class="st">(shape=1.5)"</span>, <span class="st">"Weibull</span><span class="sc">\n</span><span class="st">(shape=2.5)"</span>, <span class="st">"Gompertz"</span>]</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>markov_rates <span class="op">=</span> [<span class="fl">95</span>, <span class="fl">65</span>, <span class="fl">35</span>, <span class="fl">45</span>]  <span class="co"># Markov proposal acceptance %</span></span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>phasetype_rates <span class="op">=</span> [<span class="fl">95</span>, <span class="fl">85</span>, <span class="fl">75</span>, <span class="fl">80</span>]  <span class="co"># Phase-type proposal acceptance %</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> <span class="fu">Figure</span>(size<span class="op">=</span>(<span class="fl">700</span>, <span class="fl">400</span>))</span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> <span class="fu">Axis</span>(fig[<span class="fl">1</span>, <span class="fl">1</span>],</span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>    xlabel<span class="op">=</span><span class="st">"Hazard Family"</span>,</span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>    ylabel<span class="op">=</span><span class="st">"Acceptance Rate (%)"</span>,</span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    title<span class="op">=</span><span class="st">"MCEM Proposal Acceptance Rates"</span>,</span>
-<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>    xticks<span class="op">=</span>(<span class="fl">1</span><span class="op">:</span><span class="fl">4</span>, families))</span>
-<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a><span class="fu">barplot!</span>(ax, </span>
-<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>    <span class="fu">repeat</span>(<span class="fl">1</span><span class="op">:</span><span class="fl">4</span>, inner<span class="op">=</span><span class="fl">2</span>),</span>
-<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>    <span class="fu">vcat</span>(markov_rates, phasetype_rates),</span>
-<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>    dodge<span class="op">=</span><span class="fu">repeat</span>([<span class="fl">1</span>, <span class="fl">2</span>], <span class="fl">4</span>),</span>
-<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>    color<span class="op">=</span><span class="fu">repeat</span>([<span class="op">:</span>steelblue, <span class="op">:</span>orange], <span class="fl">4</span>))</span>
-<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a><span class="co"># Reference line at 50%</span></span>
-<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a><span class="fu">hlines!</span>(ax, [<span class="fl">50</span>], linestyle<span class="op">=:</span>dash, color<span class="op">=:</span>gray)</span>
-<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a><span class="fu">Legend</span>(fig[<span class="fl">1</span>, <span class="fl">2</span>],</span>
-<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>    [<span class="fu">PolyElement</span>(color<span class="op">=:</span>steelblue), <span class="fu">PolyElement</span>(color<span class="op">=:</span>orange)],</span>
-<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>    [<span class="st">"Markov"</span>, <span class="st">"Phase-Type"</span>])</span>
-<span id="cb9-25"><a href="#cb9-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-26"><a href="#cb9-26" aria-hidden="true" tabindex="-1"></a>fig</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</details>
-<div class="cell-output cell-output-display" data-execution_count="12">
-<div id="fig-phasetype-perf" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-phasetype-perf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="benchmarks_files/figure-html/fig-phasetype-perf-output-1.svg" class="img-fluid figure-img">
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-phasetype-perf-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;6: Proposal Acceptance Rates by Hazard Family
-</figcaption>
-</figure>
-</div>
-</div>
-</div>
+<p><em>Benchmark pending implementation.</em></p>
 </section>
-<section id="when-to-use-phase-type-proposals" class="level3">
-<h3 class="anchored" data-anchor-id="when-to-use-phase-type-proposals">When to Use Phase-Type Proposals</h3>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>Scenario</th>
-<th>Recommendation</th>
-<th>Reason</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>Exponential hazards</td>
-<td>Markov</td>
-<td>Exact proposal (100% acceptance)</td>
-</tr>
-<tr class="even">
-<td>Weibull, shape &lt; 1.5</td>
-<td>Markov</td>
-<td>Good approximation</td>
-</tr>
-<tr class="odd">
-<td>Weibull, shape &gt; 1.5</td>
-<td>Phase-Type</td>
-<td>Markov acceptance drops</td>
-</tr>
-<tr class="even">
-<td>Gompertz</td>
-<td>Phase-Type</td>
-<td>Better moment matching</td>
-</tr>
-<tr class="odd">
-<td>Spline hazards</td>
-<td>Phase-Type</td>
-<td>Non-parametric flexibility</td>
-</tr>
-</tbody>
-</table>
-</section>
-</section>
-<section id="benchmark-suite" class="level2">
-<h2 class="anchored" data-anchor-id="benchmark-suite">Benchmark Suite</h2>
-<section id="running-benchmarks" class="level3">
-<h3 class="anchored" data-anchor-id="running-benchmarks">Running Benchmarks</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Full benchmark suite</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="ex">julia</span> <span class="at">--project</span><span class="op">=</span>MultistateModelsTests benchmarks/run_benchmarks.jl</span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Quick benchmarks (smaller sample sizes)</span></span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="ex">julia</span> <span class="at">--project</span><span class="op">=</span>MultistateModelsTests benchmarks/run_benchmarks.jl <span class="at">--quick</span></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Specific benchmark</span></span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="ex">julia</span> <span class="at">--project</span><span class="op">=</span>MultistateModelsTests <span class="at">-e</span> <span class="st">'</span></span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="st">    include("benchmarks/sir_comparison.jl")</span></span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="st">'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</section>
+<section id="running-benchmarks" class="level2">
+<h2 class="anchored" data-anchor-id="running-benchmarks">Running Benchmarks</h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Full benchmark suite</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ex">julia</span> <span class="at">--project</span><span class="op">=</span>MultistateModelsTests MultistateModelsTests/benchmarks/run_benchmarks.jl</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <section id="benchmark-environment" class="level3">
 <h3 class="anchored" data-anchor-id="benchmark-environment">Benchmark Environment</h3>
-<div id="0cade7e5" class="cell" data-execution_count="12">
+<div id="0a9a6a3b" class="cell" data-execution_count="7">
 <details open="" class="code-fold">
 <summary>Show code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># System information for reproducibility</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"Julia version: "</span>, <span class="cn">VERSION</span>)</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"Threads available: "</span>, <span class="bu">Threads</span>.<span class="fu">nthreads</span>())</span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="co"># println("Physical cores: ", MultistateModels.get_physical_cores())</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># System information for reproducibility</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"Julia version: "</span>, <span class="cn">VERSION</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="fu">println</span>(<span class="st">"Threads available: "</span>, <span class="bu">Threads</span>.<span class="fu">nthreads</span>())</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="co"># println("Physical cores: ", MultistateModels.get_physical_cores())</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>Julia version: 1.12.2
@@ -936,9 +430,9 @@ Threads available: 1</code></pre>
 <h3 class="anchored" data-anchor-id="performance-highlights">Performance Highlights</h3>
 <ol type="1">
 <li><strong>Exact data fitting</strong>: Scales linearly with sample size</li>
-<li><strong>Panel data (MCEM)</strong>: ~5x slower than exact, but handles interval censoring</li>
-<li><strong>SQUAREM</strong>: 2-3x speedup over standard EM</li>
-<li><strong>Threading</strong>: Near-linear scaling up to 8 threads</li>
+<li><strong>Panel data (MCEM)</strong>: Slower than exact, but handles interval censoring</li>
+<li><strong>SQUAREM</strong>: Accelerated EM convergence (enabled by default)</li>
+<li><strong>Threading</strong>: Parallel likelihood computation</li>
 <li><strong>Phase-type proposals</strong>: Critical for non-exponential hazards in MCEM</li>
 </ol>
 </section>
@@ -1372,7 +866,7 @@ Threads available: 1</code></pre>
 </div>   
     <div class="nav-footer-center">
       &nbsp;
-    <div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/fintzij/MultistateModels.jl/blob/main/benchmarks.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/fintzij/MultistateModels.jl/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div>
+    <div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/fintzij/MultistateModelsTests.jl/blob/main/benchmarks.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/fintzij/MultistateModelsTests.jl/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div>
     <div class="nav-footer-right">
 <p>Built with <a href="https://quarto.org/">Quarto</a></p>
 </div>

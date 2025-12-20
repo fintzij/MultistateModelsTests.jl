@@ -9,9 +9,21 @@
 using Optim
 using Random
 using DataFrames
-using MultistateModels: simulate, simulate_data, simulate_paths, simulate_path, observe_path, extract_paths, Hazard, multistatemodel, set_parameters!, _find_jump_time, SamplePath, OptimJumpSolver
+using MultistateModels: simulate, simulate_data, simulate_paths, simulate_path, observe_path, extract_paths, Hazard, multistatemodel, set_parameters!, _find_jump_time, SamplePath, OptimJumpSolver, draw_paths
 using StatsModels: @formula
-using .TestFixtures
+
+# Load fixtures - handle both standalone and runner contexts
+if !@isdefined(toy_two_state_exp_model)
+    if isdefined(Main, :TestFixtures)
+        # Runner has already loaded TestFixtures, import from Main
+        import Main.TestFixtures: toy_two_state_exp_model, toy_absorbing_start_model, 
+                                   toy_expwei_model, toy_fitted_exact_model
+    else
+        # Standalone execution
+        include(joinpath(@__DIR__, "..", "fixtures", "TestFixtures.jl"))
+        using .TestFixtures
+    end
+end
 
 # --- Optim.jl Brent solver correctness ----------------------------------------
 @testset "OptimJumpSolver" begin

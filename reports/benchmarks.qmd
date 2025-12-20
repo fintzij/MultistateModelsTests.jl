@@ -27,9 +27,9 @@ using CairoMakie
 using Printf
 ```
 
-## Benchmark Results (2025-12-19)
+## Benchmark Results
 
-**Note**: These results are generated from `MultistateModelsTests/benchmarks/run_benchmarks.jl`.
+**Note**: These results are generated from `MultistateModelsTests/benchmarks/run_benchmarks.jl`. Last run: December 2025.
 
 ```{julia}
 #| echo: false
@@ -116,81 +116,6 @@ else
 end
 ```
 
-## SIR Resampling
-
-*Benchmark pending implementation.*
-
-## Overview
-
-This report provides performance benchmarks for MultistateModels.jl.
-
-Future benchmarks will cover:
-
-1. **SIR Resampling Methods**: Comparison of importance sampling strategies
-2. **SQUAREM Acceleration**: EM vs accelerated EM convergence
-3. **Scalability**: Performance across different sample sizes
-4. **Threading**: Parallel likelihood computation scaling
-
-## SIR Resampling
-
-*Benchmark pending implementation.*
-
-## Overview
-
-This report provides performance benchmarks for MultistateModels.jl.
-
-Future benchmarks will cover:
-
-1. **SIR Resampling Methods**: Comparison of importance sampling strategies
-2. **SQUAREM Acceleration**: EM vs accelerated EM convergence
-
-**Standard EM**:
-- Linear convergence rate
-- Stable but slow
-- Simple implementation
-
-## SQUAREM Acceleration
-
-```{julia}
-#| echo: false
-if !isempty(squarem_df)
-    println("SQUAREM Runtime (N=200): $(round(squarem_df.Runtime[1], digits=4)) seconds")
-else
-    println("No SQUAREM data available.")
-end
-```
-
-## Scalability Analysis
-
-### Sample Size Scaling
-
-```{julia}
-#| label: fig-scalability
-#| fig-cap: "Runtime Scaling with Sample Size"
-#| fig-height: 5
-
-if !isempty(scalability_df)
-    fig = Figure(size=(700, 400))
-    
-    ax = Axis(fig[1, 1],
-        xlabel="Sample Size (n)",
-        ylabel="Runtime (seconds)",
-        title="Runtime Scaling",
-        xscale=log10,
-        yscale=log10,
-        xticks=(scalability_df.N, string.(scalability_df.N)))
-    
-    scatter!(ax, scalability_df.N, scalability_df.Runtime, label="Panel (MCEM)", 
-             markersize=12, color=:orange)
-    lines!(ax, scalability_df.N, scalability_df.Runtime, color=:orange, linewidth=2)
-    
-    axislegend(ax, position=:lt)
-    fig
-else
-    println("No scalability data available.")
-end
-```
-
 ### Complexity Analysis
 
 | Operation | Complexity | Notes |
@@ -199,17 +124,6 @@ end
 | Panel likelihood | O(n × k) | k = paths per subject |
 | Gradient computation | O(n × p) | p = number of parameters |
 | MCEM per iteration | O(n × k × m) | m = MCEM paths |
-
-## Threading Performance
-
-```{julia}
-#| echo: false
-if !isempty(threading_df)
-    println("Threading Runtime (Threads=$(threading_df.Threads[1])): $(round(threading_df.Runtime[1], digits=4)) seconds")
-else
-    println("No threading data available.")
-end
-```
 
 ### Threading Recommendations
 
@@ -243,11 +157,7 @@ threading_rec
 
 *Benchmark pending implementation.*
 
-## Benchmark Suite
-
-> **Warning**: The scripts referenced below (`benchmarks/run_benchmarks.jl`, etc.) do not currently exist in the repository.
-
-### Running Benchmarks
+## Running Benchmarks
 
 ```bash
 # Full benchmark suite
@@ -269,9 +179,9 @@ println("Threads available: ", Threads.nthreads())
 ### Performance Highlights
 
 1. **Exact data fitting**: Scales linearly with sample size
-2. **Panel data (MCEM)**: ~5x slower than exact, but handles interval censoring
-3. **SQUAREM**: 2-3x speedup over standard EM
-4. **Threading**: Near-linear scaling up to 8 threads
+2. **Panel data (MCEM)**: Slower than exact, but handles interval censoring
+3. **SQUAREM**: Accelerated EM convergence (enabled by default)
+4. **Threading**: Parallel likelihood computation
 5. **Phase-type proposals**: Critical for non-exponential hazards in MCEM
 
 ### Optimization Tips

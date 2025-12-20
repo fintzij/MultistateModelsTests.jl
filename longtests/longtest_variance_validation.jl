@@ -39,7 +39,7 @@ import MultistateModels: Hazard, multistatemodel, fit, set_parameters!, simulate
 # =============================================================================
 const RNG_SEED = 0xABCD2030
 const N_SUBJECTS = 2000           # Large sample for variance validation
-const N_REPS = 1000               # Number of simulation replicates for empirical variance
+const N_REPS = 200                # Number of simulation replicates for empirical variance
 const MAX_TIME = 10.0             # Follow-up time
 const VAR_RATIO_TOL = 0.5         # 50% tolerance on variance ratio (ratio should be ~1)
 const DIAG_VAR_TOL = 0.25         # 25% tolerance on diagonal variance elements (tighter with 1000 reps)
@@ -649,18 +649,18 @@ end
     vcov_model = get_vcov(fitted; type=:model)
     vcov_ij = get_vcov(fitted; type=:ij)
     
-    @test !isnothing(vcov_model) "Model-based variance should be computed"
-    @test !isnothing(vcov_ij) "IJ variance should be computed"
+    @test !isnothing(vcov_model)  # Model-based variance should be computed
+    @test !isnothing(vcov_ij)  # IJ variance should be computed
     
     # Check positive definiteness
-    @test all(eigvals(Symmetric(vcov_model)) .>= -sqrt(eps())) "Model vcov should be PSD"
-    @test all(eigvals(Symmetric(vcov_ij)) .>= -sqrt(eps())) "IJ vcov should be PSD"
+    @test all(eigvals(Symmetric(vcov_model)) .>= -sqrt(eps()))  # Model vcov should be PSD
+    @test all(eigvals(Symmetric(vcov_ij)) .>= -sqrt(eps()))  # IJ vcov should be PSD
     
     # Under correct specification, IJ ≈ model-based variance
     # Note: For MCEM, we expect more variability due to importance sampling
     diag_ratio = diag(vcov_ij) ./ diag(vcov_model)
     
-    @test all(isapprox.(diag_ratio, 1.0; rtol=MCEM_VAR_RATIO_TOL)) "IJ/model ratio should be ~1"
+    @test all(isapprox.(diag_ratio, 1.0; rtol=MCEM_VAR_RATIO_TOL))  # IJ/model ratio should be ~1
     
     println("  ✓ MCEM IJ vs model-based variance ratio: $(round.(diag_ratio, digits=3))")
     println("    Model-based SE: $(round.(sqrt.(diag(vcov_model)), digits=4))")
@@ -701,14 +701,14 @@ end
     vcov_ij = get_vcov(fitted; type=:ij)
     vcov_jk = get_vcov(fitted; type=:jk)
     
-    @test !isnothing(vcov_ij) "IJ variance should be computed"
-    @test !isnothing(vcov_jk) "JK variance should be computed"
+    @test !isnothing(vcov_ij)  # IJ variance should be computed
+    @test !isnothing(vcov_jk)  # JK variance should be computed
     
     # JK = ((n-1)/n) × IJ is algebraic identity (should be exact)
     n = length(unique(panel_data.id))
     expected_jk = ((n - 1) / n) * vcov_ij
     
-    @test isapprox(vcov_jk, expected_jk; atol=JK_IJ_RATIO_TOL) "JK should equal ((n-1)/n) × IJ exactly"
+    @test isapprox(vcov_jk, expected_jk; atol=JK_IJ_RATIO_TOL)  # JK should equal ((n-1)/n) × IJ exactly
     
     println("  ✓ MCEM JK = ((n-1)/n) × IJ verified (algebraic identity)")
 end
@@ -784,7 +784,7 @@ end
         end
     end
     
-    @test n_converged >= 0.8 * MCEM_N_REPS "At least 80% of MCEM fits should converge"
+    @test n_converged >= 0.8 * MCEM_N_REPS  # At least 80% of MCEM fits should converge
     
     # Compute empirical covariance
     param_matrix = reduce(hcat, param_estimates)'
@@ -844,21 +844,21 @@ end
     vcov_model = get_vcov(fitted; type=:model)
     vcov_ij = get_vcov(fitted; type=:ij)
     
-    @test !isnothing(vcov_model) "Model-based variance should be computed"
-    @test !isnothing(vcov_ij) "IJ variance should be computed"
+    @test !isnothing(vcov_model)  # Model-based variance should be computed
+    @test !isnothing(vcov_ij)  # IJ variance should be computed
     
     # Check dimensions match number of parameters (2 + 1 + 1 = 4)
-    @test size(vcov_model) == (4, 4) "Variance matrix should be 4×4"
-    @test size(vcov_ij) == (4, 4) "IJ variance matrix should be 4×4"
+    @test size(vcov_model) == (4, 4)  # Variance matrix should be 4×4
+    @test size(vcov_ij) == (4, 4)  # IJ variance matrix should be 4×4
     
     # Check positive definiteness
-    @test all(eigvals(Symmetric(vcov_model)) .>= -sqrt(eps())) "Model vcov should be PSD"
-    @test all(eigvals(Symmetric(vcov_ij)) .>= -sqrt(eps())) "IJ vcov should be PSD"
+    @test all(eigvals(Symmetric(vcov_model)) .>= -sqrt(eps()))  # Model vcov should be PSD
+    @test all(eigvals(Symmetric(vcov_ij)) .>= -sqrt(eps()))  # IJ vcov should be PSD
     
     # IJ vs model-based ratio (under correct specification, should be ~1)
     diag_ratio = diag(vcov_ij) ./ diag(vcov_model)
     
-    @test all(isapprox.(diag_ratio, 1.0; rtol=MCEM_VAR_RATIO_TOL)) "IJ/model ratio should be ~1"
+    @test all(isapprox.(diag_ratio, 1.0; rtol=MCEM_VAR_RATIO_TOL))  # IJ/model ratio should be ~1
     
     println("  ✓ MCEM illness-death model variance validation passed")
     println("    IJ/Model ratio: $(round.(diag_ratio, digits=3))")

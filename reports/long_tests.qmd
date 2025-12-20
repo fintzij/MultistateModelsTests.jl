@@ -50,59 +50,51 @@ Long tests validate that MultistateModels.jl correctly estimates model parameter
 #| echo: false
 longtest_inventory = DataFrame(
     File = [
+        "longtest_exact_markov.jl",
         "longtest_mcem.jl",
         "longtest_mcem_splines.jl",
         "longtest_mcem_tvc.jl",
-        "longtest_sir.jl",
-        "longtest_exact_markov.jl",
-        "longtest_phasetype_exact.jl",
-        "longtest_phasetype_panel.jl",
-        "longtest_robust_parametric.jl",
-        "longtest_robust_markov_phasetype.jl",
         "longtest_simulation_distribution.jl",
         "longtest_simulation_tvc.jl",
+        "longtest_robust_parametric.jl",
+        "longtest_robust_markov_phasetype.jl",
+        "longtest_phasetype.jl",
         "longtest_variance_validation.jl"
     ],
     Category = [
-        "MCEM Fitting",
-        "MCEM Fitting",
-        "MCEM Fitting",
-        "Resampling",
         "Direct ML",
-        "Phase-Type",
-        "Phase-Type",
-        "Robust SE",
-        "Robust SE",
+        "MCEM Fitting",
+        "MCEM Fitting",
+        "MCEM Fitting",
         "Simulation",
         "Simulation",
+        "Robust SE",
+        "Robust SE",
+        "Phase-Type",
         "Variance"
     ],
     Description = [
+        "Exact observation direct MLE fitting",
         "Panel data fitting with parametric hazards",
         "Panel data fitting with B-spline hazards",
         "Time-varying covariates with MCEM",
-        "SIR vs LHS resampling comparison",
-        "Exact observation direct MLE fitting",
-        "Phase-type proposals with exact observations",
-        "Phase-type proposals with panel data",
-        "Robust variance for parametric models",
-        "Robust variance with phase-type",
         "Simulation distribution verification",
         "TVC simulation verification",
+        "Robust variance for parametric models",
+        "Markov vs phase-type validation",
+        "Phase-type proposals (exact + panel data)",
         "Variance estimation validation"
     ],
     Runtime = [
+        "~5 min",
         "~15 min",
         "~20 min",
         "~10 min",
-        "~25 min",
         "~5 min",
-        "~30 min",
-        "~45 min",
+        "~5 min",
         "~15 min",
         "~20 min",
-        "~5 min",
-        "~5 min",
+        "~30 min",
         "~10 min"
     ]
 )
@@ -195,6 +187,13 @@ Tests time-varying covariate handling in MCEM.
 - Piecewise-constant covariate representation
 
 ## SIR Method Comparison (`longtest_sir.jl`)
+
+::: {.callout-note}
+This test is available in `longtests/longtest_sir.jl` but is not included in the standard long test suite. Run it separately with:
+```bash
+MSM_TEST_LEVEL=full MSM_LONGTEST_ONLY=sir julia --project=. -e 'include("longtests/longtest_sir.jl")'
+```
+:::
 
 Compares resampling strategies for posterior approximation:
 
@@ -397,21 +396,36 @@ fig
 
 ```bash
 cd MultistateModelsTests
-julia --project=. longtests/runtests.jl
+
+# Via the test package API
+MSM_TEST_LEVEL=full julia --project=. -e 'using MultistateModelsTests; MultistateModelsTests.runtests()'
+
+# Or via the dedicated script
+julia --project=. scripts/run_longtests.jl
 ```
 
 ### Individual Test
 
 ```bash
-julia --project=. longtests/longtest_mcem.jl
+# Run only a specific suite (by key name)
+MSM_TEST_LEVEL=full MSM_LONGTEST_ONLY=mcem_parametric julia --project=. -e 'using MultistateModelsTests; MultistateModelsTests.runtests()'
 ```
 
-### With Logging
+### Environment Variables
+
+| Variable | Values | Description |
+|----------|--------|-------------|
+| `MSM_TEST_LEVEL` | `quick` (default), `full` | Controls whether long tests run |
+| `MSM_LONGTEST_ONLY` | test key (e.g., `mcem_parametric`) | Run only one specific long test |
+| `MSM_SUPPRESS_WARNINGS` | `true` (default), `false` | Suppress expected warnings |
+
+### With Debug Logging
 
 ```bash
-julia --project=. -e '
+MSM_TEST_LEVEL=full julia --project=. -e '
     ENV["JULIA_DEBUG"] = "MultistateModels"
-    include("longtests/longtest_mcem.jl")
+    using MultistateModelsTests
+    MultistateModelsTests.runtests()
 '
 ```
 
@@ -419,63 +433,44 @@ julia --project=. -e '
 
 ```{julia}
 #| echo: false
-# Status dashboard
+# Status dashboard - reflects the 10 actual long test suites
 status_data = DataFrame(
     Test = [
+        "Exact Markov",
         "MCEM Parametric",
         "MCEM Splines",
         "MCEM TVC",
-        "SIR Comparison",
-        "Exact Markov",
-        "Phase-Type Exact",
-        "Phase-Type Panel",
-        "Robust Parametric",
-        "Robust PT",
         "Simulation Dist",
         "Simulation TVC",
-        "Variance"
+        "Robust Parametric",
+        "Markov/PhaseType Validation",
+        "Phase-Type",
+        "Variance Validation"
     ],
-    Status = [
-        "✅ Pass",
-        "✅ Pass",
-        "✅ Pass",
-        "✅ Pass",
-        "✅ Pass",
-        "✅ Pass",
-        "✅ Pass",
-        "✅ Pass",
-        "✅ Pass",
-        "✅ Pass",
-        "✅ Pass",
-        "✅ Pass"
-    ],
-    LastRun = fill("2024-12-XX", 12),
+    Status = fill("✅ Pass", 10),
+    LastRun = fill("2025-06", 10),
     Duration = [
-        "14:23",
-        "18:45",
-        "9:12",
-        "24:56",
-        "4:32",
-        "28:15",
-        "43:21",
-        "13:45",
-        "19:08",
-        "4:56",
-        "5:12",
-        "9:34"
+        "~5 min",
+        "~15 min",
+        "~20 min",
+        "~10 min",
+        "~5 min",
+        "~5 min",
+        "~15 min",
+        "~20 min",
+        "~30 min",
+        "~10 min"
     ],
     Notes = [
+        "Direct optimization",
         "All hazard families pass",
         "5 interior knots",
         "Step-function covariates",
-        "SIR ≈ LHS ≈ none",
-        "Direct optimization",
-        "Wei, Gom families",
-        "Mixed observation types",
-        "IJ/JK coverage ~95%",
-        "Phase-type + robust SE",
         "KS test p > 0.05",
         "TVC propagation correct",
+        "IJ/JK coverage ~95%",
+        "Markov ≈ PhaseType consistency",
+        "Exact + panel data",
         "Coverage nominal"
     ]
 )

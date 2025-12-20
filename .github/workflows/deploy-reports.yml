@@ -25,8 +25,17 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - name: Checkout
+      - name: Checkout MultistateModelsTests
         uses: actions/checkout@v4
+        with:
+          path: MultistateModelsTests
+
+      - name: Checkout MultistateModels.jl
+        uses: actions/checkout@v4
+        with:
+          repository: fintzij/MultistateModels.jl
+          ref: ${{ github.ref_name }}
+          path: MultistateModels.jl
 
       - name: Setup Julia
         uses: julia-actions/setup-julia@v2
@@ -37,14 +46,17 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.julia
-          key: ${{ runner.os }}-julia-${{ hashFiles('Project.toml') }}
+          key: ${{ runner.os }}-julia-${{ hashFiles('MultistateModelsTests/Project.toml') }}
           restore-keys: |
             ${{ runner.os }}-julia-
 
       - name: Install Julia dependencies
         run: |
+          cd MultistateModelsTests
           julia --project=. -e '
             using Pkg
+            # Override the local path to use the checked-out sibling repo
+            Pkg.develop(path="../MultistateModels.jl")
             Pkg.instantiate()
             Pkg.precompile()
           '
@@ -56,13 +68,13 @@ jobs:
 
       - name: Render Quarto reports
         run: |
-          cd reports
+          cd MultistateModelsTests/reports
           quarto render
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: reports/_site
+          path: MultistateModelsTests/reports/_site
 
   deploy:
     environment:

@@ -49,10 +49,14 @@ const COVARIATE_VALUE = 1.5
 const SIM_SAMPLES = 40_000
 const DIST_GRID_POINTS = 400
 
+# Horizons must be large enough to ensure negligible right-truncation (<0.1%)
+# For Exponential with AFT covariates: effective rate = 0.35 * exp(-0.6*1.5) ≈ 0.14
+# Need: exp(-rate * horizon) < 0.001 => horizon > log(1000)/rate ≈ 50
+# Setting horizon = 100 provides ample margin
 const FAMILY_CONFIG = Dict(
-    "exp" => (; rate = 0.35, beta = 0.6, horizon = 5.0),
-    "wei" => (; shape = 1.35, scale = 0.4, beta = -0.35, horizon = 5.0),
-    "gom" => (; shape = 0.6, rate = 0.4, beta = 0.5, horizon = 5.0),
+    "exp" => (; rate = 0.35, beta = 0.6, horizon = 100.0),
+    "wei" => (; shape = 1.35, scale = 0.4, beta = -0.35, horizon = 50.0),
+    "gom" => (; shape = 0.6, rate = 0.4, beta = 0.5, horizon = 10.0),  # Gompertz diverges quickly
 )
 ```
 
@@ -154,15 +158,31 @@ function expected_cdf(family::String, effect::Symbol, with_covariate::Bool, t::F
 end
 
 # Simulate event times from model
+# WARNING: Only collects paths where a transition occurred within horizon.
+# Set horizon large enough so P(T > horizon) < 0.001 to avoid right-truncation bias.
 function simulate_event_times(model, nsim::Int; rng = Random.default_rng())
     durations = Float64[]
+    n_censored = 0
     strategy = CachedTransformStrategy()
-    while length(durations) < nsim
+    total_attempts = 0
+    max_attempts = nsim * 20  # Safety limit
+    
+    while length(durations) < nsim && total_attempts < max_attempts
+        total_attempts += 1
         path = simulate_path(model, 1; strategy = strategy, rng = rng)
         if path.states[end] != path.states[1]
             push!(durations, path.times[end] - path.times[1])
+        else
+            n_censored += 1
         end
     end
+    
+    # Warn if significant truncation detected
+    truncation_rate = n_censored / total_attempts
+    if truncation_rate > 0.01
+        @warn "High right-truncation rate: $(round(truncation_rate*100, digits=1))%. Increase horizon."
+    end
+    
     return durations
 end
 

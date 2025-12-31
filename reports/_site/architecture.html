@@ -221,7 +221,7 @@ window.Quarto = {
   <li><a href="#hazard-families" id="toc-hazard-families" class="nav-link" data-scroll-target="#hazard-families">Hazard Families</a>
   <ul class="collapse">
   <li><a href="#parametric-distributions" id="toc-parametric-distributions" class="nav-link" data-scroll-target="#parametric-distributions">Parametric Distributions</a></li>
-  <li><a href="#phase-type-distributions" id="toc-phase-type-distributions" class="nav-link" data-scroll-target="#phase-type-distributions">Phase-Type Distributions</a></li>
+  <li><a href="#phase-type-structure" id="toc-phase-type-structure" class="nav-link" data-scroll-target="#phase-type-structure">Phase-Type Structure</a></li>
   <li><a href="#covariate-effects" id="toc-covariate-effects" class="nav-link" data-scroll-target="#covariate-effects">Covariate Effects</a></li>
   </ul></li>
   <li><a href="#parameter-handling" id="toc-parameter-handling" class="nav-link" data-scroll-target="#parameter-handling">Parameter Handling</a>
@@ -292,7 +292,7 @@ window.Quarto = {
 <section id="internal-hazard-types" class="level3">
 <h3 class="anchored" data-anchor-id="internal-hazard-types">Internal Hazard Types</h3>
 <p>The package uses an internal type hierarchy for hazard functions that distinguishes between <strong>Markov</strong> (time-homogeneous) and <strong>semi-Markov</strong> (sojourn-time-dependent) hazards:</p>
-<div id="9d0cee78" class="cell" data-fig-height="8" data-fig-width="12" data-execution_count="2">
+<div id="a3efd78c" class="cell" data-fig-height="6" data-fig-width="14" data-execution_count="2">
 <div class="cell-output cell-output-display" data-execution_count="3">
 <div>
 <figure class="figure">
@@ -301,11 +301,11 @@ window.Quarto = {
 </div>
 </div>
 </div>
-<p><strong>Key insight:</strong> <code>PhaseTypeCoxianHazard</code> inherits from <code>_MarkovHazard</code> because the expanded state space (with latent phases) is Markovian—each phase transition is exponential. The non-exponential sojourn time arises from the <em>mixture</em> over paths through phases, not from any single transition.</p>
+<p><strong>Key insight:</strong> <code>PhaseTypeCoxianHazard</code> inherits from <code>_MarkovHazard</code> because the stochastic process on the expanded state space (with latent phases) is Markovian—each phase transition is exponential. The non-exponential sojourn time arises from the <em>mixture</em> over paths through phases, not from any single transition.</p>
 </section>
 <section id="model-types" class="level3">
 <h3 class="anchored" data-anchor-id="model-types">Model Types</h3>
-<div id="ee1ccb2b" class="cell" data-fig-height="4" data-fig-width="10" data-execution_count="3">
+<div id="6266f3a9" class="cell" data-fig-height="4" data-fig-width="10" data-execution_count="3">
 <div class="cell-output cell-output-display" data-execution_count="4">
 <div>
 <figure class="figure">
@@ -348,7 +348,7 @@ window.Quarto = {
 <td>B-spline hazard</td>
 </tr>
 <tr class="even">
-<td><code>PhaseTypeHazardSpec</code> (<code>:pt</code>)</td>
+<td><code>PhaseTypeHazard</code> (<code>:pt</code>)</td>
 <td><code>PhaseTypeCoxianHazard</code></td>
 <td>Phase-type (Coxian)</td>
 </tr>
@@ -527,9 +527,16 @@ window.Quarto = {
 <tr class="even">
 <td><strong>B-Spline</strong></td>
 <td><code>:sp</code></td>
-<td><code>coefs</code> <span class="math inline">\((\boldsymbol{\beta})\)</span></td>
-<td><span class="math inline">\(e^{B(t)'\boldsymbol{\beta}}\)</span></td>
+<td><code>coefs</code> <span class="math inline">\((\beta_1,\ldots,\beta_K)\)</span></td>
+<td><span class="math inline">\(\exp\left(\sum_{k=1}^K B_k(t)\beta_k\right)\)</span></td>
 <td>✗ (degree&gt;0)</td>
+</tr>
+<tr class="odd">
+<td><strong>Phase-Type</strong></td>
+<td><code>:pt</code></td>
+<td><span class="math inline">\(\lambda_1,\ldots,\lambda_{n-1}\)</span>, <span class="math inline">\(\mu_1,\ldots,\mu_n\)</span></td>
+<td>Coxian absorption</td>
+<td>✓ (expanded)</td>
 </tr>
 </tbody>
 </table>
@@ -547,10 +554,10 @@ Note
 </div>
 </div>
 </section>
-<section id="phase-type-distributions" class="level3">
-<h3 class="anchored" data-anchor-id="phase-type-distributions">Phase-Type Distributions</h3>
+<section id="phase-type-structure" class="level3">
+<h3 class="anchored" data-anchor-id="phase-type-structure">Phase-Type Structure</h3>
 <p>Phase-type hazards (<code>:pt</code>) use a Coxian structure with latent phases:</p>
-<div id="0f1fb63e" class="cell" data-fig-height="3.5" data-fig-width="10" data-execution_count="4">
+<div id="0450b237" class="cell" data-fig-height="5" data-fig-width="12" data-execution_count="4">
 <div class="cell-output cell-output-display" data-execution_count="5">
 <div>
 <figure class="figure">
@@ -562,7 +569,7 @@ Note
 <p><strong>Key properties:</strong></p>
 <ul>
 <li>Approximate any non-negative distribution arbitrarily well</li>
-<li><strong>The expanded state space is Markovian</strong> — hence <code>PhaseTypeCoxianHazard &lt;: _MarkovHazard</code></li>
+<li><strong>The process on the expanded state space is Markovian</strong> — hence <code>PhaseTypeCoxianHazard &lt;: _MarkovHazard</code></li>
 <li>Non-exponential sojourn times arise from the mixture over phase paths</li>
 <li>Parameters: <span class="math inline">\(\lambda_1, \ldots, \lambda_{n-1}\)</span> (progression), <span class="math inline">\(\mu_1, \ldots, \mu_n\)</span> (exit)</li>
 </ul>
@@ -715,7 +722,7 @@ Warning
 <section id="fitting-strategy-selection" class="level3">
 <h3 class="anchored" data-anchor-id="fitting-strategy-selection">Fitting Strategy Selection</h3>
 <p>The <code>fit()</code> function automatically selects the appropriate method based on data and hazard types:</p>
-<div id="94870526" class="cell" data-fig-height="5" data-fig-width="10" data-execution_count="5">
+<div id="6045a2db" class="cell" data-fig-height="5" data-fig-width="10" data-execution_count="5">
 <div class="cell-output cell-output-display" data-execution_count="6">
 <div>
 <figure class="figure">

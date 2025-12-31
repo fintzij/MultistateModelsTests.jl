@@ -176,48 +176,30 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#overview" id="toc-overview" class="nav-link active" data-scroll-target="#overview">Overview</a>
+  <li><a href="#test-inventory" id="toc-test-inventory" class="nav-link active" data-scroll-target="#test-inventory">Test Inventory</a>
   <ul class="collapse">
-  <li><a href="#test-philosophy" id="toc-test-philosophy" class="nav-link" data-scroll-target="#test-philosophy">Test Philosophy</a></li>
-  <li><a href="#success-criteria" id="toc-success-criteria" class="nav-link" data-scroll-target="#success-criteria">Success Criteria</a></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
+  <li><a href="#test-matrix" id="toc-test-matrix" class="nav-link" data-scroll-target="#test-matrix">Test Matrix</a></li>
   </ul></li>
-  <li><a href="#long-test-inventory" id="toc-long-test-inventory" class="nav-link" data-scroll-target="#long-test-inventory">Long Test Inventory</a></li>
-  <li><a href="#mcem-parameter-recovery-tests" id="toc-mcem-parameter-recovery-tests" class="nav-link" data-scroll-target="#mcem-parameter-recovery-tests">MCEM Parameter Recovery Tests</a>
+  <li><a href="#test-results-by-family" id="toc-test-results-by-family" class="nav-link" data-scroll-target="#test-results-by-family">Test Results by Family</a>
   <ul class="collapse">
-  <li><a href="#longtest_mcem.jl" id="toc-longtest_mcem.jl" class="nav-link" data-scroll-target="#longtest_mcem.jl"><code>longtest_mcem.jl</code></a></li>
-  <li><a href="#longtest_mcem_splines.jl" id="toc-longtest_mcem_splines.jl" class="nav-link" data-scroll-target="#longtest_mcem_splines.jl"><code>longtest_mcem_splines.jl</code></a></li>
-  <li><a href="#longtest_mcem_tvc.jl" id="toc-longtest_mcem_tvc.jl" class="nav-link" data-scroll-target="#longtest_mcem_tvc.jl"><code>longtest_mcem_tvc.jl</code></a></li>
-  </ul></li>
-  <li><a href="#sir-method-comparison-longtest_sir.jl" id="toc-sir-method-comparison-longtest_sir.jl" class="nav-link" data-scroll-target="#sir-method-comparison-longtest_sir.jl">SIR Method Comparison (<code>longtest_sir.jl</code>)</a></li>
-  <li><a href="#phase-type-proposal-tests" id="toc-phase-type-proposal-tests" class="nav-link" data-scroll-target="#phase-type-proposal-tests">Phase-Type Proposal Tests</a>
-  <ul class="collapse">
-  <li><a href="#why-phase-type-proposals" id="toc-why-phase-type-proposals" class="nav-link" data-scroll-target="#why-phase-type-proposals">Why Phase-Type Proposals?</a></li>
-  <li><a href="#longtest_phasetype_exact.jl" id="toc-longtest_phasetype_exact.jl" class="nav-link" data-scroll-target="#longtest_phasetype_exact.jl"><code>longtest_phasetype_exact.jl</code></a></li>
-  <li><a href="#longtest_phasetype_panel.jl" id="toc-longtest_phasetype_panel.jl" class="nav-link" data-scroll-target="#longtest_phasetype_panel.jl"><code>longtest_phasetype_panel.jl</code></a></li>
-  </ul></li>
-  <li><a href="#variance-validation-tests" id="toc-variance-validation-tests" class="nav-link" data-scroll-target="#variance-validation-tests">Variance Validation Tests</a>
-  <ul class="collapse">
-  <li><a href="#longtest_variance_validation.jl" id="toc-longtest_variance_validation.jl" class="nav-link" data-scroll-target="#longtest_variance_validation.jl"><code>longtest_variance_validation.jl</code></a></li>
-  </ul></li>
-  <li><a href="#simulation-distribution-tests" id="toc-simulation-distribution-tests" class="nav-link" data-scroll-target="#simulation-distribution-tests">Simulation Distribution Tests</a>
-  <ul class="collapse">
-  <li><a href="#longtest_simulation_distribution.jl" id="toc-longtest_simulation_distribution.jl" class="nav-link" data-scroll-target="#longtest_simulation_distribution.jl"><code>longtest_simulation_distribution.jl</code></a></li>
+  <li><a href="#exponential" id="toc-exponential" class="nav-link" data-scroll-target="#exponential">Exponential</a></li>
+  <li><a href="#weibull" id="toc-weibull" class="nav-link" data-scroll-target="#weibull">Weibull</a></li>
+  <li><a href="#gompertz" id="toc-gompertz" class="nav-link" data-scroll-target="#gompertz">Gompertz</a></li>
   </ul></li>
   <li><a href="#running-long-tests" id="toc-running-long-tests" class="nav-link" data-scroll-target="#running-long-tests">Running Long Tests</a>
   <ul class="collapse">
   <li><a href="#full-suite" id="toc-full-suite" class="nav-link" data-scroll-target="#full-suite">Full Suite</a></li>
-  <li><a href="#individual-test" id="toc-individual-test" class="nav-link" data-scroll-target="#individual-test">Individual Test</a></li>
+  <li><a href="#individual-test-suite" id="toc-individual-test-suite" class="nav-link" data-scroll-target="#individual-test-suite">Individual Test Suite</a></li>
+  <li><a href="#available-test-suites" id="toc-available-test-suites" class="nav-link" data-scroll-target="#available-test-suites">Available Test Suites</a></li>
   <li><a href="#environment-variables" id="toc-environment-variables" class="nav-link" data-scroll-target="#environment-variables">Environment Variables</a></li>
-  <li><a href="#with-debug-logging" id="toc-with-debug-logging" class="nav-link" data-scroll-target="#with-debug-logging">With Debug Logging</a></li>
   </ul></li>
-  <li><a href="#test-status-dashboard" id="toc-test-status-dashboard" class="nav-link" data-scroll-target="#test-status-dashboard">Test Status Dashboard</a></li>
-  <li><a href="#common-issues-and-debugging" id="toc-common-issues-and-debugging" class="nav-link" data-scroll-target="#common-issues-and-debugging">Common Issues and Debugging</a>
+  <li><a href="#troubleshooting" id="toc-troubleshooting" class="nav-link" data-scroll-target="#troubleshooting">Troubleshooting</a>
   <ul class="collapse">
   <li><a href="#parameter-recovery-failures" id="toc-parameter-recovery-failures" class="nav-link" data-scroll-target="#parameter-recovery-failures">Parameter Recovery Failures</a></li>
-  <li><a href="#phase-type-convergence-issues" id="toc-phase-type-convergence-issues" class="nav-link" data-scroll-target="#phase-type-convergence-issues">Phase-Type Convergence Issues</a></li>
   <li><a href="#variance-estimation-issues" id="toc-variance-estimation-issues" class="nav-link" data-scroll-target="#variance-estimation-issues">Variance Estimation Issues</a></li>
   </ul></li>
-  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
+  <li><a href="#summary-1" id="toc-summary-1" class="nav-link" data-scroll-target="#summary-1">Summary</a></li>
   </ul>
 <div class="toc-actions"><ul><li><a href="https://github.com/fintzij/MultistateModelsTests.jl/blob/main/long_tests.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/fintzij/MultistateModelsTests.jl/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
     </div>
@@ -244,314 +226,2435 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="overview" class="level2">
-<h2 class="anchored" data-anchor-id="overview">Overview</h2>
-<p>Long tests validate that MultistateModels.jl correctly estimates model parameters from simulated data where the true data-generating process (DGP) is known. These tests are computationally intensive and typically run nightly or before releases.</p>
-<section id="test-philosophy" class="level3">
-<h3 class="anchored" data-anchor-id="test-philosophy">Test Philosophy</h3>
+<section id="test-inventory" class="level2">
+<h2 class="anchored" data-anchor-id="test-inventory">Test Inventory</h2>
+<p>Long tests validate parameter recovery across all supported model configurations. Each test:</p>
 <ol type="1">
-<li><strong>Simulate</strong> data from a model with known true parameters</li>
-<li><strong>Fit</strong> the model to the simulated data</li>
-<li><strong>Compare</strong> estimated parameters to true values</li>
-<li><strong>Verify</strong> distributional properties of trajectories from fitted model</li>
+<li><strong>Simulates</strong> data from a model with known true parameters (N=1000 subjects)</li>
+<li><strong>Fits</strong> the model to the simulated data<br>
+</li>
+<li><strong>Compares</strong> estimated parameters to true values</li>
+<li><strong>Verifies</strong> distributional properties via prevalence and cumulative incidence plots</li>
 </ol>
+<section id="summary" class="level3">
+<h3 class="anchored" data-anchor-id="summary">Summary</h3>
+<p><strong>8/18 tests passing</strong> | Last updated: 2025-12-21 08:54</p>
 </section>
-<section id="success-criteria" class="level3">
-<h3 class="anchored" data-anchor-id="success-criteria">Success Criteria</h3>
-<ul>
-<li><strong>Parameter Recovery</strong>: Estimated parameters within relative tolerance of true values</li>
-<li><strong>Coverage</strong>: 95% confidence intervals contain true values at appropriate rate</li>
-<li><strong>Distributional Fidelity</strong>: Simulated trajectories from fitted model match DGP statistics</li>
-</ul>
+<section id="test-matrix" class="level3">
+<h3 class="anchored" data-anchor-id="test-matrix">Test Matrix</h3>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Test Name</th>
+<th>Family</th>
+<th>Data Type</th>
+<th>Covariates</th>
+<th>N</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>exact_markov_exp_nocov</code></td>
+<td></td>
+<td></td>
+<td></td>
+<td>1000</td>
+<td>❌ Fail</td>
+</tr>
+<tr class="even">
+<td><code>exact_markov_gom_nocov</code></td>
+<td></td>
+<td></td>
+<td></td>
+<td>1000</td>
+<td>❌ Fail</td>
+</tr>
+<tr class="odd">
+<td><code>exact_markov_wei_nocov</code></td>
+<td></td>
+<td></td>
+<td></td>
+<td>1000</td>
+<td>❌ Fail</td>
+</tr>
+<tr class="even">
+<td><code>exp_exact_fixed</code></td>
+<td>exp</td>
+<td>exact</td>
+<td>fixed</td>
+<td>1000</td>
+<td>✅ Pass</td>
+</tr>
+<tr class="odd">
+<td><code>exp_exact_nocov</code></td>
+<td>exp</td>
+<td>exact</td>
+<td>nocov</td>
+<td>1000</td>
+<td>✅ Pass</td>
+</tr>
+<tr class="even">
+<td><code>exp_exact_tvc</code></td>
+<td>exp</td>
+<td>exact</td>
+<td>tvc</td>
+<td>1000</td>
+<td>❌ Fail</td>
+</tr>
+<tr class="odd">
+<td><code>exp_panel_fixed</code></td>
+<td>exp</td>
+<td>panel</td>
+<td>fixed</td>
+<td>986</td>
+<td>✅ Pass</td>
+</tr>
+<tr class="even">
+<td><code>exp_panel_nocov</code></td>
+<td>exp</td>
+<td>panel</td>
+<td>nocov</td>
+<td>990</td>
+<td>✅ Pass</td>
+</tr>
+<tr class="odd">
+<td><code>gom_exact_fixed</code></td>
+<td>gom</td>
+<td>exact</td>
+<td>fixed</td>
+<td>1000</td>
+<td>✅ Pass</td>
+</tr>
+<tr class="even">
+<td><code>gom_exact_nocov</code></td>
+<td>gom</td>
+<td>exact</td>
+<td>nocov</td>
+<td>1000</td>
+<td>✅ Pass</td>
+</tr>
+<tr class="odd">
+<td><code>gom_exact_tvc</code></td>
+<td>gom</td>
+<td>exact</td>
+<td>tvc</td>
+<td>1000</td>
+<td>❌ Fail</td>
+</tr>
+<tr class="even">
+<td><code>gom_mcem_fixed</code></td>
+<td>gom</td>
+<td>mcem</td>
+<td>fixed</td>
+<td>838</td>
+<td>❌ Fail</td>
+</tr>
+<tr class="odd">
+<td><code>gom_mcem_nocov</code></td>
+<td>gom</td>
+<td>mcem</td>
+<td>nocov</td>
+<td>903</td>
+<td>❌ Fail</td>
+</tr>
+<tr class="even">
+<td><code>wei_exact_fixed</code></td>
+<td>wei</td>
+<td>exact</td>
+<td>fixed</td>
+<td>1000</td>
+<td>✅ Pass</td>
+</tr>
+<tr class="odd">
+<td><code>wei_exact_nocov</code></td>
+<td>wei</td>
+<td>exact</td>
+<td>nocov</td>
+<td>1000</td>
+<td>✅ Pass</td>
+</tr>
+<tr class="even">
+<td><code>wei_exact_tvc</code></td>
+<td>wei</td>
+<td>exact</td>
+<td>tvc</td>
+<td>1000</td>
+<td>❌ Fail</td>
+</tr>
+<tr class="odd">
+<td><code>wei_mcem_fixed</code></td>
+<td>wei</td>
+<td>mcem</td>
+<td>fixed</td>
+<td>1000</td>
+<td>❌ Fail</td>
+</tr>
+<tr class="even">
+<td><code>wei_mcem_nocov</code></td>
+<td>wei</td>
+<td>mcem</td>
+<td>nocov</td>
+<td>1000</td>
+<td>❌ Fail</td>
+</tr>
+</tbody>
+</table>
 </section>
 </section>
-<section id="long-test-inventory" class="level2">
-<h2 class="anchored" data-anchor-id="long-test-inventory">Long Test Inventory</h2>
-<div id="0825f77f" class="cell" data-execution_count="2">
-<div class="cell-output cell-output-display" data-execution_count="3">
-<div><div style="float: left;"><span>10×4 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
+<section id="test-results-by-family" class="level2">
+<h2 class="anchored" data-anchor-id="test-results-by-family">Test Results by Family</h2>
+<section id="exponential" class="level3">
+<h3 class="anchored" data-anchor-id="exponential">Exponential</h3>
+<section id="exponential---exact-data---fixed-covariates" class="level4">
+<h4 class="anchored" data-anchor-id="exponential---exact-data---fixed-covariates">Exponential - Exact Data - Fixed Covariates</h4>
+<p><strong>Test:</strong> <code>exp_exact_fixed</code> | <strong>N:</strong> 1000 | <strong>Run:</strong> 2025-12-21T08:36:37.698 on <code>penalized_splines</code> (b1144da)</p>
+</section>
+<section id="exponential---exact-data---no-covariates" class="level4">
+<h4 class="anchored" data-anchor-id="exponential---exact-data---no-covariates">Exponential - Exact Data - No Covariates</h4>
+<p><strong>Test:</strong> <code>exp_exact_nocov</code> | <strong>N:</strong> 1000 | <strong>Run:</strong> 2025-12-21T08:36:34.444 on <code>penalized_splines</code> (b1144da)</p>
+</section>
+<section id="exponential---exact-data---time-varying-covariates" class="level4">
+<h4 class="anchored" data-anchor-id="exponential---exact-data---time-varying-covariates">Exponential - Exact Data - Time-Varying Covariates</h4>
+<p><strong>Test:</strong> <code>exp_exact_tvc</code> | <strong>N:</strong> 1000 | <strong>Run:</strong> 2025-12-20T20:17:58.964 on <code>penalized_splines</code> (b1144da)</p>
+</section>
+<section id="exponential---panel-data-markov---fixed-covariates" class="level4">
+<h4 class="anchored" data-anchor-id="exponential---panel-data-markov---fixed-covariates">Exponential - Panel Data (Markov) - Fixed Covariates</h4>
+<p><strong>Test:</strong> <code>exp_panel_fixed</code> | <strong>N:</strong> 986 | <strong>Run:</strong> 2025-12-21T08:38:41.967 on <code>penalized_splines</code> (b1144da)</p>
+</section>
+<section id="exponential---panel-data-markov---no-covariates" class="level4">
+<h4 class="anchored" data-anchor-id="exponential---panel-data-markov---no-covariates">Exponential - Panel Data (Markov) - No Covariates</h4>
+<p><strong>Test:</strong> <code>exp_panel_nocov</code> | <strong>N:</strong> 990 | <strong>Run:</strong> 2025-12-21T08:38:31.240 on <code>penalized_splines</code> (b1144da)</p>
+</section>
+</section>
+<section id="weibull" class="level3">
+<h3 class="anchored" data-anchor-id="weibull">Weibull</h3>
+<section id="weibull---exact-data---fixed-covariates" class="level4">
+<h4 class="anchored" data-anchor-id="weibull---exact-data---fixed-covariates">Weibull - Exact Data - Fixed Covariates</h4>
+<p><strong>Test:</strong> <code>wei_exact_fixed</code> | <strong>N:</strong> 1000 | <strong>Run:</strong> 2025-12-21T08:37:16.632 on <code>penalized_splines</code> (b1144da)</p>
+</section>
+<section id="weibull---exact-data---no-covariates" class="level4">
+<h4 class="anchored" data-anchor-id="weibull---exact-data---no-covariates">Weibull - Exact Data - No Covariates</h4>
+<p><strong>Test:</strong> <code>wei_exact_nocov</code> | <strong>N:</strong> 1000 | <strong>Run:</strong> 2025-12-21T08:36:54.585 on <code>penalized_splines</code> (b1144da)</p>
+</section>
+<section id="weibull---exact-data---time-varying-covariates" class="level4">
+<h4 class="anchored" data-anchor-id="weibull---exact-data---time-varying-covariates">Weibull - Exact Data - Time-Varying Covariates</h4>
+<p><strong>Test:</strong> <code>wei_exact_tvc</code> | <strong>N:</strong> 1000 | <strong>Run:</strong> 2025-12-20T20:04:42.887 on <code>penalized_splines</code> (b1144da)</p>
+</section>
+<section id="weibull---panel-data-mcem---fixed-covariates" class="level4">
+<h4 class="anchored" data-anchor-id="weibull---panel-data-mcem---fixed-covariates">Weibull - Panel Data (MCEM) - Fixed Covariates</h4>
+<p><strong>Test:</strong> <code>wei_mcem_fixed</code> | <strong>N:</strong> 1000 | <strong>Run:</strong> 2025-12-20T23:00:34.199 on <code>penalized_splines</code> (b1144da)</p>
+</section>
+<section id="weibull---panel-data-mcem---no-covariates" class="level4">
+<h4 class="anchored" data-anchor-id="weibull---panel-data-mcem---no-covariates">Weibull - Panel Data (MCEM) - No Covariates</h4>
+<p><strong>Test:</strong> <code>wei_mcem_nocov</code> | <strong>N:</strong> 1000 | <strong>Run:</strong> 2025-12-20T22:46:39.341 on <code>penalized_splines</code> (b1144da)</p>
+</section>
+</section>
+<section id="gompertz" class="level3">
+<h3 class="anchored" data-anchor-id="gompertz">Gompertz</h3>
+<section id="gompertz---exact-data---fixed-covariates" class="level4">
+<h4 class="anchored" data-anchor-id="gompertz---exact-data---fixed-covariates">Gompertz - Exact Data - Fixed Covariates</h4>
+<p><strong>Test:</strong> <code>gom_exact_fixed</code> | <strong>N:</strong> 1000 | <strong>Run:</strong> 2025-12-21T08:38:20.310 on <code>penalized_splines</code> (b1144da)</p>
+</section>
+<section id="gompertz---exact-data---no-covariates" class="level4">
+<h4 class="anchored" data-anchor-id="gompertz---exact-data---no-covariates">Gompertz - Exact Data - No Covariates</h4>
+<p><strong>Test:</strong> <code>gom_exact_nocov</code> | <strong>N:</strong> 1000 | <strong>Run:</strong> 2025-12-21T08:37:32.462 on <code>penalized_splines</code> (b1144da)</p>
+</section>
+<section id="gompertz---exact-data---time-varying-covariates" class="level4">
+<h4 class="anchored" data-anchor-id="gompertz---exact-data---time-varying-covariates">Gompertz - Exact Data - Time-Varying Covariates</h4>
+<p><strong>Test:</strong> <code>gom_exact_tvc</code> | <strong>N:</strong> 1000 | <strong>Run:</strong> 2025-12-20T20:06:47.320 on <code>penalized_splines</code> (b1144da)</p>
+</section>
+<section id="gompertz---panel-data-mcem---fixed-covariates" class="level4">
+<h4 class="anchored" data-anchor-id="gompertz---panel-data-mcem---fixed-covariates">Gompertz - Panel Data (MCEM) - Fixed Covariates</h4>
+<p><strong>Test:</strong> <code>gom_mcem_fixed</code> | <strong>N:</strong> 838 | <strong>Run:</strong> 2025-12-20T23:02:59.276 on <code>penalized_splines</code> (b1144da)</p>
+</section>
+<section id="gompertz---panel-data-mcem---no-covariates" class="level4">
+<h4 class="anchored" data-anchor-id="gompertz---panel-data-mcem---no-covariates">Gompertz - Panel Data (MCEM) - No Covariates</h4>
+<p><strong>Test:</strong> <code>gom_mcem_nocov</code> | <strong>N:</strong> 903 | <strong>Run:</strong> 2025-12-20T23:01:08.536 on <code>penalized_splines</code> (b1144da)</p>
+<div id="5f89fd9d" class="cell" data-execution_count="5">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+---
+
+### Exact data MLE: exp_nocov - Details
+
+
+**Parameter Recovery:**
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div><div style="float: left;"><span>2×8 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
 <table class="data-frame caption-top table table-sm table-striped small">
 <thead>
 <tr class="header">
 <th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Row</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">File</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">Category</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">Description</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">Runtime</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Parameter</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">True</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Estimated</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">SE</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Lower</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Upper</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">RelError_pct</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Covered</th>
 </tr>
 <tr class="subheader headerLastRow even">
 <th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;"></th>
 <th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
 <th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
-<td style="text-align: left;">longtest_exact_markov.jl</td>
-<td style="text-align: left;">Direct ML</td>
-<td style="text-align: left;">Exact observation direct MLE fitting</td>
-<td style="text-align: left;">~5 min</td>
+<td style="text-align: left;">h12_log_rate</td>
+<td style="text-align: right;">-1.38629</td>
+<td style="text-align: right;">-1.45202</td>
+<td style="text-align: right;">0.031734</td>
+<td style="text-align: right;">-1.51422</td>
+<td style="text-align: right;">-1.38982</td>
+<td style="text-align: right;">4.74089</td>
+<td style="text-align: left;">✗</td>
 </tr>
 <tr class="even">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
-<td style="text-align: left;">longtest_mcem.jl</td>
-<td style="text-align: left;">MCEM Fitting</td>
-<td style="text-align: left;">Panel data fitting with parametric hazards</td>
-<td style="text-align: left;">~15 min</td>
+<td style="text-align: left;">h23_log_rate</td>
+<td style="text-align: right;">-1.89712</td>
+<td style="text-align: right;">-1.91894</td>
+<td style="text-align: right;">0.0336909</td>
+<td style="text-align: right;">-1.98498</td>
+<td style="text-align: right;">-1.85291</td>
+<td style="text-align: right;">1.15023</td>
+<td style="text-align: left;">✓</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+---
+
+### Exact data MLE: gom_nocov - Details
+
+
+**Parameter Recovery:**
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div><div style="float: left;"><span>4×8 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
+<table class="data-frame caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Row</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Parameter</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">True</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Estimated</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">SE</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Lower</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Upper</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">RelError_pct</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Covered</th>
+</tr>
+<tr class="subheader headerLastRow even">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;"></th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
+<td style="text-align: left;">h12_log_rate</td>
+<td style="text-align: right;">-2.30259</td>
+<td style="text-align: right;">-2.28414</td>
+<td style="text-align: right;">0.0375181</td>
+<td style="text-align: right;">-2.35768</td>
+<td style="text-align: right;">-2.21061</td>
+<td style="text-align: right;">0.801037</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
+<td style="text-align: left;">h12_shape</td>
+<td style="text-align: right;">0.08</td>
+<td style="text-align: right;">0.073476</td>
+<td style="text-align: right;">0.00466369</td>
+<td style="text-align: right;">0.0643352</td>
+<td style="text-align: right;">0.0826169</td>
+<td style="text-align: right;">8.15494</td>
+<td style="text-align: left;">✓</td>
 </tr>
 <tr class="odd">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">3</td>
-<td style="text-align: left;">longtest_mcem_splines.jl</td>
-<td style="text-align: left;">MCEM Fitting</td>
-<td style="text-align: left;">Panel data fitting with B-spline hazards</td>
-<td style="text-align: left;">~20 min</td>
+<td style="text-align: left;">h23_log_rate</td>
+<td style="text-align: right;">-2.52573</td>
+<td style="text-align: right;">-2.53441</td>
+<td style="text-align: right;">0.0392335</td>
+<td style="text-align: right;">-2.61131</td>
+<td style="text-align: right;">-2.45751</td>
+<td style="text-align: right;">0.343758</td>
+<td style="text-align: left;">✓</td>
 </tr>
 <tr class="even">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
-<td style="text-align: left;">longtest_mcem_tvc.jl</td>
-<td style="text-align: left;">MCEM Fitting</td>
-<td style="text-align: left;">Time-varying covariates with MCEM</td>
-<td style="text-align: left;">~10 min</td>
-</tr>
-<tr class="odd">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">5</td>
-<td style="text-align: left;">longtest_simulation_distribution.jl</td>
-<td style="text-align: left;">Simulation</td>
-<td style="text-align: left;">Simulation distribution verification</td>
-<td style="text-align: left;">~5 min</td>
-</tr>
-<tr class="even">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">6</td>
-<td style="text-align: left;">longtest_simulation_tvc.jl</td>
-<td style="text-align: left;">Simulation</td>
-<td style="text-align: left;">TVC simulation verification</td>
-<td style="text-align: left;">~5 min</td>
-</tr>
-<tr class="odd">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">7</td>
-<td style="text-align: left;">longtest_robust_parametric.jl</td>
-<td style="text-align: left;">Robust SE</td>
-<td style="text-align: left;">Robust variance for parametric models</td>
-<td style="text-align: left;">~15 min</td>
-</tr>
-<tr class="even">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">8</td>
-<td style="text-align: left;">longtest_robust_markov_phasetype.jl</td>
-<td style="text-align: left;">Robust SE</td>
-<td style="text-align: left;">Markov vs phase-type validation</td>
-<td style="text-align: left;">~20 min</td>
-</tr>
-<tr class="odd">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">9</td>
-<td style="text-align: left;">longtest_phasetype.jl</td>
-<td style="text-align: left;">Phase-Type</td>
-<td style="text-align: left;">Phase-type proposals (exact + panel data)</td>
-<td style="text-align: left;">~30 min</td>
-</tr>
-<tr class="even">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">10</td>
-<td style="text-align: left;">longtest_variance_validation.jl</td>
-<td style="text-align: left;">Variance</td>
-<td style="text-align: left;">Variance estimation validation</td>
-<td style="text-align: left;">~10 min</td>
+<td style="text-align: left;">h23_shape</td>
+<td style="text-align: right;">0.06</td>
+<td style="text-align: right;">0.061281</td>
+<td style="text-align: right;">0.00414755</td>
+<td style="text-align: right;">0.0531518</td>
+<td style="text-align: right;">0.0694102</td>
+<td style="text-align: right;">2.135</td>
+<td style="text-align: left;">✓</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+---
+
+### Exact data MLE: wei_nocov - Details
+
+
+**Parameter Recovery:**
+</code></pre>
 </div>
-</section>
-<section id="mcem-parameter-recovery-tests" class="level2">
-<h2 class="anchored" data-anchor-id="mcem-parameter-recovery-tests">MCEM Parameter Recovery Tests</h2>
-<section id="longtest_mcem.jl" class="level3">
-<h3 class="anchored" data-anchor-id="longtest_mcem.jl"><code>longtest_mcem.jl</code></h3>
-<p>Tests MCEM algorithm convergence and parameter recovery for panel data with parametric hazards.</p>
-<p><strong>Test Configuration</strong>: - Model: Progressive 3-state (1→2→3, state 3 absorbing) - Hazard families: Exponential, Weibull, Gompertz - Sample size: n=1000 - Observation: Panel data with interval censoring</p>
-<div id="cell-fig-mcem-params" class="cell" data-execution_count="3">
-<div class="cell-output cell-output-display" data-execution_count="4">
-<div id="fig-mcem-params" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-mcem-params-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="long_tests_files/figure-html/fig-mcem-params-output-1.svg" class="img-fluid figure-img">
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-mcem-params-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;1: MCEM Parameter Recovery: True vs Estimated
-</figcaption>
-</figure>
-</div>
-</div>
-</div>
-<p><strong>Validation Criteria</strong>:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Parameters should be within 15% relative tolerance</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>PARAM_TOL_REL <span class="op">=</span> <span class="fl">0.15</span></span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Check each parameter</span></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (est, true_val) <span class="kw">in</span> <span class="fu">zip</span>(estimated, true_params)</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    rel_error <span class="op">=</span> <span class="fu">abs</span>(est <span class="op">-</span> true_val) <span class="op">/</span> <span class="fu">abs</span>(true_val)</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="pp">@test</span> rel_error <span class="op">&lt;</span> PARAM_TOL_REL</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="cf">end</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</section>
-<section id="longtest_mcem_splines.jl" class="level3">
-<h3 class="anchored" data-anchor-id="longtest_mcem_splines.jl"><code>longtest_mcem_splines.jl</code></h3>
-<p>Tests MCEM with B-spline hazards for flexible semi-Markov modeling.</p>
-<p><strong>Key Features Tested</strong>: - Automatic knot placement from data quantiles - Spline coefficient estimation - Non-monotonic hazard recovery - PH covariate effects with splines</p>
-</section>
-<section id="longtest_mcem_tvc.jl" class="level3">
-<h3 class="anchored" data-anchor-id="longtest_mcem_tvc.jl"><code>longtest_mcem_tvc.jl</code></h3>
-<p>Tests time-varying covariate handling in MCEM.</p>
-<p><strong>Configuration</strong>: - Covariates that change value at observation times - Both PH and AFT effect types - Piecewise-constant covariate representation</p>
-</section>
-</section>
-<section id="sir-method-comparison-longtest_sir.jl" class="level2">
-<h2 class="anchored" data-anchor-id="sir-method-comparison-longtest_sir.jl">SIR Method Comparison (<code>longtest_sir.jl</code>)</h2>
-<p>Compares resampling strategies for posterior approximation:</p>
-<div id="6f3fabab" class="cell" data-execution_count="4">
-<div class="cell-output cell-output-display" data-execution_count="5">
-<div><div style="float: left;"><span>3×4 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
+<div class="cell-output cell-output-display">
+<div><div style="float: left;"><span>4×8 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
 <table class="data-frame caption-top table table-sm table-striped small">
 <thead>
 <tr class="header">
 <th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Row</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">Method</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">Description</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">Pros</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">Cons</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Parameter</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">True</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Estimated</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">SE</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Lower</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Upper</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">RelError_pct</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Covered</th>
 </tr>
 <tr class="subheader headerLastRow even">
 <th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;"></th>
 <th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
 <th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
-<td style="text-align: left;">:none</td>
-<td style="text-align: left;">Importance-weighted (no resampling)</td>
-<td style="text-align: left;">Exact weights</td>
-<td style="text-align: left;">High variance with poor proposals</td>
+<td style="text-align: left;">h12_log_scale</td>
+<td style="text-align: right;">-1.60944</td>
+<td style="text-align: right;">-1.60922</td>
+<td style="text-align: right;">0.0590221</td>
+<td style="text-align: right;">-1.72491</td>
+<td style="text-align: right;">-1.49354</td>
+<td style="text-align: right;">0.0133309</td>
+<td style="text-align: left;">✓</td>
 </tr>
 <tr class="even">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
-<td style="text-align: left;">:sir</td>
-<td style="text-align: left;">Standard SIR with Pareto smoothing</td>
-<td style="text-align: left;">Reduced variance, PSIS diagnostics</td>
-<td style="text-align: left;">May lose tail coverage</td>
+<td style="text-align: left;">h12_log_shape</td>
+<td style="text-align: right;">0.262364</td>
+<td style="text-align: right;">0.273965</td>
+<td style="text-align: right;">0.0244188</td>
+<td style="text-align: right;">0.226104</td>
+<td style="text-align: right;">0.321825</td>
+<td style="text-align: right;">4.42145</td>
+<td style="text-align: left;">✓</td>
 </tr>
 <tr class="odd">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">3</td>
-<td style="text-align: left;">:lhs</td>
-<td style="text-align: left;">Latin Hypercube Stratified resampling</td>
-<td style="text-align: left;">Better stratification, uniform coverage</td>
-<td style="text-align: left;">Slightly higher computation</td>
+<td style="text-align: left;">h23_log_scale</td>
+<td style="text-align: right;">-1.89712</td>
+<td style="text-align: right;">-1.87974</td>
+<td style="text-align: right;">0.0678816</td>
+<td style="text-align: right;">-2.01278</td>
+<td style="text-align: right;">-1.74669</td>
+<td style="text-align: right;">0.916285</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
+<td style="text-align: left;">h23_log_shape</td>
+<td style="text-align: right;">-0.105361</td>
+<td style="text-align: right;">-0.105892</td>
+<td style="text-align: right;">0.0289413</td>
+<td style="text-align: right;">-0.162617</td>
+<td style="text-align: right;">-0.0491667</td>
+<td style="text-align: right;">0.50412</td>
+<td style="text-align: left;">✓</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+---
+
+### Exponential - Exact Data - Fixed Covariates - Details
+
+
+**Parameter Recovery:**
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div><div style="float: left;"><span>4×8 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
+<table class="data-frame caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Row</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Parameter</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">True</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Estimated</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">SE</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Lower</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Upper</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">RelError_pct</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Covered</th>
+</tr>
+<tr class="subheader headerLastRow even">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;"></th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
+<td style="text-align: left;">h12_beta</td>
+<td style="text-align: right;">0.5</td>
+<td style="text-align: right;">0.526746</td>
+<td style="text-align: right;">0.065457</td>
+<td style="text-align: right;">0.39845</td>
+<td style="text-align: right;">0.655041</td>
+<td style="text-align: right;">5.34913</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
+<td style="text-align: left;">h12_log_rate</td>
+<td style="text-align: right;">-1.89712</td>
+<td style="text-align: right;">-1.88978</td>
+<td style="text-align: right;">0.0457869</td>
+<td style="text-align: right;">-1.97952</td>
+<td style="text-align: right;">-1.80004</td>
+<td style="text-align: right;">0.386995</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">3</td>
+<td style="text-align: left;">h23_beta</td>
+<td style="text-align: right;">0.5</td>
+<td style="text-align: right;">0.479096</td>
+<td style="text-align: right;">0.0753465</td>
+<td style="text-align: right;">0.331417</td>
+<td style="text-align: right;">0.626775</td>
+<td style="text-align: right;">4.18081</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
+<td style="text-align: left;">h23_log_rate</td>
+<td style="text-align: right;">-2.12026</td>
+<td style="text-align: right;">-2.06702</td>
+<td style="text-align: right;">0.0555556</td>
+<td style="text-align: right;">-2.1759</td>
+<td style="text-align: right;">-1.95813</td>
+<td style="text-align: right;">2.51137</td>
+<td style="text-align: left;">✓</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+---
+
+### Exponential - Exact Data - No Covariates - Details
+
+
+**Parameter Recovery:**
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div><div style="float: left;"><span>2×8 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
+<table class="data-frame caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Row</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Parameter</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">True</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Estimated</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">SE</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Lower</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Upper</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">RelError_pct</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Covered</th>
+</tr>
+<tr class="subheader headerLastRow even">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;"></th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
+<td style="text-align: left;">h12_log_rate</td>
+<td style="text-align: right;">-1.89712</td>
+<td style="text-align: right;">-1.84645</td>
+<td style="text-align: right;">0.0332045</td>
+<td style="text-align: right;">-1.91154</td>
+<td style="text-align: right;">-1.78137</td>
+<td style="text-align: right;">2.67065</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
+<td style="text-align: left;">h23_log_rate</td>
+<td style="text-align: right;">-2.12026</td>
+<td style="text-align: right;">-2.09038</td>
+<td style="text-align: right;">0.0403567</td>
+<td style="text-align: right;">-2.16948</td>
+<td style="text-align: right;">-2.01128</td>
+<td style="text-align: right;">1.40959</td>
+<td style="text-align: left;">✓</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+---
+
+### Exponential - Exact Data - Time-Varying Covariates - Details
+
+
+**Parameter Recovery:**
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div><div style="float: left;"><span>4×8 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
+<table class="data-frame caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Row</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Parameter</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">True</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Estimated</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">SE</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Lower</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Upper</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">RelError_pct</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Covered</th>
+</tr>
+<tr class="subheader headerLastRow even">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;"></th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
+<td style="text-align: left;">h12_beta</td>
+<td style="text-align: right;">0.5</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">100.0</td>
+<td style="text-align: left;">✗</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
+<td style="text-align: left;">h12_log_rate</td>
+<td style="text-align: right;">-1.89712</td>
+<td style="text-align: right;">-1.84645</td>
+<td style="text-align: right;">0.0332045</td>
+<td style="text-align: right;">-1.91154</td>
+<td style="text-align: right;">-1.78137</td>
+<td style="text-align: right;">2.67065</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">3</td>
+<td style="text-align: left;">h23_beta</td>
+<td style="text-align: right;">0.5</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">100.0</td>
+<td style="text-align: left;">✗</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
+<td style="text-align: left;">h23_log_rate</td>
+<td style="text-align: right;">-2.12026</td>
+<td style="text-align: right;">-2.09038</td>
+<td style="text-align: right;">0.0403567</td>
+<td style="text-align: right;">-2.16948</td>
+<td style="text-align: right;">-2.01128</td>
+<td style="text-align: right;">1.40959</td>
+<td style="text-align: left;">✓</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+---
+
+### Exponential - Panel Data (Markov) - Fixed Covariates - Details
+
+
+**Parameter Recovery:**
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div><div style="float: left;"><span>4×8 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
+<table class="data-frame caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Row</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Parameter</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">True</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Estimated</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">SE</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Lower</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Upper</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">RelError_pct</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Covered</th>
+</tr>
+<tr class="subheader headerLastRow even">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;"></th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
+<td style="text-align: left;">h12_beta</td>
+<td style="text-align: right;">0.5</td>
+<td style="text-align: right;">0.532568</td>
+<td style="text-align: right;">0.0771887</td>
+<td style="text-align: right;">0.381278</td>
+<td style="text-align: right;">0.683858</td>
+<td style="text-align: right;">6.51366</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
+<td style="text-align: left;">h12_log_rate</td>
+<td style="text-align: right;">-1.89712</td>
+<td style="text-align: right;">-1.85012</td>
+<td style="text-align: right;">0.0546095</td>
+<td style="text-align: right;">-1.95716</td>
+<td style="text-align: right;">-1.74309</td>
+<td style="text-align: right;">2.47726</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">3</td>
+<td style="text-align: left;">h23_beta</td>
+<td style="text-align: right;">0.5</td>
+<td style="text-align: right;">0.45703</td>
+<td style="text-align: right;">0.0898408</td>
+<td style="text-align: right;">0.280942</td>
+<td style="text-align: right;">0.633118</td>
+<td style="text-align: right;">8.59399</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
+<td style="text-align: left;">h23_log_rate</td>
+<td style="text-align: right;">-2.12026</td>
+<td style="text-align: right;">-2.0921</td>
+<td style="text-align: right;">0.0696143</td>
+<td style="text-align: right;">-2.22855</td>
+<td style="text-align: right;">-1.95566</td>
+<td style="text-align: right;">1.32826</td>
+<td style="text-align: left;">✓</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+---
+
+### Exponential - Panel Data (Markov) - No Covariates - Details
+
+
+**Parameter Recovery:**
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div><div style="float: left;"><span>2×8 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
+<table class="data-frame caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Row</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Parameter</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">True</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Estimated</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">SE</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Lower</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Upper</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">RelError_pct</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Covered</th>
+</tr>
+<tr class="subheader headerLastRow even">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;"></th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
+<td style="text-align: left;">h12_log_rate</td>
+<td style="text-align: right;">-1.89712</td>
+<td style="text-align: right;">-1.87335</td>
+<td style="text-align: right;">0.0394745</td>
+<td style="text-align: right;">-1.95072</td>
+<td style="text-align: right;">-1.79598</td>
+<td style="text-align: right;">1.25309</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
+<td style="text-align: left;">h23_log_rate</td>
+<td style="text-align: right;">-2.12026</td>
+<td style="text-align: right;">-2.09382</td>
+<td style="text-align: right;">0.0503324</td>
+<td style="text-align: right;">-2.19247</td>
+<td style="text-align: right;">-1.99517</td>
+<td style="text-align: right;">1.24721</td>
+<td style="text-align: left;">✓</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+---
+
+### Gompertz - Exact Data - Fixed Covariates - Details
+
+
+**Parameter Recovery:**
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div><div style="float: left;"><span>6×8 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
+<table class="data-frame caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Row</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Parameter</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">True</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Estimated</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">SE</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Lower</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Upper</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">RelError_pct</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Covered</th>
+</tr>
+<tr class="subheader headerLastRow even">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;"></th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
+<td style="text-align: left;">h12_beta</td>
+<td style="text-align: right;">0.5</td>
+<td style="text-align: right;">0.584861</td>
+<td style="text-align: right;">0.0902646</td>
+<td style="text-align: right;">0.407942</td>
+<td style="text-align: right;">0.76178</td>
+<td style="text-align: right;">16.9722</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
+<td style="text-align: left;">h12_log_rate</td>
+<td style="text-align: right;">-1.89712</td>
+<td style="text-align: right;">-1.88435</td>
+<td style="text-align: right;">0.092737</td>
+<td style="text-align: right;">-2.06612</td>
+<td style="text-align: right;">-1.70259</td>
+<td style="text-align: right;">0.673068</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">3</td>
+<td style="text-align: left;">h12_shape</td>
+<td style="text-align: right;">0.05</td>
+<td style="text-align: right;">0.00603061</td>
+<td style="text-align: right;">0.0820083</td>
+<td style="text-align: right;">-0.154706</td>
+<td style="text-align: right;">0.166767</td>
+<td style="text-align: right;">87.9388</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
+<td style="text-align: left;">h23_beta</td>
+<td style="text-align: right;">0.5</td>
+<td style="text-align: right;">0.556102</td>
+<td style="text-align: right;">0.134977</td>
+<td style="text-align: right;">0.291547</td>
+<td style="text-align: right;">0.820656</td>
+<td style="text-align: right;">11.2203</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">5</td>
+<td style="text-align: left;">h23_log_rate</td>
+<td style="text-align: right;">-2.12026</td>
+<td style="text-align: right;">-2.18194</td>
+<td style="text-align: right;">0.151832</td>
+<td style="text-align: right;">-2.47953</td>
+<td style="text-align: right;">-1.88434</td>
+<td style="text-align: right;">2.90869</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">6</td>
+<td style="text-align: left;">h23_shape</td>
+<td style="text-align: right;">0.03</td>
+<td style="text-align: right;">0.0663068</td>
+<td style="text-align: right;">0.127546</td>
+<td style="text-align: right;">-0.183683</td>
+<td style="text-align: right;">0.316297</td>
+<td style="text-align: right;">121.023</td>
+<td style="text-align: left;">✓</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+---
+
+### Gompertz - Exact Data - No Covariates - Details
+
+
+**Parameter Recovery:**
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div><div style="float: left;"><span>4×8 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
+<table class="data-frame caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Row</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Parameter</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">True</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Estimated</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">SE</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Lower</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Upper</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">RelError_pct</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Covered</th>
+</tr>
+<tr class="subheader headerLastRow even">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;"></th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
+<td style="text-align: left;">h12_log_rate</td>
+<td style="text-align: right;">-1.89712</td>
+<td style="text-align: right;">-1.80132</td>
+<td style="text-align: right;">0.0936246</td>
+<td style="text-align: right;">-1.98483</td>
+<td style="text-align: right;">-1.61782</td>
+<td style="text-align: right;">5.0495</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
+<td style="text-align: left;">h12_shape</td>
+<td style="text-align: right;">0.05</td>
+<td style="text-align: right;">0.0186752</td>
+<td style="text-align: right;">0.065939</td>
+<td style="text-align: right;">-0.110565</td>
+<td style="text-align: right;">0.147916</td>
+<td style="text-align: right;">62.6495</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">3</td>
+<td style="text-align: left;">h23_log_rate</td>
+<td style="text-align: right;">-2.12026</td>
+<td style="text-align: right;">-2.08191</td>
+<td style="text-align: right;">0.172197</td>
+<td style="text-align: right;">-2.41942</td>
+<td style="text-align: right;">-1.74441</td>
+<td style="text-align: right;">1.80871</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
+<td style="text-align: left;">h23_shape</td>
+<td style="text-align: right;">0.03</td>
+<td style="text-align: right;">0.0185745</td>
+<td style="text-align: right;">0.106198</td>
+<td style="text-align: right;">-0.189574</td>
+<td style="text-align: right;">0.226723</td>
+<td style="text-align: right;">38.0851</td>
+<td style="text-align: left;">✓</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+---
+
+### Gompertz - Exact Data - Time-Varying Covariates - Details
+
+
+**Parameter Recovery:**
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div><div style="float: left;"><span>6×8 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
+<table class="data-frame caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Row</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Parameter</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">True</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Estimated</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">SE</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Lower</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Upper</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">RelError_pct</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Covered</th>
+</tr>
+<tr class="subheader headerLastRow even">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;"></th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
+<td style="text-align: left;">h12_beta</td>
+<td style="text-align: right;">0.5</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">100.0</td>
+<td style="text-align: left;">✗</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
+<td style="text-align: left;">h12_log_rate</td>
+<td style="text-align: right;">-1.89712</td>
+<td style="text-align: right;">-1.80132</td>
+<td style="text-align: right;">0.0936246</td>
+<td style="text-align: right;">-1.98483</td>
+<td style="text-align: right;">-1.61782</td>
+<td style="text-align: right;">5.0495</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">3</td>
+<td style="text-align: left;">h12_shape</td>
+<td style="text-align: right;">0.05</td>
+<td style="text-align: right;">0.0186752</td>
+<td style="text-align: right;">0.065939</td>
+<td style="text-align: right;">-0.110565</td>
+<td style="text-align: right;">0.147916</td>
+<td style="text-align: right;">62.6495</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
+<td style="text-align: left;">h23_beta</td>
+<td style="text-align: right;">0.5</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">100.0</td>
+<td style="text-align: left;">✗</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">5</td>
+<td style="text-align: left;">h23_log_rate</td>
+<td style="text-align: right;">-2.12026</td>
+<td style="text-align: right;">-2.08191</td>
+<td style="text-align: right;">0.172197</td>
+<td style="text-align: right;">-2.41942</td>
+<td style="text-align: right;">-1.74441</td>
+<td style="text-align: right;">1.80871</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">6</td>
+<td style="text-align: left;">h23_shape</td>
+<td style="text-align: right;">0.03</td>
+<td style="text-align: right;">0.0185745</td>
+<td style="text-align: right;">0.106198</td>
+<td style="text-align: right;">-0.189574</td>
+<td style="text-align: right;">0.226723</td>
+<td style="text-align: right;">38.0851</td>
+<td style="text-align: left;">✓</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+---
+
+### Gompertz - Panel Data (MCEM) - Fixed Covariates - Details
+
+
+**Parameter Recovery:**
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div><div style="float: left;"><span>6×8 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
+<table class="data-frame caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Row</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Parameter</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">True</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Estimated</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">SE</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Lower</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Upper</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">RelError_pct</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Covered</th>
+</tr>
+<tr class="subheader headerLastRow even">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;"></th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
+<td style="text-align: left;">h12_beta</td>
+<td style="text-align: right;">0.5</td>
+<td style="text-align: right;">-0.0471565</td>
+<td style="text-align: right;">0.344318</td>
+<td style="text-align: right;">-0.72202</td>
+<td style="text-align: right;">0.627707</td>
+<td style="text-align: right;">109.431</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
+<td style="text-align: left;">h12_log_rate</td>
+<td style="text-align: right;">-1.89712</td>
+<td style="text-align: right;">0.737091</td>
+<td style="text-align: right;">0.692153</td>
+<td style="text-align: right;">-0.61953</td>
+<td style="text-align: right;">2.09371</td>
+<td style="text-align: right;">138.853</td>
+<td style="text-align: left;">✗</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">3</td>
+<td style="text-align: left;">h12_shape</td>
+<td style="text-align: right;">0.05</td>
+<td style="text-align: right;">0.326248</td>
+<td style="text-align: right;">0.496625</td>
+<td style="text-align: right;">-0.647137</td>
+<td style="text-align: right;">1.29963</td>
+<td style="text-align: right;">552.496</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
+<td style="text-align: left;">h23_beta</td>
+<td style="text-align: right;">0.5</td>
+<td style="text-align: right;">0.0723904</td>
+<td style="text-align: right;">0.309514</td>
+<td style="text-align: right;">-0.534258</td>
+<td style="text-align: right;">0.679039</td>
+<td style="text-align: right;">85.5219</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">5</td>
+<td style="text-align: left;">h23_log_rate</td>
+<td style="text-align: right;">-2.12026</td>
+<td style="text-align: right;">0.503514</td>
+<td style="text-align: right;">0.380604</td>
+<td style="text-align: right;">-0.242469</td>
+<td style="text-align: right;">1.2495</td>
+<td style="text-align: right;">123.748</td>
+<td style="text-align: left;">✗</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">6</td>
+<td style="text-align: left;">h23_shape</td>
+<td style="text-align: right;">0.03</td>
+<td style="text-align: right;">0.209498</td>
+<td style="text-align: right;">0.387744</td>
+<td style="text-align: right;">-0.550481</td>
+<td style="text-align: right;">0.969477</td>
+<td style="text-align: right;">598.328</td>
+<td style="text-align: left;">✓</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+---
+
+### Gompertz - Panel Data (MCEM) - No Covariates - Details
+
+
+**Parameter Recovery:**
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div><div style="float: left;"><span>4×8 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
+<table class="data-frame caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Row</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Parameter</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">True</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Estimated</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">SE</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Lower</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Upper</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">RelError_pct</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Covered</th>
+</tr>
+<tr class="subheader headerLastRow even">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;"></th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
+<td style="text-align: left;">h12_log_rate</td>
+<td style="text-align: right;">-1.89712</td>
+<td style="text-align: right;">0.114879</td>
+<td style="text-align: right;">0.342961</td>
+<td style="text-align: right;">-0.557325</td>
+<td style="text-align: right;">0.787084</td>
+<td style="text-align: right;">106.055</td>
+<td style="text-align: left;">✗</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
+<td style="text-align: left;">h12_shape</td>
+<td style="text-align: right;">0.05</td>
+<td style="text-align: right;">0.499918</td>
+<td style="text-align: right;">0.279923</td>
+<td style="text-align: right;">-0.0487301</td>
+<td style="text-align: right;">1.04857</td>
+<td style="text-align: right;">899.837</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">3</td>
+<td style="text-align: left;">h23_log_rate</td>
+<td style="text-align: right;">-2.12026</td>
+<td style="text-align: right;">-0.220047</td>
+<td style="text-align: right;">0.267144</td>
+<td style="text-align: right;">-0.743649</td>
+<td style="text-align: right;">0.303556</td>
+<td style="text-align: right;">89.6217</td>
+<td style="text-align: left;">✗</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
+<td style="text-align: left;">h23_shape</td>
+<td style="text-align: right;">0.03</td>
+<td style="text-align: right;">0.793044</td>
+<td style="text-align: right;">0.231301</td>
+<td style="text-align: right;">0.339695</td>
+<td style="text-align: right;">1.24639</td>
+<td style="text-align: right;">2543.48</td>
+<td style="text-align: left;">✗</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+---
+
+### Weibull - Exact Data - Fixed Covariates - Details
+
+
+**Parameter Recovery:**
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div><div style="float: left;"><span>6×8 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
+<table class="data-frame caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Row</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Parameter</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">True</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Estimated</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">SE</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Lower</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Upper</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">RelError_pct</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Covered</th>
+</tr>
+<tr class="subheader headerLastRow even">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;"></th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
+<td style="text-align: left;">h12_beta</td>
+<td style="text-align: right;">0.5</td>
+<td style="text-align: right;">0.440567</td>
+<td style="text-align: right;">0.0644436</td>
+<td style="text-align: right;">0.314258</td>
+<td style="text-align: right;">0.566876</td>
+<td style="text-align: right;">11.8866</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
+<td style="text-align: left;">h12_log_scale</td>
+<td style="text-align: right;">1.45932</td>
+<td style="text-align: right;">1.46481</td>
+<td style="text-align: right;">0.0246363</td>
+<td style="text-align: right;">1.41653</td>
+<td style="text-align: right;">1.5131</td>
+<td style="text-align: right;">0.376213</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">3</td>
+<td style="text-align: left;">h12_log_shape</td>
+<td style="text-align: right;">0.262364</td>
+<td style="text-align: right;">0.317475</td>
+<td style="text-align: right;">0.0443599</td>
+<td style="text-align: right;">0.230529</td>
+<td style="text-align: right;">0.40442</td>
+<td style="text-align: right;">21.0053</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
+<td style="text-align: left;">h23_beta</td>
+<td style="text-align: right;">0.5</td>
+<td style="text-align: right;">0.43163</td>
+<td style="text-align: right;">0.0642007</td>
+<td style="text-align: right;">0.305796</td>
+<td style="text-align: right;">0.557463</td>
+<td style="text-align: right;">13.6741</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">5</td>
+<td style="text-align: left;">h23_log_scale</td>
+<td style="text-align: right;">2.65033</td>
+<td style="text-align: right;">2.62185</td>
+<td style="text-align: right;">0.0244304</td>
+<td style="text-align: right;">2.57397</td>
+<td style="text-align: right;">2.66974</td>
+<td style="text-align: right;">1.07441</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">6</td>
+<td style="text-align: left;">h23_log_shape</td>
+<td style="text-align: right;">-0.223144</td>
+<td style="text-align: right;">-0.160085</td>
+<td style="text-align: right;">0.0465926</td>
+<td style="text-align: right;">-0.251407</td>
+<td style="text-align: right;">-0.0687636</td>
+<td style="text-align: right;">28.2591</td>
+<td style="text-align: left;">✓</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+---
+
+### Weibull - Exact Data - No Covariates - Details
+
+
+**Parameter Recovery:**
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div><div style="float: left;"><span>4×8 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
+<table class="data-frame caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Row</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Parameter</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">True</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Estimated</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">SE</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Lower</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Upper</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">RelError_pct</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Covered</th>
+</tr>
+<tr class="subheader headerLastRow even">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;"></th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
+<td style="text-align: left;">h12_log_scale</td>
+<td style="text-align: right;">1.45932</td>
+<td style="text-align: right;">1.46478</td>
+<td style="text-align: right;">0.0246503</td>
+<td style="text-align: right;">1.41646</td>
+<td style="text-align: right;">1.51309</td>
+<td style="text-align: right;">0.373686</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
+<td style="text-align: left;">h12_log_shape</td>
+<td style="text-align: right;">0.262364</td>
+<td style="text-align: right;">0.286588</td>
+<td style="text-align: right;">0.0317991</td>
+<td style="text-align: right;">0.224261</td>
+<td style="text-align: right;">0.348914</td>
+<td style="text-align: right;">9.23273</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">3</td>
+<td style="text-align: left;">h23_log_scale</td>
+<td style="text-align: right;">2.65033</td>
+<td style="text-align: right;">2.62155</td>
+<td style="text-align: right;">0.0244354</td>
+<td style="text-align: right;">2.57365</td>
+<td style="text-align: right;">2.66944</td>
+<td style="text-align: right;">1.08602</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
+<td style="text-align: left;">h23_log_shape</td>
+<td style="text-align: right;">-0.223144</td>
+<td style="text-align: right;">-0.186833</td>
+<td style="text-align: right;">0.0350368</td>
+<td style="text-align: right;">-0.255505</td>
+<td style="text-align: right;">-0.118161</td>
+<td style="text-align: right;">16.2722</td>
+<td style="text-align: left;">✓</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+---
+
+### Weibull - Exact Data - Time-Varying Covariates - Details
+
+
+**Parameter Recovery:**
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div><div style="float: left;"><span>6×8 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
+<table class="data-frame caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Row</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Parameter</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">True</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Estimated</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">SE</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Lower</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Upper</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">RelError_pct</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Covered</th>
+</tr>
+<tr class="subheader headerLastRow even">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;"></th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
+<td style="text-align: left;">h12_beta</td>
+<td style="text-align: right;">0.5</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">100.0</td>
+<td style="text-align: left;">✗</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
+<td style="text-align: left;">h12_log_scale</td>
+<td style="text-align: right;">1.45932</td>
+<td style="text-align: right;">1.46478</td>
+<td style="text-align: right;">0.0246503</td>
+<td style="text-align: right;">1.41646</td>
+<td style="text-align: right;">1.51309</td>
+<td style="text-align: right;">0.373686</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">3</td>
+<td style="text-align: left;">h12_log_shape</td>
+<td style="text-align: right;">0.262364</td>
+<td style="text-align: right;">0.286588</td>
+<td style="text-align: right;">0.0317991</td>
+<td style="text-align: right;">0.224261</td>
+<td style="text-align: right;">0.348914</td>
+<td style="text-align: right;">9.23273</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
+<td style="text-align: left;">h23_beta</td>
+<td style="text-align: right;">0.5</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">0.0</td>
+<td style="text-align: right;">100.0</td>
+<td style="text-align: left;">✗</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">5</td>
+<td style="text-align: left;">h23_log_scale</td>
+<td style="text-align: right;">2.65033</td>
+<td style="text-align: right;">2.62155</td>
+<td style="text-align: right;">0.0244354</td>
+<td style="text-align: right;">2.57365</td>
+<td style="text-align: right;">2.66944</td>
+<td style="text-align: right;">1.08602</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">6</td>
+<td style="text-align: left;">h23_log_shape</td>
+<td style="text-align: right;">-0.223144</td>
+<td style="text-align: right;">-0.186833</td>
+<td style="text-align: right;">0.0350368</td>
+<td style="text-align: right;">-0.255505</td>
+<td style="text-align: right;">-0.118161</td>
+<td style="text-align: right;">16.2722</td>
+<td style="text-align: left;">✓</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+---
+
+### Weibull - Panel Data (MCEM) - Fixed Covariates - Details
+
+
+**Parameter Recovery:**
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div><div style="float: left;"><span>6×8 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
+<table class="data-frame caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Row</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Parameter</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">True</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Estimated</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">SE</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Lower</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Upper</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">RelError_pct</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Covered</th>
+</tr>
+<tr class="subheader headerLastRow even">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;"></th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
+<td style="text-align: left;">h12_beta</td>
+<td style="text-align: right;">0.5</td>
+<td style="text-align: right;">0.8345</td>
+<td style="text-align: right;">0.687274</td>
+<td style="text-align: right;">-0.512557</td>
+<td style="text-align: right;">2.18156</td>
+<td style="text-align: right;">66.8999</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
+<td style="text-align: left;">h12_log_scale</td>
+<td style="text-align: right;">1.45932</td>
+<td style="text-align: right;">2.00901</td>
+<td style="text-align: right;">0.558313</td>
+<td style="text-align: right;">0.91472</td>
+<td style="text-align: right;">3.10331</td>
+<td style="text-align: right;">37.6675</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">3</td>
+<td style="text-align: left;">h12_log_shape</td>
+<td style="text-align: right;">0.262364</td>
+<td style="text-align: right;">2.16521</td>
+<td style="text-align: right;">0.750666</td>
+<td style="text-align: right;">0.693901</td>
+<td style="text-align: right;">3.63651</td>
+<td style="text-align: right;">725.268</td>
+<td style="text-align: left;">✗</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
+<td style="text-align: left;">h23_beta</td>
+<td style="text-align: right;">0.5</td>
+<td style="text-align: right;">0.399131</td>
+<td style="text-align: right;">0.131722</td>
+<td style="text-align: right;">0.140956</td>
+<td style="text-align: right;">0.657306</td>
+<td style="text-align: right;">20.1738</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">5</td>
+<td style="text-align: left;">h23_log_scale</td>
+<td style="text-align: right;">2.65033</td>
+<td style="text-align: right;">0.729106</td>
+<td style="text-align: right;">0.29099</td>
+<td style="text-align: right;">0.158765</td>
+<td style="text-align: right;">1.29945</td>
+<td style="text-align: right;">72.49</td>
+<td style="text-align: left;">✗</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">6</td>
+<td style="text-align: left;">h23_log_shape</td>
+<td style="text-align: right;">-0.223144</td>
+<td style="text-align: right;">1.16784</td>
+<td style="text-align: right;">0.076834</td>
+<td style="text-align: right;">1.01724</td>
+<td style="text-align: right;">1.31843</td>
+<td style="text-align: right;">623.357</td>
+<td style="text-align: left;">✗</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+---
+
+### Weibull - Panel Data (MCEM) - No Covariates - Details
+
+
+**Parameter Recovery:**
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div><div style="float: left;"><span>4×8 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
+<table class="data-frame caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Row</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Parameter</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">True</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Estimated</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">SE</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Lower</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Upper</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">RelError_pct</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Covered</th>
+</tr>
+<tr class="subheader headerLastRow even">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;"></th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
+<td style="text-align: left;">h12_log_scale</td>
+<td style="text-align: right;">1.45932</td>
+<td style="text-align: right;">2.23495</td>
+<td style="text-align: right;">NaN</td>
+<td style="text-align: right;">NaN</td>
+<td style="text-align: right;">NaN</td>
+<td style="text-align: right;">53.1495</td>
+<td style="text-align: left;">?</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
+<td style="text-align: left;">h12_log_shape</td>
+<td style="text-align: right;">0.262364</td>
+<td style="text-align: right;">3.13744</td>
+<td style="text-align: right;">NaN</td>
+<td style="text-align: right;">NaN</td>
+<td style="text-align: right;">NaN</td>
+<td style="text-align: right;">1095.83</td>
+<td style="text-align: left;">?</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">3</td>
+<td style="text-align: left;">h23_log_scale</td>
+<td style="text-align: right;">2.65033</td>
+<td style="text-align: right;">0.912191</td>
+<td style="text-align: right;">NaN</td>
+<td style="text-align: right;">NaN</td>
+<td style="text-align: right;">NaN</td>
+<td style="text-align: right;">65.582</td>
+<td style="text-align: left;">?</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
+<td style="text-align: left;">h23_log_shape</td>
+<td style="text-align: right;">-0.223144</td>
+<td style="text-align: right;">1.09493</td>
+<td style="text-align: right;">NaN</td>
+<td style="text-align: right;">NaN</td>
+<td style="text-align: right;">NaN</td>
+<td style="text-align: right;">590.683</td>
+<td style="text-align: left;">?</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
 </div>
-<p><strong>Validation</strong>: All three methods should produce estimates within tolerance of each other and of true parameters.</p>
-</section>
-<section id="phase-type-proposal-tests" class="level2">
-<h2 class="anchored" data-anchor-id="phase-type-proposal-tests">Phase-Type Proposal Tests</h2>
-<section id="why-phase-type-proposals" class="level3">
-<h3 class="anchored" data-anchor-id="why-phase-type-proposals">Why Phase-Type Proposals?</h3>
-<p>For semi-Markov models (non-exponential sojourn times), standard Markov proposals can have poor acceptance rates. Phase-type approximations:</p>
-<ol type="1">
-<li>Match the first two moments of the true sojourn distribution</li>
-<li>Enable Markov-like forward-backward sampling</li>
-<li>Dramatically improve MCEM efficiency for non-Markov models</li>
-</ol>
-</section>
-<section id="longtest_phasetype_exact.jl" class="level3">
-<h3 class="anchored" data-anchor-id="longtest_phasetype_exact.jl"><code>longtest_phasetype_exact.jl</code></h3>
-<p>Tests phase-type fitting with exactly observed transition times:</p>
-<div id="cell-fig-phasetype-exact" class="cell" data-execution_count="5">
-<div class="cell-output cell-output-display" data-execution_count="6">
-<div id="fig-phasetype-exact" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-phasetype-exact-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="long_tests_files/figure-html/fig-phasetype-exact-output-1.svg" class="img-fluid figure-img">
+<div id="9854f718" class="cell" data-fig-height="4" data-fig-width="10" data-execution_count="6">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**State Prevalence: Exact data MLE: exp_nocov**
+
+Red = true model, Blue = fitted model
+</code></pre>
 </div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-phasetype-exact-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;2: Phase-Type Proposal Performance with Exact Observations
-</figcaption>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="long_tests_files/figure-html/cell-7-output-2.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**State Prevalence: Exact data MLE: gom_nocov**
+
+Red = true model, Blue = fitted model
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="long_tests_files/figure-html/cell-7-output-4.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**State Prevalence: Exact data MLE: wei_nocov**
+
+Red = true model, Blue = fitted model
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="long_tests_files/figure-html/cell-7-output-6.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**State Prevalence: Exponential - Exact Data - Fixed Covariates**
+
+Red = true model, Blue = fitted model
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="long_tests_files/figure-html/cell-7-output-8.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**State Prevalence: Exponential - Exact Data - No Covariates**
+
+Red = true model, Blue = fitted model
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="long_tests_files/figure-html/cell-7-output-10.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**State Prevalence: Exponential - Exact Data - Time-Varying Covariates**
+
+Red = true model, Blue = fitted model
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="long_tests_files/figure-html/cell-7-output-12.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**State Prevalence: Exponential - Panel Data (Markov) - Fixed Covariates**
+
+Red = true model, Blue = fitted model
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="long_tests_files/figure-html/cell-7-output-14.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**State Prevalence: Exponential - Panel Data (Markov) - No Covariates**
+
+Red = true model, Blue = fitted model
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="long_tests_files/figure-html/cell-7-output-16.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**State Prevalence: Gompertz - Exact Data - Fixed Covariates**
+
+Red = true model, Blue = fitted model
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="long_tests_files/figure-html/cell-7-output-18.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**State Prevalence: Gompertz - Exact Data - No Covariates**
+
+Red = true model, Blue = fitted model
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="long_tests_files/figure-html/cell-7-output-20.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**State Prevalence: Gompertz - Exact Data - Time-Varying Covariates**
+
+Red = true model, Blue = fitted model
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="long_tests_files/figure-html/cell-7-output-22.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**State Prevalence: Gompertz - Panel Data (MCEM) - Fixed Covariates**
+
+Red = true model, Blue = fitted model
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="long_tests_files/figure-html/cell-7-output-24.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**State Prevalence: Gompertz - Panel Data (MCEM) - No Covariates**
+
+Red = true model, Blue = fitted model
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="long_tests_files/figure-html/cell-7-output-26.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**State Prevalence: Weibull - Exact Data - Fixed Covariates**
+
+Red = true model, Blue = fitted model
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="long_tests_files/figure-html/cell-7-output-28.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**State Prevalence: Weibull - Exact Data - No Covariates**
+
+Red = true model, Blue = fitted model
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="long_tests_files/figure-html/cell-7-output-30.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**State Prevalence: Weibull - Exact Data - Time-Varying Covariates**
+
+Red = true model, Blue = fitted model
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="long_tests_files/figure-html/cell-7-output-32.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**State Prevalence: Weibull - Panel Data (MCEM) - Fixed Covariates**
+
+Red = true model, Blue = fitted model
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="long_tests_files/figure-html/cell-7-output-34.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**State Prevalence: Weibull - Panel Data (MCEM) - No Covariates**
+
+Red = true model, Blue = fitted model
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="long_tests_files/figure-html/cell-7-output-36.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<div id="e42da906" class="cell" data-fig-height="3" data-fig-width="8" data-execution_count="7">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**Cumulative Incidence: Exact data MLE: exp_nocov**
+
+Transitions 1→2 and 2→3 only (progressive model)
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="long_tests_files/figure-html/cell-8-output-2.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**Cumulative Incidence: Exact data MLE: gom_nocov**
+
+Transitions 1→2 and 2→3 only (progressive model)
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="long_tests_files/figure-html/cell-8-output-4.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**Cumulative Incidence: Exact data MLE: wei_nocov**
+
+Transitions 1→2 and 2→3 only (progressive model)
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="long_tests_files/figure-html/cell-8-output-6.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**Cumulative Incidence: Exponential - Exact Data - Fixed Covariates**
+
+Transitions 1→2 and 2→3 only (progressive model)
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="long_tests_files/figure-html/cell-8-output-8.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**Cumulative Incidence: Exponential - Exact Data - No Covariates**
+
+Transitions 1→2 and 2→3 only (progressive model)
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="long_tests_files/figure-html/cell-8-output-10.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**Cumulative Incidence: Exponential - Exact Data - Time-Varying Covariates**
+
+Transitions 1→2 and 2→3 only (progressive model)
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="long_tests_files/figure-html/cell-8-output-12.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**Cumulative Incidence: Exponential - Panel Data (Markov) - Fixed Covariates**
+
+Transitions 1→2 and 2→3 only (progressive model)
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="long_tests_files/figure-html/cell-8-output-14.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**Cumulative Incidence: Exponential - Panel Data (Markov) - No Covariates**
+
+Transitions 1→2 and 2→3 only (progressive model)
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="long_tests_files/figure-html/cell-8-output-16.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**Cumulative Incidence: Gompertz - Exact Data - Fixed Covariates**
+
+Transitions 1→2 and 2→3 only (progressive model)
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="long_tests_files/figure-html/cell-8-output-18.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**Cumulative Incidence: Gompertz - Exact Data - No Covariates**
+
+Transitions 1→2 and 2→3 only (progressive model)
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="long_tests_files/figure-html/cell-8-output-20.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**Cumulative Incidence: Gompertz - Exact Data - Time-Varying Covariates**
+
+Transitions 1→2 and 2→3 only (progressive model)
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="long_tests_files/figure-html/cell-8-output-22.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**Cumulative Incidence: Gompertz - Panel Data (MCEM) - Fixed Covariates**
+
+Transitions 1→2 and 2→3 only (progressive model)
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="long_tests_files/figure-html/cell-8-output-24.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**Cumulative Incidence: Gompertz - Panel Data (MCEM) - No Covariates**
+
+Transitions 1→2 and 2→3 only (progressive model)
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="long_tests_files/figure-html/cell-8-output-26.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**Cumulative Incidence: Weibull - Exact Data - Fixed Covariates**
+
+Transitions 1→2 and 2→3 only (progressive model)
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="long_tests_files/figure-html/cell-8-output-28.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**Cumulative Incidence: Weibull - Exact Data - No Covariates**
+
+Transitions 1→2 and 2→3 only (progressive model)
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="long_tests_files/figure-html/cell-8-output-30.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**Cumulative Incidence: Weibull - Exact Data - Time-Varying Covariates**
+
+Transitions 1→2 and 2→3 only (progressive model)
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="long_tests_files/figure-html/cell-8-output-32.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**Cumulative Incidence: Weibull - Panel Data (MCEM) - Fixed Covariates**
+
+Transitions 1→2 and 2→3 only (progressive model)
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="long_tests_files/figure-html/cell-8-output-34.svg" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+**Cumulative Incidence: Weibull - Panel Data (MCEM) - No Covariates**
+
+Transitions 1→2 and 2→3 only (progressive model)
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="long_tests_files/figure-html/cell-8-output-36.svg" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>
 </div>
 </section>
-<section id="longtest_phasetype_panel.jl" class="level3">
-<h3 class="anchored" data-anchor-id="longtest_phasetype_panel.jl"><code>longtest_phasetype_panel.jl</code></h3>
-<p>Tests phase-type proposals with interval-censored (panel) data:</p>
-<p><strong>Test Matrix</strong>: - 2-state models: Weibull, Gompertz - 3-state progressive: Mixed hazard families - Covariate effects: PH, AFT - Panel observation patterns: Regular, irregular</p>
-</section>
-</section>
-<section id="variance-validation-tests" class="level2">
-<h2 class="anchored" data-anchor-id="variance-validation-tests">Variance Validation Tests</h2>
-<section id="longtest_variance_validation.jl" class="level3">
-<h3 class="anchored" data-anchor-id="longtest_variance_validation.jl"><code>longtest_variance_validation.jl</code></h3>
-<p>Validates that variance estimates achieve nominal coverage.</p>
-<p><strong>Approach</strong>: 1. Simulate 500+ datasets (1000 for variance, 100 for coverage) from true DGP 2. Fit model to each dataset 3. Compute 95% CIs using different variance methods 4. Check that coverage rate ≈ 95%</p>
-<div id="cell-fig-coverage" class="cell" data-execution_count="6">
-<div class="cell-output cell-output-display" data-execution_count="7">
-<div id="fig-coverage" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-coverage-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="long_tests_files/figure-html/fig-coverage-output-1.svg" class="img-fluid figure-img">
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-coverage-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;3: Variance Estimation Coverage Rates
-</figcaption>
-</figure>
-</div>
-</div>
-</div>
-</section>
-</section>
-<section id="simulation-distribution-tests" class="level2">
-<h2 class="anchored" data-anchor-id="simulation-distribution-tests">Simulation Distribution Tests</h2>
-<section id="longtest_simulation_distribution.jl" class="level3">
-<h3 class="anchored" data-anchor-id="longtest_simulation_distribution.jl"><code>longtest_simulation_distribution.jl</code></h3>
-<p>Verifies that simulated paths have correct statistical properties.</p>
-<p><strong>Validation Approach</strong>: 1. Simulate many paths from model 2. Compute empirical sojourn time distribution 3. Compare to theoretical distribution (KS test) 4. Verify state occupancy proportions</p>
-<div id="cell-fig-sim-dist" class="cell" data-execution_count="7">
-<div class="cell-output cell-output-display" data-execution_count="8">
-<div id="fig-sim-dist" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-sim-dist-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="long_tests_files/figure-html/fig-sim-dist-output-1.svg" class="img-fluid figure-img">
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-sim-dist-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;4: Simulation Distribution Validation
-</figcaption>
-</figure>
-</div>
-</div>
-</div>
 </section>
 </section>
 <section id="running-long-tests" class="level2">
 <h2 class="anchored" data-anchor-id="running-long-tests">Running Long Tests</h2>
 <section id="full-suite" class="level3">
 <h3 class="anchored" data-anchor-id="full-suite">Full Suite</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> MultistateModelsTests</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Via the test package API</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="va">MSM_TEST_LEVEL</span><span class="op">=</span>full <span class="ex">julia</span> <span class="at">--project</span><span class="op">=</span>. <span class="at">-e</span> <span class="st">'using MultistateModelsTests; MultistateModelsTests.runtests()'</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Or via the dedicated script</span></span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="ex">julia</span> <span class="at">--project</span><span class="op">=</span>. scripts/run_longtests.jl</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb55"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> MultistateModelsTests</span>
+<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Via the test package API</span></span>
+<span id="cb55-4"><a href="#cb55-4" aria-hidden="true" tabindex="-1"></a><span class="va">MSM_TEST_LEVEL</span><span class="op">=</span>full <span class="ex">julia</span> <span class="at">--project</span><span class="op">=</span>. <span class="at">-e</span> <span class="st">'using MultistateModelsTests; MultistateModelsTests.runtests()'</span></span>
+<span id="cb55-5"><a href="#cb55-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb55-6"><a href="#cb55-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Or via the dedicated script</span></span>
+<span id="cb55-7"><a href="#cb55-7" aria-hidden="true" tabindex="-1"></a><span class="ex">julia</span> <span class="at">--project</span><span class="op">=</span>. scripts/run_longtests.jl</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
-<section id="individual-test" class="level3">
-<h3 class="anchored" data-anchor-id="individual-test">Individual Test</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Run only a specific suite (by key name)</span></span>
-<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="va">MSM_TEST_LEVEL</span><span class="op">=</span>full <span class="va">MSM_LONGTEST_ONLY</span><span class="op">=</span>mcem_parametric <span class="ex">julia</span> <span class="at">--project</span><span class="op">=</span>. <span class="at">-e</span> <span class="st">'using MultistateModelsTests; MultistateModelsTests.runtests()'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<section id="individual-test-suite" class="level3">
+<h3 class="anchored" data-anchor-id="individual-test-suite">Individual Test Suite</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb56"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Run only a specific suite (by key name)</span></span>
+<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a><span class="va">MSM_TEST_LEVEL</span><span class="op">=</span>full <span class="va">MSM_LONGTEST_ONLY</span><span class="op">=</span>parametric_suite <span class="ex">julia</span> <span class="at">--project</span><span class="op">=</span>. <span class="at">-e</span> <span class="st">'using MultistateModelsTests; MultistateModelsTests.runtests()'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="available-test-suites" class="level3">
+<h3 class="anchored" data-anchor-id="available-test-suites">Available Test Suites</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 27%">
+<col style="width: 72%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Key</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>parametric_suite</code></td>
+<td>Parametric families (exp/wei/gom) × data types × covariates</td>
+</tr>
+<tr class="even">
+<td><code>exact_data</code></td>
+<td>Exact observation direct MLE</td>
+</tr>
+<tr class="odd">
+<td><code>mcem_parametric</code></td>
+<td>Panel data with parametric hazards</td>
+</tr>
+<tr class="even">
+<td><code>mcem_splines</code></td>
+<td>Panel data with spline hazards</td>
+</tr>
+<tr class="odd">
+<td><code>phasetype</code></td>
+<td>Phase-type hazard models</td>
+</tr>
+<tr class="even">
+<td><code>variance_validation</code></td>
+<td>Variance estimation validation</td>
+</tr>
+</tbody>
+</table>
 </section>
 <section id="environment-variables" class="level3">
 <h3 class="anchored" data-anchor-id="environment-variables">Environment Variables</h3>
@@ -576,8 +2679,8 @@ Figure&nbsp;4: Simulation Distribution Validation
 </tr>
 <tr class="even">
 <td><code>MSM_LONGTEST_ONLY</code></td>
-<td>test key (e.g., <code>mcem_parametric</code>)</td>
-<td>Run only one specific long test</td>
+<td>test key</td>
+<td>Run only one specific long test suite</td>
 </tr>
 <tr class="odd">
 <td><code>MSM_SUPPRESS_WARNINGS</code></td>
@@ -587,137 +2690,13 @@ Figure&nbsp;4: Simulation Distribution Validation
 </tbody>
 </table>
 </section>
-<section id="with-debug-logging" class="level3">
-<h3 class="anchored" data-anchor-id="with-debug-logging">With Debug Logging</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="va">MSM_TEST_LEVEL</span><span class="op">=</span>full <span class="ex">julia</span> <span class="at">--project</span><span class="op">=</span>. <span class="at">-e</span> <span class="st">'</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="st">    ENV["JULIA_DEBUG"] = "MultistateModels"</span></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="st">    using MultistateModelsTests</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="st">    MultistateModelsTests.runtests()</span></span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="st">'</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
-</section>
-<section id="test-status-dashboard" class="level2">
-<h2 class="anchored" data-anchor-id="test-status-dashboard">Test Status Dashboard</h2>
-<div id="11defae5" class="cell" data-execution_count="8">
-<div class="cell-output cell-output-display" data-execution_count="9">
-<div><div style="float: left;"><span>10×5 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
-<table class="data-frame caption-top table table-sm table-striped small">
-<thead>
-<tr class="header">
-<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Row</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">Test</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">Status</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">LastRun</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">Duration</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">Notes</th>
-</tr>
-<tr class="subheader headerLastRow even">
-<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;"></th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
-<td style="text-align: left;">Exact Markov</td>
-<td style="text-align: left;">✅ Pass</td>
-<td style="text-align: left;">2025-06</td>
-<td style="text-align: left;">~5 min</td>
-<td style="text-align: left;">Direct optimization</td>
-</tr>
-<tr class="even">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
-<td style="text-align: left;">MCEM Parametric</td>
-<td style="text-align: left;">✅ Pass</td>
-<td style="text-align: left;">2025-06</td>
-<td style="text-align: left;">~15 min</td>
-<td style="text-align: left;">All hazard families pass</td>
-</tr>
-<tr class="odd">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">3</td>
-<td style="text-align: left;">MCEM Splines</td>
-<td style="text-align: left;">✅ Pass</td>
-<td style="text-align: left;">2025-06</td>
-<td style="text-align: left;">~20 min</td>
-<td style="text-align: left;">5 interior knots</td>
-</tr>
-<tr class="even">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
-<td style="text-align: left;">MCEM TVC</td>
-<td style="text-align: left;">✅ Pass</td>
-<td style="text-align: left;">2025-06</td>
-<td style="text-align: left;">~10 min</td>
-<td style="text-align: left;">Step-function covariates</td>
-</tr>
-<tr class="odd">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">5</td>
-<td style="text-align: left;">Simulation Dist</td>
-<td style="text-align: left;">✅ Pass</td>
-<td style="text-align: left;">2025-06</td>
-<td style="text-align: left;">~5 min</td>
-<td style="text-align: left;">KS test p &gt; 0.05</td>
-</tr>
-<tr class="even">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">6</td>
-<td style="text-align: left;">Simulation TVC</td>
-<td style="text-align: left;">✅ Pass</td>
-<td style="text-align: left;">2025-06</td>
-<td style="text-align: left;">~5 min</td>
-<td style="text-align: left;">TVC propagation correct</td>
-</tr>
-<tr class="odd">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">7</td>
-<td style="text-align: left;">Robust Parametric</td>
-<td style="text-align: left;">✅ Pass</td>
-<td style="text-align: left;">2025-06</td>
-<td style="text-align: left;">~15 min</td>
-<td style="text-align: left;">IJ/JK coverage ~95%</td>
-</tr>
-<tr class="even">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">8</td>
-<td style="text-align: left;">Markov/PhaseType Validation</td>
-<td style="text-align: left;">✅ Pass</td>
-<td style="text-align: left;">2025-06</td>
-<td style="text-align: left;">~20 min</td>
-<td style="text-align: left;">Markov ≈ PhaseType consistency</td>
-</tr>
-<tr class="odd">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">9</td>
-<td style="text-align: left;">Phase-Type</td>
-<td style="text-align: left;">✅ Pass</td>
-<td style="text-align: left;">2025-06</td>
-<td style="text-align: left;">~30 min</td>
-<td style="text-align: left;">Exact + panel data</td>
-</tr>
-<tr class="even">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">10</td>
-<td style="text-align: left;">Variance Validation</td>
-<td style="text-align: left;">✅ Pass</td>
-<td style="text-align: left;">2025-06</td>
-<td style="text-align: left;">~10 min</td>
-<td style="text-align: left;">Coverage nominal</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-</div>
-</section>
-<section id="common-issues-and-debugging" class="level2">
-<h2 class="anchored" data-anchor-id="common-issues-and-debugging">Common Issues and Debugging</h2>
+<section id="troubleshooting" class="level2">
+<h2 class="anchored" data-anchor-id="troubleshooting">Troubleshooting</h2>
 <section id="parameter-recovery-failures" class="level3">
 <h3 class="anchored" data-anchor-id="parameter-recovery-failures">Parameter Recovery Failures</h3>
 <p><strong>Symptoms</strong>: Estimated parameters far from true values</p>
-<p><strong>Potential Causes</strong>: 1. <strong>Insufficient sample size</strong>: Increase <code>N_SUBJECTS</code> 2. <strong>Poor initialization</strong>: Check <code>initialize_parameters!</code> settings 3. <strong>Non-identifiability</strong>: Verify model specification 4. <strong>MCEM convergence</strong>: Increase <code>MAX_ITER</code> or tighten <code>MCEM_TOL</code></p>
-</section>
-<section id="phase-type-convergence-issues" class="level3">
-<h3 class="anchored" data-anchor-id="phase-type-convergence-issues">Phase-Type Convergence Issues</h3>
-<p><strong>Symptoms</strong>: Phase-type fitting fails or produces poor approximation</p>
-<p><strong>Solutions</strong>: 1. Increase number of phases in expansion 2. Check moment matching quality 3. Verify sojourn distribution has finite moments</p>
+<p><strong>Potential Causes</strong>: 1. <strong>Insufficient sample size</strong>: Tests use N=1000, may need more for some models 2. <strong>Poor initialization</strong>: Check <code>initialize_parameters!</code> settings 3. <strong>MCEM convergence</strong>: Increase iterations or tighten tolerance</p>
 </section>
 <section id="variance-estimation-issues" class="level3">
 <h3 class="anchored" data-anchor-id="variance-estimation-issues">Variance Estimation Issues</h3>
@@ -725,16 +2704,16 @@ Figure&nbsp;4: Simulation Distribution Validation
 <p><strong>Potential Causes</strong>: 1. <strong>Small sample bias</strong>: Need larger n 2. <strong>Boundary parameters</strong>: Transform scale may help 3. <strong>Model misspecification</strong>: Verify DGP matches fitted model</p>
 </section>
 </section>
-<section id="summary" class="level2">
-<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<section id="summary-1" class="level2">
+<h2 class="anchored" data-anchor-id="summary-1">Summary</h2>
 <p>Long tests provide rigorous validation that MultistateModels.jl:</p>
 <ol type="1">
-<li><strong>Recovers parameters</strong> within expected tolerance</li>
+<li><strong>Recovers parameters</strong> within expected tolerance (20% relative error)</li>
 <li><strong>Produces valid uncertainty</strong> through variance estimation</li>
 <li><strong>Simulates correctly</strong> from fitted models</li>
 <li><strong>Handles all supported</strong> hazard families and observation types</li>
 </ol>
-<p>These tests run regularly to catch regressions and validate new features before release.</p>
+<p>The test matrix covers: - <strong>Families</strong>: Exponential, Weibull, Gompertz, Phase-Type, Spline - <strong>Data types</strong>: Exact (direct MLE), Panel (Markov/MCEM) - <strong>Covariates</strong>: None, Time-fixed, Time-varying</p>
 
 
 </section>

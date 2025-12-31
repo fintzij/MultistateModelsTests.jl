@@ -268,24 +268,28 @@ window.Quarto = {
 </section>
 <section id="configuration" class="level2">
 <h2 class="anchored" data-anchor-id="configuration">Configuration</h2>
-<div id="774044c0" class="cell" data-execution_count="2">
+<div id="4353a2e6" class="cell" data-execution_count="2">
 <details class="code-fold">
 <summary>Show code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> COVARIATE_VALUE <span class="op">=</span> <span class="fl">1.5</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> SIM_SAMPLES <span class="op">=</span> <span class="fl">40_000</span></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> DIST_GRID_POINTS <span class="op">=</span> <span class="fl">400</span></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> FAMILY_CONFIG <span class="op">=</span> <span class="fu">Dict</span>(</span>
-<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"exp"</span> <span class="op">=&gt;</span> (; rate <span class="op">=</span> <span class="fl">0.35</span>, beta <span class="op">=</span> <span class="fl">0.6</span>, horizon <span class="op">=</span> <span class="fl">5.0</span>),</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">"wei"</span> <span class="op">=&gt;</span> (; shape <span class="op">=</span> <span class="fl">1.35</span>, scale <span class="op">=</span> <span class="fl">0.4</span>, beta <span class="op">=</span> <span class="op">-</span><span class="fl">0.35</span>, horizon <span class="op">=</span> <span class="fl">5.0</span>),</span>
-<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">"gom"</span> <span class="op">=&gt;</span> (; shape <span class="op">=</span> <span class="fl">0.6</span>, rate <span class="op">=</span> <span class="fl">0.4</span>, beta <span class="op">=</span> <span class="fl">0.5</span>, horizon <span class="op">=</span> <span class="fl">5.0</span>),</span>
-<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Horizons must be large enough to ensure negligible right-truncation (&lt;0.1%)</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co"># For Exponential with AFT covariates: effective rate = 0.35 * exp(-0.6*1.5) ≈ 0.14</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Need: exp(-rate * horizon) &lt; 0.001 =&gt; horizon &gt; log(1000)/rate ≈ 50</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Setting horizon = 100 provides ample margin</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> FAMILY_CONFIG <span class="op">=</span> <span class="fu">Dict</span>(</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">"exp"</span> <span class="op">=&gt;</span> (; rate <span class="op">=</span> <span class="fl">0.35</span>, beta <span class="op">=</span> <span class="fl">0.6</span>, horizon <span class="op">=</span> <span class="fl">100.0</span>),</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">"wei"</span> <span class="op">=&gt;</span> (; shape <span class="op">=</span> <span class="fl">1.35</span>, scale <span class="op">=</span> <span class="fl">0.4</span>, beta <span class="op">=</span> <span class="op">-</span><span class="fl">0.35</span>, horizon <span class="op">=</span> <span class="fl">50.0</span>),</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">"gom"</span> <span class="op">=&gt;</span> (; shape <span class="op">=</span> <span class="fl">0.6</span>, rate <span class="op">=</span> <span class="fl">0.4</span>, beta <span class="op">=</span> <span class="fl">0.5</span>, horizon <span class="op">=</span> <span class="fl">10.0</span>),  <span class="co"># Gompertz diverges quickly</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
-<div class="cell-output cell-output-display" data-execution_count="3">
+<div class="cell-output cell-output-display" data-execution_count="5">
 <pre><code>Dict{String, NamedTuple} with 3 entries:
-  "exp" =&gt; (rate = 0.35, beta = 0.6, horizon = 5.0)
-  "wei" =&gt; (shape = 1.35, scale = 0.4, beta = -0.35, horizon = 5.0)
-  "gom" =&gt; (shape = 0.6, rate = 0.4, beta = 0.5, horizon = 5.0)</code></pre>
+  "exp" =&gt; (rate = 0.35, beta = 0.6, horizon = 100.0)
+  "wei" =&gt; (shape = 1.35, scale = 0.4, beta = -0.35, horizon = 50.0)
+  "gom" =&gt; (shape = 0.6, rate = 0.4, beta = 0.5, horizon = 10.0)</code></pre>
 </div>
 </div>
 </section>
@@ -323,7 +327,7 @@ window.Quarto = {
 </section>
 <section id="helper-functions" class="level2">
 <h2 class="anchored" data-anchor-id="helper-functions">Helper Functions</h2>
-<div id="452bc901" class="cell" data-execution_count="3">
+<div id="f7655420" class="cell" data-execution_count="3">
 <details class="code-fold">
 <summary>Show code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a 2-state model for a given scenario</span></span>
@@ -396,33 +400,49 @@ window.Quarto = {
 <span id="cb3-68"><a href="#cb3-68" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
 <span id="cb3-69"><a href="#cb3-69" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-70"><a href="#cb3-70" aria-hidden="true" tabindex="-1"></a><span class="co"># Simulate event times from model</span></span>
-<span id="cb3-71"><a href="#cb3-71" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">simulate_event_times</span>(model, nsim<span class="op">::</span><span class="dt">Int</span>; rng <span class="op">=</span> <span class="bu">Random</span>.<span class="fu">default_rng</span>())</span>
-<span id="cb3-72"><a href="#cb3-72" aria-hidden="true" tabindex="-1"></a>    durations <span class="op">=</span> <span class="dt">Float64</span>[]</span>
-<span id="cb3-73"><a href="#cb3-73" aria-hidden="true" tabindex="-1"></a>    strategy <span class="op">=</span> <span class="fu">CachedTransformStrategy</span>()</span>
-<span id="cb3-74"><a href="#cb3-74" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="fu">length</span>(durations) <span class="op">&lt;</span> nsim</span>
-<span id="cb3-75"><a href="#cb3-75" aria-hidden="true" tabindex="-1"></a>        path <span class="op">=</span> <span class="fu">simulate_path</span>(model, <span class="fl">1</span>; strategy <span class="op">=</span> strategy, rng <span class="op">=</span> rng)</span>
-<span id="cb3-76"><a href="#cb3-76" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> path.states[<span class="kw">end</span>] <span class="op">!=</span> path.states[<span class="fl">1</span>]</span>
-<span id="cb3-77"><a href="#cb3-77" aria-hidden="true" tabindex="-1"></a>            <span class="fu">push!</span>(durations, path.times[<span class="kw">end</span>] <span class="op">-</span> path.times[<span class="fl">1</span>])</span>
-<span id="cb3-78"><a href="#cb3-78" aria-hidden="true" tabindex="-1"></a>        <span class="cf">end</span></span>
-<span id="cb3-79"><a href="#cb3-79" aria-hidden="true" tabindex="-1"></a>    <span class="cf">end</span></span>
-<span id="cb3-80"><a href="#cb3-80" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> durations</span>
-<span id="cb3-81"><a href="#cb3-81" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
-<span id="cb3-82"><a href="#cb3-82" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-83"><a href="#cb3-83" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute maximum CDF difference</span></span>
-<span id="cb3-84"><a href="#cb3-84" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">max_cdf_diff</span>(durations<span class="op">::</span><span class="dt">Vector{Float64}</span>, cdf_func, horizon<span class="op">::</span><span class="dt">Float64</span>)</span>
-<span id="cb3-85"><a href="#cb3-85" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Compute empirical CDF</span></span>
-<span id="cb3-86"><a href="#cb3-86" aria-hidden="true" tabindex="-1"></a>    sorted <span class="op">=</span> <span class="fu">sort</span>(durations)</span>
-<span id="cb3-87"><a href="#cb3-87" aria-hidden="true" tabindex="-1"></a>    n <span class="op">=</span> <span class="fu">length</span>(sorted)</span>
-<span id="cb3-88"><a href="#cb3-88" aria-hidden="true" tabindex="-1"></a>    ecdf_vals <span class="op">=</span> (<span class="fl">1</span><span class="op">:</span>n) <span class="op">./</span> n</span>
+<span id="cb3-71"><a href="#cb3-71" aria-hidden="true" tabindex="-1"></a><span class="co"># </span><span class="al">WARNING</span><span class="co">: Only collects paths where a transition occurred within horizon.</span></span>
+<span id="cb3-72"><a href="#cb3-72" aria-hidden="true" tabindex="-1"></a><span class="co"># Set horizon large enough so P(T &gt; horizon) &lt; 0.001 to avoid right-truncation bias.</span></span>
+<span id="cb3-73"><a href="#cb3-73" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">simulate_event_times</span>(model, nsim<span class="op">::</span><span class="dt">Int</span>; rng <span class="op">=</span> <span class="bu">Random</span>.<span class="fu">default_rng</span>())</span>
+<span id="cb3-74"><a href="#cb3-74" aria-hidden="true" tabindex="-1"></a>    durations <span class="op">=</span> <span class="dt">Float64</span>[]</span>
+<span id="cb3-75"><a href="#cb3-75" aria-hidden="true" tabindex="-1"></a>    n_censored <span class="op">=</span> <span class="fl">0</span></span>
+<span id="cb3-76"><a href="#cb3-76" aria-hidden="true" tabindex="-1"></a>    strategy <span class="op">=</span> <span class="fu">CachedTransformStrategy</span>()</span>
+<span id="cb3-77"><a href="#cb3-77" aria-hidden="true" tabindex="-1"></a>    total_attempts <span class="op">=</span> <span class="fl">0</span></span>
+<span id="cb3-78"><a href="#cb3-78" aria-hidden="true" tabindex="-1"></a>    max_attempts <span class="op">=</span> nsim <span class="op">*</span> <span class="fl">20</span>  <span class="co"># Safety limit</span></span>
+<span id="cb3-79"><a href="#cb3-79" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-80"><a href="#cb3-80" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="fu">length</span>(durations) <span class="op">&lt;</span> nsim <span class="op">&amp;&amp;</span> total_attempts <span class="op">&lt;</span> max_attempts</span>
+<span id="cb3-81"><a href="#cb3-81" aria-hidden="true" tabindex="-1"></a>        total_attempts <span class="op">+=</span> <span class="fl">1</span></span>
+<span id="cb3-82"><a href="#cb3-82" aria-hidden="true" tabindex="-1"></a>        path <span class="op">=</span> <span class="fu">simulate_path</span>(model, <span class="fl">1</span>; strategy <span class="op">=</span> strategy, rng <span class="op">=</span> rng)</span>
+<span id="cb3-83"><a href="#cb3-83" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> path.states[<span class="kw">end</span>] <span class="op">!=</span> path.states[<span class="fl">1</span>]</span>
+<span id="cb3-84"><a href="#cb3-84" aria-hidden="true" tabindex="-1"></a>            <span class="fu">push!</span>(durations, path.times[<span class="kw">end</span>] <span class="op">-</span> path.times[<span class="fl">1</span>])</span>
+<span id="cb3-85"><a href="#cb3-85" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span></span>
+<span id="cb3-86"><a href="#cb3-86" aria-hidden="true" tabindex="-1"></a>            n_censored <span class="op">+=</span> <span class="fl">1</span></span>
+<span id="cb3-87"><a href="#cb3-87" aria-hidden="true" tabindex="-1"></a>        <span class="cf">end</span></span>
+<span id="cb3-88"><a href="#cb3-88" aria-hidden="true" tabindex="-1"></a>    <span class="cf">end</span></span>
 <span id="cb3-89"><a href="#cb3-89" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb3-90"><a href="#cb3-90" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Compute theoretical CDF at each point</span></span>
-<span id="cb3-91"><a href="#cb3-91" aria-hidden="true" tabindex="-1"></a>    tcdf_vals <span class="op">=</span> [<span class="fu">cdf_func</span>(t) for t <span class="kw">in</span> sorted]</span>
-<span id="cb3-92"><a href="#cb3-92" aria-hidden="true" tabindex="-1"></a>    </span>
-<span id="cb3-93"><a href="#cb3-93" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Max absolute difference</span></span>
-<span id="cb3-94"><a href="#cb3-94" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="fu">maximum</span>(<span class="fu">abs</span>.(ecdf_vals <span class="op">.-</span> tcdf_vals))</span>
-<span id="cb3-95"><a href="#cb3-95" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb3-90"><a href="#cb3-90" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Warn if significant truncation detected</span></span>
+<span id="cb3-91"><a href="#cb3-91" aria-hidden="true" tabindex="-1"></a>    truncation_rate <span class="op">=</span> n_censored <span class="op">/</span> total_attempts</span>
+<span id="cb3-92"><a href="#cb3-92" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> truncation_rate <span class="op">&gt;</span> <span class="fl">0.01</span></span>
+<span id="cb3-93"><a href="#cb3-93" aria-hidden="true" tabindex="-1"></a>        <span class="pp">@warn</span> <span class="st">"High right-truncation rate: </span><span class="sc">$</span>(<span class="fu">round</span>(truncation_rate<span class="op">*</span><span class="fl">100</span>, digits<span class="op">=</span><span class="fl">1</span>))<span class="st">%. Increase horizon."</span></span>
+<span id="cb3-94"><a href="#cb3-94" aria-hidden="true" tabindex="-1"></a>    <span class="cf">end</span></span>
+<span id="cb3-95"><a href="#cb3-95" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-96"><a href="#cb3-96" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> durations</span>
+<span id="cb3-97"><a href="#cb3-97" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span>
+<span id="cb3-98"><a href="#cb3-98" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-99"><a href="#cb3-99" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute maximum CDF difference</span></span>
+<span id="cb3-100"><a href="#cb3-100" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">max_cdf_diff</span>(durations<span class="op">::</span><span class="dt">Vector{Float64}</span>, cdf_func, horizon<span class="op">::</span><span class="dt">Float64</span>)</span>
+<span id="cb3-101"><a href="#cb3-101" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Compute empirical CDF</span></span>
+<span id="cb3-102"><a href="#cb3-102" aria-hidden="true" tabindex="-1"></a>    sorted <span class="op">=</span> <span class="fu">sort</span>(durations)</span>
+<span id="cb3-103"><a href="#cb3-103" aria-hidden="true" tabindex="-1"></a>    n <span class="op">=</span> <span class="fu">length</span>(sorted)</span>
+<span id="cb3-104"><a href="#cb3-104" aria-hidden="true" tabindex="-1"></a>    ecdf_vals <span class="op">=</span> (<span class="fl">1</span><span class="op">:</span>n) <span class="op">./</span> n</span>
+<span id="cb3-105"><a href="#cb3-105" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-106"><a href="#cb3-106" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Compute theoretical CDF at each point</span></span>
+<span id="cb3-107"><a href="#cb3-107" aria-hidden="true" tabindex="-1"></a>    tcdf_vals <span class="op">=</span> [<span class="fu">cdf_func</span>(t) for t <span class="kw">in</span> sorted]</span>
+<span id="cb3-108"><a href="#cb3-108" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb3-109"><a href="#cb3-109" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Max absolute difference</span></span>
+<span id="cb3-110"><a href="#cb3-110" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="fu">maximum</span>(<span class="fu">abs</span>.(ecdf_vals <span class="op">.-</span> tcdf_vals))</span>
+<span id="cb3-111"><a href="#cb3-111" aria-hidden="true" tabindex="-1"></a><span class="kw">end</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
-<div class="cell-output cell-output-display" data-execution_count="4">
+<div class="cell-output cell-output-display" data-execution_count="6">
 <pre><code>max_cdf_diff (generic function with 1 method)</code></pre>
 </div>
 </div>
@@ -490,7 +510,7 @@ This program contains Ipopt, a library for large-scale nonlinear optimization.
 Table&nbsp;1: Simulation Diagnostic Summary
 </figcaption>
 <div aria-describedby="tbl-results-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<div class="cell-output cell-output-display" data-execution_count="5">
+<div class="cell-output cell-output-display" data-execution_count="7">
 <div><div style="float: left;"><span>12×5 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
 <table class="data-frame do-not-create-environment cell caption-top table table-sm table-striped small">
 <thead>
@@ -517,15 +537,15 @@ Table&nbsp;1: Simulation Diagnostic Summary
 <td style="text-align: left;">Exp</td>
 <td style="text-align: left;">PH</td>
 <td style="text-align: left;">No</td>
-<td style="text-align: right;">0.1738</td>
-<td style="text-align: left;">❌ Fail</td>
+<td style="text-align: right;">0.0042</td>
+<td style="text-align: left;">✅ Pass</td>
 </tr>
 <tr class="even">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
 <td style="text-align: left;">Exp</td>
 <td style="text-align: left;">PH</td>
 <td style="text-align: left;">Yes</td>
-<td style="text-align: right;">0.0145</td>
+<td style="text-align: right;">0.0034</td>
 <td style="text-align: left;">✅ Pass</td>
 </tr>
 <tr class="odd">
@@ -533,47 +553,47 @@ Table&nbsp;1: Simulation Diagnostic Summary
 <td style="text-align: left;">Exp</td>
 <td style="text-align: left;">AFT</td>
 <td style="text-align: left;">No</td>
-<td style="text-align: right;">0.1738</td>
-<td style="text-align: left;">❌ Fail</td>
+<td style="text-align: right;">0.0039</td>
+<td style="text-align: left;">✅ Pass</td>
 </tr>
 <tr class="even">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
 <td style="text-align: left;">Exp</td>
 <td style="text-align: left;">AFT</td>
 <td style="text-align: left;">Yes</td>
-<td style="text-align: right;">0.4909</td>
-<td style="text-align: left;">❌ Fail</td>
+<td style="text-align: right;">0.0042</td>
+<td style="text-align: left;">✅ Pass</td>
 </tr>
 <tr class="odd">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">5</td>
 <td style="text-align: left;">Wei</td>
 <td style="text-align: left;">PH</td>
 <td style="text-align: left;">No</td>
-<td style="text-align: right;">0.0299</td>
-<td style="text-align: left;">❌ Fail</td>
+<td style="text-align: right;">0.0063</td>
+<td style="text-align: left;">✅ Pass</td>
 </tr>
 <tr class="even">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">6</td>
 <td style="text-align: left;">Wei</td>
 <td style="text-align: left;">PH</td>
 <td style="text-align: left;">Yes</td>
-<td style="text-align: right;">0.1252</td>
-<td style="text-align: left;">❌ Fail</td>
+<td style="text-align: right;">0.0035</td>
+<td style="text-align: left;">✅ Pass</td>
 </tr>
 <tr class="odd">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">7</td>
 <td style="text-align: left;">Wei</td>
 <td style="text-align: left;">AFT</td>
 <td style="text-align: left;">No</td>
-<td style="text-align: right;">0.0299</td>
-<td style="text-align: left;">❌ Fail</td>
+<td style="text-align: right;">0.0063</td>
+<td style="text-align: left;">✅ Pass</td>
 </tr>
 <tr class="even">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">8</td>
 <td style="text-align: left;">Wei</td>
 <td style="text-align: left;">AFT</td>
 <td style="text-align: left;">Yes</td>
-<td style="text-align: right;">0.0049</td>
+<td style="text-align: right;">0.0031</td>
 <td style="text-align: left;">✅ Pass</td>
 </tr>
 <tr class="odd">
@@ -581,7 +601,7 @@ Table&nbsp;1: Simulation Diagnostic Summary
 <td style="text-align: left;">Gom</td>
 <td style="text-align: left;">PH</td>
 <td style="text-align: left;">No</td>
-<td style="text-align: right;">0.0043</td>
+<td style="text-align: right;">0.0088</td>
 <td style="text-align: left;">✅ Pass</td>
 </tr>
 <tr class="even">
@@ -589,7 +609,7 @@ Table&nbsp;1: Simulation Diagnostic Summary
 <td style="text-align: left;">Gom</td>
 <td style="text-align: left;">PH</td>
 <td style="text-align: left;">Yes</td>
-<td style="text-align: right;">0.0043</td>
+<td style="text-align: right;">0.0045</td>
 <td style="text-align: left;">✅ Pass</td>
 </tr>
 <tr class="odd">
@@ -597,7 +617,7 @@ Table&nbsp;1: Simulation Diagnostic Summary
 <td style="text-align: left;">Gom</td>
 <td style="text-align: left;">AFT</td>
 <td style="text-align: left;">No</td>
-<td style="text-align: right;">0.0039</td>
+<td style="text-align: right;">0.0054</td>
 <td style="text-align: left;">✅ Pass</td>
 </tr>
 <tr class="even">
@@ -605,8 +625,8 @@ Table&nbsp;1: Simulation Diagnostic Summary
 <td style="text-align: left;">Gom</td>
 <td style="text-align: left;">AFT</td>
 <td style="text-align: left;">Yes</td>
-<td style="text-align: right;">0.1245</td>
-<td style="text-align: left;">❌ Fail</td>
+<td style="text-align: right;">0.0046</td>
+<td style="text-align: left;">✅ Pass</td>
 </tr>
 </tbody>
 </table>
@@ -675,7 +695,7 @@ Table&nbsp;1: Simulation Diagnostic Summary
 <span id="cb7-49"><a href="#cb7-49" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb7-50"><a href="#cb7-50" aria-hidden="true" tabindex="-1"></a>fig</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
-<div class="cell-output cell-output-display" data-execution_count="6">
+<div class="cell-output cell-output-display" data-execution_count="8">
 <div id="fig-exp" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
 <div aria-describedby="fig-exp-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
@@ -746,7 +766,7 @@ Figure&nbsp;1: Exponential Hazard Diagnostics
 <span id="cb8-50"><a href="#cb8-50" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-51"><a href="#cb8-51" aria-hidden="true" tabindex="-1"></a>fig</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
-<div class="cell-output cell-output-display" data-execution_count="7">
+<div class="cell-output cell-output-display" data-execution_count="9">
 <div id="fig-wei" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
 <div aria-describedby="fig-wei-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
@@ -817,7 +837,7 @@ Figure&nbsp;2: Weibull Hazard Diagnostics
 <span id="cb9-50"><a href="#cb9-50" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb9-51"><a href="#cb9-51" aria-hidden="true" tabindex="-1"></a>fig</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
-<div class="cell-output cell-output-display" data-execution_count="8">
+<div class="cell-output cell-output-display" data-execution_count="10">
 <div id="fig-gom" class="quarto-float quarto-figure quarto-figure-center anchored">
 <figure class="quarto-float quarto-float-fig figure">
 <div aria-describedby="fig-gom-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">

@@ -12,6 +12,9 @@ using Test
 const TEST_LEVEL = get(ENV, "MSM_TEST_LEVEL", "quick")
 const SUPPRESS_EXPECTED_WARNINGS = get(ENV, "MSM_SUPPRESS_WARNINGS", "true") == "true"
 
+# LongTestResults infrastructure disabled for now - requires JSON3 dependency
+# include("LongTestResults.jl")
+
 """
 Custom logger that filters expected warnings during tests.
 """
@@ -99,6 +102,7 @@ function runtests()
 
         # Long test suite definitions with progress tracking
         long_tests = [
+            ("parametric_suite", "Long Tests - Parametric Suite (exp/wei/gom × exact/panel × nocov/fixed/tvc)", "longtest_parametric_suite.jl"),
             ("exact_data", "Long Tests - Exact Data", "longtest_exact_markov.jl"),
             ("mcem_parametric", "Long Tests - Panel Data MCEM (Parametric Hazards)", "longtest_mcem.jl"),
             ("mcem_splines", "Long Tests - Panel Data MCEM (Spline Hazards)", "longtest_mcem_splines.jl"),

@@ -27,6 +27,12 @@ const RNG_SEED = 2882347045
 # Pass criteria
 const PASS_THRESHOLD = 10.0  # Max |relative error| ≤ 10%
 
+# Parameter recovery tolerances for capture_longtest_result!
+const PARAM_REL_TOL = 0.20   # 20% relative error for main params
+const BETA_ABS_TOL = 0.30    # 0.3 absolute tolerance for beta (covariate) params
+const SHAPE_ABS_TOL = 0.15   # Absolute tolerance for shape parameters (log-scale or Gompertz)
+const SMALL_PARAM_THRESHOLD = 0.5  # Below this, use absolute tolerance
+
 # MCEM settings (Markov proposals for all)
 const MCEM_TOL = 0.01
 const MCEM_ESS_INITIAL = 100

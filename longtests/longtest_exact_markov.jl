@@ -34,15 +34,22 @@ using Statistics
 using LinearAlgebra
 using Distributions
 
+# Load result saving infrastructure
+include(joinpath(@__DIR__, "..", "src", "LongTestResults.jl"))
+
 const RNG_SEED = 0x12345678
 const N_SUBJECTS = 1000         # Sample size for fitting
 const N_SIM_TRAJ = 10000        # Trajectories for distributional comparison
 const MAX_TIME = 20.0           # Maximum follow-up time
 const PARAM_TOL_SE = 3.0        # Parameter should be within 3 SEs of truth
 const PARAM_TOL_REL = 0.15      # Relative tolerance (15% with n=1000)
+const EVAL_TIMES = collect(0.0:0.5:MAX_TIME)  # Time grid for prevalence/CI comparisons
 
 # Shared helper functions (compute_state_prevalence, count_transitions, etc.) are loaded
 # from longtest_helpers.jl by the test runner.
+
+# Results accumulator for saving after all tests complete
+const EXACT_MARKOV_RESULTS = Dict{String, LongTestResult}()
 
 # ============================================================================
 # Helper Functions
@@ -186,6 +193,109 @@ function _flat_to_named(flat_params, hazards)
     return NamedTuple(params)
 end
 
+"""
+    capture_fit_result!(result_name, fitted, true_params_named, param_names, hazards;
+                        n_states=3, n_sim=1000, max_time=MAX_TIME)
+
+Capture fitting results including parameter estimates, SEs, CIs, and simulation comparison.
+Stores result in EXACT_MARKOV_RESULTS dictionary.
+
+Note: `hazard_specs` are the user-facing ParametricHazard specs used for model construction.
+The internal hazards (with hazname) are accessed via fitted.hazards.
+"""
+function capture_fit_result!(result_name::String, fitted, true_params_named::NamedTuple,
+                             param_names::Vector{String}, hazard_specs;
+                             n_states::Int=3, n_sim::Int=1000, max_time::Float64=MAX_TIME,
+                             hazard_family::String="unknown")
+    
+    result = LongTestResult(
+        test_name = "exact_markov_$(result_name)",
+        test_description = "Exact data MLE: $(result_name)",
+        n_subjects = N_SUBJECTS,
+        n_simulations = n_sim,
+        n_states = n_states,
+        hazard_families = [hazard_family]
+    )
+    
+    # Use internal hazards from fitted model to flatten true params
+    # (internal hazards have hazname field, user-facing specs don't)
+    true_flat = Float64[]
+    for haz in fitted.hazards
+        append!(true_flat, true_params_named[haz.hazname])
+    end
+    
+    # Get fitted params (estimation scale)
+    fitted_flat = get_parameters_flat(fitted)
+    
+    # Get SEs and CIs
+    ses = isnothing(fitted.vcov) ? fill(NaN, length(fitted_flat)) : sqrt.(diag(fitted.vcov))
+    
+    # Store parameter info
+    for (i, name) in enumerate(param_names)
+        result.true_params[name] = true_flat[i]
+        result.estimated_params[name] = fitted_flat[i]
+        result.standard_errors[name] = ses[i]
+        result.ci_lower[name] = fitted_flat[i] - 1.96 * ses[i]
+        result.ci_upper[name] = fitted_flat[i] + 1.96 * ses[i]
+    end
+    
+    # Simulate from true and fitted for prevalence comparison
+    template = DataFrame(
+        id = 1:n_sim,
+        tstart = zeros(n_sim),
+        tstop = fill(max_time, n_sim),
+        statefrom = ones(Int, n_sim),
+        stateto = ones(Int, n_sim),
+        obstype = ones(Int, n_sim)
+    )
+    
+    model_true = multistatemodel(hazard_specs...; data=template)
+    set_parameters!(model_true, true_params_named)
+    
+    model_fitted = multistatemodel(hazard_specs...; data=template)
+    fitted_named = _flat_to_named(fitted_flat, model_fitted.hazards)
+    set_parameters!(model_fitted, fitted_named)
+    
+    Random.seed!(RNG_SEED + 2000)
+    paths_true = simulate(model_true; paths=true, data=false, nsim=1)[1]
+    Random.seed!(RNG_SEED + 2001)
+    paths_fitted = simulate(model_fitted; paths=true, data=false, nsim=1)[1]
+    
+    # Compute state prevalence
+    result.prevalence_times = copy(EVAL_TIMES)
+    for s in 1:n_states
+        prev_true = compute_state_prevalence(paths_true, s, EVAL_TIMES)
+        prev_fitted = compute_state_prevalence(paths_fitted, s, EVAL_TIMES)
+        
+        result.prevalence_true[string(s)] = prev_true.mean
+        result.prevalence_true_lower[string(s)] = prev_true.lower
+        result.prevalence_true_upper[string(s)] = prev_true.upper
+        result.prevalence_fitted[string(s)] = prev_fitted.mean
+        result.prevalence_fitted_lower[string(s)] = prev_fitted.lower
+        result.prevalence_fitted_upper[string(s)] = prev_fitted.upper
+    end
+    
+    # Compute cumulative incidence for key transitions
+    result.cumulative_incidence_times = copy(EVAL_TIMES)
+    for (from, to) in [(1, 2), (2, 3), (1, 3)]
+        key = "$(from)→$(to)"
+        ci_true = compute_cumulative_incidence(paths_true, from, to, EVAL_TIMES)
+        ci_fitted = compute_cumulative_incidence(paths_fitted, from, to, EVAL_TIMES)
+        
+        result.cumulative_incidence_true[key] = ci_true.mean
+        result.cumulative_incidence_true_lower[key] = ci_true.lower
+        result.cumulative_incidence_true_upper[key] = ci_true.upper
+        result.cumulative_incidence_fitted[key] = ci_fitted.mean
+        result.cumulative_incidence_fitted_lower[key] = ci_fitted.lower
+        result.cumulative_incidence_fitted_upper[key] = ci_fitted.upper
+    end
+    
+    # Store in accumulator
+    EXACT_MARKOV_RESULTS[result_name] = result
+    
+    return result
+end
+
 # ============================================================================
 # TEST SECTION 1: EXPONENTIAL HAZARDS
 # ============================================================================
@@ -224,6 +334,11 @@ flush(stdout)
     @testset "Distributional fidelity" begin
         @test check_distributional_fidelity((h12, h23), true_params, get_parameters_flat(fitted))
     end
+    
+    # Capture results for reporting
+    capture_fit_result!("exp_nocov", fitted, true_params,
+        ["h12_log_rate", "h23_log_rate"], (h12, h23);
+        hazard_family="exponential")
 end
 
 @testset "Exponential - With Covariate" begin
@@ -298,6 +413,11 @@ flush(stdout)
     @testset "Distributional fidelity" begin
         @test check_distributional_fidelity((h12, h23), true_params, get_parameters_flat(fitted))
     end
+    
+    # Capture results for reporting
+    capture_fit_result!("wei_nocov", fitted, true_params,
+        ["h12_log_shape", "h12_log_scale", "h23_log_shape", "h23_log_scale"], (h12, h23);
+        hazard_family="weibull")
 end
 
 @testset "Weibull - With Covariate" begin
@@ -371,6 +491,11 @@ end
     @testset "Distributional fidelity" begin
         @test check_distributional_fidelity((h12, h23), true_params, get_parameters_flat(fitted); max_time=30.0)
     end
+    
+    # Capture results for reporting
+    capture_fit_result!("gom_nocov", fitted, true_params,
+        ["h12_shape", "h12_log_rate", "h23_shape", "h23_log_rate"], (h12, h23);
+        hazard_family="gompertz", max_time=30.0)
 end
 
 @testset "Gompertz - With Covariate" begin
@@ -801,3 +926,18 @@ println("  - Spline hazards: no covariate, with covariate, TVC")
 println("  - Edge cases: subject weights, likelihood properties")
 println("Model structure: progressive 3-state (1→2→3)")
 println("Sample size: n=$(N_SUBJECTS), simulation trajectories: $(N_SIM_TRAJ)")
+
+# ============================================================================
+# Save Results to Cache
+# ============================================================================
+
+println("\nSaving results to cache...")
+for (name, result) in EXACT_MARKOV_RESULTS
+    try
+        filepath = save_longtest_result(result)
+        println("  ✓ Saved $(name) → $(basename(filepath))")
+    catch e
+        @warn "Failed to save result for $name: $e"
+    end
+end
+println("Results saved to: $(LONGTEST_RESULTS_DIR)")

@@ -21,373 +21,207 @@ using Pkg
 Pkg.activate(joinpath(@__DIR__, ".."))
 using MultistateModels
 using DataFrames
-using Random
 using Statistics
 using CairoMakie
 using Printf
+using JSON3
+using Dates
+
+# Include ReportHelpers for cache loading and plotting
+include(joinpath(@__DIR__, "..", "src", "ReportHelpers.jl"))
+import .ReportHelpers: load_test_cache, get_cache_status, cache_status_badge,
+       results_to_dataframe, get_git_info, get_category_result,
+       load_longtest_result, list_longtest_results,
+       plot_parameter_recovery, plot_state_prevalence, plot_cumulative_incidence,
+       longtest_result_to_parameter_table,
+       plot_data_summary, plot_validation_panel, format_test_name,
+       create_test_inventory_df
 ```
 
-## Overview
+## Test Inventory
 
-Long tests validate that MultistateModels.jl correctly estimates model parameters from simulated data where the true data-generating process (DGP) is known. These tests are computationally intensive and typically run nightly or before releases.
+Long tests validate parameter recovery across all supported model configurations. Each test:
 
-### Test Philosophy
-
-1. **Simulate** data from a model with known true parameters
-2. **Fit** the model to the simulated data
-3. **Compare** estimated parameters to true values
-4. **Verify** distributional properties of trajectories from fitted model
-
-### Success Criteria
-
-- **Parameter Recovery**: Estimated parameters within relative tolerance of true values
-- **Coverage**: 95% confidence intervals contain true values at appropriate rate
-- **Distributional Fidelity**: Simulated trajectories from fitted model match DGP statistics
-
-## Long Test Inventory
+1. **Simulates** data from a model with known true parameters (N=1000 subjects)
+2. **Fits** the model to the simulated data  
+3. **Compares** estimated parameters to true values
+4. **Verifies** distributional properties via prevalence and cumulative incidence plots
 
 ```{julia}
 #| echo: false
-longtest_inventory = DataFrame(
-    File = [
-        "longtest_exact_markov.jl",
-        "longtest_mcem.jl",
-        "longtest_mcem_splines.jl",
-        "longtest_mcem_tvc.jl",
-        "longtest_simulation_distribution.jl",
-        "longtest_simulation_tvc.jl",
-        "longtest_robust_parametric.jl",
-        "longtest_robust_markov_phasetype.jl",
-        "longtest_phasetype.jl",
-        "longtest_variance_validation.jl"
-    ],
-    Category = [
-        "Direct ML",
-        "MCEM Fitting",
-        "MCEM Fitting",
-        "MCEM Fitting",
-        "Simulation",
-        "Simulation",
-        "Robust SE",
-        "Robust SE",
-        "Phase-Type",
-        "Variance"
-    ],
-    Description = [
-        "Exact observation direct MLE fitting",
-        "Panel data fitting with parametric hazards",
-        "Panel data fitting with B-spline hazards",
-        "Time-varying covariates with MCEM",
-        "Simulation distribution verification",
-        "TVC simulation verification",
-        "Robust variance for parametric models",
-        "Markov vs phase-type validation",
-        "Phase-type proposals (exact + panel data)",
-        "Variance estimation validation"
-    ],
-    Runtime = [
-        "~5 min",
-        "~15 min",
-        "~20 min",
-        "~10 min",
-        "~5 min",
-        "~5 min",
-        "~15 min",
-        "~20 min",
-        "~30 min",
-        "~10 min"
-    ]
-)
+#| output: asis
 
-longtest_inventory
-```
+inventory_df = create_test_inventory_df()
 
-## MCEM Parameter Recovery Tests
-
-### `longtest_mcem.jl`
-
-Tests MCEM algorithm convergence and parameter recovery for panel data with parametric hazards.
-
-**Test Configuration**:
-- Model: Progressive 3-state (1→2→3, state 3 absorbing)
-- Hazard families: Exponential, Weibull, Gompertz
-- Sample size: n=1000
-- Observation: Panel data with interval censoring
-
-```{julia}
-#| echo: false
-#| label: fig-mcem-params
-#| fig-cap: "MCEM Parameter Recovery: True vs Estimated"
-
-# Create visualization of expected parameter recovery
-fig = Figure(size=(700, 400))
-
-# Define test scenarios
-scenarios = ["Exp", "Wei", "Gom", "Wei+Cov"]
-n_scenarios = length(scenarios)
-
-# Simulated "results" showing typical parameter recovery
-# In practice, these would be loaded from actual test runs
-Random.seed!(42)
-true_params = [0.3, 1.5, 0.8, 1.2]
-estimated_means = true_params .+ randn(4) .* 0.03
-estimated_ci_low = estimated_means .- 0.1
-estimated_ci_high = estimated_means .+ 0.1
-
-ax = Axis(fig[1, 1],
-    xlabel="Scenario",
-    ylabel="Parameter Value",
-    title="Parameter Recovery Across Hazard Families",
-    xticks=(1:4, scenarios))
-
-# Plot true values
-scatter!(ax, 1:4, true_params, color=:red, markersize=15, marker=:star5, 
-         label="True")
-
-# Plot estimates with error bars
-scatter!(ax, 1:4, estimated_means, color=:steelblue, markersize=12,
-         label="Estimated")
-errorbars!(ax, 1:4, estimated_means, estimated_means .- estimated_ci_low,
-           estimated_ci_high .- estimated_means, color=:steelblue)
-
-axislegend(ax, position=:rt)
-
-fig
-```
-
-**Validation Criteria**:
-```julia
-# Parameters should be within 15% relative tolerance
-PARAM_TOL_REL = 0.15
-
-# Check each parameter
-for (est, true_val) in zip(estimated, true_params)
-    rel_error = abs(est - true_val) / abs(true_val)
-    @test rel_error < PARAM_TOL_REL
+if nrow(inventory_df) == 0
+    println("::: {.callout-note}")
+    println("## No Results Available")
+    println("")
+    println("Long test results are saved to `cache/longtest_results/` after each test run.")
+    println("To populate these results, run:")
+    println("")
+    println("```bash")
+    println("cd MultistateModelsTests")
+    println("MSM_TEST_LEVEL=full julia --project=. -e 'using MultistateModelsTests; MultistateModelsTests.runtests()'")
+    println("```")
+    println(":::")
+else
+    n_pass = count(r -> r == "✅ Pass", inventory_df.Status)
+    n_total = nrow(inventory_df)
+    
+    println("### Summary\n")
+    println("**$(n_pass)/$(n_total) tests passing** | Last updated: $(Dates.format(now(), "yyyy-mm-dd HH:MM"))\n")
+    
+    println("\n### Test Matrix\n")
+    println("| Test Name | Family | Data Type | Covariates | N | Status |")
+    println("|-----------|--------|-----------|------------|---|--------|")
+    for row in eachrow(inventory_df)
+        println("| `$(row.TestName)` | $(row.Family) | $(row.DataType) | $(row.Covariates) | $(row.NSubjects) | $(row.Status) |")
+    end
 end
 ```
 
-### `longtest_mcem_splines.jl`
-
-Tests MCEM with B-spline hazards for flexible semi-Markov modeling.
-
-**Key Features Tested**:
-- Automatic knot placement from data quantiles
-- Spline coefficient estimation
-- Non-monotonic hazard recovery
-- PH covariate effects with splines
-
-### `longtest_mcem_tvc.jl`
-
-Tests time-varying covariate handling in MCEM.
-
-**Configuration**:
-- Covariates that change value at observation times
-- Both PH and AFT effect types
-- Piecewise-constant covariate representation
-
-## SIR Method Comparison (`longtest_sir.jl`)
-
-::: {.callout-note}
-This test is available in `longtests/longtest_sir.jl` but is not included in the standard long test suite. Run it separately with:
-```bash
-MSM_TEST_LEVEL=full MSM_LONGTEST_ONLY=sir julia --project=. -e 'include("longtests/longtest_sir.jl")'
-```
-:::
-
-Compares resampling strategies for posterior approximation:
+## Test Results by Family
 
 ```{julia}
 #| echo: false
-sir_methods = DataFrame(
-    Method = [":none", ":sir", ":lhs"],
-    Description = [
-        "Importance-weighted (no resampling)",
-        "Standard SIR with Pareto smoothing",
-        "Latin Hypercube Stratified resampling"
-    ],
-    Pros = [
-        "Exact weights",
-        "Reduced variance, PSIS diagnostics",
-        "Better stratification, uniform coverage"
-    ],
-    Cons = [
-        "High variance with poor proposals",
-        "May lose tail coverage",
-        "Slightly higher computation"
-    ]
+#| output: asis
+
+available_results = list_longtest_results()
+
+if isempty(available_results)
+    println("::: {.callout-warning}")
+    println("No long test results found in cache.")
+    println(":::")
+end
+```
+
+```{julia}
+#| echo: false
+#| output: asis
+
+# Group results by family for organized display
+family_order = ["exp", "wei", "gom", "pt", "sp"]
+family_names = Dict(
+    "exp" => "Exponential",
+    "wei" => "Weibull",
+    "gom" => "Gompertz",
+    "pt" => "Phase-Type",
+    "sp" => "Spline"
 )
 
-sir_methods
+# Get all results grouped by family
+results_by_family = Dict{String, Vector{Any}}()
+for test_name in available_results
+    result = load_longtest_result(test_name)
+    isnothing(result) && continue
+    
+    family = get(result, :hazard_family, "")
+    if isempty(family)
+        # Try to infer from test name or hazard_families field
+        families = get(result, :hazard_families, [])
+        family = !isempty(families) ? String(first(families)) : "unknown"
+    end
+    
+    if !haskey(results_by_family, family)
+        results_by_family[family] = []
+    end
+    push!(results_by_family[family], result)
+end
+
+# Display by family
+for fam in family_order
+    !haskey(results_by_family, fam) && continue
+    results = results_by_family[fam]
+    isempty(results) && continue
+    
+    println("\n### $(get(family_names, fam, fam))\n")
+    
+    for result in results
+        test_name = String(result[:test_name])
+        test_desc = String(get(result, :test_description, test_name))
+        
+        # Try to use formatted name if new fields available
+        formatted_name = format_test_name(result)
+        if formatted_name != "Unknown - Unknown - Unknown"
+            test_desc = formatted_name
+        end
+        
+        println("\n#### $test_desc\n")
+        println("**Test:** `$test_name` | **N:** $(result[:n_subjects]) | ")
+        println("**Run:** $(result[:timestamp]) on `$(result[:git_branch])` ($(result[:git_commit]))\n")
+    end
+end
 ```
-
-**Validation**: All three methods should produce estimates within tolerance of each other and of true parameters.
-
-## Phase-Type Proposal Tests
-
-### Why Phase-Type Proposals?
-
-For semi-Markov models (non-exponential sojourn times), standard Markov proposals can have poor acceptance rates. Phase-type approximations:
-
-1. Match the first two moments of the true sojourn distribution
-2. Enable Markov-like forward-backward sampling
-3. Dramatically improve MCEM efficiency for non-Markov models
-
-### `longtest_phasetype_exact.jl`
-
-Tests phase-type fitting with exactly observed transition times:
 
 ```{julia}
 #| echo: false
-#| label: fig-phasetype-exact
-#| fig-cap: "Phase-Type Proposal Performance with Exact Observations"
 
-# Create visualization of phase-type approximation quality
-fig = Figure(size=(700, 350))
-
-# Left: Hazard comparison
-ax1 = Axis(fig[1, 1],
-    xlabel="Time",
-    ylabel="Hazard",
-    title="True vs Phase-Type Hazard")
-
-t = range(0, 5, length=100)
-
-# Weibull hazard (shape=1.5, scale=1.0)
-shape, scale = 1.5, 1.0
-h_true = (shape / scale) .* (t ./ scale).^(shape - 1)
-
-# Phase-type approximation (simulated)
-Random.seed!(123)
-h_pt = h_true .+ randn(100) .* 0.02 .* h_true
-
-lines!(ax1, t, h_true, color=:red, linewidth=2, label="True Weibull")
-lines!(ax1, t, h_pt, color=:steelblue, linewidth=2, linestyle=:dash, 
-       label="Phase-Type")
-axislegend(ax1, position=:rt)
-
-# Right: Acceptance rate comparison
-ax2 = Axis(fig[1, 2],
-    xlabel="Proposal Type",
-    ylabel="Acceptance Rate (%)",
-    title="MCMC Acceptance Rates",
-    xticks=(1:2, ["Markov", "Phase-Type"]))
-
-barplot!(ax2, [1, 2], [35, 78], color=[:gray, :steelblue])
-
-fig
+# Display parameter tables and validation panels for each result
+for test_name in available_results
+    result = load_longtest_result(test_name)
+    isnothing(result) && continue
+    
+    # Format nice name
+    formatted_name = format_test_name(result)
+    if formatted_name == "Unknown - Unknown - Unknown"
+        formatted_name = String(get(result, :test_description, test_name))
+    end
+    
+    println("\n---\n")
+    println("### $formatted_name - Details\n")
+    
+    # Parameter table
+    println("\n**Parameter Recovery:**\n")
+    param_table = longtest_result_to_parameter_table(result)
+    display(param_table)
+end
 ```
-
-### `longtest_phasetype_panel.jl`
-
-Tests phase-type proposals with interval-censored (panel) data:
-
-**Test Matrix**:
-- 2-state models: Weibull, Gompertz
-- 3-state progressive: Mixed hazard families
-- Covariate effects: PH, AFT
-- Panel observation patterns: Regular, irregular
-
-## Variance Validation Tests
-
-### `longtest_variance_validation.jl`
-
-Validates that variance estimates achieve nominal coverage.
-
-**Approach**:
-1. Simulate 500+ datasets (1000 for variance, 100 for coverage) from true DGP
-2. Fit model to each dataset
-3. Compute 95% CIs using different variance methods
-4. Check that coverage rate ≈ 95%
 
 ```{julia}
 #| echo: false
-#| label: fig-coverage
-#| fig-cap: "Variance Estimation Coverage Rates"
+#| fig-width: 10
+#| fig-height: 4
 
-fig = Figure(size=(600, 350))
-
-methods = ["Observed Info", "IJ", "JK", "Bootstrap"]
-coverage_rates = [0.93, 0.95, 0.94, 0.96]
-ci_low = coverage_rates .- 0.02
-ci_high = coverage_rates .+ 0.02
-
-ax = Axis(fig[1, 1],
-    xlabel="Variance Estimation Method",
-    ylabel="Coverage Rate",
-    title="95% CI Coverage (Target = 0.95)",
-    xticks=(1:4, methods),
-    limits=(nothing, nothing, 0.85, 1.0))
-
-# Reference line at 0.95
-hlines!(ax, [0.95], color=:red, linestyle=:dash, linewidth=2)
-
-# Coverage bars
-barplot!(ax, 1:4, coverage_rates, color=:steelblue)
-errorbars!(ax, 1:4, coverage_rates, coverage_rates .- ci_low, 
-           ci_high .- coverage_rates, color=:black)
-
-fig
+# Plot state prevalence for each result
+for test_name in available_results
+    result = load_longtest_result(test_name)
+    isnothing(result) && continue
+    
+    formatted_name = format_test_name(result)
+    if formatted_name == "Unknown - Unknown - Unknown"
+        formatted_name = String(get(result, :test_description, test_name))
+    end
+    
+    println("\n**State Prevalence: $formatted_name**\n")
+    println("Red = true model, Blue = fitted model\n")
+    
+    fig = plot_state_prevalence(result)
+    display(fig)
+end
 ```
-
-## Simulation Distribution Tests
-
-### `longtest_simulation_distribution.jl`
-
-Verifies that simulated paths have correct statistical properties.
-
-**Validation Approach**:
-1. Simulate many paths from model
-2. Compute empirical sojourn time distribution
-3. Compare to theoretical distribution (KS test)
-4. Verify state occupancy proportions
 
 ```{julia}
 #| echo: false
-#| label: fig-sim-dist
-#| fig-cap: "Simulation Distribution Validation"
+#| fig-width: 8
+#| fig-height: 3
 
-fig = Figure(size=(700, 350))
-
-# Sojourn time distribution
-ax1 = Axis(fig[1, 1],
-    xlabel="Sojourn Time",
-    ylabel="Density",
-    title="Sojourn Time Distribution (State 1)")
-
-t = range(0, 10, length=100)
-# True Weibull density
-shape, scale = 1.5, 2.0
-f_true = (shape / scale) .* (t ./ scale).^(shape - 1) .* exp.(-(t ./ scale).^shape)
-
-# Simulated histogram (approximated)
-Random.seed!(456)
-sojourns = rand(100) .* 10
-
-# Plot theoretical
-lines!(ax1, t, f_true, color=:red, linewidth=2, label="Theoretical")
-
-# Plot simulated histogram
-hist!(ax1, sojourns, bins=20, normalization=:pdf, color=(:steelblue, 0.5),
-      label="Simulated")
-
-axislegend(ax1, position=:rt)
-
-# State prevalence over time
-ax2 = Axis(fig[1, 2],
-    xlabel="Time",
-    ylabel="State Prevalence",
-    title="State Occupancy Over Time")
-
-times = range(0, 10, length=50)
-prev_1 = exp.(-0.2 .* times)
-prev_2 = 1 .- prev_1
-
-lines!(ax2, times, prev_1, color=:steelblue, linewidth=2, label="State 1")
-lines!(ax2, times, prev_2, color=:orange, linewidth=2, label="State 2")
-axislegend(ax2, position=:rt)
-
-fig
+# Plot cumulative incidence for each result
+for test_name in available_results
+    result = load_longtest_result(test_name)
+    isnothing(result) && continue
+    
+    formatted_name = format_test_name(result)
+    if formatted_name == "Unknown - Unknown - Unknown"
+        formatted_name = String(get(result, :test_description, test_name))
+    end
+    
+    println("\n**Cumulative Incidence: $formatted_name**\n")
+    println("Transitions 1→2 and 2→3 only (progressive model)\n")
+    
+    fig = plot_cumulative_incidence(result)
+    display(fig)
+end
 ```
 
 ## Running Long Tests
@@ -404,100 +238,42 @@ MSM_TEST_LEVEL=full julia --project=. -e 'using MultistateModelsTests; Multistat
 julia --project=. scripts/run_longtests.jl
 ```
 
-### Individual Test
+### Individual Test Suite
 
 ```bash
 # Run only a specific suite (by key name)
-MSM_TEST_LEVEL=full MSM_LONGTEST_ONLY=mcem_parametric julia --project=. -e 'using MultistateModelsTests; MultistateModelsTests.runtests()'
+MSM_TEST_LEVEL=full MSM_LONGTEST_ONLY=parametric_suite julia --project=. -e 'using MultistateModelsTests; MultistateModelsTests.runtests()'
 ```
+
+### Available Test Suites
+
+| Key | Description |
+|-----|-------------|
+| `parametric_suite` | Parametric families (exp/wei/gom) × data types × covariates |
+| `exact_data` | Exact observation direct MLE |
+| `mcem_parametric` | Panel data with parametric hazards |
+| `mcem_splines` | Panel data with spline hazards |
+| `phasetype` | Phase-type hazard models |
+| `variance_validation` | Variance estimation validation |
 
 ### Environment Variables
 
 | Variable | Values | Description |
 |----------|--------|-------------|
 | `MSM_TEST_LEVEL` | `quick` (default), `full` | Controls whether long tests run |
-| `MSM_LONGTEST_ONLY` | test key (e.g., `mcem_parametric`) | Run only one specific long test |
+| `MSM_LONGTEST_ONLY` | test key | Run only one specific long test suite |
 | `MSM_SUPPRESS_WARNINGS` | `true` (default), `false` | Suppress expected warnings |
 
-### With Debug Logging
-
-```bash
-MSM_TEST_LEVEL=full julia --project=. -e '
-    ENV["JULIA_DEBUG"] = "MultistateModels"
-    using MultistateModelsTests
-    MultistateModelsTests.runtests()
-'
-```
-
-## Test Status Dashboard
-
-```{julia}
-#| echo: false
-# Status dashboard - reflects the 10 actual long test suites
-status_data = DataFrame(
-    Test = [
-        "Exact Markov",
-        "MCEM Parametric",
-        "MCEM Splines",
-        "MCEM TVC",
-        "Simulation Dist",
-        "Simulation TVC",
-        "Robust Parametric",
-        "Markov/PhaseType Validation",
-        "Phase-Type",
-        "Variance Validation"
-    ],
-    Status = fill("✅ Pass", 10),
-    LastRun = fill("2025-06", 10),
-    Duration = [
-        "~5 min",
-        "~15 min",
-        "~20 min",
-        "~10 min",
-        "~5 min",
-        "~5 min",
-        "~15 min",
-        "~20 min",
-        "~30 min",
-        "~10 min"
-    ],
-    Notes = [
-        "Direct optimization",
-        "All hazard families pass",
-        "5 interior knots",
-        "Step-function covariates",
-        "KS test p > 0.05",
-        "TVC propagation correct",
-        "IJ/JK coverage ~95%",
-        "Markov ≈ PhaseType consistency",
-        "Exact + panel data",
-        "Coverage nominal"
-    ]
-)
-
-status_data
-```
-
-## Common Issues and Debugging
+## Troubleshooting
 
 ### Parameter Recovery Failures
 
 **Symptoms**: Estimated parameters far from true values
 
 **Potential Causes**:
-1. **Insufficient sample size**: Increase `N_SUBJECTS`
+1. **Insufficient sample size**: Tests use N=1000, may need more for some models
 2. **Poor initialization**: Check `initialize_parameters!` settings
-3. **Non-identifiability**: Verify model specification
-4. **MCEM convergence**: Increase `MAX_ITER` or tighten `MCEM_TOL`
-
-### Phase-Type Convergence Issues
-
-**Symptoms**: Phase-type fitting fails or produces poor approximation
-
-**Solutions**:
-1. Increase number of phases in expansion
-2. Check moment matching quality
-3. Verify sojourn distribution has finite moments
+3. **MCEM convergence**: Increase iterations or tighten tolerance
 
 ### Variance Estimation Issues
 
@@ -512,9 +288,12 @@ status_data
 
 Long tests provide rigorous validation that MultistateModels.jl:
 
-1. **Recovers parameters** within expected tolerance
+1. **Recovers parameters** within expected tolerance (20% relative error)
 2. **Produces valid uncertainty** through variance estimation
 3. **Simulates correctly** from fitted models
 4. **Handles all supported** hazard families and observation types
 
-These tests run regularly to catch regressions and validate new features before release.
+The test matrix covers:
+- **Families**: Exponential, Weibull, Gompertz, Phase-Type, Spline
+- **Data types**: Exact (direct MLE), Panel (Markov/MCEM)
+- **Covariates**: None, Time-fixed, Time-varying

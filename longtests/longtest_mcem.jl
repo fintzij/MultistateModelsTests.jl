@@ -47,6 +47,7 @@ const MCEM_TOL = 0.05            # MCEM convergence tolerance
 const MAX_ITER = 30              # Maximum MCEM iterations
 const PARAM_TOL_REL = 0.35       # Relaxed relative tolerance for MCEM (more MC noise)
 const MAX_PATHS_PER_SUBJECT = 500  # Diagnostic hard limit for MCEM path counts
+const EVAL_TIMES = collect(0.0:0.5:MAX_TIME)  # Time grid for prevalence/CI comparisons
 
 # Include shared helper functions for standalone runs
 # (when run via test runner, these are already loaded by MultistateModelsTests module)
@@ -54,6 +55,12 @@ if !isdefined(Main, :compute_state_prevalence)
     include(joinpath(@__DIR__, "longtest_config.jl"))
     include(joinpath(@__DIR__, "longtest_helpers.jl"))
 end
+
+# Load result saving infrastructure
+include(joinpath(@__DIR__, "..", "src", "LongTestResults.jl"))
+
+# Results accumulator for saving after all tests complete
+const MCEM_RESULTS = Dict{String, LongTestResult}()
 
 # ============================================================================
 # Helper Functions
@@ -243,6 +250,119 @@ function fit_mcem_with_path_cap(model; test_label::AbstractString, path_cap::Int
     return fitted
 end
 
+"""
+    _flat_to_named(flat_params, hazards)
+
+Convert flat parameter vector to NamedTuple keyed by hazard names.
+"""
+function _flat_to_named(flat_params::Vector{Float64}, hazards)
+    params = Dict{Symbol, Vector{Float64}}()
+    idx = 1
+    for haz in hazards
+        npar = haz.npar_total
+        params[haz.hazname] = flat_params[idx:idx+npar-1]
+        idx += npar
+    end
+    return NamedTuple(params)
+end
+
+"""
+    capture_mcem_result!(result_name, fitted, true_params_named, param_names, hazard_specs;
+                         n_states=3, n_sim=1000, max_time=MAX_TIME, hazard_family)
+
+Capture MCEM fitting results for reporting.
+"""
+function capture_mcem_result!(result_name::String, fitted, true_params_named::NamedTuple,
+                              param_names::Vector{String}, hazard_specs;
+                              n_states::Int=3, n_sim::Int=1000, max_time::Float64=MAX_TIME,
+                              hazard_family::String="unknown")
+    
+    result = LongTestResult(
+        test_name = "mcem_$(result_name)",
+        test_description = "MCEM panel data: $(result_name)",
+        n_subjects = N_SUBJECTS,
+        n_simulations = n_sim,
+        n_states = n_states,
+        hazard_families = [hazard_family]
+    )
+    
+    # Flatten true params using fitted model's internal hazards
+    true_flat = Float64[]
+    for haz in fitted.hazards
+        append!(true_flat, true_params_named[haz.hazname])
+    end
+    
+    # Get fitted params
+    fitted_flat = get_parameters_flat(fitted)
+    
+    # Get SEs and CIs
+    ses = isnothing(fitted.vcov) ? fill(NaN, length(fitted_flat)) : sqrt.(diag(fitted.vcov))
+    
+    # Store parameter info
+    for (i, name) in enumerate(param_names)
+        result.true_params[name] = true_flat[i]
+        result.estimated_params[name] = fitted_flat[i]
+        result.standard_errors[name] = ses[i]
+        result.ci_lower[name] = fitted_flat[i] - 1.96 * ses[i]
+        result.ci_upper[name] = fitted_flat[i] + 1.96 * ses[i]
+    end
+    
+    # Simulate from true and fitted for prevalence comparison
+    template = DataFrame(
+        id = 1:n_sim,
+        tstart = zeros(n_sim),
+        tstop = fill(max_time, n_sim),
+        statefrom = ones(Int, n_sim),
+        stateto = ones(Int, n_sim),
+        obstype = ones(Int, n_sim)
+    )
+    
+    model_true = multistatemodel(hazard_specs...; data=template)
+    set_parameters!(model_true, true_params_named)
+    
+    model_fitted = multistatemodel(hazard_specs...; data=template)
+    # Convert flat params to named tuple using helper
+    fitted_named = _flat_to_named(fitted_flat, model_fitted.hazards)
+    set_parameters!(model_fitted, fitted_named)
+    
+    Random.seed!(RNG_SEED + 3000)
+    paths_true = simulate(model_true; paths=true, data=false, nsim=1)[1]
+    Random.seed!(RNG_SEED + 3001)
+    paths_fitted = simulate(model_fitted; paths=true, data=false, nsim=1)[1]
+    
+    # Compute state prevalence
+    result.prevalence_times = copy(EVAL_TIMES)
+    for s in 1:n_states
+        prev_true = compute_state_prevalence(paths_true, s, EVAL_TIMES)
+        prev_fitted = compute_state_prevalence(paths_fitted, s, EVAL_TIMES)
+        
+        result.prevalence_true[string(s)] = prev_true.mean
+        result.prevalence_true_lower[string(s)] = prev_true.lower
+        result.prevalence_true_upper[string(s)] = prev_true.upper
+        result.prevalence_fitted[string(s)] = prev_fitted.mean
+        result.prevalence_fitted_lower[string(s)] = prev_fitted.lower
+        result.prevalence_fitted_upper[string(s)] = prev_fitted.upper
+    end
+    
+    # Compute cumulative incidence
+    result.cumulative_incidence_times = copy(EVAL_TIMES)
+    for (from, to) in [(1, 2), (2, 3), (1, 3)]
+        key = "$(from)→$(to)"
+        ci_true = compute_cumulative_incidence(paths_true, from, to, EVAL_TIMES)
+        ci_fitted = compute_cumulative_incidence(paths_fitted, from, to, EVAL_TIMES)
+        
+        result.cumulative_incidence_true[key] = ci_true.mean
+        result.cumulative_incidence_true_lower[key] = ci_true.lower
+        result.cumulative_incidence_true_upper[key] = ci_true.upper
+        result.cumulative_incidence_fitted[key] = ci_fitted.mean
+        result.cumulative_incidence_fitted_lower[key] = ci_fitted.lower
+        result.cumulative_incidence_fitted_upper[key] = ci_fitted.upper
+    end
+    
+    MCEM_RESULTS[result_name] = result
+    return result
+end
+
 # ============================================================================
 # TEST SECTION 1: EXPONENTIAL HAZARDS (MARKOV PANEL SOLVER)
 # ============================================================================
@@ -307,6 +427,11 @@ flush(stdout)
     @testset "Distributional fidelity" begin
         @test check_distributional_fidelity_mcem((h12, h23), true_params, get_parameters_flat(fitted))
     end
+    
+    # Capture results for reporting
+    capture_mcem_result!("exp_panel_nocov", fitted, true_params,
+        ["h12_log_rate", "h23_log_rate"], (h12, h23);
+        hazard_family="exponential")
 end
 
 @testset "Exponential panel (Markov) - With Covariate" begin
@@ -415,6 +540,11 @@ flush(stdout)
     @testset "Distributional fidelity" begin
         @test check_distributional_fidelity_mcem((h12, h23), true_params, get_parameters_flat(fitted))
     end
+    
+    # Capture result for reporting
+    capture_mcem_result!("wei_panel_nocov", fitted, true_params,
+        ["h12_log_shape", "h12_log_scale", "h23_log_shape", "h23_log_scale"], (h12, h23);
+        hazard_family="weibull")
 end
 
 @testset "MCEM Weibull - With Covariate" begin
@@ -524,6 +654,11 @@ flush(stdout)
         @test check_distributional_fidelity_mcem((h12, h23), true_params, get_parameters_flat(fitted);
             max_time=25.0, eval_times=collect(2.0:2.0:25.0))
     end
+    
+    # Capture result for reporting
+    capture_mcem_result!("gom_panel_nocov", fitted, true_params,
+        ["h12_shape", "h12_log_rate", "h23_shape", "h23_log_rate"], (h12, h23);
+        hazard_family="gompertz")
 end
 
 @testset "MCEM Gompertz - With Covariate" begin
@@ -895,3 +1030,18 @@ println("  - Convergence diagnostics and ESS tracking")
 println("  - Markov surrogate fitting")
 println("  - Estimated vs. true parameter comparisons printed for all tests")
 println("Sample size: n=$(N_SUBJECTS), simulation trajectories: $(N_SIM_TRAJ)")
+
+# ============================================================================
+# Save Results to Cache
+# ============================================================================
+
+println("\nSaving MCEM results to cache...")
+for (name, result) in MCEM_RESULTS
+    try
+        filepath = save_longtest_result(result)
+        println("  ✓ Saved $(name) → $(basename(filepath))")
+    catch e
+        @warn "Failed to save result for $name: $e"
+    end
+end
+println("Results saved to: $(LONGTEST_RESULTS_DIR)")

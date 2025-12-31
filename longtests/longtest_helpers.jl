@@ -595,3 +595,257 @@ function finalize_result!(result::TestResult)
     end
     return result
 end
+
+# =============================================================================
+# LongTestResult Capture Functions
+# =============================================================================
+#
+# These functions capture comprehensive test results for the reporting system.
+# Each test should call capture_longtest_result!() after fitting to save
+# all relevant data to the cache for display in long_tests.qmd.
+#
+# Note: LongTestResults.jl is included at module level in MultistateModelsTests.jl
+# so types like LongTestResult are available here.
+# =============================================================================
+
+# Import internal functions needed for capture
+import MultistateModels: get_parameters_flat, multistatemodel, set_parameters!, simulate
+
+# Use constants from longtest_config.jl (included before this file)
+# N_SUBJECTS, MAX_TIME, EVAL_TIMES, N_SIM_TRAJ, RNG_SEED are defined there
+
+"""
+    _flat_to_named(flat_params, hazards)
+
+Convert flat parameter vector to NamedTuple keyed by hazard names.
+"""
+function _flat_to_named(flat_params::Vector{Float64}, hazards)
+    params = Dict{Symbol, Vector{Float64}}()
+    idx = 1
+    for haz in hazards
+        npar = haz.npar_total
+        params[haz.hazname] = flat_params[idx:idx+npar-1]
+        idx += npar
+    end
+    return NamedTuple(params)
+end
+
+"""
+    check_param_recovery(true_val, est_val; is_beta=false, is_shape=false) -> Bool
+
+Check if a parameter was recovered within tolerance.
+
+# Arguments
+- `true_val`: True parameter value
+- `est_val`: Estimated parameter value  
+- `is_beta`: Whether this is a beta (covariate) parameter (uses BETA_ABS_TOL)
+- `is_shape`: Whether this is a shape parameter (uses SHAPE_ABS_TOL)
+
+Shape and beta parameters use absolute tolerance since they can be near zero.
+Other parameters use relative tolerance unless the true value is small.
+"""
+function check_param_recovery(true_val::Float64, est_val::Float64; 
+                              is_beta::Bool=false, is_shape::Bool=false)
+    if is_beta
+        return abs(est_val - true_val) <= BETA_ABS_TOL
+    elseif is_shape
+        return abs(est_val - true_val) <= SHAPE_ABS_TOL
+    else
+        # For small parameters, use absolute tolerance to avoid massive relative errors
+        if abs(true_val) < SMALL_PARAM_THRESHOLD
+            return abs(est_val - true_val) <= PARAM_REL_TOL
+        else
+            return abs((est_val - true_val) / true_val) <= PARAM_REL_TOL
+        end
+    end
+end
+
+"""
+    capture_longtest_result!(
+        test_name::String,
+        fitted,
+        true_params_named::NamedTuple,
+        param_names::Vector{String},
+        hazard_specs;
+        hazard_family::String,
+        data_type::String,
+        covariate_type::String,
+        data::DataFrame,
+        n_sim::Int=N_SIM_TRAJ,
+        eval_times::Vector{Float64}=EVAL_TIMES,
+        beta_param_names::Vector{String}=String[],
+        shape_param_names::Vector{String}=String[]
+    ) -> LongTestResult
+
+Capture comprehensive long test results for reporting.
+
+# Arguments
+- `test_name`: Unique test identifier (e.g., "exp_exact_nocov")
+- `fitted`: Fitted MultistateModelFitted object
+- `true_params_named`: True parameters as NamedTuple by hazard
+- `param_names`: Vector of parameter names for display
+- `hazard_specs`: Tuple of Hazard objects used in model construction
+- `hazard_family`: One of "exp", "wei", "gom", "pt", "sp"
+- `data_type`: One of "exact", "panel", "mcem"
+- `covariate_type`: One of "nocov", "fixed", "tvc"
+- `data`: The simulated data used for fitting
+- `n_sim`: Number of simulations for prevalence/CI comparison (default: N_SIM_TRAJ from config)
+- `eval_times`: Times at which to evaluate prevalence/CI (default: EVAL_TIMES from config)
+- `beta_param_names`: Names of beta (covariate) parameters for tolerance checking
+- `shape_param_names`: Names of shape parameters for tolerance checking
+
+# Returns
+Populated LongTestResult, also saved to cache.
+"""
+function capture_longtest_result!(
+    test_name::String,
+    fitted,
+    true_params_named::NamedTuple,
+    param_names::Vector{String},
+    hazard_specs;
+    hazard_family::String,
+    data_type::String,
+    covariate_type::String,
+    data::DataFrame,
+    n_sim::Int=N_SIM_TRAJ,
+    eval_times::Vector{Float64}=EVAL_TIMES,
+    beta_param_names::Vector{String}=String[],
+    shape_param_names::Vector{String}=String[]
+)
+    result = LongTestResult(
+        test_name = test_name,
+        test_description = "$(hazard_family) - $(data_type) - $(covariate_type)",
+        hazard_family = hazard_family,
+        data_type = data_type,
+        covariate_type = covariate_type,
+        n_subjects = length(unique(data.id)),
+        n_simulations = n_sim,
+        n_states = 3
+    )
+    
+    # Flatten true params
+    true_flat = Float64[]
+    for haz in fitted.hazards
+        append!(true_flat, true_params_named[haz.hazname])
+    end
+    
+    # Get fitted params (use get_parameters with :flat scale via import)
+    fitted_flat = get_parameters_flat(fitted)
+    
+    # Get SEs (handle missing vcov or negative diagonal elements safely)
+    if isnothing(fitted.vcov)
+        ses = fill(NaN, length(fitted_flat))
+    else
+        diag_vals = diag(fitted.vcov)
+        ses = [v >= 0 ? sqrt(v) : NaN for v in diag_vals]
+    end
+    
+    # Store parameters and check recovery
+    all_passed = true
+    for (i, name) in enumerate(param_names)
+        is_beta = name in beta_param_names
+        is_shape = name in shape_param_names
+        passed = check_param_recovery(true_flat[i], fitted_flat[i]; is_beta=is_beta, is_shape=is_shape)
+        all_passed = all_passed && passed
+        
+        result.true_params[name] = true_flat[i]
+        result.estimated_params[name] = fitted_flat[i]
+        result.standard_errors[name] = ses[i]
+        result.ci_lower[name] = fitted_flat[i] - 1.96 * ses[i]
+        result.ci_upper[name] = fitted_flat[i] + 1.96 * ses[i]
+        result.param_passed[name] = passed
+    end
+    result.passed = all_passed
+    
+    # Data summary
+    result.data_summary = summarize_data(data)
+    
+    # Simulate from true and fitted for comparison
+    max_time = maximum(eval_times)
+    
+    # Create appropriate template based on covariate type
+    if covariate_type == "nocov"
+        template = DataFrame(
+            id = 1:n_sim,
+            tstart = zeros(n_sim),
+            tstop = fill(max_time, n_sim),
+            statefrom = ones(Int, n_sim),
+            stateto = ones(Int, n_sim),
+            obstype = ones(Int, n_sim)
+        )
+    elseif covariate_type == "fixed"
+        # Time-fixed covariate: half with x=0, half with x=1
+        template = DataFrame(
+            id = 1:n_sim,
+            tstart = zeros(n_sim),
+            tstop = fill(max_time, n_sim),
+            statefrom = ones(Int, n_sim),
+            stateto = ones(Int, n_sim),
+            obstype = ones(Int, n_sim),
+            x = repeat([0.0, 1.0], n_sim ÷ 2)
+        )
+    elseif covariate_type == "tvc"
+        # Time-varying covariate: 2 rows per subject, x changes at TVC_CHANGEPOINT
+        ids = repeat(1:n_sim, inner=2)
+        tstart = repeat([0.0, TVC_CHANGEPOINT], n_sim)
+        tstop = repeat([TVC_CHANGEPOINT, max_time], n_sim)
+        x_vals = repeat([0.0, 1.0], n_sim)
+        template = DataFrame(
+            id = ids,
+            tstart = tstart,
+            tstop = tstop,
+            statefrom = ones(Int, 2*n_sim),
+            stateto = ones(Int, 2*n_sim),
+            obstype = ones(Int, 2*n_sim),
+            x = x_vals
+        )
+    else
+        error("Unknown covariate_type: $covariate_type")
+    end
+    
+    model_true = multistatemodel(hazard_specs...; data=template)
+    set_parameters!(model_true, true_params_named)
+    
+    model_fitted = multistatemodel(hazard_specs...; data=template)
+    fitted_named = _flat_to_named(fitted_flat, model_fitted.hazards)
+    set_parameters!(model_fitted, fitted_named)
+    
+    Random.seed!(RNG_SEED + 5000)
+    paths_true = simulate(model_true; paths=true, data=false, nsim=1)[1]
+    Random.seed!(RNG_SEED + 5001)
+    paths_fitted = simulate(model_fitted; paths=true, data=false, nsim=1)[1]
+    
+    # Compute state prevalence
+    result.prevalence_times = copy(eval_times)
+    for s in 1:3
+        prev_true = compute_state_prevalence(paths_true, s, eval_times)
+        prev_fitted = compute_state_prevalence(paths_fitted, s, eval_times)
+        
+        result.prevalence_true[string(s)] = prev_true.mean
+        result.prevalence_true_lower[string(s)] = prev_true.lower
+        result.prevalence_true_upper[string(s)] = prev_true.upper
+        result.prevalence_fitted[string(s)] = prev_fitted.mean
+        result.prevalence_fitted_lower[string(s)] = prev_fitted.lower
+        result.prevalence_fitted_upper[string(s)] = prev_fitted.upper
+    end
+    
+    # Compute cumulative incidence for 1→2 and 2→3 only (NOT 1→3)
+    result.cumulative_incidence_times = copy(eval_times)
+    for (from, to) in [(1, 2), (2, 3)]
+        key = "$(from)→$(to)"
+        ci_true = compute_cumulative_incidence(paths_true, from, to, eval_times)
+        ci_fitted = compute_cumulative_incidence(paths_fitted, from, to, eval_times)
+        
+        result.cumulative_incidence_true[key] = ci_true.mean
+        result.cumulative_incidence_true_lower[key] = ci_true.lower
+        result.cumulative_incidence_true_upper[key] = ci_true.upper
+        result.cumulative_incidence_fitted[key] = ci_fitted.mean
+        result.cumulative_incidence_fitted_lower[key] = ci_fitted.lower
+        result.cumulative_incidence_fitted_upper[key] = ci_fitted.upper
+    end
+    
+    # Save to cache
+    save_longtest_result(result)
+    
+    return result
+end

@@ -1,0 +1,2149 @@
+
+******************************************************************************
+This program contains Ipopt, a library for large-scale nonlinear optimization.
+ Ipopt is released as open source code under the Eclipse Public License (EPL).
+         For more information visit https://github.com/coin-or/Ipopt
+******************************************************************************
+
+Running all tests...
+  Running test_hazards.jl...
+  Running test_helpers.jl...
+  Running test_initialization.jl...
+  Running test_mcem.jl...
+  Running test_mll_consistency.jl...
+Fitting Markov surrogate via MLE ...
+
+Markov surrogate MLE complete.
+
+
+  Sample-level MLL estimates:
+    IS-weighted (full pool): -35.4531
+    SIR (ESS=200):    -35.1639
+    LHS (ESS=200):    -35.3625
+    Max absolute difference: 0.2892
+
+  Subject-level MLL agreement:
+    Correlation (SIR vs IS):  0.9991
+    Correlation (LHS vs IS):  0.9993
+    Correlation (SIR vs LHS): 0.9988
+    Relative MAE (SIR vs IS): 2.51%
+    Relative MAE (LHS vs IS): 1.95%
+
+  Runtime benchmarks (50 reps, warmed up):
+    Pool size: 382 paths/subject avg, ESS target: 200
+
+    MLL computation only (excluding resampling):
+      IS-weighted (full pool, 382 paths): 0.0042 ms
+      SIR resampled (200 paths):             0.0089 ms
+      LHS resampled (200 paths):             0.0085 ms
+      Speedup (IS/SIR): 0.48x
+      Speedup (IS/LHS): 0.5x
+
+    Resampling overhead:
+      SIR resampling: 0.5686 ms
+      LHS resampling: 0.4077 ms
+
+    Total (MLL + resampling):
+      IS-weighted:    0.0042 ms
+      SIR:            0.5775 ms
+      LHS:            0.4162 ms
+
+    Log-likelihood computation (M-step bottleneck, 10 reps):
+      Full pool (19107 paths total): 50.75 ms
+      SIR subset (10000 paths total):  21.76 ms
+      LHS subset (10000 paths total):  20.32 ms
+      Speedup (Full/SIR): 2.33x
+      Speedup (Full/LHS): 2.5x
+      Expected speedup (paths ratio): 1.91x
+
+  Variance comparison (50 replications, ESS=200):
+    Full Pool IS variance: 0.0 (deterministic)
+    SIR variance:          0.0315, SD: 0.1774
+    LHS variance:          0.0217, SD: 0.1472
+    Variance ratio (SIR/LHS): 1.45
+
+    Full Pool IS mean:     -35.4531 (exact)
+    SIR mean:              -35.4592
+    LHS mean:              -35.4281
+
+    Variance computation runtimes:
+      SIR (50 reps):  0.047 s
+      LHS (50 reps):  0.023 s
+
+  Unbiasedness check (100 bootstrap samples):
+    IS estimate:   -35.4531
+    SIR mean:      -35.4845, bias: -0.0315
+    LHS mean:      -35.4786, bias: -0.0255
+    SIR SD:        0.2727
+    LHS SD:        0.2669
+
+  Edge case tests passed
+
+✓ All MLL consistency tests completed
+  Running test_modelgeneration.jl...
+  Running test_observation_weights_emat.jl...
+  Running test_per_transition_obstype.jl...
+  Running test_phasetype.jl...
+
+Phase-Type Correctness Tests Complete
+
+Phase-Type Tests Complete
+  Running test_phasetype_emission_expansion.jl...
+
+Parameter recovery test:
+  True λ = 0.5
+  Grid MLE λ = 0.4
+  Log-likelihoods: [-75.41, -70.25, -68.99, -69.88, -72.01, -74.85, -78.07]
+  Running test_phasetype_panel_expansion.jl...
+  Running test_pijcv.jl...
+  Running test_reconstructor.jl...
+  Running test_reversible_tvc_loglik.jl...
+  Running test_simulation.jl...
+  Running test_sir.jl...
+  Running test_splines.jl...
+  Running test_subject_weights.jl...
+  Running test_surrogates.jl...
+  Running test_variance.jl...
+  Loading long test helpers...
+  Running longtest_exact_markov.jl...
+  ▸ [Exact Data] Section 1: Exponential hazards
+    ▸ Exponential - No Covariates
+  ▸ [Exact Data] Section 2: Weibull hazards
+    ▸ Weibull - No Covariates
+
+=== Exact Data Long Test Suite Complete ===
+
+This test suite validated:
+  - Exponential hazards: no covariate, with covariate, TVC
+  - Weibull hazards: no covariate, with covariate, TVC
+  - Gompertz hazards: no covariate, with covariate, TVC
+  - Spline hazards: no covariate, with covariate, TVC
+  - Edge cases: subject weights, likelihood properties
+Model structure: progressive 3-state (1→2→3)
+Sample size: n=1000, simulation trajectories: 10000
+
+Saving results to cache...
+  ✓ Saved wei_nocov → exact_markov_wei_nocov.json
+  ✓ Saved gom_nocov → exact_markov_gom_nocov.json
+  ✓ Saved exp_nocov → exact_markov_exp_nocov.json
+Results saved to: /Users/fintzij/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/cache/longtest_results
+  Running longtest_mcem.jl...
+  ▸ [MCEM] Section 1: Exponential hazards (Markov panel solver)
+    ▸ Exponential panel (Markov) - No Covariates
+
+    Parameter Comparison: Exponential - No Covariates
+    ----------------------------------------------------------------------
+    Parameter         True        Estimated   Abs Diff    Rel Diff (%)
+    ----------------------------------------------------------------------
+    rate_12           0.2000      0.1989      0.0011      0.5%
+    rate_23           0.1500      0.1430      0.0070      4.7%
+    ----------------------------------------------------------------------
+    ▸ Exponential panel (Markov) - With Covariate
+
+    Parameter Comparison: Exponential - With Covariate
+    ----------------------------------------------------------------------
+    Parameter         True        Estimated   Abs Diff    Rel Diff (%)
+    ----------------------------------------------------------------------
+    rate_12           0.2000      0.2065      0.0065      3.2%
+    beta_12           0.4000      0.3321      0.0679      17.0%
+    rate_23           0.1500      0.1480      0.0020      1.4%
+    beta_23           -0.3000     -0.3694     0.0694      23.1%
+    ----------------------------------------------------------------------
+  ▸ [MCEM] Section 2: Weibull hazards
+    ▸ MCEM Weibull - No Covariates
+Using SQUAREM acceleration for MCEM.
+
+Using adaptive SIR (will switch to lhs when cost-effective).
+
+Using model's Markov surrogate for MCEM.
+
+Initializing sample paths ...
+
+Initial target ESS: 30.0 per-subject
+Initial range of the number of sample paths per-subject: [30, 50]
+Initial estimate of the marginal log-likelihood, Q: -4533.169
+Initial estimate of the log marginal likelihood: -3419.979
+
+Starting Monte Carlo EM...
+
+Iteration: 1
+Target ESS: 30.0 per-subject
+Range of the number of sampled paths per-subject: [30, 50]
+Estimate of the marginal log-likelihood, Q: -4530.026
+Gain in marginal log-likelihood, ΔQ: 3.14
+MCEM asymptotic standard error: 0.162
+Ascent lower and upper bound: [2.94, 3.35]
+Estimate of the log marginal likelihood, l(θ): -3416.173
+SQUAREM: 0 accelerations, 0 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 2
+Target ESS: 30.0 per-subject
+Range of the number of sampled paths per-subject: [30, 50]
+Estimate of the marginal log-likelihood, Q: -4527.785
+Gain in marginal log-likelihood, ΔQ: 0.156
+MCEM asymptotic standard error: 0.0359
+Ascent lower and upper bound: [0.11, 0.202]
+Estimate of the log marginal likelihood, l(θ): -3415.985
+SQUAREM: 0 accelerations, 1 fallbacks
+
+Iteration: 3
+Target ESS: 30.0 per-subject
+Range of the number of sampled paths per-subject: [30, 50]
+Estimate of the marginal log-likelihood, Q: -4527.259
+Gain in marginal log-likelihood, ΔQ: 0.00805
+MCEM asymptotic standard error: 0.00813
+Ascent lower and upper bound: [-0.00237, 0.0185]
+Estimate of the log marginal likelihood, l(θ): -3415.976
+SQUAREM: 0 accelerations, 1 fallbacks
+
+The MCEM algorithm has converged.
+
+Computing variance-covariance matrix at final estimates.
+
+    Parameter Comparison: Weibull - No Covariates
+    ----------------------------------------------------------------------
+    Parameter         True        Estimated   Abs Diff    Rel Diff (%)
+    ----------------------------------------------------------------------
+    shape_12          1.3000      1.2582      0.0418      3.2%
+    scale_12          0.1500      0.1500      0.0000      0.0%
+    shape_23          1.1000      1.0862      0.0138      1.3%
+    scale_23          0.1200      0.1252      0.0052      4.4%
+    ----------------------------------------------------------------------
+    ▸ MCEM Weibull - With Covariate
+Using SQUAREM acceleration for MCEM.
+
+Using adaptive SIR (will switch to lhs when cost-effective).
+
+Using model's Markov surrogate for MCEM.
+
+Initializing sample paths ...
+
+Initial target ESS: 30.0 per-subject
+Initial range of the number of sample paths per-subject: [30, 50]
+Initial estimate of the marginal log-likelihood, Q: -4425.224
+Initial estimate of the log marginal likelihood: -3321.611
+
+Starting Monte Carlo EM...
+
+Iteration: 1
+Target ESS: 30.0 per-subject
+Range of the number of sampled paths per-subject: [30, 50]
+Estimate of the marginal log-likelihood, Q: -4418.578
+Gain in marginal log-likelihood, ΔQ: 6.65
+MCEM asymptotic standard error: 0.242
+Ascent lower and upper bound: [6.34, 6.96]
+Estimate of the log marginal likelihood, l(θ): -3313.337
+SQUAREM: 0 accelerations, 0 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 2
+Target ESS: 30.0 per-subject
+Range of the number of sampled paths per-subject: [30, 50]
+Estimate of the marginal log-likelihood, Q: -4412.951
+Gain in marginal log-likelihood, ΔQ: 0.453
+MCEM asymptotic standard error: 0.0634
+Ascent lower and upper bound: [0.372, 0.534]
+Estimate of the log marginal likelihood, l(θ): -3312.769
+SQUAREM: 0 accelerations, 1 fallbacks
+
+Iteration: 3
+Target ESS: 30.0 per-subject
+Range of the number of sampled paths per-subject: [30, 50]
+Estimate of the marginal log-likelihood, Q: -4411.331
+Gain in marginal log-likelihood, ΔQ: 0.0344
+MCEM asymptotic standard error: 0.0176
+Ascent lower and upper bound: [0.0119, 0.057]
+Estimate of the log marginal likelihood, l(θ): -3312.727
+SQUAREM: 0 accelerations, 1 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 4
+Target ESS: 30.0 per-subject
+Range of the number of sampled paths per-subject: [30, 50]
+Estimate of the marginal log-likelihood, Q: -4410.866
+Gain in marginal log-likelihood, ΔQ: 0.00284
+MCEM asymptotic standard error: 0.00515
+Ascent lower and upper bound: [-0.00375, 0.00944]
+Estimate of the log marginal likelihood, l(θ): -3312.724
+SQUAREM: 0 accelerations, 2 fallbacks
+
+The MCEM algorithm has converged.
+
+
+    Parameter Comparison: Weibull - With Covariate
+    ----------------------------------------------------------------------
+    Parameter         True        Estimated   Abs Diff    Rel Diff (%)
+    ----------------------------------------------------------------------
+    shape_12          1.3000      1.3009      0.0009      0.1%
+    scale_12          0.1500      0.1520      0.0020      1.3%
+    beta_12           0.4000      0.4174      0.0174      4.4%
+    shape_23          1.1000      1.1237      0.0237      2.2%
+    scale_23          0.1200      0.1156      0.0044      3.7%
+    beta_23           -0.3000     -0.3684     0.0684      22.8%
+    ----------------------------------------------------------------------
+  ▸ [MCEM] Section 3: Gompertz hazards
+    ▸ MCEM Gompertz - No Covariates
+Using SQUAREM acceleration for MCEM.
+
+Using adaptive SIR (will switch to lhs when cost-effective).
+
+Using model's Markov surrogate for MCEM.
+
+Initializing sample paths ...
+
+Initial target ESS: 30.0 per-subject
+Initial range of the number of sample paths per-subject: [30, 50]
+Initial estimate of the marginal log-likelihood, Q: -5055.101
+Initial estimate of the log marginal likelihood: -2837.904
+
+Starting Monte Carlo EM...
+
+Iteration: 1
+Target ESS: 30.0 per-subject
+Range of the number of sampled paths per-subject: [30, 50]
+Estimate of the marginal log-likelihood, Q: -5041.429
+Gain in marginal log-likelihood, ΔQ: 13.7
+MCEM asymptotic standard error: 0.253
+Ascent lower and upper bound: [13.3, 14.0]
+Estimate of the log marginal likelihood, l(θ): -2822.647
+SQUAREM: 0 accelerations, 0 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 2
+Target ESS: 30.0 per-subject
+Range of the number of sampled paths per-subject: [30, 50]
+Estimate of the marginal log-likelihood, Q: -5038.402
+Gain in marginal log-likelihood, ΔQ: 0.204
+MCEM asymptotic standard error: 0.0322
+Ascent lower and upper bound: [0.162, 0.245]
+Estimate of the log marginal likelihood, l(θ): -2822.421
+SQUAREM: 0 accelerations, 1 fallbacks
+
+Iteration: 3
+Target ESS: 30.0 per-subject
+Range of the number of sampled paths per-subject: [30, 50]
+Estimate of the marginal log-likelihood, Q: -5037.994
+Gain in marginal log-likelihood, ΔQ: 0.00342
+MCEM asymptotic standard error: 0.00419
+Ascent lower and upper bound: [-0.00195, 0.00879]
+Estimate of the log marginal likelihood, l(θ): -2822.417
+SQUAREM: 0 accelerations, 1 fallbacks
+
+The MCEM algorithm has converged.
+
+Computing variance-covariance matrix at final estimates.
+ESS diagnostics for test 'MCEM Gompertz - No Covariates':
+  Iter 1: ESS min=30.0, median=49.69, max=50.0
+  Iter 2: ESS min=30.0, median=49.68, max=50.0
+  Iter 3: ESS min=30.0, median=49.67, max=50.0
+
+    Parameter Comparison: Gompertz - No Covariates
+    ----------------------------------------------------------------------
+    Parameter         True        Estimated   Abs Diff    Rel Diff (%)
+    ----------------------------------------------------------------------
+    shape_12          0.0800      0.0797      0.0003      0.4%
+    rate_12           0.0400      0.0389      0.0011      2.8%
+    shape_23          0.0600      0.0696      0.0096      16.0%
+    rate_23           0.0300      0.0272      0.0028      9.2%
+    ----------------------------------------------------------------------
+    ▸ MCEM Gompertz - With Covariate
+Using SQUAREM acceleration for MCEM.
+
+Using adaptive SIR (will switch to lhs when cost-effective).
+
+Using model's Markov surrogate for MCEM.
+
+Initializing sample paths ...
+
+Initial target ESS: 30.0 per-subject
+Initial range of the number of sample paths per-subject: [30, 50]
+Initial estimate of the marginal log-likelihood, Q: -4957.068
+Initial estimate of the log marginal likelihood: -2781.694
+
+Starting Monte Carlo EM...
+
+Iteration: 1
+Target ESS: 30.0 per-subject
+Range of the number of sampled paths per-subject: [30, 50]
+Estimate of the marginal log-likelihood, Q: -4948.572
+Gain in marginal log-likelihood, ΔQ: 8.5
+MCEM asymptotic standard error: 0.2
+Ascent lower and upper bound: [8.24, 8.75]
+Estimate of the log marginal likelihood, l(θ): -2772.21
+SQUAREM: 0 accelerations, 0 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 2
+Target ESS: 30.0 per-subject
+Range of the number of sampled paths per-subject: [30, 50]
+Estimate of the marginal log-likelihood, Q: -4946.784
+Gain in marginal log-likelihood, ΔQ: 0.126
+MCEM asymptotic standard error: 0.0253
+Ascent lower and upper bound: [0.094, 0.159]
+Estimate of the log marginal likelihood, l(θ): -2772.07
+SQUAREM: 0 accelerations, 1 fallbacks
+
+Iteration: 3
+Target ESS: 30.0 per-subject
+Range of the number of sampled paths per-subject: [30, 50]
+Estimate of the marginal log-likelihood, Q: -4946.548
+Gain in marginal log-likelihood, ΔQ: 0.0021
+MCEM asymptotic standard error: 0.00328
+Ascent lower and upper bound: [-0.0021, 0.0063]
+Estimate of the log marginal likelihood, l(θ): -2772.068
+SQUAREM: 0 accelerations, 1 fallbacks
+
+The MCEM algorithm has converged.
+
+
+    Parameter Comparison: Gompertz - With Covariate
+    ----------------------------------------------------------------------
+    Parameter         True        Estimated   Abs Diff    Rel Diff (%)
+    ----------------------------------------------------------------------
+    shape_12          0.0800      0.0798      0.0002      0.3%
+    rate_12           0.0400      0.0404      0.0004      0.9%
+    beta_12           0.3000      0.2812      0.0188      6.3%
+    shape_23          0.0600      0.0590      0.0010      1.7%
+    rate_23           0.0300      0.0280      0.0020      6.5%
+    beta_23           -0.2000     -0.1910     0.0090      4.5%
+    ----------------------------------------------------------------------
+  ▸ [MCEM] Section 3B: PhaseType proposal fitting
+    ▸ MCEM Weibull - PhaseType Proposal
+Using SQUAREM acceleration for MCEM.
+
+Using adaptive SIR (will switch to lhs when cost-effective).
+
+Using phase-type proposal for MCEM importance sampling.
+
+Using model's Markov surrogate for MCEM.
+
+Phase-type surrogate configuration:
+  n_phases per state: [3, 3, 1]
+  Total expanded states: 7
+  Phase-type surrogate built successfully.
+
+Initializing sample paths ...
+
+Initial target ESS: 30.0 per-subject
+Initial range of the number of sample paths per-subject: [30, 50]
+Initial estimate of the marginal log-likelihood, Q: -4169.764
+Initial estimate of the log marginal likelihood: -3017.441
+
+Starting Monte Carlo EM...
+
+Iteration: 1
+Target ESS: 30.0 per-subject
+Range of the number of sampled paths per-subject: [30, 50]
+Estimate of the marginal log-likelihood, Q: -4157.024
+Gain in marginal log-likelihood, ΔQ: 12.7
+MCEM asymptotic standard error: 0.356
+Ascent lower and upper bound: [12.3, 13.2]
+Estimate of the log marginal likelihood, l(θ): -3001.155
+SQUAREM: 0 accelerations, 0 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 2
+Target ESS: 30.0 per-subject
+Range of the number of sampled paths per-subject: [30, 50]
+Estimate of the marginal log-likelihood, Q: -4137.667
+Gain in marginal log-likelihood, ΔQ: 1.14
+MCEM asymptotic standard error: 0.112
+Ascent lower and upper bound: [0.994, 1.28]
+Estimate of the log marginal likelihood, l(θ): -2999.683
+SQUAREM: 0 accelerations, 1 fallbacks
+
+Iteration: 3
+Target ESS: 30.0 per-subject
+Range of the number of sampled paths per-subject: [30, 50]
+Estimate of the marginal log-likelihood, Q: -4132.227
+Gain in marginal log-likelihood, ΔQ: 0.129
+MCEM asymptotic standard error: 0.0403
+Ascent lower and upper bound: [0.0776, 0.181]
+Estimate of the log marginal likelihood, l(θ): -2999.516
+SQUAREM: 0 accelerations, 1 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 4
+Target ESS: 30.0 per-subject
+Range of the number of sampled paths per-subject: [30, 50]
+Estimate of the marginal log-likelihood, Q: -4130.627
+Gain in marginal log-likelihood, ΔQ: 0.0187
+MCEM asymptotic standard error: 0.016
+Ascent lower and upper bound: [-0.00175, 0.0392]
+Estimate of the log marginal likelihood, l(θ): -2999.493
+SQUAREM: 0 accelerations, 2 fallbacks
+
+The MCEM algorithm has converged.
+
+
+    Parameter Comparison: Weibull - PhaseType Proposal
+    ----------------------------------------------------------------------
+    Parameter         True        Estimated   Abs Diff    Rel Diff (%)
+    ----------------------------------------------------------------------
+    shape_12          1.3000      1.4112      0.1112      8.6%
+    scale_12          0.1500      0.1303      0.0197      13.1%
+    shape_23          1.4000      1.4150      0.0150      1.1%
+    scale_23          0.2000      0.2078      0.0078      3.9%
+    ----------------------------------------------------------------------
+    ▸ MCEM Gompertz - PhaseType Proposal
+Using SQUAREM acceleration for MCEM.
+
+Using adaptive SIR (will switch to lhs when cost-effective).
+
+Using phase-type proposal for MCEM importance sampling.
+
+Using model's Markov surrogate for MCEM.
+
+Phase-type surrogate configuration:
+  n_phases per state: [3, 1]
+  Total expanded states: 4
+  Phase-type surrogate built successfully.
+
+Initializing sample paths ...
+
+Initial target ESS: 30.0 per-subject
+Initial range of the number of sample paths per-subject: [30, 50]
+Initial estimate of the marginal log-likelihood, Q: -2103.031
+Initial estimate of the log marginal likelihood: -1423.695
+
+Starting Monte Carlo EM...
+
+Iteration: 1
+Target ESS: 30.0 per-subject
+Range of the number of sampled paths per-subject: [30, 50]
+Estimate of the marginal log-likelihood, Q: -2094.617
+Gain in marginal log-likelihood, ΔQ: 8.41
+MCEM asymptotic standard error: 0.187
+Ascent lower and upper bound: [8.17, 8.65]
+Estimate of the log marginal likelihood, l(θ): -1414.414
+SQUAREM: 0 accelerations, 0 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 2
+Target ESS: 30.0 per-subject
+Range of the number of sampled paths per-subject: [30, 50]
+Estimate of the marginal log-likelihood, Q: -2091.946
+Gain in marginal log-likelihood, ΔQ: 0.123
+MCEM asymptotic standard error: 0.0271
+Ascent lower and upper bound: [0.0882, 0.158]
+Estimate of the log marginal likelihood, l(θ): -1414.278
+SQUAREM: 0 accelerations, 1 fallbacks
+
+Iteration: 3
+Target ESS: 30.0 per-subject
+Range of the number of sampled paths per-subject: [30, 50]
+Estimate of the marginal log-likelihood, Q: -2091.199
+Gain in marginal log-likelihood, ΔQ: 0.00344
+MCEM asymptotic standard error: 0.00478
+Ascent lower and upper bound: [-0.00269, 0.00957]
+Estimate of the log marginal likelihood, l(θ): -1414.275
+SQUAREM: 0 accelerations, 1 fallbacks
+
+The MCEM algorithm has converged.
+
+
+    Parameter Comparison: Gompertz - PhaseType Proposal
+    ----------------------------------------------------------------------
+    Parameter         True        Estimated   Abs Diff    Rel Diff (%)
+    ----------------------------------------------------------------------
+    shape_12          0.3000      0.3033      0.0033      1.1%
+    rate_12           0.1200      0.1135      0.0065      5.4%
+    ----------------------------------------------------------------------
+  ▸ [MCEM] Section 4: Proposal selection and convergence
+    ▸ Phase-Type vs Markov Proposal Selection
+    ▸ MCEM Convergence Diagnostics
+Using SQUAREM acceleration for MCEM.
+
+Using adaptive SIR (will switch to lhs when cost-effective).
+
+Using model's Markov surrogate for MCEM.
+
+Initializing sample paths ...
+
+Initial target ESS: 20.0 per-subject
+Initial range of the number of sample paths per-subject: [20, 50]
+Initial estimate of the marginal log-likelihood, Q: -61.691
+Initial estimate of the log marginal likelihood: -61.767
+
+Starting Monte Carlo EM...
+
+Iteration: 1
+Target ESS: 20.0 per-subject
+Range of the number of sampled paths per-subject: [20, 50]
+Estimate of the marginal log-likelihood, Q: -61.327
+Gain in marginal log-likelihood, ΔQ: 0.364
+MCEM asymptotic standard error: 0.078
+Ascent lower and upper bound: [0.264, 0.464]
+Estimate of the log marginal likelihood, l(θ): -61.268
+SQUAREM: 0 accelerations, 0 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 2
+Target ESS: 20.0 per-subject
+Range of the number of sampled paths per-subject: [20, 50]
+Estimate of the marginal log-likelihood, Q: -60.901
+Gain in marginal log-likelihood, ΔQ: 0.0718
+MCEM asymptotic standard error: 0.0409
+Ascent lower and upper bound: [0.0194, 0.124]
+Estimate of the log marginal likelihood, l(θ): -61.163
+SQUAREM: 0 accelerations, 1 fallbacks
+
+Iteration: 3
+Target ESS: 20.0 per-subject
+Range of the number of sampled paths per-subject: [20, 50]
+Estimate of the marginal log-likelihood, Q: -60.628
+Gain in marginal log-likelihood, ΔQ: 0.0237
+MCEM asymptotic standard error: 0.0289
+Ascent lower and upper bound: [-0.0133, 0.0608]
+Estimate of the log marginal likelihood, l(θ): -61.128
+SQUAREM: 0 accelerations, 1 fallbacks
+
+The MCEM algorithm has converged.
+
+Fitting Markov surrogate via MLE ...
+
+Markov surrogate MLE complete.
+
+
+=== MCEM Long Test Suite Complete ===
+
+This test suite validated:
+  - Progressive 3-state model (1→2→3)
+  - MCEM parameter recovery for exponential, Weibull, Gompertz hazards
+  - MCEM with covariates
+  - MCEM distributional fidelity (state prevalence)
+  - MCEM with PhaseType proposal (Weibull, Gompertz)
+  - Phase-type vs Markov proposal selection
+  - Convergence diagnostics and ESS tracking
+  - Markov surrogate fitting
+  - Estimated vs. true parameter comparisons printed for all tests
+Sample size: n=1000, simulation trajectories: 10000
+
+Saving MCEM results to cache...
+  ✓ Saved gom_panel_nocov → mcem_gom_panel_nocov.json
+  ✓ Saved wei_panel_nocov → mcem_wei_panel_nocov.json
+  ✓ Saved exp_panel_nocov → mcem_exp_panel_nocov.json
+Results saved to: /Users/fintzij/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/cache/longtest_results
+  Running longtest_mcem_splines.jl...
+Using SQUAREM acceleration for MCEM.
+
+Using adaptive SIR (will switch to lhs when cost-effective).
+
+Using model's Markov surrogate for MCEM.
+
+Initializing sample paths ...
+
+Initial target ESS: 25.0 per-subject
+Initial range of the number of sample paths per-subject: [25, 50]
+Initial estimate of the marginal log-likelihood, Q: -1526.096
+Initial estimate of the log marginal likelihood: -1079.445
+
+Starting Monte Carlo EM...
+
+Iteration: 1
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1519.25
+Gain in marginal log-likelihood, ΔQ: 6.85
+MCEM asymptotic standard error: 0.273
+Ascent lower and upper bound: [6.5, 7.2]
+Estimate of the log marginal likelihood, l(θ): -1070.678
+SQUAREM: 0 accelerations, 0 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 2
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1528.373
+Gain in marginal log-likelihood, ΔQ: 0.526
+MCEM asymptotic standard error: 0.0772
+Ascent lower and upper bound: [0.427, 0.625]
+Estimate of the log marginal likelihood, l(θ): -1070.0
+SQUAREM: 0 accelerations, 1 fallbacks
+
+Iteration: 3
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1530.72
+Gain in marginal log-likelihood, ΔQ: 0.0438
+MCEM asymptotic standard error: 0.0226
+Ascent lower and upper bound: [0.0149, 0.0728]
+Estimate of the log marginal likelihood, l(θ): -1069.943
+SQUAREM: 0 accelerations, 1 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 4
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1531.384
+Gain in marginal log-likelihood, ΔQ: 0.0038
+MCEM asymptotic standard error: 0.00668
+Ascent lower and upper bound: [-0.00476, 0.0124]
+Estimate of the log marginal likelihood, l(θ): -1069.938
+SQUAREM: 0 accelerations, 2 fallbacks
+
+The MCEM algorithm has converged.
+
+  ✓ Linear spline approximates constant/exponential hazard
+Using SQUAREM acceleration for MCEM.
+
+Using adaptive SIR (will switch to lhs when cost-effective).
+
+Using model's Markov surrogate for MCEM.
+
+Initializing sample paths ...
+
+Initial target ESS: 25.0 per-subject
+Initial range of the number of sample paths per-subject: [25, 50]
+Initial estimate of the marginal log-likelihood, Q: -1542.569
+Initial estimate of the log marginal likelihood: -1048.519
+
+Starting Monte Carlo EM...
+
+Iteration: 1
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1538.23
+Gain in marginal log-likelihood, ΔQ: 4.34
+MCEM asymptotic standard error: 0.22
+Ascent lower and upper bound: [4.06, 4.62]
+Estimate of the log marginal likelihood, l(θ): -1042.934
+SQUAREM: 0 accelerations, 0 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 2
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1546.943
+Gain in marginal log-likelihood, ΔQ: 0.354
+MCEM asymptotic standard error: 0.0641
+Ascent lower and upper bound: [0.272, 0.436]
+Estimate of the log marginal likelihood, l(θ): -1042.476
+SQUAREM: 0 accelerations, 1 fallbacks
+
+Iteration: 3
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1549.325
+Gain in marginal log-likelihood, ΔQ: 0.0323
+MCEM asymptotic standard error: 0.0217
+Ascent lower and upper bound: [0.00446, 0.0601]
+Estimate of the log marginal likelihood, l(θ): -1042.432
+SQUAREM: 0 accelerations, 1 fallbacks
+
+  [SQUAREM: acceleration accepted, α=-0.989]
+
+Iteration: 4
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1550.019
+Gain in marginal log-likelihood, ΔQ: 0.00603
+MCEM asymptotic standard error: 0.0131
+Ascent lower and upper bound: [-0.0108, 0.0228]
+Estimate of the log marginal likelihood, l(θ): -1042.422
+SQUAREM: 1 accelerations, 1 fallbacks
+
+The MCEM algorithm has converged.
+
+  ✓ Spline with interior knot handles piecewise hazard
+Using SQUAREM acceleration for MCEM.
+
+Using adaptive SIR (will switch to lhs when cost-effective).
+
+Using model's Markov surrogate for MCEM.
+
+Initializing sample paths ...
+
+Initial target ESS: 25.0 per-subject
+Initial range of the number of sample paths per-subject: [25, 50]
+Initial estimate of the marginal log-likelihood, Q: -1484.27
+Initial estimate of the log marginal likelihood: -1097.473
+
+Starting Monte Carlo EM...
+
+Iteration: 1
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1471.98
+Gain in marginal log-likelihood, ΔQ: 12.3
+MCEM asymptotic standard error: 0.36
+Ascent lower and upper bound: [11.8, 12.8]
+Estimate of the log marginal likelihood, l(θ): -1081.819
+SQUAREM: 0 accelerations, 0 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 2
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1474.32
+Gain in marginal log-likelihood, ΔQ: 0.911
+MCEM asymptotic standard error: 0.0997
+Ascent lower and upper bound: [0.783, 1.04]
+Estimate of the log marginal likelihood, l(θ): -1080.669
+SQUAREM: 0 accelerations, 1 fallbacks
+
+Iteration: 3
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1474.951
+Gain in marginal log-likelihood, ΔQ: 0.0718
+MCEM asymptotic standard error: 0.0314
+Ascent lower and upper bound: [0.0315, 0.112]
+Estimate of the log marginal likelihood, l(θ): -1080.574
+SQUAREM: 0 accelerations, 1 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 4
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1475.308
+Gain in marginal log-likelihood, ΔQ: 0.0128
+MCEM asymptotic standard error: 0.0193
+Ascent lower and upper bound: [-0.0119, 0.0375]
+Estimate of the log marginal likelihood, l(θ): -1080.55
+SQUAREM: 0 accelerations, 2 fallbacks
+
+The MCEM algorithm has converged.
+
+  ✓ Cubic spline approximates Gompertz (increasing) hazard
+Using SQUAREM acceleration for MCEM.
+
+Using adaptive SIR (will switch to lhs when cost-effective).
+
+Using model's Markov surrogate for MCEM.
+
+Initializing sample paths ...
+
+Initial target ESS: 25.0 per-subject
+Initial range of the number of sample paths per-subject: [25, 50]
+Initial estimate of the marginal log-likelihood, Q: -1560.821
+Initial estimate of the log marginal likelihood: -1251.682
+
+Starting Monte Carlo EM...
+
+Iteration: 1
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1558.554
+Gain in marginal log-likelihood, ΔQ: 2.27
+MCEM asymptotic standard error: 0.121
+Ascent lower and upper bound: [2.11, 2.42]
+Estimate of the log marginal likelihood, l(θ): -1249.042
+SQUAREM: 0 accelerations, 0 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 2
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1562.807
+Gain in marginal log-likelihood, ΔQ: 0.0633
+MCEM asymptotic standard error: 0.0209
+Ascent lower and upper bound: [0.0366, 0.0901]
+Estimate of the log marginal likelihood, l(θ): -1248.968
+SQUAREM: 0 accelerations, 1 fallbacks
+
+Iteration: 3
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1563.522
+Gain in marginal log-likelihood, ΔQ: 0.00192
+MCEM asymptotic standard error: 0.00366
+Ascent lower and upper bound: [-0.00276, 0.00661]
+Estimate of the log marginal likelihood, l(θ): -1248.966
+SQUAREM: 0 accelerations, 1 fallbacks
+
+The MCEM algorithm has converged.
+
+  ✓ Spline with covariates works in MCEM
+Using SQUAREM acceleration for MCEM.
+
+Using adaptive SIR (will switch to lhs when cost-effective).
+
+Using model's Markov surrogate for MCEM.
+
+Initializing sample paths ...
+
+Initial target ESS: 25.0 per-subject
+Initial range of the number of sample paths per-subject: [25, 50]
+Initial estimate of the marginal log-likelihood, Q: -1523.792
+Initial estimate of the log marginal likelihood: -1070.562
+
+Starting Monte Carlo EM...
+
+Iteration: 1
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1522.051
+Gain in marginal log-likelihood, ΔQ: 1.74
+MCEM asymptotic standard error: 0.0425
+Ascent lower and upper bound: [1.69, 1.8]
+Estimate of the log marginal likelihood, l(θ): -1068.775
+SQUAREM: 0 accelerations, 0 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 2
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1523.28
+Gain in marginal log-likelihood, ΔQ: 0.00113
+MCEM asymptotic standard error: 0.00106
+Ascent lower and upper bound: [-0.000224, 0.00249]
+Estimate of the log marginal likelihood, l(θ): -1068.774
+SQUAREM: 0 accelerations, 1 fallbacks
+
+The MCEM algorithm has converged.
+
+  ✓ Monotone increasing spline enforces constraint in MCEM
+Using SQUAREM acceleration for MCEM.
+
+Using adaptive SIR (will switch to lhs when cost-effective).
+
+Using phase-type proposal for MCEM importance sampling.
+
+Using model's Markov surrogate for MCEM.
+
+Phase-type surrogate configuration:
+  n_phases per state: [3, 1]
+  Total expanded states: 4
+  Phase-type surrogate built successfully.
+
+Initializing sample paths ...
+
+Initial target ESS: 25.0 per-subject
+Initial range of the number of sample paths per-subject: [25, 50]
+Initial estimate of the marginal log-likelihood, Q: -1869.032
+Initial estimate of the log marginal likelihood: -1264.34
+
+Starting Monte Carlo EM...
+
+Iteration: 1
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1842.201
+Gain in marginal log-likelihood, ΔQ: 26.8
+MCEM asymptotic standard error: 0.336
+Ascent lower and upper bound: [26.4, 27.3]
+Estimate of the log marginal likelihood, l(θ): -1234.69
+SQUAREM: 0 accelerations, 0 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 2
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1835.848
+Gain in marginal log-likelihood, ΔQ: 0.491
+MCEM asymptotic standard error: 0.057
+Ascent lower and upper bound: [0.418, 0.564]
+Estimate of the log marginal likelihood, l(θ): -1234.119
+SQUAREM: 0 accelerations, 1 fallbacks
+
+Iteration: 3
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1834.494
+Gain in marginal log-likelihood, ΔQ: 0.017
+MCEM asymptotic standard error: 0.0114
+Ascent lower and upper bound: [0.00239, 0.0317]
+Estimate of the log marginal likelihood, l(θ): -1234.1
+SQUAREM: 0 accelerations, 1 fallbacks
+
+The MCEM algorithm has converged.
+
+  ✓ Spline with PhaseType proposal works
+
+=== MCEM Spline Long Test Suite Complete ===
+
+Tests verify:
+  - Linear spline approximates constant/exponential hazard
+  - Spline with interior knots handles piecewise hazard
+  - Cubic spline approximates Gompertz (exponential) hazard
+  - Spline with covariates recovers log hazard ratio
+  - Monotone spline constraints are enforced in MCEM
+  - Spline hazards work with PhaseType proposal
+  Running longtest_mcem_tvc.jl...
+  ✓ Markov Panel Exponential + TVC fitting works
+Using SQUAREM acceleration for MCEM.
+
+Using adaptive SIR (will switch to lhs when cost-effective).
+
+Using model's Markov surrogate for MCEM.
+
+Initializing sample paths ...
+
+Initial target ESS: 25.0 per-subject
+Initial range of the number of sample paths per-subject: [25, 50]
+Initial estimate of the marginal log-likelihood, Q: -2006.87
+Initial estimate of the log marginal likelihood: -1565.889
+
+Starting Monte Carlo EM...
+
+Iteration: 1
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1983.284
+Gain in marginal log-likelihood, ΔQ: 23.6
+MCEM asymptotic standard error: 0.151
+Ascent lower and upper bound: [23.4, 23.8]
+Estimate of the log marginal likelihood, l(θ): -1541.726
+SQUAREM: 0 accelerations, 0 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 2
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1979.553
+Gain in marginal log-likelihood, ΔQ: 0.0418
+MCEM asymptotic standard error: 0.0256
+Ascent lower and upper bound: [0.00892, 0.0746]
+Estimate of the log marginal likelihood, l(θ): -1541.668
+SQUAREM: 0 accelerations, 1 fallbacks
+
+Iteration: 3
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1978.762
+Gain in marginal log-likelihood, ΔQ: 0.0113
+MCEM asymptotic standard error: 0.0185
+Ascent lower and upper bound: [-0.0124, 0.035]
+Estimate of the log marginal likelihood, l(θ): -1541.649
+SQUAREM: 0 accelerations, 1 fallbacks
+
+The MCEM algorithm has converged.
+
+  ✓ Binary TVC (treatment switch) MCEM fitting works
+Using SQUAREM acceleration for MCEM.
+
+Using adaptive SIR (will switch to lhs when cost-effective).
+
+Using model's Markov surrogate for MCEM.
+
+Initializing sample paths ...
+
+Initial target ESS: 25.0 per-subject
+Initial range of the number of sample paths per-subject: [25, 50]
+Initial estimate of the marginal log-likelihood, Q: -1847.579
+Initial estimate of the log marginal likelihood: -1453.644
+
+Starting Monte Carlo EM...
+
+Iteration: 1
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1834.682
+Gain in marginal log-likelihood, ΔQ: 12.9
+MCEM asymptotic standard error: 0.102
+Ascent lower and upper bound: [12.8, 13.0]
+Estimate of the log marginal likelihood, l(θ): -1440.485
+SQUAREM: 0 accelerations, 0 fallbacks
+
+  [SQUAREM: acceleration accepted, α=-0.973]
+
+Iteration: 2
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1836.335
+Gain in marginal log-likelihood, ΔQ: 0.00778
+MCEM asymptotic standard error: 0.00955
+Ascent lower and upper bound: [-0.00441, 0.0201]
+Estimate of the log marginal likelihood, l(θ): -1440.473
+SQUAREM: 1 accelerations, 0 fallbacks
+
+The MCEM algorithm has converged.
+
+  ✓ Continuous TVC (biomarker) MCEM fitting works
+Using SQUAREM acceleration for MCEM.
+
+Using adaptive SIR (will switch to lhs when cost-effective).
+
+Using model's Markov surrogate for MCEM.
+
+Initializing sample paths ...
+
+Initial target ESS: 30.0 per-subject
+Initial range of the number of sample paths per-subject: [30, 50]
+Initial estimate of the marginal log-likelihood, Q: -2263.669
+Initial estimate of the log marginal likelihood: -1485.752
+
+Starting Monte Carlo EM...
+
+Iteration: 1
+Target ESS: 30.0 per-subject
+Range of the number of sampled paths per-subject: [30, 50]
+Estimate of the marginal log-likelihood, Q: -2210.822
+Gain in marginal log-likelihood, ΔQ: 52.8
+MCEM asymptotic standard error: 0.275
+Ascent lower and upper bound: [52.5, 53.2]
+Estimate of the log marginal likelihood, l(θ): -1431.002
+SQUAREM: 0 accelerations, 0 fallbacks
+
+  [SQUAREM: acceleration accepted, α=-0.999]
+
+Iteration: 2
+Target ESS: 30.0 per-subject
+Range of the number of sampled paths per-subject: [30, 50]
+Estimate of the marginal log-likelihood, Q: -2207.061
+Gain in marginal log-likelihood, ΔQ: 0.353
+MCEM asymptotic standard error: 0.0951
+Ascent lower and upper bound: [0.231, 0.474]
+Estimate of the log marginal likelihood, l(θ): -1430.434
+SQUAREM: 1 accelerations, 0 fallbacks
+
+Iteration: 3
+Target ESS: 30.0 per-subject
+Range of the number of sampled paths per-subject: [30, 50]
+Estimate of the marginal log-likelihood, Q: -2208.4
+Gain in marginal log-likelihood, ΔQ: 0.167
+MCEM asymptotic standard error: 0.072
+Ascent lower and upper bound: [0.0747, 0.259]
+Estimate of the log marginal likelihood, l(θ): -1430.138
+SQUAREM: 1 accelerations, 0 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 4
+Target ESS: 30.0 per-subject
+Range of the number of sampled paths per-subject: [30, 50]
+Estimate of the marginal log-likelihood, Q: -2209.58
+Gain in marginal log-likelihood, ΔQ: 0.102
+MCEM asymptotic standard error: 0.055
+Ascent lower and upper bound: [0.031, 0.172]
+Estimate of the log marginal likelihood, l(θ): -1429.958
+SQUAREM: 1 accelerations, 1 fallbacks
+
+Iteration: 5
+Target ESS: 30.0 per-subject
+Range of the number of sampled paths per-subject: [30, 50]
+Estimate of the marginal log-likelihood, Q: -2210.396
+Gain in marginal log-likelihood, ΔQ: 0.0617
+MCEM asymptotic standard error: 0.0422
+Ascent lower and upper bound: [0.00758, 0.116]
+Estimate of the log marginal likelihood, l(θ): -1429.849
+SQUAREM: 1 accelerations, 1 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 6
+Target ESS: 30.0 per-subject
+Range of the number of sampled paths per-subject: [30, 50]
+Estimate of the marginal log-likelihood, Q: -2210.957
+Gain in marginal log-likelihood, ΔQ: 0.0373
+MCEM asymptotic standard error: 0.0325
+Ascent lower and upper bound: [-0.00428, 0.079]
+Estimate of the log marginal likelihood, l(θ): -1429.783
+SQUAREM: 1 accelerations, 2 fallbacks
+
+Target ESS increased to 43.0 (growth factor 1.414).
+
+Iteration: 7
+Target ESS: 43.0 per-subject
+Range of the number of sampled paths per-subject: [43.0, 50]
+Estimate of the marginal log-likelihood, Q: -2211.347
+Gain in marginal log-likelihood, ΔQ: 0.0225
+MCEM asymptotic standard error: 0.025
+Ascent lower and upper bound: [-0.00952, 0.0546]
+Estimate of the log marginal likelihood, l(θ): -1429.743
+SQUAREM: 1 accelerations, 2 fallbacks
+
+Target ESS increased to 61.0 (growth factor 1.414).
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 8
+Target ESS: 61.0 per-subject
+Range of the number of sampled paths per-subject: [61.0, 70]
+Estimate of the marginal log-likelihood, Q: -2211.492
+Gain in marginal log-likelihood, ΔQ: 0.0107
+MCEM asymptotic standard error: 0.0145
+Ascent lower and upper bound: [-0.00787, 0.0293]
+Estimate of the log marginal likelihood, l(θ): -1429.774
+SQUAREM: 1 accelerations, 3 fallbacks
+
+The MCEM algorithm has converged.
+
+  ✓ Weibull + TVC (semi-Markov) MCEM fitting works
+Using SQUAREM acceleration for MCEM.
+
+Using adaptive SIR (will switch to lhs when cost-effective).
+
+Using model's Markov surrogate for MCEM.
+
+Initializing sample paths ...
+
+Initial target ESS: 25.0 per-subject
+Initial range of the number of sample paths per-subject: [25, 50]
+Initial estimate of the marginal log-likelihood, Q: -2533.5
+Initial estimate of the log marginal likelihood: -1695.173
+
+Starting Monte Carlo EM...
+
+Iteration: 1
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -2512.486
+Gain in marginal log-likelihood, ΔQ: 21.0
+MCEM asymptotic standard error: 0.27
+Ascent lower and upper bound: [20.7, 21.4]
+Estimate of the log marginal likelihood, l(θ): -1672.356
+SQUAREM: 0 accelerations, 0 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 2
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -2511.571
+Gain in marginal log-likelihood, ΔQ: 0.178
+MCEM asymptotic standard error: 0.0267
+Ascent lower and upper bound: [0.144, 0.212]
+Estimate of the log marginal likelihood, l(θ): -1672.165
+SQUAREM: 0 accelerations, 1 fallbacks
+
+Iteration: 3
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -2511.369
+Gain in marginal log-likelihood, ΔQ: 0.00186
+MCEM asymptotic standard error: 0.00276
+Ascent lower and upper bound: [-0.00168, 0.0054]
+Estimate of the log marginal likelihood, l(θ): -1672.163
+SQUAREM: 0 accelerations, 1 fallbacks
+
+The MCEM algorithm has converged.
+
+  ✓ Gompertz + TVC (aging + treatment) MCEM fitting works
+Using SQUAREM acceleration for MCEM.
+
+Using adaptive SIR (will switch to lhs when cost-effective).
+
+Using model's Markov surrogate for MCEM.
+
+Initializing sample paths ...
+
+Initial target ESS: 30.0 per-subject
+Initial range of the number of sample paths per-subject: [30, 50]
+Initial estimate of the marginal log-likelihood, Q: -3488.136
+Initial estimate of the log marginal likelihood: -2778.525
+
+Starting Monte Carlo EM...
+
+Iteration: 1
+Target ESS: 30.0 per-subject
+Range of the number of sampled paths per-subject: [30, 50]
+Estimate of the marginal log-likelihood, Q: -3480.684
+Gain in marginal log-likelihood, ΔQ: 7.45
+MCEM asymptotic standard error: 0.0759
+Ascent lower and upper bound: [7.35, 7.55]
+Estimate of the log marginal likelihood, l(θ): -2770.927
+SQUAREM: 0 accelerations, 0 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 2
+Target ESS: 30.0 per-subject
+Range of the number of sampled paths per-subject: [30, 50]
+Estimate of the marginal log-likelihood, Q: -3482.245
+Gain in marginal log-likelihood, ΔQ: 0.017
+MCEM asymptotic standard error: 0.0141
+Ascent lower and upper bound: [-0.00107, 0.035]
+Estimate of the log marginal likelihood, l(θ): -2770.905
+SQUAREM: 0 accelerations, 1 fallbacks
+
+The MCEM algorithm has converged.
+
+
+    Parameter Comparison: Progressive with TVC
+    ----------------------------------------------------------------------
+    Parameter         True        Estimated   Abs Diff    Rel Diff (%)
+    ----------------------------------------------------------------------
+    shape_12          1.0000      1.0124      0.0124      1.2%
+    scale_12          0.1500      0.1550      0.0050      3.3%
+    beta_12           0.3000      0.2530      0.0470      15.7%
+    shape_23          1.0000      1.0139      0.0139      1.4%
+    scale_23          0.2500      0.2481      0.0019      0.8%
+    beta_23           0.4000      0.4285      0.0285      7.1%
+    ----------------------------------------------------------------------
+  ✓ Progressive model with TVC MCEM fitting works
+Using SQUAREM acceleration for MCEM.
+
+Using adaptive SIR (will switch to lhs when cost-effective).
+
+Using model's Markov surrogate for MCEM.
+
+Initializing sample paths ...
+
+Initial target ESS: 25.0 per-subject
+Initial range of the number of sample paths per-subject: [25, 50]
+Initial estimate of the marginal log-likelihood, Q: -2213.603
+Initial estimate of the log marginal likelihood: -1920.856
+
+Starting Monte Carlo EM...
+
+Iteration: 1
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -2205.373
+Gain in marginal log-likelihood, ΔQ: 8.23
+MCEM asymptotic standard error: 0.17
+Ascent lower and upper bound: [8.01, 8.45]
+Estimate of the log marginal likelihood, l(θ): -1911.953
+SQUAREM: 0 accelerations, 0 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 2
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -2207.834
+Gain in marginal log-likelihood, ΔQ: 0.353
+MCEM asymptotic standard error: 0.0882
+Ascent lower and upper bound: [0.24, 0.466]
+Estimate of the log marginal likelihood, l(θ): -1911.411
+SQUAREM: 0 accelerations, 1 fallbacks
+
+Iteration: 3
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -2208.607
+Gain in marginal log-likelihood, ΔQ: 0.102
+MCEM asymptotic standard error: 0.0456
+Ascent lower and upper bound: [0.0435, 0.16]
+Estimate of the log marginal likelihood, l(θ): -1911.256
+SQUAREM: 0 accelerations, 1 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 4
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -2208.942
+Gain in marginal log-likelihood, ΔQ: 0.0285
+MCEM asymptotic standard error: 0.0236
+Ascent lower and upper bound: [-0.00178, 0.0588]
+Estimate of the log marginal likelihood, l(θ): -1911.212
+SQUAREM: 0 accelerations, 2 fallbacks
+
+Target ESS increased to 36.0 (growth factor 1.414).
+
+Iteration: 5
+Target ESS: 36.0 per-subject
+Range of the number of sampled paths per-subject: [36.0, 50]
+Estimate of the marginal log-likelihood, Q: -2209.099
+Gain in marginal log-likelihood, ΔQ: 0.00782
+MCEM asymptotic standard error: 0.0123
+Ascent lower and upper bound: [-0.00788, 0.0235]
+Estimate of the log marginal likelihood, l(θ): -1911.201
+SQUAREM: 0 accelerations, 2 fallbacks
+
+The MCEM algorithm has converged.
+
+  ✓ Multiple TVC change points MCEM fitting works
+Using SQUAREM acceleration for MCEM.
+
+Using adaptive SIR (will switch to lhs when cost-effective).
+
+Using model's Markov surrogate for MCEM.
+
+Initializing sample paths ...
+
+Initial target ESS: 25.0 per-subject
+Initial range of the number of sample paths per-subject: [25, 50]
+Initial estimate of the marginal log-likelihood, Q: -1774.553
+Initial estimate of the log marginal likelihood: -1396.813
+
+Starting Monte Carlo EM...
+
+Iteration: 1
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1771.086
+Gain in marginal log-likelihood, ΔQ: 3.47
+MCEM asymptotic standard error: 0.382
+Ascent lower and upper bound: [2.98, 3.96]
+Estimate of the log marginal likelihood, l(θ): -1391.02
+SQUAREM: 0 accelerations, 0 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 2
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1781.821
+Gain in marginal log-likelihood, ΔQ: 1.89
+MCEM asymptotic standard error: 0.266
+Ascent lower and upper bound: [1.55, 2.23]
+Estimate of the log marginal likelihood, l(θ): -1387.685
+SQUAREM: 0 accelerations, 1 fallbacks
+
+Iteration: 3
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1787.394
+Gain in marginal log-likelihood, ΔQ: 1.15
+MCEM asymptotic standard error: 0.191
+Ascent lower and upper bound: [0.905, 1.4]
+Estimate of the log marginal likelihood, l(θ): -1385.655
+SQUAREM: 0 accelerations, 1 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 4
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1790.236
+Gain in marginal log-likelihood, ΔQ: 0.69
+MCEM asymptotic standard error: 0.14
+Ascent lower and upper bound: [0.51, 0.87]
+Estimate of the log marginal likelihood, l(θ): -1384.444
+SQUAREM: 0 accelerations, 2 fallbacks
+
+Iteration: 5
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1791.609
+Gain in marginal log-likelihood, ΔQ: 0.404
+MCEM asymptotic standard error: 0.104
+Ascent lower and upper bound: [0.271, 0.537]
+Estimate of the log marginal likelihood, l(θ): -1383.738
+SQUAREM: 0 accelerations, 2 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 6
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1792.204
+Gain in marginal log-likelihood, ΔQ: 0.232
+MCEM asymptotic standard error: 0.0766
+Ascent lower and upper bound: [0.134, 0.33]
+Estimate of the log marginal likelihood, l(θ): -1383.335
+SQUAREM: 0 accelerations, 3 fallbacks
+
+Iteration: 7
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1792.405
+Gain in marginal log-likelihood, ΔQ: 0.132
+MCEM asymptotic standard error: 0.0567
+Ascent lower and upper bound: [0.0588, 0.204]
+Estimate of the log marginal likelihood, l(θ): -1383.108
+SQUAREM: 0 accelerations, 3 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 8
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1792.42
+Gain in marginal log-likelihood, ΔQ: 0.0736
+MCEM asymptotic standard error: 0.0419
+Ascent lower and upper bound: [0.0199, 0.127]
+Estimate of the log marginal likelihood, l(θ): -1382.982
+SQUAREM: 0 accelerations, 4 fallbacks
+
+Iteration: 9
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1792.357
+Gain in marginal log-likelihood, ΔQ: 0.0408
+MCEM asymptotic standard error: 0.031
+Ascent lower and upper bound: [0.00113, 0.0806]
+Estimate of the log marginal likelihood, l(θ): -1382.913
+SQUAREM: 0 accelerations, 4 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 10
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1792.269
+Gain in marginal log-likelihood, ΔQ: 0.0225
+MCEM asymptotic standard error: 0.0229
+Ascent lower and upper bound: [-0.00681, 0.0518]
+Estimate of the log marginal likelihood, l(θ): -1382.875
+SQUAREM: 0 accelerations, 5 fallbacks
+
+Target ESS increased to 36.0 (growth factor 1.414).
+
+Iteration: 11
+Target ESS: 36.0 per-subject
+Range of the number of sampled paths per-subject: [36.0, 50]
+Estimate of the marginal log-likelihood, Q: -1792.183
+Gain in marginal log-likelihood, ΔQ: 0.0123
+MCEM asymptotic standard error: 0.0169
+Ascent lower and upper bound: [-0.00928, 0.034]
+Estimate of the log marginal likelihood, l(θ): -1382.855
+SQUAREM: 0 accelerations, 5 fallbacks
+
+The MCEM algorithm has converged.
+
+  ✓ AFT effect with TVC MCEM fitting works
+Using SQUAREM acceleration for MCEM.
+
+Using adaptive SIR (will switch to lhs when cost-effective).
+
+Using model's Markov surrogate for MCEM.
+
+Initializing sample paths ...
+
+Initial target ESS: 25.0 per-subject
+Initial range of the number of sample paths per-subject: [25, 50]
+Initial estimate of the marginal log-likelihood, Q: -1897.358
+Initial estimate of the log marginal likelihood: -1543.295
+
+Starting Monte Carlo EM...
+
+Iteration: 1
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1882.331
+Gain in marginal log-likelihood, ΔQ: 15.0
+MCEM asymptotic standard error: 0.331
+Ascent lower and upper bound: [14.6, 15.5]
+Estimate of the log marginal likelihood, l(θ): -1525.531
+SQUAREM: 0 accelerations, 0 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 2
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1878.284
+Gain in marginal log-likelihood, ΔQ: 0.972
+MCEM asymptotic standard error: 0.125
+Ascent lower and upper bound: [0.812, 1.13]
+Estimate of the log marginal likelihood, l(θ): -1524.191
+SQUAREM: 0 accelerations, 1 fallbacks
+
+Iteration: 3
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1876.656
+Gain in marginal log-likelihood, ΔQ: 0.163
+MCEM asymptotic standard error: 0.0534
+Ascent lower and upper bound: [0.0944, 0.231]
+Estimate of the log marginal likelihood, l(θ): -1523.968
+SQUAREM: 0 accelerations, 1 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 4
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1875.942
+Gain in marginal log-likelihood, ΔQ: 0.0309
+MCEM asymptotic standard error: 0.0236
+Ascent lower and upper bound: [0.00064, 0.0612]
+Estimate of the log marginal likelihood, l(θ): -1523.927
+SQUAREM: 0 accelerations, 2 fallbacks
+
+Iteration: 5
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1875.619
+Gain in marginal log-likelihood, ΔQ: 0.00616
+MCEM asymptotic standard error: 0.0106
+Ascent lower and upper bound: [-0.00745, 0.0198]
+Estimate of the log marginal likelihood, l(θ): -1523.92
+SQUAREM: 0 accelerations, 2 fallbacks
+
+The MCEM algorithm has converged.
+
+  ✓ Spline + TVC MCEM fitting works
+Using SQUAREM acceleration for MCEM.
+
+Using adaptive SIR (will switch to lhs when cost-effective).
+
+Using phase-type proposal for MCEM importance sampling.
+
+Using model's Markov surrogate for MCEM.
+
+Phase-type surrogate configuration:
+  n_phases per state: [3, 3, 1]
+  Total expanded states: 7
+  Phase-type surrogate built successfully.
+
+Initializing sample paths ...
+
+Initial target ESS: 25.0 per-subject
+Initial range of the number of sample paths per-subject: [25, 50]
+Initial estimate of the marginal log-likelihood, Q: -3996.396
+Initial estimate of the log marginal likelihood: -2615.768
+
+Starting Monte Carlo EM...
+
+Iteration: 1
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -3952.547
+Gain in marginal log-likelihood, ΔQ: 43.8
+MCEM asymptotic standard error: 0.636
+Ascent lower and upper bound: [43.0, 44.7]
+Estimate of the log marginal likelihood, l(θ): -2561.458
+SQUAREM: 0 accelerations, 0 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 2
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -3916.298
+Gain in marginal log-likelihood, ΔQ: 4.38
+MCEM asymptotic standard error: 0.252
+Ascent lower and upper bound: [4.06, 4.71]
+Estimate of the log marginal likelihood, l(θ): -2555.283
+SQUAREM: 0 accelerations, 1 fallbacks
+
+Iteration: 3
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -3899.944
+Gain in marginal log-likelihood, ΔQ: 0.841
+MCEM asymptotic standard error: 0.111
+Ascent lower and upper bound: [0.699, 0.984]
+Estimate of the log marginal likelihood, l(θ): -2554.113
+SQUAREM: 0 accelerations, 1 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 4
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -3892.417
+Gain in marginal log-likelihood, ΔQ: 0.165
+MCEM asymptotic standard error: 0.0494
+Ascent lower and upper bound: [0.102, 0.229]
+Estimate of the log marginal likelihood, l(θ): -2553.895
+SQUAREM: 0 accelerations, 2 fallbacks
+
+Iteration: 5
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -3889.003
+Gain in marginal log-likelihood, ΔQ: 0.0324
+MCEM asymptotic standard error: 0.0219
+Ascent lower and upper bound: [0.00431, 0.0605]
+Estimate of the log marginal likelihood, l(θ): -2553.858
+SQUAREM: 0 accelerations, 2 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 6
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -3887.479
+Gain in marginal log-likelihood, ΔQ: 0.00634
+MCEM asymptotic standard error: 0.00972
+Ascent lower and upper bound: [-0.00611, 0.0188]
+Estimate of the log marginal likelihood, l(θ): -2553.853
+SQUAREM: 0 accelerations, 3 fallbacks
+
+The MCEM algorithm has converged.
+
+
+    Parameter Comparison: Weibull + TVC - PhaseType
+    ----------------------------------------------------------------------
+    Parameter         True        Estimated   Abs Diff    Rel Diff (%)
+    ----------------------------------------------------------------------
+    shape_12          1.3000      1.3507      0.0507      3.9%
+    scale_12          0.1500      0.1509      0.0009      0.6%
+    beta_12           0.5000      0.4373      0.0627      12.5%
+    shape_23          1.4000      1.4325      0.0325      2.3%
+    scale_23          0.2000      0.2160      0.0160      8.0%
+    ----------------------------------------------------------------------
+  Activating project at `~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests`
+Precompiling packages...
+  11096.8 ms  ✓ MultistateModels
+   9220.7 ms  ✓ MultistateModelsTests
+  2 dependencies successfully precompiled in 23 seconds. 627 already precompiled.
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [0.333, 0.667]
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [0.333, 0.667]
+[ Info: Constrained fit had numerical issues: MethodError
+┌ Warning: The maximum number of iterations (3) has been reached.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/inference/fit.jl:1375
+┌ Warning: MCEM did not converge.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/inference/fit.jl:1462
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [0.47, 0.609]
+[ Info: Auto-placed 2 interior knots for 2→1 transition at: [0.36, 0.471]
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [0.47, 0.609]
+[ Info: Auto-placed 2 interior knots for 2→1 transition at: [0.36, 0.471]
+[ Info: Natural boundary conditions are not currently compatible with monotone splines. The restrictions on second derivatives at the spline boundaries will be removed.
+[ Info: Natural boundary conditions are not currently compatible with monotone splines. The restrictions on second derivatives at the spline boundaries will be removed.
+[ Info: Natural boundary conditions are not currently compatible with monotone splines. The restrictions on second derivatives at the spline boundaries will be removed.
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [1.168, 2.697]
+[ Info: Auto-placed 2 interior knots for 1→3 transition at: [2.798, 3.578]
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [1.168, 2.697]
+[ Info: Auto-placed 2 interior knots for 1→3 transition at: [2.798, 3.578]
+[ Info: Using observed transition times for knot calibration
+[ Info: Calibrated 2 interior knots for h12 at: [1.168, 2.697]
+[ Info: Calibrated 2 interior knots for h13 at: [2.798, 3.578]
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [1.168, 2.697]
+[ Info: Auto-placed 2 interior knots for 1→3 transition at: [2.798, 3.578]
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [1.168, 2.697]
+[ Info: Auto-placed 2 interior knots for 1→3 transition at: [2.798, 3.578]
+[ Info: Using observed transition times for knot calibration
+[ Info: Calibrated 3 interior knots for h12 at: [0.877, 1.946, 2.929]
+[ Info: Calibrated 3 interior knots for h13 at: [2.429, 3.301, 3.787]
+[ Info: Using observed transition times for knot calibration
+[ Info: Calibrated 4 interior knots for h12 at: [0.73, 1.294, 2.178, 3.219]
+[ Info: Calibrated 2 interior knots for h13 at: [2.798, 3.578]
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [1.168, 2.697]
+[ Info: Auto-placed 2 interior knots for 1→3 transition at: [2.798, 3.578]
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [1.168, 2.697]
+[ Info: Auto-placed 2 interior knots for 1→3 transition at: [2.798, 3.578]
+[ Info: Using observed transition times for knot calibration
+[ Info: Calibrated 3 interior knots for h12 at: [0.877, 1.946, 2.929]
+[ Info: Calibrated 3 interior knots for h13 at: [2.429, 3.301, 3.787]
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [1.168, 2.697]
+[ Info: Auto-placed 2 interior knots for 1→3 transition at: [2.798, 3.578]
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [1.168, 2.697]
+[ Info: Auto-placed 2 interior knots for 1→3 transition at: [2.798, 3.578]
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [1.168, 2.697]
+[ Info: Auto-placed 2 interior knots for 1→3 transition at: [2.798, 3.578]
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [1.168, 2.697]
+[ Info: Auto-placed 2 interior knots for 1→3 transition at: [2.798, 3.578]
+[ Info: Using observed transition times for knot calibration
+[ Info: Calibrated 4 interior knots for h12 at: [0.73, 1.294, 2.178, 3.219]
+[ Info: Calibrated 4 interior knots for h13 at: [1.995, 2.838, 3.451, 4.286]
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [1.168, 2.697]
+[ Info: Auto-placed 2 interior knots for 1→3 transition at: [2.798, 3.578]
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [1.168, 2.697]
+[ Info: Auto-placed 2 interior knots for 1→3 transition at: [2.798, 3.578]
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [1.168, 2.697]
+[ Info: Auto-placed 2 interior knots for 1→3 transition at: [2.798, 3.578]
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [1.168, 2.697]
+[ Info: Auto-placed 2 interior knots for 1→3 transition at: [2.798, 3.578]
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [1.168, 2.697]
+[ Info: Auto-placed 2 interior knots for 1→3 transition at: [2.798, 3.578]
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [1.168, 2.697]
+[ Info: Auto-placed 2 interior knots for 1→3 transition at: [2.798, 3.578]
+[ Info: Natural boundary conditions are not currently compatible with monotone splines. The restrictions on second derivatives at the spline boundaries will be removed.
+┌ Warning: Data does not contain any transitions from state 1 to state 2
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/validation.jl:114
+┌ Warning: Data does not contain any transitions from state 1 to state 3
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/validation.jl:114
+┌ Warning: Data does not contain any transitions from state 1 to state 5
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/validation.jl:114
+┌ Warning: Data does not contain any transitions from state 2 to state 3
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/validation.jl:114
+┌ Warning: Data does not contain any transitions from state 2 to state 5
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/validation.jl:114
+┌ Warning: Data does not contain any transitions from state 3 to state 4
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/validation.jl:114
+┌ Warning: Data does not contain any transitions from state 3 to state 5
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/validation.jl:114
+┌ Warning: Data does not contain any transitions from state 4 to state 5
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/validation.jl:114
+┌ Warning: Data does not contain any transitions from state 1 to state 2
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/validation.jl:114
+┌ Warning: Data does not contain any transitions from state 1 to state 3
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/validation.jl:114
+┌ Warning: Data does not contain any transitions from state 2 to state 3
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/validation.jl:114
+[ Info: Semi-Markov TVC: 9688/10000 paths had 1→2→1 pattern
+[ Info: Illness-death TVC: direct=4008, via-illness=5435, censored=557
+[ Info: Recorded results for :surrogates
+[ Info: Recorded results for :simulation
+[ Info: Recorded results for :mcem
+[ Info: Recorded results for :splines
+[ Info: Recorded results for :modelgeneration
+[ Info: Recorded results for :helpers
+[ Info: Recorded results for :reconstructor
+[ Info: Recorded results for :initialization
+[ Info: Recorded results for :hazards
+[ Info: Recorded results for :sir
+[ Info: Recorded results for :phasetype
+[ Info: Recorded results for :variance
+┌ Warning: Assignment to `h12` in soft scope is ambiguous because a global variable by the same name exists: `h12` will be treated as a new local. Disambiguate by using `local h12` to suppress this warning or `global h12` to assign to the existing global variable.
+└ @ ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/benchmarks/run_benchmarks.jl:122
+┌ Warning: Assignment to `h13` in soft scope is ambiguous because a global variable by the same name exists: `h13` will be treated as a new local. Disambiguate by using `local h13` to suppress this warning or `global h13` to assign to the existing global variable.
+└ @ ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/benchmarks/run_benchmarks.jl:123
+┌ Warning: Assignment to `h23` in soft scope is ambiguous because a global variable by the same name exists: `h23` will be treated as a new local. Disambiguate by using `local h23` to suppress this warning or `global h23` to assign to the existing global variable.
+└ @ ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/benchmarks/run_benchmarks.jl:124
+┌ Warning: Assignment to `t_start` in soft scope is ambiguous because a global variable by the same name exists: `t_start` will be treated as a new local. Disambiguate by using `local t_start` to suppress this warning or `global t_start` to assign to the existing global variable.
+└ @ ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/benchmarks/run_benchmarks.jl:127
+  ✓ Weibull + TVC with PhaseType proposal works
+Using SQUAREM acceleration for MCEM.
+
+Using adaptive SIR (will switch to lhs when cost-effective).
+
+Using phase-type proposal for MCEM importance sampling.
+
+Using model's Markov surrogate for MCEM.
+
+Phase-type surrogate configuration:
+  n_phases per state: [3, 1]
+  Total expanded states: 4
+  Phase-type surrogate built successfully.
+
+Initializing sample paths ...
+
+Initial target ESS: 25.0 per-subject
+Initial range of the number of sample paths per-subject: [25, 50]
+Initial estimate of the marginal log-likelihood, Q: -1905.65
+Initial estimate of the log marginal likelihood: -1517.156
+
+Starting Monte Carlo EM...
+
+Iteration: 1
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1879.54
+Gain in marginal log-likelihood, ΔQ: 26.1
+MCEM asymptotic standard error: 0.352
+Ascent lower and upper bound: [25.7, 26.6]
+Estimate of the log marginal likelihood, l(θ): -1487.964
+SQUAREM: 0 accelerations, 0 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 2
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1866.955
+Gain in marginal log-likelihood, ΔQ: 0.597
+MCEM asymptotic standard error: 0.0654
+Ascent lower and upper bound: [0.513, 0.681]
+Estimate of the log marginal likelihood, l(θ): -1487.265
+SQUAREM: 0 accelerations, 1 fallbacks
+
+Iteration: 3
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1864.131
+Gain in marginal log-likelihood, ΔQ: 0.0243
+MCEM asymptotic standard error: 0.0136
+Ascent lower and upper bound: [0.00698, 0.0417]
+Estimate of the log marginal likelihood, l(θ): -1487.239
+SQUAREM: 0 accelerations, 1 fallbacks
+
+The MCEM algorithm has converged.
+
+  ✓ Gompertz + TVC with PhaseType proposal works
+
+=== TVC Long Test Suite Complete ===
+
+Tests verify fitting for:
+  - Markov Panel Exponential + TVC
+  - Binary TVC (treatment switch)
+  - Continuous TVC (biomarker)
+  - Weibull + TVC (semi-Markov)
+  - Gompertz + TVC (aging + treatment)
+  - Progressive 3-state model with TVC
+  - Multiple TVC change points
+  - AFT effect with TVC
+  - Spline + TVC
+  - Weibull + TVC with PhaseType proposal
+  - Gompertz + TVC with PhaseType proposal
+  Running longtest_phasetype.jl...
+
+======================================================================
+Phase-Type Hazard Models: Exact Data Long Tests
+======================================================================
+Testing inference for models with Coxian phase-type hazard structure.
+These models are Markov on the expanded state space → direct MLE.
+Default sample size: n=1000
+
+--- 2-Phase Coxian Illness-Death Model ---
+Observed states: 3, Phases per transient: 2
+Expanded states: 5 (2 + 2 + 1)
+Phase-type model structure:
+  Observed states: 3
+  Expanded states: 5
+  State 1 → phases 1:2 (2 phases)
+  State 2 → phases 3:4 (2 phases)
+  State 3 → phases 5:5 (1 phases)
+  Number of hazards: 8
+  Number of hazards in expanded model: 8
+  True rates: [0.5, 0.3, 0.4, 0.2, 0.25, 0.35, 0.3, 0.15]
+
+Simulating exact data...
+  Simulated 2089 observations
+
+Fitting phase-type model with direct MLE...
+True params (log): [-0.693, -1.204, -0.916, -1.609, -1.386, -1.05, -1.204, -1.897]
+Fitted params (log): [-0.78, -1.075, -0.891, -1.559, -1.442, -1.018, -1.23, -1.752]
+
+--- Distributional Fidelity Check ---
+Verify fitted phase-type model reproduces data-generating distribution
+  Quantiles (true → fitted):
+    25th: 1.137 → 1.077
+    50th: 2.358 → 2.31
+    75th: 3.977 → 4.06
+    90th: 5.991 → 5.84
+
+--- 2-Phase Phase-Type with Fixed Covariate ---
+Phase-type model structure:
+  Observed states: 2
+  Expanded states: 3
+  State 1 → phases 1:2 (2 phases)
+  State 2 → phases 3:3 (1 phases)
+  Number of hazards: 3
+  Number of hazards: 3
+  True rates: [0.5, 0.3, 0.6]
+  True betas: [0.0, 0.4, 0.3]
+
+Simulating exact data with covariate...
+  Simulated 1559 observations
+  Events: 995
+
+Fitting phase-type model with covariate...
+
+--- 2-Phase Phase-Type with Time-Varying Covariate ---
+  True rates: [0.4, 0.25, 0.5]
+  True TVC betas: [0.0, 0.5, 0.4]
+
+Simulating exact data with TVC...
+  Simulated 1957 observations
+
+Fitting phase-type model with TVC...
+
+======================================================================
+Phase-Type Hazard Model Tests Complete
+======================================================================
+
+======================================================================
+Phase-Type Hazard Models: Panel & Mixed Data Long Tests
+======================================================================
+Testing inference for Coxian phase-type models with intermittent observations.
+These models are Markov on expanded state space → direct likelihood (no MCEM).
+Default sample size: n=1000
+
+--- Simple 2-State Phase-Type with Panel Data ---
+Observed states: 2, Expanded phases: 3
+State 1 → phases 1:2
+State 2 → phases 3:3
+True rates: [0.4, 0.2, 0.5]
+Observation times: [0.0, 2.5, 5.0, 7.5, 10.0]
+Simulated 1662 exact observations
+Converted to 4000 panel observations
+Panel data: 985 state changes observed, 3329 absorptions
+
+Fitting phase-type model with panel data...
+True params (log): [-0.916, -1.609, -0.693]
+Fitted params (log): [-0.84, -1.527, -0.654]
+
+--- Illness-Death Phase-Type with Panel Data ---
+Observed states: 3, Expanded phases: 5
+True rates: [0.5, 0.3, 0.35, 0.4, 0.25, 0.2, 0.3, 0.35]
+Number of hazards: 8
+Sample size: 1000
+Panel observations: 2046 rows
+
+Fitting illness-death phase-type model with panel data...
+True params (log): [-0.693, -1.204, -1.05, -0.916, -1.386, -1.609, -1.204, -1.05]
+Fitted params (log): [-0.626, -1.224, -1.032, -0.953, -1.263, -1.568, -1.236, -1.04]
+
+--- Mixed Exact + Panel Data ---
+Some subjects observed exactly, others at panel times
+Template: 600 exact + 400 panel subjects
+True rates: [0.35, 0.25, 0.45]
+Simulated: 959 exact + 664 panel observations
+
+Fitting with mixed observation types...
+True params (log): [-1.05, -1.386, -0.799]
+Fitted params (log): [-1.038, -1.402, -0.792]
+
+Comparison of estimation approaches:
+  Exact-only:  [-1.024, -1.427, -0.831]
+  Panel-only:  [-1.084, -1.344, -0.731]
+  Mixed:       [-1.038, -1.402, -0.792]
+  True:        [-1.05, -1.386, -0.799]
+
+--- Structured Mixed Observations ---
+First half of subjects: exact observations
+Second half of subjects: panel observations
+Absorbing phase: 3
+Simulated: 805 exact + 822 panel observations
+
+Fitting with structured mixed observations...
+True params (log): [-0.916, -1.386, -0.693]
+Fitted params (log): [-0.952, -1.385, -0.726]
+
+--- Distributional Fidelity: Panel vs Exact ---
+  Quantiles (true → fitted from panel):
+    25th: 0.999 → 0.953
+    50th: 1.95 → 2.137
+    75th: 3.601 → 3.785
+    90th: 5.703 → 6.149
+
+--- 2-Phase Phase-Type with Fixed Covariate (Panel Data) ---
+
+Fitting phase-type model with covariate from panel data...
+
+--- 2-Phase Phase-Type with TVC (Panel Data) ---
+
+Fitting phase-type model with TVC from panel data...
+
+======================================================================
+Phase-Type Panel & Mixed Data Long Tests Complete
+======================================================================
+
+This test suite validated:
+  1. Simple 2-state phase-type with panel data
+  2. Illness-death phase-type with panel data
+  3. Mixed exact + panel observations
+  4. Illness-death with exactly observed absorptions
+  5. Distributional fidelity for panel data fitting
+  6. Phase-type with fixed covariates (panel data)
+  7. Phase-type with time-varying covariates (panel data)
+
+Key insight: Phase-type hazard models remain Markov on expanded space,
+so panel data can be fit with direct likelihood (no MCEM needed).
+======================================================================
+  Running longtest_robust_markov_phasetype.jl...
+  ✓ Markov MLE panel data: rates recovered within 20.0%
+  ✓ Markov MLE with covariate: rates and betas recovered
+  ✓ Phase-type IS weights = 1.0 exactly when target = proposal (100 samples)
+  ✓ Phase-type IS estimate is finite and correction is moderate
+  ✓ MCEM Weibull competing risks: shape and scale recovered within 35.0%
+  ✓ MCEM Weibull with covariate: all parameters recovered
+  ✓ MCEM Gompertz competing risks: shape and scale recovered within tolerance
+  ✓ Markov surrogate MLE is optimal (ll_mle >= ll_heur)
+
+======================================================================
+ROBUST MARKOV/PHASE-TYPE LONGTEST SUITE COMPLETE
+======================================================================
+Markov MLE sample size: n = 1000
+MCEM sample size: n = 1000
+Tolerances: 20.0% Markov, 35.0% MCEM
+IS weight tolerance: 1.0e-10 (algebraic exactness)
+======================================================================
+  Running longtest_robust_parametric.jl...
+  ✓ Exponential no covariates: all rates recovered within 5.0%
+  ✓ Exponential with covariate: rates and betas recovered
+  ✓ Exponential with multiple covariates: all parameters recovered
+  ✓ Weibull no covariates: shape and scale recovered within 5.0%
+  ✓ Weibull with covariate: all parameters recovered
+  ✓ Gompertz no covariates: shape and scale recovered
+  ✓ Gompertz with covariate: all parameters recovered
+  ✓ Hazard function evaluation matches fitted parameters exactly
+
+======================================================================
+ROBUST PARAMETRIC LONGTEST SUITE COMPLETE
+======================================================================
+Sample size: n = 10000
+Tolerances: 5.0% relative, 5.0% for betas
+Families tested: Exponential, Weibull, Gompertz
+Covariate settings: None, Single, Multiple
+======================================================================
+  Running longtest_simulation_distribution.jl...
+simulate_path long test passed: mean=5.56, KS p-value=0.516
+simulate_path family coverage validated for 12 scenarios
+  Running longtest_simulation_tvc.jl...
+  Running longtest_sir.jl...
+
+======================================================================
+SIR/LHS Resampling Method Comparison Long Test
+======================================================================
+
+Generating test data (n=500)...
+  Generated 3678 observations for 500 subjects
+
+Fitting: No SIR + Markov...
+  ✓ Converged in 3 iterations (11.5s)
+  Max relative error: 14.9%
+
+Fitting: SIR + Markov...
+  ✓ Converged in 4 iterations (41.3s)
+  Max relative error: 15.3%
+
+Fitting: LHS + Markov...
+  ✓ Converged in 3 iterations (34.3s)
+  Max relative error: 15.1%
+
+Fitting: No SIR + Phase-Type...
+  ✓ Converged in 4 iterations (15.4s)
+  Max relative error: 26.8%
+
+Fitting: SIR + Phase-Type...
+  ✓ Converged in 4 iterations (34.4s)
+  Max relative error: 25.2%
+
+Fitting: LHS + Phase-Type...
+  ✓ Converged in 5 iterations (49.6s)
+  Max relative error: 26.3%
+
+Report saved to: /Users/fintzij/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/longtests/../diagnostics/sir_longtest_report.md
+
+
+======================================================================
+SIR/LHS Long Test Complete
+======================================================================
+
+  Running longtest_variance_validation.jl...
+  ✓ IJ vs model-based variance ratio: [0.978]
+  ✓ Frobenius norm ratio: 0.978
+  ✓ Weibull IJ vs model-based variance ratio: [0.979, 0.965]
+  ✓ Markov panel IJ vs model-based variance ratio: [1.04, 1.001, 1.007]
+  ✓ JK = ((n-1)/n) × IJ verified (algebraic identity)
+  ✓ JK = ((n-1)/n) × IJ verified for panel data
+  Computing empirical variance from 200 replicates...
+  ✓ Model-based vs empirical variance ratio: [1.142]
+    Model-based SE: [0.0234]
+    Empirical SE: [0.0218]
+  Computing empirical variance from 200 replicates...
+  ✓ Weibull model-based vs empirical variance ratio: [0.864, 0.944]
+    Model-based SE: [0.0185, 0.0448]
+    Empirical SE: [0.0199, 0.0462]
+  Computing empirical variance from 200 replicates...
+  ✓ IJ vs empirical variance ratio: [1.055]
+  ✓ Covariate model IJ vs model-based ratio: [0.979, 0.992]
+  Computing coverage from 100 replicates...
+  ✓ 95% CI coverage: 94.0%
+  ✓ All variance matrices are positive semi-definite
+    Model eigenvalues: [9.0e-5, 0.000846, 0.001984]
+    IJ eigenvalues: [9.5e-5, 0.000828, 0.001902]
+    JK eigenvalues: [9.5e-5, 0.000828, 0.001901]
+  ✓ MCEM IJ vs model-based variance ratio: [0.808, 0.932]
+    Model-based SE: [0.0435, 0.1155]
+    IJ SE: [0.0391, 0.1115]
+  ✓ MCEM JK = ((n-1)/n) × IJ verified (algebraic identity)
+  Computing empirical variance from 50 MCEM replicates...
+  (This may take several minutes)
+    Completed 10 / 50 replicates (10 converged)
+    Completed 20 / 50 replicates (20 converged)
+    Completed 30 / 50 replicates (30 converged)
+    Completed 40 / 50 replicates (40 converged)
+    Completed 50 / 50 replicates (50 converged)
+  ✓ MCEM model-based vs empirical variance ratio: [1.656, 1.204]
+    Model-based SE: [0.045, 0.1073]
+    Empirical SE: [0.035, 0.0978]
+    (50 / 50 replicates converged)
+  ✓ MCEM illness-death model variance validation passed
+    IJ/Model ratio: [0.881, 1.134, 0.982, 0.961]
+    Model-based SE: [0.0462, 0.1144, 0.6608, 0.0557]
+
+===== Variance Validation Long Tests Complete =====
+Test Summary: |  Pass  Total      Time
+All Tests     | 11717  11717  60m22.8s
+Updating test cache...
+Running Benchmarks...
+Running Scalability Benchmark...
+  N = 100
+  N = 200
+  N = 500
+Running SQUAREM Benchmark...
+Running Threading Benchmark...
+  Threads = 1
+  Threads = 4
+Benchmarks complete. Results saved to assets/benchmarks/results.json
+All tests and benchmarks completed.

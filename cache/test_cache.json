@@ -2,91 +2,91 @@
     "test_results": {
         "surrogates": {
             "errors": 0,
-            "timestamp": "2025-12-20T08:48:04.947",
+            "timestamp": "2025-12-31T22:19:43.687",
             "failed": 0,
-            "git_commit": "d6ee7ab",
+            "git_commit": "b1144da",
             "passed": 58
         },
         "simulation": {
             "errors": 0,
-            "timestamp": "2025-12-20T08:48:05.434",
+            "timestamp": "2025-12-31T22:19:44.055",
             "failed": 0,
-            "git_commit": "d6ee7ab",
+            "git_commit": "b1144da",
             "passed": 39
         },
         "mcem": {
             "errors": 0,
-            "timestamp": "2025-12-20T08:48:05.626",
+            "timestamp": "2025-12-31T22:19:44.231",
             "failed": 0,
-            "git_commit": "d6ee7ab",
+            "git_commit": "b1144da",
             "passed": 23
         },
         "splines": {
             "errors": 0,
-            "timestamp": "2025-12-20T08:48:05.804",
+            "timestamp": "2025-12-31T22:19:44.408",
             "failed": 0,
-            "git_commit": "d6ee7ab",
+            "git_commit": "b1144da",
             "passed": 152
         },
         "modelgeneration": {
             "errors": 0,
-            "timestamp": "2025-12-20T08:48:05.981",
+            "timestamp": "2025-12-31T22:19:44.580",
             "failed": 0,
-            "git_commit": "d6ee7ab",
+            "git_commit": "b1144da",
             "passed": 5
         },
         "helpers": {
             "errors": 0,
-            "timestamp": "2025-12-20T08:48:06.162",
+            "timestamp": "2025-12-31T22:19:44.755",
             "failed": 0,
-            "git_commit": "d6ee7ab",
+            "git_commit": "b1144da",
             "passed": 53
         },
         "reconstructor": {
             "errors": 0,
-            "timestamp": "2025-12-20T08:48:06.351",
+            "timestamp": "2025-12-31T22:19:44.930",
             "failed": 0,
-            "git_commit": "d6ee7ab",
+            "git_commit": "b1144da",
             "passed": 79
         },
         "initialization": {
             "errors": 0,
-            "timestamp": "2025-12-20T08:48:06.546",
+            "timestamp": "2025-12-31T22:19:45.106",
             "failed": 0,
-            "git_commit": "d6ee7ab",
+            "git_commit": "b1144da",
             "passed": 59
         },
         "hazards": {
             "errors": 0,
-            "timestamp": "2025-12-20T08:48:06.745",
+            "timestamp": "2025-12-31T22:19:45.278",
             "failed": 0,
-            "git_commit": "d6ee7ab",
+            "git_commit": "b1144da",
             "passed": 163
         },
         "sir": {
             "errors": 0,
-            "timestamp": "2025-12-20T08:48:06.978",
+            "timestamp": "2025-12-31T22:19:45.451",
             "failed": 0,
-            "git_commit": "d6ee7ab",
+            "git_commit": "b1144da",
             "passed": 38
         },
         "phasetype": {
             "errors": 0,
-            "timestamp": "2025-12-20T08:48:07.161",
+            "timestamp": "2025-12-31T22:19:45.626",
             "failed": 0,
-            "git_commit": "d6ee7ab",
+            "git_commit": "b1144da",
             "passed": 505
         },
         "variance": {
             "passed": 18,
-            "timestamp": "2025-12-20T08:48:07.341",
+            "timestamp": "2025-12-31T22:19:45.798",
             "failed": 0,
-            "git_commit": "d6ee7ab",
+            "git_commit": "b1144da",
             "errors": 0
         }
     },
-    "last_updated": "2025-12-20T08:48:07.355",
-    "git_commit": "d6ee7ab",
+    "last_updated": "2025-12-31T22:19:45.812",
+    "git_commit": "b1144da",
     "git_branch": "penalized_splines",
     "source_hashes": {
         "src/output/": "c2ed12f2b1dd8b2d5f995a8cf30a1d0b07717969",

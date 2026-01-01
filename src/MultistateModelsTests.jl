@@ -1,6 +1,7 @@
 module MultistateModelsTests
 
 using DataFrames
+using Dates
 using Distributions
 using LinearAlgebra
 using Logging
@@ -8,12 +9,13 @@ using MultistateModels
 using Random
 using Statistics
 using Test
+using JSON3
 
 const TEST_LEVEL = get(ENV, "MSM_TEST_LEVEL", "quick")
 const SUPPRESS_EXPECTED_WARNINGS = get(ENV, "MSM_SUPPRESS_WARNINGS", "true") == "true"
 
-# LongTestResults infrastructure disabled for now - requires JSON3 dependency
-# include("LongTestResults.jl")
+# Long test results infrastructure
+include("LongTestResults.jl")
 
 """
 Custom logger that filters expected warnings during tests.

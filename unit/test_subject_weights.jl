@@ -51,11 +51,11 @@ end
         @test model_weighted.SubjectWeights == custom_weights
         
         # Test 3: Validation - wrong length should error
-        @test_throws ErrorException multistatemodel(h12, h23; data=dat, SubjectWeights=[1.0, 2.0])
+        @test_throws ArgumentError multistatemodel(h12, h23; data=dat, SubjectWeights=[1.0, 2.0])
         
         # Test 4: Validation - non-positive weights should error
-        @test_throws ErrorException multistatemodel(h12, h23; data=dat, SubjectWeights=[1.0, 0.0, 1.0, 1.0, 1.0])
-        @test_throws ErrorException multistatemodel(h12, h23; data=dat, SubjectWeights=[1.0, -1.0, 1.0, 1.0, 1.0])
+        @test_throws ArgumentError multistatemodel(h12, h23; data=dat, SubjectWeights=[1.0, 0.0, 1.0, 1.0, 1.0])
+        @test_throws ArgumentError multistatemodel(h12, h23; data=dat, SubjectWeights=[1.0, -1.0, 1.0, 1.0, 1.0])
     end
     
     @testset "loglik_markov weighted vs. duplicated data equivalence" begin

@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.22">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="dcterms.date" content="2025-12-19">
+
+<title>Long Tests Status – MultistateModels Test Reports</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-e34c512d8f599efa8461f365689868f8.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-3bbbbd466991e281563892c5dce73c3d.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a href="./index.html" class="navbar-brand navbar-brand-logo">
+    </a>
+    <a class="navbar-brand" href="./index.html">
+    <span class="navbar-title">MultistateModels Test Reports</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="./index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./architecture.html"> 
+<span class="menu-text">Architecture</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./unit_tests.html"> 
+<span class="menu-text">Unit Tests</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./long_tests.html"> 
+<span class="menu-text">Long Tests</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./simulation_diagnostics.html"> 
+<span class="menu-text">Simulation</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="./benchmarks.html"> 
+<span class="menu-text">Benchmarks</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/fintzij/MultistateModels.jl"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#summary-dashboard" id="toc-summary-dashboard" class="nav-link active" data-scroll-target="#summary-dashboard">1. Summary Dashboard</a>
+  <ul class="collapse">
+  <li><a href="#passfail-status" id="toc-passfail-status" class="nav-link" data-scroll-target="#passfail-status">Pass/Fail Status</a></li>
+  </ul></li>
+  <li><a href="#parametric-models" id="toc-parametric-models" class="nav-link" data-scroll-target="#parametric-models">2. Parametric Models</a>
+  <ul class="collapse">
+  <li><a href="#exponential-exact-observation" id="toc-exponential-exact-observation" class="nav-link" data-scroll-target="#exponential-exact-observation">2.1 Exponential (Exact Observation)</a></li>
+  <li><a href="#weibull-exact-observation" id="toc-weibull-exact-observation" class="nav-link" data-scroll-target="#weibull-exact-observation">2.2 Weibull (Exact Observation)</a></li>
+  <li><a href="#gompertz-exact-observation" id="toc-gompertz-exact-observation" class="nav-link" data-scroll-target="#gompertz-exact-observation">2.3 Gompertz (Exact Observation)</a></li>
+  <li><a href="#markov-panel-data" id="toc-markov-panel-data" class="nav-link" data-scroll-target="#markov-panel-data">2.4 Markov Panel Data</a></li>
+  </ul></li>
+  <li><a href="#spline-models" id="toc-spline-models" class="nav-link" data-scroll-target="#spline-models">3. Spline Models</a>
+  <ul class="collapse">
+  <li><a href="#b-splines-panel-data" id="toc-b-splines-panel-data" class="nav-link" data-scroll-target="#b-splines-panel-data">3.1 B-Splines (Panel Data)</a></li>
+  </ul></li>
+  <li><a href="#semi-markov-models" id="toc-semi-markov-models" class="nav-link" data-scroll-target="#semi-markov-models">4. Semi-Markov Models</a>
+  <ul class="collapse">
+  <li><a href="#duration-dependent-hazards" id="toc-duration-dependent-hazards" class="nav-link" data-scroll-target="#duration-dependent-hazards">4.1 Duration-Dependent Hazards</a></li>
+  </ul></li>
+  <li><a href="#time-varying-covariates" id="toc-time-varying-covariates" class="nav-link" data-scroll-target="#time-varying-covariates">5. Time-Varying Covariates</a>
+  <ul class="collapse">
+  <li><a href="#step-function-tvc" id="toc-step-function-tvc" class="nav-link" data-scroll-target="#step-function-tvc">5.1 Step-Function TVC</a></li>
+  </ul></li>
+  <li><a href="#mcem-convergence" id="toc-mcem-convergence" class="nav-link" data-scroll-target="#mcem-convergence">6. MCEM Convergence</a>
+  <ul class="collapse">
+  <li><a href="#convergence-diagnostics" id="toc-convergence-diagnostics" class="nav-link" data-scroll-target="#convergence-diagnostics">Convergence Diagnostics</a></li>
+  <li><a href="#effective-sample-size" id="toc-effective-sample-size" class="nav-link" data-scroll-target="#effective-sample-size">Effective Sample Size</a></li>
+  </ul></li>
+  </ul>
+<div class="toc-actions"><ul><li><a href="https://github.com/fintzij/MultistateModelsTests.jl/blob/main/03_long_tests.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/fintzij/MultistateModelsTests.jl/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Long Tests Status</h1>
+<p class="subtitle lead">Statistical recovery of parameters</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">December 19, 2025</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Status: Not Started
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>This report is a placeholder. Content will be added as the long test infrastructure is developed.</p>
+</div>
+</div>
+<section id="summary-dashboard" class="level2">
+<h2 class="anchored" data-anchor-id="summary-dashboard">1. Summary Dashboard</h2>
+<section id="passfail-status" class="level3">
+<h3 class="anchored" data-anchor-id="passfail-status">Pass/Fail Status</h3>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Test</th>
+<th>Family</th>
+<th>Observation</th>
+<th>Status</th>
+<th>Last Run</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>longtest_exact_markov.jl</code></td>
+<td>Mixed</td>
+<td>Exact</td>
+<td>⏳</td>
+<td>-</td>
+</tr>
+<tr class="even">
+<td><code>longtest_mcem.jl</code></td>
+<td>Mixed</td>
+<td>Panel</td>
+<td>⏳</td>
+<td>-</td>
+</tr>
+<tr class="odd">
+<td><code>longtest_mcem_splines.jl</code></td>
+<td>B-Spline</td>
+<td>Panel</td>
+<td>⏳</td>
+<td>-</td>
+</tr>
+<tr class="even">
+<td><code>longtest_mcem_tvc.jl</code></td>
+<td>Mixed</td>
+<td>Panel + TVC</td>
+<td>⏳</td>
+<td>-</td>
+</tr>
+<tr class="odd">
+<td><code>longtest_phasetype.jl</code></td>
+<td>Mixed</td>
+<td>Panel</td>
+<td>⏳</td>
+<td>-</td>
+</tr>
+<tr class="even">
+<td><code>longtest_sir.jl</code></td>
+<td>Mixed</td>
+<td>Panel</td>
+<td>⏳</td>
+<td>-</td>
+</tr>
+<tr class="odd">
+<td><code>longtest_simulation_distribution.jl</code></td>
+<td>All</td>
+<td>Simulation</td>
+<td>⏳</td>
+<td>-</td>
+</tr>
+<tr class="even">
+<td><code>longtest_variance_validation.jl</code></td>
+<td>Mixed</td>
+<td>Panel</td>
+<td>⏳</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="parametric-models" class="level2">
+<h2 class="anchored" data-anchor-id="parametric-models">2. Parametric Models</h2>
+<section id="exponential-exact-observation" class="level3">
+<h3 class="anchored" data-anchor-id="exponential-exact-observation">2.1 Exponential (Exact Observation)</h3>
+<section id="setup" class="level4">
+<h4 class="anchored" data-anchor-id="setup">Setup</h4>
+<p><em>To be documented</em></p>
+</section>
+<section id="parameter-recovery" class="level4">
+<h4 class="anchored" data-anchor-id="parameter-recovery">Parameter Recovery</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>True</th>
+<th>Estimated</th>
+<th>SE</th>
+<th>Coverage</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>rate_12</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr class="even">
+<td>rate_23</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="diagnostic-plots" class="level4">
+<h4 class="anchored" data-anchor-id="diagnostic-plots">Diagnostic Plots</h4>
+<p><em>Plots to be generated</em></p>
+</section>
+</section>
+<section id="weibull-exact-observation" class="level3">
+<h3 class="anchored" data-anchor-id="weibull-exact-observation">2.2 Weibull (Exact Observation)</h3>
+<section id="setup-1" class="level4">
+<h4 class="anchored" data-anchor-id="setup-1">Setup</h4>
+<p><em>To be documented</em></p>
+</section>
+<section id="parameter-recovery-1" class="level4">
+<h4 class="anchored" data-anchor-id="parameter-recovery-1">Parameter Recovery</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>True</th>
+<th>Estimated</th>
+<th>SE</th>
+<th>Coverage</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>shape_12</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr class="even">
+<td>scale_12</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="diagnostic-plots-1" class="level4">
+<h4 class="anchored" data-anchor-id="diagnostic-plots-1">Diagnostic Plots</h4>
+<p><em>Plots to be generated</em></p>
+</section>
+</section>
+<section id="gompertz-exact-observation" class="level3">
+<h3 class="anchored" data-anchor-id="gompertz-exact-observation">2.3 Gompertz (Exact Observation)</h3>
+<section id="setup-2" class="level4">
+<h4 class="anchored" data-anchor-id="setup-2">Setup</h4>
+<p><em>To be documented</em></p>
+</section>
+<section id="parameter-recovery-2" class="level4">
+<h4 class="anchored" data-anchor-id="parameter-recovery-2">Parameter Recovery</h4>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Parameter</th>
+<th>True</th>
+<th>Estimated</th>
+<th>SE</th>
+<th>Coverage</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>shape_12</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr class="even">
+<td>rate_12</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="diagnostic-plots-2" class="level4">
+<h4 class="anchored" data-anchor-id="diagnostic-plots-2">Diagnostic Plots</h4>
+<p><em>Plots to be generated</em></p>
+</section>
+</section>
+<section id="markov-panel-data" class="level3">
+<h3 class="anchored" data-anchor-id="markov-panel-data">2.4 Markov Panel Data</h3>
+<section id="setup-3" class="level4">
+<h4 class="anchored" data-anchor-id="setup-3">Setup</h4>
+<p><em>To be documented</em></p>
+</section>
+<section id="parameter-recovery-3" class="level4">
+<h4 class="anchored" data-anchor-id="parameter-recovery-3">Parameter Recovery</h4>
+<p><em>Tables to be generated</em></p>
+</section>
+<section id="diagnostic-plots-3" class="level4">
+<h4 class="anchored" data-anchor-id="diagnostic-plots-3">Diagnostic Plots</h4>
+<p><em>Plots to be generated</em></p>
+</section>
+</section>
+</section>
+<section id="spline-models" class="level2">
+<h2 class="anchored" data-anchor-id="spline-models">3. Spline Models</h2>
+<section id="b-splines-panel-data" class="level3">
+<h3 class="anchored" data-anchor-id="b-splines-panel-data">3.1 B-Splines (Panel Data)</h3>
+<section id="setup-4" class="level4">
+<h4 class="anchored" data-anchor-id="setup-4">Setup</h4>
+<p><em>To be documented</em></p>
+</section>
+<section id="hazard-curve-recovery" class="level4">
+<h4 class="anchored" data-anchor-id="hazard-curve-recovery">Hazard Curve Recovery</h4>
+<p><em>Plots to be generated: True vs Estimated hazard curves</em></p>
+</section>
+<section id="cumulative-incidence" class="level4">
+<h4 class="anchored" data-anchor-id="cumulative-incidence">Cumulative Incidence</h4>
+<p><em>Plots to be generated</em></p>
+</section>
+</section>
+</section>
+<section id="semi-markov-models" class="level2">
+<h2 class="anchored" data-anchor-id="semi-markov-models">4. Semi-Markov Models</h2>
+<section id="duration-dependent-hazards" class="level3">
+<h3 class="anchored" data-anchor-id="duration-dependent-hazards">4.1 Duration-Dependent Hazards</h3>
+<section id="setup-5" class="level4">
+<h4 class="anchored" data-anchor-id="setup-5">Setup</h4>
+<p><em>To be documented</em></p>
+</section>
+<section id="parameter-recovery-4" class="level4">
+<h4 class="anchored" data-anchor-id="parameter-recovery-4">Parameter Recovery</h4>
+<p><em>Tables to be generated</em></p>
+</section>
+<section id="diagnostic-plots-4" class="level4">
+<h4 class="anchored" data-anchor-id="diagnostic-plots-4">Diagnostic Plots</h4>
+<p><em>Plots to be generated</em></p>
+</section>
+</section>
+</section>
+<section id="time-varying-covariates" class="level2">
+<h2 class="anchored" data-anchor-id="time-varying-covariates">5. Time-Varying Covariates</h2>
+<section id="step-function-tvc" class="level3">
+<h3 class="anchored" data-anchor-id="step-function-tvc">5.1 Step-Function TVC</h3>
+<section id="setup-6" class="level4">
+<h4 class="anchored" data-anchor-id="setup-6">Setup</h4>
+<p><em>To be documented</em></p>
+</section>
+<section id="parameter-recovery-5" class="level4">
+<h4 class="anchored" data-anchor-id="parameter-recovery-5">Parameter Recovery</h4>
+<p><em>Tables to be generated</em></p>
+</section>
+<section id="diagnostic-plots-5" class="level4">
+<h4 class="anchored" data-anchor-id="diagnostic-plots-5">Diagnostic Plots</h4>
+<p><em>Plots to be generated</em></p>
+</section>
+</section>
+</section>
+<section id="mcem-convergence" class="level2">
+<h2 class="anchored" data-anchor-id="mcem-convergence">6. MCEM Convergence</h2>
+<section id="convergence-diagnostics" class="level3">
+<h3 class="anchored" data-anchor-id="convergence-diagnostics">Convergence Diagnostics</h3>
+<p><em>Trace plots to be generated</em></p>
+</section>
+<section id="effective-sample-size" class="level3">
+<h3 class="anchored" data-anchor-id="effective-sample-size">Effective Sample Size</h3>
+<p><em>ESS plots to be generated</em></p>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+        const codeEl = trigger.previousElementSibling.cloneNode(true);
+        for (const childEl of codeEl.children) {
+          if (isCodeAnnotation(childEl)) {
+            childEl.remove();
+          }
+        }
+        return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+<p>© 2025 MultistateModels.jl</p>
+</div>   
+    <div class="nav-footer-center">
+      &nbsp;
+    <div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/fintzij/MultistateModelsTests.jl/blob/main/03_long_tests.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/fintzij/MultistateModelsTests.jl/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div>
+    <div class="nav-footer-right">
+<p>Built with <a href="https://quarto.org/">Quarto</a></p>
+</div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

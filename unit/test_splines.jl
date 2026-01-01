@@ -212,7 +212,7 @@ import MultistateModels: get_parameters_flat, default_nknots, place_interior_kno
         test_pars = randn(npar) * 0.4
         set_parameters!(model, 1, test_pars)
         
-        params = MultistateModels.get_hazard_params(model.parameters)
+        params = MultistateModels.get_hazard_params(model.parameters, model.hazards)
         pars = params[1]
         subjdat_row = model.data[1, :]
         covars = MultistateModels.extract_covariates_fast(subjdat_row, haz.covar_names)

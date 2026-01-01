@@ -1,0 +1,98 @@
+---
+title: "Benchmarks"
+subtitle: "Performance of sampling methods and algorithms"
+date: last-modified
+---
+
+::: {.callout-note}
+## Status: Not Started
+This report is a placeholder. Content will be added as the benchmark infrastructure is developed.
+:::
+
+## 1. Sampling Methods Comparison
+
+### Overview
+
+This section compares the performance of different sampling methods used in the MCEM algorithm:
+
+- **SIR**: Sampling Importance Resampling
+- **LHS**: Latin Hypercube Sampling
+- **IS**: Importance Sampling
+
+### Benchmark Setup
+
+```{julia}
+#| eval: false
+#| echo: true
+
+# TODO: Add benchmark setup code
+using BenchmarkTools
+
+# Model configuration
+# ...
+```
+
+### Results
+
+| Method | ESS | Runtime (s) | ESS/second |
+|--------|-----|-------------|------------|
+| SIR | - | - | - |
+| LHS | - | - | - |
+| IS | - | - | - |
+
+### Effective Sample Size Comparison
+
+*Plot to be generated: ESS vs computation time for each method*
+
+## 2. MCEM Acceleration
+
+### Overview
+
+This section compares standard EM with SQUAREM acceleration.
+
+### Benchmark Setup
+
+```{julia}
+#| eval: false
+#| echo: true
+
+# TODO: Add SQUAREM benchmark code
+```
+
+### Convergence Comparison
+
+| Method | Iterations to Convergence | Total Runtime (s) |
+|--------|---------------------------|-------------------|
+| Standard EM | - | - |
+| SQUAREM | - | - |
+
+### Convergence Plots
+
+*Plots to be generated: Log-likelihood vs iteration for each method*
+
+## 3. Scalability
+
+### 3.1 Runtime vs Number of Subjects
+
+*Plot to be generated*
+
+### 3.2 Runtime vs Number of States
+
+*Plot to be generated*
+
+### 3.3 Runtime vs Number of Transitions
+
+*Plot to be generated*
+
+## 4. Memory Usage
+
+### Peak Memory by Problem Size
+
+| Subjects | States | Transitions | Peak Memory (GB) |
+|----------|--------|-------------|------------------|
+| 100 | 3 | 2 | - |
+| 500 | 3 | 2 | - |
+| 1000 | 3 | 2 | - |
+| 1000 | 5 | 6 | - |
+
+*Additional memory profiling to be added*

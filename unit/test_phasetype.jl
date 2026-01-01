@@ -850,7 +850,7 @@ using LinearAlgebra
                 1, model, tpm_book_ph, hazmat_book_ph, books[2], 
                 fbmats_ph, emat_ph, surrogate, absorbingstates)
             
-            params = MultistateModels.get_hazard_params(model.parameters)
+            params = MultistateModels.get_hazard_params(model.parameters, model.hazards)
             ll_target = MultistateModels.loglik(params, path_result.collapsed, model.hazards, model)
             ll_surrog = MultistateModels.loglik_expanded_path(path_result.expanded, surrogate)
             push!(log_weights, ll_target - ll_surrog)
@@ -1052,7 +1052,7 @@ using LinearAlgebra
                 1, model, tpm_book_ph, hazmat_book_ph, books[2],
                 fbmats_ph, emat_ph, surrogate, absorbingstates)
             
-            params = MultistateModels.get_hazard_params(model.parameters)
+            params = MultistateModels.get_hazard_params(model.parameters, model.hazards)
             ll_target = MultistateModels.loglik(params, result.collapsed, model.hazards, model)
             ll_surrog = MultistateModels.loglik_expanded_path(result.expanded, surrogate)
             push!(log_weights, ll_target - ll_surrog)
@@ -1664,14 +1664,14 @@ end
 @testset "Phase-Type Model Interface" begin
     
     @testset "n_phases Dict interface" begin
-        # Create simple test data
+        # Create simple test data (exact observations with valid times)
         df = DataFrame(
-            id = repeat(1:5, inner=2),
-            tstart = repeat([0.0, 1.0], 5),
-            tstop = repeat([1.0, 2.0], 5),
-            statefrom = repeat([1, 2], 5),
-            stateto = vcat(repeat([2], 5), repeat([2], 5)),
-            obstype = fill(1, 10)
+            id = 1:5,
+            tstart = fill(0.0, 5),
+            tstop = [1.0, 1.5, 2.0, 1.2, 1.8],
+            statefrom = fill(1, 5),
+            stateto = fill(2, 5),
+            obstype = fill(1, 5)  # exact observations
         )
         
         # Define phase-type hazard
@@ -1688,13 +1688,14 @@ end
     end
     
     @testset "Letter-based hazard naming" begin
+        # Create simple test data (exact observations with valid times)
         df = DataFrame(
-            id = repeat(1:5, inner=2),
-            tstart = repeat([0.0, 1.0], 5),
-            tstop = repeat([1.0, 2.0], 5),
-            statefrom = repeat([1, 2], 5),
-            stateto = vcat(repeat([2], 5), repeat([2], 5)),
-            obstype = fill(1, 10)
+            id = 1:5,
+            tstart = fill(0.0, 5),
+            tstop = [1.0, 1.5, 2.0, 1.2, 1.8],
+            statefrom = fill(1, 5),
+            stateto = fill(2, 5),
+            obstype = fill(1, 5)  # exact observations
         )
         
         h12 = Hazard(@formula(0 ~ 1), "pt", 1, 2)
@@ -1723,13 +1724,14 @@ end
     
     @testset "SCTP constraint generation" begin
         # Need at least 2 destinations for SCTP to generate constraints
+        # Simple exact observations: 3 subjects go 1→2, 3 subjects go 1→3
         df = DataFrame(
-            id = repeat(1:6, inner=2),
-            tstart = repeat([0.0, 1.0], 6),
-            tstop = repeat([1.0, 2.0], 6),
-            statefrom = repeat([1, 2], 6),
-            stateto = vcat([2, 2, 3, 3, 2, 2], fill(3, 6)),  # Mix of 1→2 and 1→3
-            obstype = fill(1, 12)
+            id = 1:6,
+            tstart = fill(0.0, 6),
+            tstop = [1.0, 1.5, 2.0, 1.2, 1.8, 2.2],
+            statefrom = fill(1, 6),
+            stateto = [2, 2, 2, 3, 3, 3],  # Mix of 1→2 and 1→3
+            obstype = fill(1, 6)  # exact observations
         )
         
         h12 = Hazard(@formula(0 ~ 1), "pt", 1, 2)
@@ -1755,13 +1757,14 @@ end
     end
     
     @testset "No SCTP constraints for unstructured" begin
+        # Simple exact observations: 3 subjects go 1→2, 3 subjects go 1→3
         df = DataFrame(
-            id = repeat(1:6, inner=2),
-            tstart = repeat([0.0, 1.0], 6),
-            tstop = repeat([1.0, 2.0], 6),
-            statefrom = repeat([1, 2], 6),
-            stateto = vcat([2, 2, 3, 3, 2, 2], fill(3, 6)),
-            obstype = fill(1, 12)
+            id = 1:6,
+            tstart = fill(0.0, 6),
+            tstop = [1.0, 1.5, 2.0, 1.2, 1.8, 2.2],
+            statefrom = fill(1, 6),
+            stateto = [2, 2, 2, 3, 3, 3],
+            obstype = fill(1, 6)  # exact observations
         )
         
         h12 = Hazard(@formula(0 ~ 1), "pt", 1, 2)
@@ -1790,17 +1793,18 @@ end
         h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
         
         # Should error if n_phases specified for non-pt state
-        @test_throws ErrorException multistatemodel(h12; data=df, n_phases=Dict(1 => 3))
+        @test_throws ArgumentError multistatemodel(h12; data=df, n_phases=Dict(1 => 3))
     end
     
     @testset "Mixed hazard types warning" begin
+        # Simple exact observations: 3 subjects go 1→2, 3 subjects go 1→3
         df = DataFrame(
-            id = repeat(1:6, inner=2),
-            tstart = repeat([0.0, 1.0], 6),
-            tstop = repeat([1.0, 2.0], 6),
-            statefrom = repeat([1, 2], 6),
-            stateto = vcat([2, 2, 3, 3, 2, 2], fill(3, 6)),
-            obstype = fill(1, 12)
+            id = 1:6,
+            tstart = fill(0.0, 6),
+            tstop = [1.0, 1.5, 2.0, 1.2, 1.8, 2.2],
+            statefrom = fill(1, 6),
+            stateto = [2, 2, 2, 3, 3, 3],
+            obstype = fill(1, 6)  # exact observations
         )
         
         # Mix of pt and non-pt from same state
@@ -1815,22 +1819,23 @@ end
 @testset "expand_data_for_phasetype_fitting" begin
     
     @testset "Exact observations are split" begin
-        # Create data with exact observation
+        # Create data with exact observation - need multiple subjects for phase-type
         df = DataFrame(
-            id = [1],
-            tstart = [0.0],
-            tstop = [1.0],
-            statefrom = [1],
-            stateto = [2],
-            obstype = [1]  # Exact
+            id = [1, 2, 3],
+            tstart = [0.0, 0.0, 0.0],
+            tstop = [1.0, 1.5, 2.0],
+            statefrom = [1, 1, 1],
+            stateto = [2, 2, 2],
+            obstype = [1, 1, 1]  # Exact
         )
         
         h12 = Hazard(@formula(0 ~ 1), "pt", 1, 2)
         model = multistatemodel(h12; data=df, n_phases=Dict(1 => 2))
         
-        # Check that data was expanded
-        @test nrow(model.data) == 2  # Sojourn + transition
+        # Check that data was expanded: 3 subjects × 2 rows each (sojourn + transition)
+        @test nrow(model.data) == 6
         
+        # For first subject:
         # First row should be sojourn (obstype > 2 indicates phase uncertainty)
         @test model.data.obstype[1] >= 3
         

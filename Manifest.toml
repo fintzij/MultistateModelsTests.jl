@@ -1944,9 +1944,9 @@ version = "0.2.4"
 
 [[deps.MultistateModels]]
 deps = ["ADTypes", "BSplineKit", "BenchmarkTools", "CairoMakie", "Chain", "ComponentArrays", "DataFrames", "DiffResults", "DifferentiationInterface", "Distributions", "ElasticArrays", "Enzyme", "ExponentialUtilities", "ForwardDiff", "HypothesisTests", "Ipopt", "JSON", "LinearAlgebra", "MacroTools", "ModelContextProtocol", "Mooncake", "NonlinearSolve", "Optim", "Optimization", "OptimizationMOI", "OptimizationOptimJL", "OrderedCollections", "ParameterHandling", "ParetoSmooth", "Preferences", "QuadGK", "QuasiMonteCarlo", "Random", "RuntimeGeneratedFunctions", "SpecialFunctions", "Statistics", "StatsBase", "StatsFuns", "StatsModels", "Symbolics"]
-path = "/Users/fintzij/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl"
+path = "/Users/fintzij/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/"
 uuid = "0f8f0c3e-0b3a-5b8a-9e9a-0a0a0a0a0a0a"
-version = "0.2.3"
+version = "0.2.4"
 
 [[deps.MultistateModelsTests]]
 deps = ["BSplineKit", "CairoMakie", "DataFrames", "Dates", "Distributions", "ForwardDiff", "HypothesisTests", "JSON3", "LinearAlgebra", "Logging", "MultistateModels", "Optim", "ParameterHandling", "QuadGK", "Random", "SpecialFunctions", "Statistics", "StatsBase", "StatsModels", "Test"]

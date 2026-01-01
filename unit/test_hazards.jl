@@ -76,7 +76,7 @@ const PARAM_RTOL = 1e-6
     MultistateModels.set_parameters!(model, (h12 = [log(0.1),], h13 = [log(0.1), 0.0, 0.0, 0.0]))
 
     subjdat_row = model.data[1, :]
-    params = MultistateModels.get_hazard_params(model.parameters)
+    params = MultistateModels.get_hazard_params(model.parameters, model.hazards)
     
     # Compute cumulative incidence = 1 - S(0, 2)
     interval_incid = 1 - MultistateModels.survprob(0.0, 2.0, params, subjdat_row, 
@@ -115,11 +115,11 @@ end
     covars1 = MultistateModels.extract_covariates_fast(subjdat_row, hazard1.covar_names)
     
     # Verify: log h(t) = 0.8, h(t) = exp(0.8) for intercept-only model
-    @test log(MultistateModels.eval_hazard(hazard1, 0.0, get_hazard_params(model.parameters)[1], covars1)) ≈ 0.8
-    @test MultistateModels.eval_hazard(hazard1, 0.0, get_hazard_params(model.parameters)[1], covars1) ≈ exp(0.8)
+    @test log(MultistateModels.eval_hazard(hazard1, 0.0, get_hazard_params(model.parameters, model.hazards)[1], covars1)) ≈ 0.8
+    @test MultistateModels.eval_hazard(hazard1, 0.0, get_hazard_params(model.parameters, model.hazards)[1], covars1) ≈ exp(0.8)
     
     # Verify DataFrameRow interface gives identical results (zero-copy approach)
-    @test MultistateModels.eval_hazard(hazard1, 0.0, get_hazard_params(model.parameters)[1], subjdat_row) ≈ exp(0.8)
+    @test MultistateModels.eval_hazard(hazard1, 0.0, get_hazard_params(model.parameters, model.hazards)[1], subjdat_row) ≈ exp(0.8)
 
     # -------------------------------------------------------------------------
     # Test 2: Exponential hazard with covariates (PH model)
@@ -127,7 +127,7 @@ end
     # Formula: log h(t|x) = β₀ + β₁·trt + β₂·age + β₃·trt·age
     # where β₀ = 0.3, β₁ = 0.6, β₂ = -0.4, β₃ = 0.15
     
-    pars_nt = get_hazard_params(model.parameters)[2]
+    pars_nt = get_hazard_params(model.parameters, model.hazards)[2]
     pars = MultistateModels.extract_params_vector(pars_nt)
     
     # Compute analytical log-hazard for each row
@@ -176,7 +176,7 @@ end
     subjdat_row = model.data[1, :]
     hazard3 = model.hazards[3]
     covars3 = MultistateModels.extract_covariates_fast(subjdat_row, hazard3.covar_names)
-    pars_nt = get_hazard_params(model.parameters)[3]
+    pars_nt = get_hazard_params(model.parameters, model.hazards)[3]
     pars = MultistateModels.extract_params_vector(pars_nt)
     
     t_eval = 1.7
@@ -201,7 +201,7 @@ end
     
     t = 1.0
     MultistateModels.set_parameters!(model, (h23 = [0.2, 0.25, -0.3],))
-    pars_h23_nt = get_hazard_params(model.parameters)[4]
+    pars_h23_nt = get_hazard_params(model.parameters, model.hazards)[4]
     pars_h23 = MultistateModels.extract_params_vector(pars_h23_nt)
     
     # Baseline params are now on natural scale
@@ -250,7 +250,7 @@ end
     hazard1 = model.hazards[1]
     covars1 = MultistateModels.extract_covariates_fast(subjdat_row, hazard1.covar_names)
     
-    @test log(MultistateModels.eval_cumhaz(hazard1, lb, ub, get_hazard_params(model.parameters)[1], covars1)) ≈ 0.8 + log(ub-lb)
+    @test log(MultistateModels.eval_cumhaz(hazard1, lb, ub, get_hazard_params(model.parameters, model.hazards)[1], covars1)) ≈ 0.8 + log(ub-lb)
 
     # -------------------------------------------------------------------------
     # Test 2: Cumulative hazard with covariates (PH model)
@@ -259,7 +259,7 @@ end
     #        = (log(λ) + β'x) + log(interval_length)
     #        = log_hazard + log(ub - lb)
     
-    pars_nt = get_hazard_params(model.parameters)[2]
+    pars_nt = get_hazard_params(model.parameters, model.hazards)[2]
     pars = MultistateModels.extract_params_vector(pars_nt)
     
     # Compute log-hazard for each row
@@ -308,7 +308,7 @@ end
     covars3 = MultistateModels.extract_covariates_fast(subjdat_row, hazard3.covar_names)
     
     # Analytical: log H(0,5) = log(scale) + log(5^shape - 0^shape)
-    pars_h21_nt = get_hazard_params(model.parameters)[3]
+    pars_h21_nt = get_hazard_params(model.parameters, model.hazards)[3]
     pars_h21 = MultistateModels.extract_params_vector(pars_h21_nt)
     # Baseline params are now on natural scale
     shape = pars_h21[1]
@@ -323,7 +323,7 @@ end
     # -------------------------------------------------------------------------
     # Formula: log H(s,t|x) = log(λ) + log(t^κ - s^κ) + β·trt
     
-    pars_nt = get_hazard_params(model.parameters)[4]
+    pars_nt = get_hazard_params(model.parameters, model.hazards)[4]
     pars = MultistateModels.extract_params_vector(pars_nt)
     
     hazard4 = model.hazards[4]
@@ -365,10 +365,10 @@ end
     window = ub - lb
 
     # Extract all parameters (NamedTuples for hazard calls)
-    pars_h12_nt = get_hazard_params(model.parameters)[1]
-    pars_h13_nt = get_hazard_params(model.parameters)[2]
-    pars_h21_nt = get_hazard_params(model.parameters)[3]
-    pars_h23_nt = get_hazard_params(model.parameters)[4]
+    pars_h12_nt = get_hazard_params(model.parameters, model.hazards)[1]
+    pars_h13_nt = get_hazard_params(model.parameters, model.hazards)[2]
+    pars_h21_nt = get_hazard_params(model.parameters, model.hazards)[3]
+    pars_h23_nt = get_hazard_params(model.parameters, model.hazards)[4]
     
     # Extract vectors for arithmetic
     pars_h12 = MultistateModels.extract_params_vector(pars_h12_nt)
@@ -425,7 +425,7 @@ end
                 0.0  # absorbing state
             end
 
-            params = get_hazard_params(model.parameters)
+            params = get_hazard_params(model.parameters, model.hazards)
             result = MultistateModels.total_cumulhaz(lb, ub, params, subjdat_row, model.totalhazards[s], model.hazards; give_log = false)
             @test result ≈ expected_total
 
@@ -462,8 +462,8 @@ end
                                              h13 = [log(0.5), log(0.5), 1.5], 
                                              h23 = [log(1), log(2/3)]))    
 
-    pars_h12_nt = get_hazard_params(model.parameters)[1]
-    pars_h13_nt = get_hazard_params(model.parameters)[2]
+    pars_h12_nt = get_hazard_params(model.parameters, model.hazards)[1]
+    pars_h13_nt = get_hazard_params(model.parameters, model.hazards)[2]
     pars_h12 = MultistateModels.extract_params_vector(pars_h12_nt)
     pars_h13 = MultistateModels.extract_params_vector(pars_h13_nt)
     
@@ -514,8 +514,8 @@ end
     lb = 0.0
     ub = 5.0
 
-    pars_h12_nt = get_hazard_params(model.parameters)[1]
-    pars_h13_nt = get_hazard_params(model.parameters)[2]
+    pars_h12_nt = get_hazard_params(model.parameters, model.hazards)[1]
+    pars_h13_nt = get_hazard_params(model.parameters, model.hazards)[2]
     pars_h12 = MultistateModels.extract_params_vector(pars_h12_nt)
     pars_h13 = MultistateModels.extract_params_vector(pars_h13_nt)
     
@@ -603,8 +603,8 @@ end
     MultistateModels.set_parameters!(model_exp_aft, (h12 = [log(0.4), 0.7],))
 
     # Use retrieved params for expected value calculation
-    pars_exp_ph_nt = get_hazard_params(model_exp_ph.parameters)[1]
-    pars_exp_aft_nt = get_hazard_params(model_exp_aft.parameters)[1]
+    pars_exp_ph_nt = get_hazard_params(model_exp_ph.parameters, model_exp_ph.hazards)[1]
+    pars_exp_aft_nt = get_hazard_params(model_exp_aft.parameters, model_exp_aft.hazards)[1]
     pars_exp_ph = MultistateModels.extract_params_vector(pars_exp_ph_nt)
     pars_exp_aft = MultistateModels.extract_params_vector(pars_exp_aft_nt)
     # Baseline params are now natural scale
@@ -642,8 +642,8 @@ end
     MultistateModels.set_parameters!(model_wei_aft, (h12 = [log(1.4), log(0.6), -0.3],))
 
     # Use retrieved params for expected value calculation
-    pars_wei_ph_nt = get_hazard_params(model_wei_ph.parameters)[1]
-    pars_wei_aft_nt = get_hazard_params(model_wei_aft.parameters)[1]
+    pars_wei_ph_nt = get_hazard_params(model_wei_ph.parameters, model_wei_ph.hazards)[1]
+    pars_wei_aft_nt = get_hazard_params(model_wei_aft.parameters, model_wei_aft.hazards)[1]
     pars_wei_ph = MultistateModels.extract_params_vector(pars_wei_ph_nt)
     pars_wei_aft = MultistateModels.extract_params_vector(pars_wei_aft_nt)
     # Baseline params are now natural scale
@@ -681,8 +681,8 @@ end
     MultistateModels.set_parameters!(model_gom_aft, (h12 = [log(0.2), log(0.3), 0.5],))
 
     # Use retrieved params for expected value calculation
-    pars_gom_ph_nt = get_hazard_params(model_gom_ph.parameters)[1]
-    pars_gom_aft_nt = get_hazard_params(model_gom_aft.parameters)[1]
+    pars_gom_ph_nt = get_hazard_params(model_gom_ph.parameters, model_gom_ph.hazards)[1]
+    pars_gom_aft_nt = get_hazard_params(model_gom_aft.parameters, model_gom_aft.hazards)[1]
     pars_gom_ph = MultistateModels.extract_params_vector(pars_gom_ph_nt)
     pars_gom_aft = MultistateModels.extract_params_vector(pars_gom_aft_nt)
     # Baseline params are now natural scale
@@ -750,7 +750,7 @@ end
     MultistateModels.set_parameters!(model_exp_tt, (h12 = [log(0.4), 0.7],))
     
     # Use retrieved params for expected value calculation
-    pars_exp_tt_nt = get_hazard_params(model_exp_tt.parameters)[1]
+    pars_exp_tt_nt = get_hazard_params(model_exp_tt.parameters, model_exp_tt.hazards)[1]
     pars_exp_tt = MultistateModels.extract_params_vector(pars_exp_tt_nt)
     # Baseline params are now natural scale
     λ0_tt = pars_exp_tt[1]
@@ -766,7 +766,7 @@ end
     cum_exp = rate_exp * (interval[2] - interval[1])
     @test MultistateModels.eval_cumhaz(hazard_exp_tt, interval[1], interval[2], pars_exp_tt_nt, covars_exp_tt; apply_transform = true) ≈ cum_exp
     @test log(MultistateModels.eval_cumhaz(hazard_exp_tt, interval[1], interval[2], pars_exp_tt_nt, covars_exp_tt; apply_transform = true)) ≈ log(cum_exp)
-    @test MultistateModels.survprob(interval[1], interval[2], get_hazard_params(model_exp_tt.parameters), subjdat_row, model_exp_tt.totalhazards[1], model_exp_tt.hazards; give_log = false, apply_transform = true) ≈ exp(-cum_exp)
+    @test MultistateModels.survprob(interval[1], interval[2], get_hazard_params(model_exp_tt.parameters, model_exp_tt.hazards), subjdat_row, model_exp_tt.totalhazards[1], model_exp_tt.hazards; give_log = false, apply_transform = true) ≈ exp(-cum_exp)
 
     # zero-length interval should return zero cumulative hazard and log zero
     @test MultistateModels.eval_cumhaz(hazard_exp_tt, interval[1], interval[1], pars_exp_tt_nt, covars_exp_tt; apply_transform = true) == 0.0
@@ -778,7 +778,7 @@ end
     MultistateModels.set_parameters!(model_wei_tt, (h12 = [log(1.3), log(0.6), -0.4],))
     
     # Use retrieved params for expected value calculation
-    pars_wei_tt_nt = get_hazard_params(model_wei_tt.parameters)[1]
+    pars_wei_tt_nt = get_hazard_params(model_wei_tt.parameters, model_wei_tt.hazards)[1]
     pars_wei_tt = MultistateModels.extract_params_vector(pars_wei_tt_nt)
     # Baseline params are now natural scale
     shape = pars_wei_tt[1]
@@ -802,7 +802,7 @@ end
     MultistateModels.set_parameters!(model_gom_tt, (h12 = [log(0.5), log(0.8), 0.25],))
     
     # Use retrieved params for expected value calculation
-    pars_gom_tt_nt = get_hazard_params(model_gom_tt.parameters)[1]
+    pars_gom_tt_nt = get_hazard_params(model_gom_tt.parameters, model_gom_tt.hazards)[1]
     pars_gom_tt = MultistateModels.extract_params_vector(pars_gom_tt_nt)
     # Baseline params are now natural scale
     shape_g = pars_gom_tt[1]
@@ -825,7 +825,7 @@ end
     h_cache = Hazard(@formula(0 ~ x), "exp", 1, 2; time_transform = true)
     model_cache = multistatemodel(h_cache; data = dat)
     MultistateModels.set_parameters!(model_cache, (h12 = [log(0.5), 0.3],))
-    pars_cache_nt = get_hazard_params(model_cache.parameters)[1]
+    pars_cache_nt = get_hazard_params(model_cache.parameters, model_cache.hazards)[1]
     pars_cache_vec = MultistateModels.extract_params_vector(pars_cache_nt)
     t_cache = 0.7
     lb_cache, ub_cache = 0.1, 0.9
@@ -851,11 +851,11 @@ end
     
     # For mutation test, we update model parameters and get new NamedTuple
     MultistateModels.set_parameters!(model_cache, (h12 = [log(0.5), 0.5],))  # Changed from 0.3 to 0.5
-    pars_cache_nt_new = get_hazard_params(model_cache.parameters)[1]
+    pars_cache_nt_new = get_hazard_params(model_cache.parameters, model_cache.hazards)[1]
     _ = MultistateModels.eval_hazard(hazard_cache, t_cache, pars_cache_nt_new, covars_cache; apply_transform = true, cache_context = ctx, hazard_slot = hazard_slot)
     @test length(cache.hazard_values) == 2
 
-    pars_cum_nt = get_hazard_params(model_cache.parameters)[1]
+    pars_cum_nt = get_hazard_params(model_cache.parameters, model_cache.hazards)[1]
     _ = MultistateModels.eval_cumhaz(hazard_cache, lb_cache, ub_cache, pars_cum_nt, covars_cache; apply_transform = true, cache_context = ctx, hazard_slot = hazard_slot)
     @test length(cache.cumulhaz_values) == 1
     _ = MultistateModels.eval_cumhaz(hazard_cache, lb_cache, ub_cache, pars_cum_nt, covars_cache; apply_transform = true, cache_context = ctx, hazard_slot = hazard_slot)
@@ -892,8 +892,8 @@ end
     hazard13 = model_shared.hazards[2]
     covars12 = MultistateModels.extract_covariates_fast(row12, hazard12.covar_names)
     covars13 = MultistateModels.extract_covariates_fast(row13, hazard13.covar_names)
-    pars12 = get_hazard_params(model_shared.parameters)[1]  # NamedTuple
-    pars13 = get_hazard_params(model_shared.parameters)[2]  # NamedTuple
+    pars12 = get_hazard_params(model_shared.parameters, model_shared.hazards)[1]  # NamedTuple
+    pars13 = get_hazard_params(model_shared.parameters, model_shared.hazards)[2]  # NamedTuple
     t_shared = 0.6
 
     @test ctx_shared.caches[1] === nothing
@@ -914,12 +914,12 @@ end
 
     # Helper exposes context construction to callers
     subj_df = DataFrame(sojourn = Float64[0.2])
-    params_shared = get_hazard_params(model_shared.parameters)
+    params_shared = get_hazard_params(model_shared.parameters, model_shared.hazards)
     ctx_auto = MultistateModels.maybe_time_transform_context(params_shared, subj_df, model_shared.hazards)
     @test ctx_auto isa MultistateModels.TimeTransformContext
     plain_hazard = Hazard(@formula(0 ~ x), "exp", 1, 2)
     plain_model = multistatemodel(plain_hazard; data = dat)
-    params_plain = get_hazard_params(plain_model.parameters)
+    params_plain = get_hazard_params(plain_model.parameters, plain_model.hazards)
     ctx_none = MultistateModels.maybe_time_transform_context(params_plain, subj_df, plain_model.hazards)
     @test ctx_none === nothing
 
@@ -975,20 +975,20 @@ end
     for row in eachrow(dat)
         covars_plain_exp = MultistateModels.extract_covariates_fast(row, hazard_plain_exp.covar_names)
         covars_tt_exp = MultistateModels.extract_covariates_fast(row, hazard_tt_exp.covar_names)
-        plain_haz = MultistateModels.eval_hazard(hazard_plain_exp, eval_times[1], get_hazard_params(model_plain_exp.parameters)[1], covars_plain_exp)
-        tt_haz = MultistateModels.eval_hazard(hazard_tt_exp, eval_times[1], get_hazard_params(model_tt_exp.parameters)[1], covars_tt_exp; apply_transform = true)
+        plain_haz = MultistateModels.eval_hazard(hazard_plain_exp, eval_times[1], get_hazard_params(model_plain_exp.parameters, model_plain_exp.hazards)[1], covars_plain_exp)
+        tt_haz = MultistateModels.eval_hazard(hazard_tt_exp, eval_times[1], get_hazard_params(model_tt_exp.parameters, model_tt_exp.hazards)[1], covars_tt_exp; apply_transform = true)
         @test tt_haz ≈ plain_haz
 
-        plain_log_haz = log(MultistateModels.eval_hazard(hazard_plain_exp, eval_times[2], get_hazard_params(model_plain_exp.parameters)[1], covars_plain_exp))
-        tt_log_haz = log(MultistateModels.eval_hazard(hazard_tt_exp, eval_times[2], get_hazard_params(model_tt_exp.parameters)[1], covars_tt_exp; apply_transform = true))
+        plain_log_haz = log(MultistateModels.eval_hazard(hazard_plain_exp, eval_times[2], get_hazard_params(model_plain_exp.parameters, model_plain_exp.hazards)[1], covars_plain_exp))
+        tt_log_haz = log(MultistateModels.eval_hazard(hazard_tt_exp, eval_times[2], get_hazard_params(model_tt_exp.parameters, model_tt_exp.hazards)[1], covars_tt_exp; apply_transform = true))
         @test tt_log_haz ≈ plain_log_haz
 
-        plain_cum = MultistateModels.eval_cumhaz(hazard_plain_exp, interval[1], interval[2], get_hazard_params(model_plain_exp.parameters)[1], covars_plain_exp)
-        tt_cum = MultistateModels.eval_cumhaz(hazard_tt_exp, interval[1], interval[2], get_hazard_params(model_tt_exp.parameters)[1], covars_tt_exp; apply_transform = true)
+        plain_cum = MultistateModels.eval_cumhaz(hazard_plain_exp, interval[1], interval[2], get_hazard_params(model_plain_exp.parameters, model_plain_exp.hazards)[1], covars_plain_exp)
+        tt_cum = MultistateModels.eval_cumhaz(hazard_tt_exp, interval[1], interval[2], get_hazard_params(model_tt_exp.parameters, model_tt_exp.hazards)[1], covars_tt_exp; apply_transform = true)
         @test tt_cum ≈ plain_cum
 
-        plain_surv = MultistateModels.survprob(interval[1], interval[2], get_hazard_params(model_plain_exp.parameters), row, model_plain_exp.totalhazards[1], model_plain_exp.hazards; give_log = false)
-        tt_surv = MultistateModels.survprob(interval[1], interval[2], get_hazard_params(model_tt_exp.parameters), row, model_tt_exp.totalhazards[1], model_tt_exp.hazards; give_log = false, apply_transform = true)
+        plain_surv = MultistateModels.survprob(interval[1], interval[2], get_hazard_params(model_plain_exp.parameters, model_plain_exp.hazards), row, model_plain_exp.totalhazards[1], model_plain_exp.hazards; give_log = false)
+        tt_surv = MultistateModels.survprob(interval[1], interval[2], get_hazard_params(model_tt_exp.parameters, model_tt_exp.hazards), row, model_tt_exp.totalhazards[1], model_tt_exp.hazards; give_log = false, apply_transform = true)
         @test tt_surv ≈ plain_surv
     end
 
@@ -1009,16 +1009,16 @@ end
     for row in eachrow(dat)
         covars_plain_wei = MultistateModels.extract_covariates_fast(row, hazard_plain_wei.covar_names)
         covars_tt_wei = MultistateModels.extract_covariates_fast(row, hazard_tt_wei.covar_names)
-        plain_haz = MultistateModels.eval_hazard(hazard_plain_wei, t_eval, get_hazard_params(model_plain_wei.parameters)[1], covars_plain_wei)
-        tt_haz = MultistateModels.eval_hazard(hazard_tt_wei, t_eval, get_hazard_params(model_tt_wei.parameters)[1], covars_tt_wei; apply_transform = true)
+        plain_haz = MultistateModels.eval_hazard(hazard_plain_wei, t_eval, get_hazard_params(model_plain_wei.parameters, model_plain_wei.hazards)[1], covars_plain_wei)
+        tt_haz = MultistateModels.eval_hazard(hazard_tt_wei, t_eval, get_hazard_params(model_tt_wei.parameters, model_tt_wei.hazards)[1], covars_tt_wei; apply_transform = true)
         @test tt_haz ≈ plain_haz
 
-        plain_cum = MultistateModels.eval_cumhaz(hazard_plain_wei, interval_wei[1], interval_wei[2], get_hazard_params(model_plain_wei.parameters)[1], covars_plain_wei)
-        tt_cum = MultistateModels.eval_cumhaz(hazard_tt_wei, interval_wei[1], interval_wei[2], get_hazard_params(model_tt_wei.parameters)[1], covars_tt_wei; apply_transform = true)
+        plain_cum = MultistateModels.eval_cumhaz(hazard_plain_wei, interval_wei[1], interval_wei[2], get_hazard_params(model_plain_wei.parameters, model_plain_wei.hazards)[1], covars_plain_wei)
+        tt_cum = MultistateModels.eval_cumhaz(hazard_tt_wei, interval_wei[1], interval_wei[2], get_hazard_params(model_tt_wei.parameters, model_tt_wei.hazards)[1], covars_tt_wei; apply_transform = true)
         @test tt_cum ≈ plain_cum
 
-        plain_surv = MultistateModels.survprob(interval_wei[1], interval_wei[2], get_hazard_params(model_plain_wei.parameters), row, model_plain_wei.totalhazards[1], model_plain_wei.hazards; give_log = false)
-        tt_surv = MultistateModels.survprob(interval_wei[1], interval_wei[2], get_hazard_params(model_tt_wei.parameters), row, model_tt_wei.totalhazards[1], model_tt_wei.hazards; give_log = false, apply_transform = true)
+        plain_surv = MultistateModels.survprob(interval_wei[1], interval_wei[2], get_hazard_params(model_plain_wei.parameters, model_plain_wei.hazards), row, model_plain_wei.totalhazards[1], model_plain_wei.hazards; give_log = false)
+        tt_surv = MultistateModels.survprob(interval_wei[1], interval_wei[2], get_hazard_params(model_tt_wei.parameters, model_tt_wei.hazards), row, model_tt_wei.totalhazards[1], model_tt_wei.hazards; give_log = false, apply_transform = true)
         @test tt_surv ≈ plain_surv
     end
 
@@ -1039,20 +1039,20 @@ end
     for row in eachrow(dat)
         covars_plain_gom = MultistateModels.extract_covariates_fast(row, hazard_plain_gom.covar_names)
         covars_tt_gom = MultistateModels.extract_covariates_fast(row, hazard_tt_gom.covar_names)
-        plain_haz = MultistateModels.eval_hazard(hazard_plain_gom, t_eval_g, get_hazard_params(model_plain_gom.parameters)[1], covars_plain_gom)
-        tt_haz = MultistateModels.eval_hazard(hazard_tt_gom, t_eval_g, get_hazard_params(model_tt_gom.parameters)[1], covars_tt_gom; apply_transform = true)
+        plain_haz = MultistateModels.eval_hazard(hazard_plain_gom, t_eval_g, get_hazard_params(model_plain_gom.parameters, model_plain_gom.hazards)[1], covars_plain_gom)
+        tt_haz = MultistateModels.eval_hazard(hazard_tt_gom, t_eval_g, get_hazard_params(model_tt_gom.parameters, model_tt_gom.hazards)[1], covars_tt_gom; apply_transform = true)
         @test tt_haz ≈ plain_haz
 
-        plain_log_haz = log(MultistateModels.eval_hazard(hazard_plain_gom, t_eval_g, get_hazard_params(model_plain_gom.parameters)[1], covars_plain_gom))
-        tt_log_haz = log(MultistateModels.eval_hazard(hazard_tt_gom, t_eval_g, get_hazard_params(model_tt_gom.parameters)[1], covars_tt_gom; apply_transform = true))
+        plain_log_haz = log(MultistateModels.eval_hazard(hazard_plain_gom, t_eval_g, get_hazard_params(model_plain_gom.parameters, model_plain_gom.hazards)[1], covars_plain_gom))
+        tt_log_haz = log(MultistateModels.eval_hazard(hazard_tt_gom, t_eval_g, get_hazard_params(model_tt_gom.parameters, model_tt_gom.hazards)[1], covars_tt_gom; apply_transform = true))
         @test tt_log_haz ≈ plain_log_haz
 
-        plain_cum = MultistateModels.eval_cumhaz(hazard_plain_gom, interval_g[1], interval_g[2], get_hazard_params(model_plain_gom.parameters)[1], covars_plain_gom)
-        tt_cum = MultistateModels.eval_cumhaz(hazard_tt_gom, interval_g[1], interval_g[2], get_hazard_params(model_tt_gom.parameters)[1], covars_tt_gom; apply_transform = true)
+        plain_cum = MultistateModels.eval_cumhaz(hazard_plain_gom, interval_g[1], interval_g[2], get_hazard_params(model_plain_gom.parameters, model_plain_gom.hazards)[1], covars_plain_gom)
+        tt_cum = MultistateModels.eval_cumhaz(hazard_tt_gom, interval_g[1], interval_g[2], get_hazard_params(model_tt_gom.parameters, model_tt_gom.hazards)[1], covars_tt_gom; apply_transform = true)
         @test tt_cum ≈ plain_cum
 
-        plain_surv = MultistateModels.survprob(interval_g[1], interval_g[2], get_hazard_params(model_plain_gom.parameters), row, model_plain_gom.totalhazards[1], model_plain_gom.hazards; give_log = false)
-        tt_surv = MultistateModels.survprob(interval_g[1], interval_g[2], get_hazard_params(model_tt_gom.parameters), row, model_tt_gom.totalhazards[1], model_tt_gom.hazards; give_log = false, apply_transform = true)
+        plain_surv = MultistateModels.survprob(interval_g[1], interval_g[2], get_hazard_params(model_plain_gom.parameters, model_plain_gom.hazards), row, model_plain_gom.totalhazards[1], model_plain_gom.hazards; give_log = false)
+        tt_surv = MultistateModels.survprob(interval_g[1], interval_g[2], get_hazard_params(model_tt_gom.parameters, model_tt_gom.hazards), row, model_tt_gom.totalhazards[1], model_tt_gom.hazards; give_log = false, apply_transform = true)
         @test tt_surv ≈ plain_surv
     end
 end

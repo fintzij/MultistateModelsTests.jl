@@ -1,0 +1,138 @@
+---
+title: "Unit Test Coverage"
+subtitle: "Validation of key functions"
+date: last-modified
+---
+
+::: {.callout-note}
+## Status: Not Started
+This report is a placeholder. Content will be added as the test documentation is developed.
+:::
+
+## 1. Coverage Summary
+
+```{julia}
+#| eval: false
+#| echo: false
+
+# TODO: Add coverage statistics
+```
+
+### Overall Statistics
+
+| Metric | Value |
+|--------|-------|
+| Total Test Files | - |
+| Total Test Cases | - |
+| Passing | - |
+| Failing | - |
+| Coverage % | - |
+
+### Coverage by Module
+
+| Module | Tests | Coverage |
+|--------|-------|----------|
+| Hazard | - | - |
+| Likelihood | - | - |
+| Simulation | - | - |
+| Inference | - | - |
+| Splines | - | - |
+| Phase-Type | - | - |
+
+## 2. Hazard Functions
+
+### Test Summary
+
+| Function | Test File | Condition | Status |
+|----------|-----------|-----------|--------|
+| `eval_hazard` (Exp) | `test_hazards.jl` | Baseline | ⏳ |
+| `eval_hazard` (Wei) | `test_hazards.jl` | Baseline | ⏳ |
+| `eval_hazard` (Gom) | `test_hazards.jl` | Baseline | ⏳ |
+| `eval_cumhaz` (Exp) | `test_hazards.jl` | With covariate | ⏳ |
+| `eval_cumhaz` (Wei) | `test_hazards.jl` | AFT effect | ⏳ |
+| `eval_cumhaz` (Gom) | `test_hazards.jl` | PH effect | ⏳ |
+
+### Validation Approach
+
+*To be documented*
+
+## 3. Likelihood Functions
+
+### Test Summary
+
+| Function | Test File | Condition | Status |
+|----------|-----------|-----------|--------|
+| `loglik_path` | `test_mll_consistency.jl` | Exact observation | ⏳ |
+| `loglik` | `test_mll_consistency.jl` | Panel data | ⏳ |
+| `tvc_loglik` | `test_reversible_tvc_loglik.jl` | Time-varying covariates | ⏳ |
+
+### Validation Approach
+
+*To be documented*
+
+## 4. Simulation
+
+### Test Summary
+
+| Function | Test File | Condition | Status |
+|----------|-----------|-----------|--------|
+| `simulate_path` | `test_simulation.jl` | Single subject | ⏳ |
+| `simulate` | `test_simulation.jl` | Multiple subjects | ⏳ |
+
+### Validation Approach
+
+*To be documented*
+
+## 5. Model Construction
+
+### Test Summary
+
+| Function | Test File | Condition | Status |
+|----------|-----------|-----------|--------|
+| `multistatemodel` | `test_modelgeneration.jl` | Basic model | ⏳ |
+| `Hazard` | `test_hazards.jl` | All families | ⏳ |
+| `set_parameters!` | `test_initialization.jl` | Parameter setting | ⏳ |
+
+### Validation Approach
+
+*To be documented*
+
+## 6. Splines & Penalization
+
+### Test Summary
+
+| Function | Test File | Condition | Status |
+|----------|-----------|-----------|--------|
+| B-spline basis | `test_splines.jl` | Evaluation | ⏳ |
+| Penalty matrix | `test_splines.jl` | Second derivative | ⏳ |
+
+### Validation Approach
+
+*To be documented*
+
+## 7. Phase-Type Models
+
+### Test Summary
+
+| Function | Test File | Condition | Status |
+|----------|-----------|-----------|--------|
+| Expansion | `test_phasetype.jl` | State expansion | ⏳ |
+| Collapse | `test_phasetype.jl` | State collapse | ⏳ |
+| FFBS | `test_phasetype.jl` | Forward-backward | ⏳ |
+
+### Validation Approach
+
+*To be documented*
+
+## 8. Helpers & Utilities
+
+### Test Summary
+
+| Function | Test File | Condition | Status |
+|----------|-----------|-----------|--------|
+| `extract_covariates` | `test_helpers.jl` | Covariate extraction | ⏳ |
+| `get_hazard_params` | `test_helpers.jl` | Parameter retrieval | ⏳ |
+
+### Validation Approach
+
+*To be documented*

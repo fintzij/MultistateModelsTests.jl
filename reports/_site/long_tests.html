@@ -238,7 +238,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ol>
 <section id="summary" class="level3">
 <h3 class="anchored" data-anchor-id="summary">Summary</h3>
-<p><strong>8/18 tests passing</strong> | Last updated: 2025-12-21 08:54</p>
+<p><strong>12/18 tests passing</strong> | Last updated: 2025-12-31 17:37</p>
 </section>
 <section id="test-matrix" class="level3">
 <h3 class="anchored" data-anchor-id="test-matrix">Test Matrix</h3>
@@ -279,6 +279,30 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>❌ Fail</td>
 </tr>
 <tr class="even">
+<td><code>mcem_exp_panel_nocov</code></td>
+<td></td>
+<td></td>
+<td></td>
+<td>1000</td>
+<td>❌ Fail</td>
+</tr>
+<tr class="odd">
+<td><code>mcem_gom_panel_nocov</code></td>
+<td></td>
+<td></td>
+<td></td>
+<td>1000</td>
+<td>❌ Fail</td>
+</tr>
+<tr class="even">
+<td><code>mcem_wei_panel_nocov</code></td>
+<td></td>
+<td></td>
+<td></td>
+<td>1000</td>
+<td>❌ Fail</td>
+</tr>
+<tr class="odd">
 <td><code>exp_exact_fixed</code></td>
 <td>exp</td>
 <td>exact</td>
@@ -286,21 +310,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>1000</td>
 <td>✅ Pass</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>exp_exact_nocov</code></td>
 <td>exp</td>
 <td>exact</td>
 <td>nocov</td>
 <td>1000</td>
 <td>✅ Pass</td>
-</tr>
-<tr class="even">
-<td><code>exp_exact_tvc</code></td>
-<td>exp</td>
-<td>exact</td>
-<td>tvc</td>
-<td>1000</td>
-<td>❌ Fail</td>
 </tr>
 <tr class="odd">
 <td><code>exp_panel_fixed</code></td>
@@ -335,30 +351,22 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>✅ Pass</td>
 </tr>
 <tr class="odd">
-<td><code>gom_exact_tvc</code></td>
-<td>gom</td>
-<td>exact</td>
-<td>tvc</td>
-<td>1000</td>
-<td>❌ Fail</td>
-</tr>
-<tr class="even">
 <td><code>gom_mcem_fixed</code></td>
 <td>gom</td>
 <td>mcem</td>
 <td>fixed</td>
-<td>838</td>
-<td>❌ Fail</td>
+<td>984</td>
+<td>✅ Pass</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>gom_mcem_nocov</code></td>
 <td>gom</td>
 <td>mcem</td>
 <td>nocov</td>
-<td>903</td>
-<td>❌ Fail</td>
+<td>992</td>
+<td>✅ Pass</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>wei_exact_fixed</code></td>
 <td>wei</td>
 <td>exact</td>
@@ -366,7 +374,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>1000</td>
 <td>✅ Pass</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>wei_exact_nocov</code></td>
 <td>wei</td>
 <td>exact</td>
@@ -374,29 +382,21 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td>1000</td>
 <td>✅ Pass</td>
 </tr>
-<tr class="even">
-<td><code>wei_exact_tvc</code></td>
-<td>wei</td>
-<td>exact</td>
-<td>tvc</td>
-<td>1000</td>
-<td>❌ Fail</td>
-</tr>
 <tr class="odd">
 <td><code>wei_mcem_fixed</code></td>
 <td>wei</td>
 <td>mcem</td>
 <td>fixed</td>
-<td>1000</td>
-<td>❌ Fail</td>
+<td>989</td>
+<td>✅ Pass</td>
 </tr>
 <tr class="even">
 <td><code>wei_mcem_nocov</code></td>
 <td>wei</td>
 <td>mcem</td>
 <td>nocov</td>
-<td>1000</td>
-<td>❌ Fail</td>
+<td>991</td>
+<td>✅ Pass</td>
 </tr>
 </tbody>
 </table>
@@ -408,70 +408,58 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <h3 class="anchored" data-anchor-id="exponential">Exponential</h3>
 <section id="exponential---exact-data---fixed-covariates" class="level4">
 <h4 class="anchored" data-anchor-id="exponential---exact-data---fixed-covariates">Exponential - Exact Data - Fixed Covariates</h4>
-<p><strong>Test:</strong> <code>exp_exact_fixed</code> | <strong>N:</strong> 1000 | <strong>Run:</strong> 2025-12-21T08:36:37.698 on <code>penalized_splines</code> (b1144da)</p>
+<p><strong>Test:</strong> <code>exp_exact_fixed</code> | <strong>N:</strong> 1000 | <strong>Run:</strong> 2025-12-31T14:02:17.661 on <code>penalized_splines</code> (b1144da)</p>
 </section>
 <section id="exponential---exact-data---no-covariates" class="level4">
 <h4 class="anchored" data-anchor-id="exponential---exact-data---no-covariates">Exponential - Exact Data - No Covariates</h4>
-<p><strong>Test:</strong> <code>exp_exact_nocov</code> | <strong>N:</strong> 1000 | <strong>Run:</strong> 2025-12-21T08:36:34.444 on <code>penalized_splines</code> (b1144da)</p>
-</section>
-<section id="exponential---exact-data---time-varying-covariates" class="level4">
-<h4 class="anchored" data-anchor-id="exponential---exact-data---time-varying-covariates">Exponential - Exact Data - Time-Varying Covariates</h4>
-<p><strong>Test:</strong> <code>exp_exact_tvc</code> | <strong>N:</strong> 1000 | <strong>Run:</strong> 2025-12-20T20:17:58.964 on <code>penalized_splines</code> (b1144da)</p>
+<p><strong>Test:</strong> <code>exp_exact_nocov</code> | <strong>N:</strong> 1000 | <strong>Run:</strong> 2025-12-31T14:02:12.307 on <code>penalized_splines</code> (b1144da)</p>
 </section>
 <section id="exponential---panel-data-markov---fixed-covariates" class="level4">
 <h4 class="anchored" data-anchor-id="exponential---panel-data-markov---fixed-covariates">Exponential - Panel Data (Markov) - Fixed Covariates</h4>
-<p><strong>Test:</strong> <code>exp_panel_fixed</code> | <strong>N:</strong> 986 | <strong>Run:</strong> 2025-12-21T08:38:41.967 on <code>penalized_splines</code> (b1144da)</p>
+<p><strong>Test:</strong> <code>exp_panel_fixed</code> | <strong>N:</strong> 986 | <strong>Run:</strong> 2025-12-31T14:04:03.838 on <code>penalized_splines</code> (b1144da)</p>
 </section>
 <section id="exponential---panel-data-markov---no-covariates" class="level4">
 <h4 class="anchored" data-anchor-id="exponential---panel-data-markov---no-covariates">Exponential - Panel Data (Markov) - No Covariates</h4>
-<p><strong>Test:</strong> <code>exp_panel_nocov</code> | <strong>N:</strong> 990 | <strong>Run:</strong> 2025-12-21T08:38:31.240 on <code>penalized_splines</code> (b1144da)</p>
+<p><strong>Test:</strong> <code>exp_panel_nocov</code> | <strong>N:</strong> 990 | <strong>Run:</strong> 2025-12-31T14:03:49.033 on <code>penalized_splines</code> (b1144da)</p>
 </section>
 </section>
 <section id="weibull" class="level3">
 <h3 class="anchored" data-anchor-id="weibull">Weibull</h3>
 <section id="weibull---exact-data---fixed-covariates" class="level4">
 <h4 class="anchored" data-anchor-id="weibull---exact-data---fixed-covariates">Weibull - Exact Data - Fixed Covariates</h4>
-<p><strong>Test:</strong> <code>wei_exact_fixed</code> | <strong>N:</strong> 1000 | <strong>Run:</strong> 2025-12-21T08:37:16.632 on <code>penalized_splines</code> (b1144da)</p>
+<p><strong>Test:</strong> <code>wei_exact_fixed</code> | <strong>N:</strong> 1000 | <strong>Run:</strong> 2025-12-31T14:03:01.014 on <code>penalized_splines</code> (b1144da)</p>
 </section>
 <section id="weibull---exact-data---no-covariates" class="level4">
 <h4 class="anchored" data-anchor-id="weibull---exact-data---no-covariates">Weibull - Exact Data - No Covariates</h4>
-<p><strong>Test:</strong> <code>wei_exact_nocov</code> | <strong>N:</strong> 1000 | <strong>Run:</strong> 2025-12-21T08:36:54.585 on <code>penalized_splines</code> (b1144da)</p>
-</section>
-<section id="weibull---exact-data---time-varying-covariates" class="level4">
-<h4 class="anchored" data-anchor-id="weibull---exact-data---time-varying-covariates">Weibull - Exact Data - Time-Varying Covariates</h4>
-<p><strong>Test:</strong> <code>wei_exact_tvc</code> | <strong>N:</strong> 1000 | <strong>Run:</strong> 2025-12-20T20:04:42.887 on <code>penalized_splines</code> (b1144da)</p>
+<p><strong>Test:</strong> <code>wei_exact_nocov</code> | <strong>N:</strong> 1000 | <strong>Run:</strong> 2025-12-31T14:02:36.902 on <code>penalized_splines</code> (b1144da)</p>
 </section>
 <section id="weibull---panel-data-mcem---fixed-covariates" class="level4">
 <h4 class="anchored" data-anchor-id="weibull---panel-data-mcem---fixed-covariates">Weibull - Panel Data (MCEM) - Fixed Covariates</h4>
-<p><strong>Test:</strong> <code>wei_mcem_fixed</code> | <strong>N:</strong> 1000 | <strong>Run:</strong> 2025-12-20T23:00:34.199 on <code>penalized_splines</code> (b1144da)</p>
+<p><strong>Test:</strong> <code>wei_mcem_fixed</code> | <strong>N:</strong> 989 | <strong>Run:</strong> 2025-12-31T14:06:07.737 on <code>penalized_splines</code> (b1144da)</p>
 </section>
 <section id="weibull---panel-data-mcem---no-covariates" class="level4">
 <h4 class="anchored" data-anchor-id="weibull---panel-data-mcem---no-covariates">Weibull - Panel Data (MCEM) - No Covariates</h4>
-<p><strong>Test:</strong> <code>wei_mcem_nocov</code> | <strong>N:</strong> 1000 | <strong>Run:</strong> 2025-12-20T22:46:39.341 on <code>penalized_splines</code> (b1144da)</p>
+<p><strong>Test:</strong> <code>wei_mcem_nocov</code> | <strong>N:</strong> 991 | <strong>Run:</strong> 2025-12-31T14:04:54.393 on <code>penalized_splines</code> (b1144da)</p>
 </section>
 </section>
 <section id="gompertz" class="level3">
 <h3 class="anchored" data-anchor-id="gompertz">Gompertz</h3>
 <section id="gompertz---exact-data---fixed-covariates" class="level4">
 <h4 class="anchored" data-anchor-id="gompertz---exact-data---fixed-covariates">Gompertz - Exact Data - Fixed Covariates</h4>
-<p><strong>Test:</strong> <code>gom_exact_fixed</code> | <strong>N:</strong> 1000 | <strong>Run:</strong> 2025-12-21T08:38:20.310 on <code>penalized_splines</code> (b1144da)</p>
+<p><strong>Test:</strong> <code>gom_exact_fixed</code> | <strong>N:</strong> 1000 | <strong>Run:</strong> 2025-12-31T14:03:32.394 on <code>penalized_splines</code> (b1144da)</p>
 </section>
 <section id="gompertz---exact-data---no-covariates" class="level4">
 <h4 class="anchored" data-anchor-id="gompertz---exact-data---no-covariates">Gompertz - Exact Data - No Covariates</h4>
-<p><strong>Test:</strong> <code>gom_exact_nocov</code> | <strong>N:</strong> 1000 | <strong>Run:</strong> 2025-12-21T08:37:32.462 on <code>penalized_splines</code> (b1144da)</p>
-</section>
-<section id="gompertz---exact-data---time-varying-covariates" class="level4">
-<h4 class="anchored" data-anchor-id="gompertz---exact-data---time-varying-covariates">Gompertz - Exact Data - Time-Varying Covariates</h4>
-<p><strong>Test:</strong> <code>gom_exact_tvc</code> | <strong>N:</strong> 1000 | <strong>Run:</strong> 2025-12-20T20:06:47.320 on <code>penalized_splines</code> (b1144da)</p>
+<p><strong>Test:</strong> <code>gom_exact_nocov</code> | <strong>N:</strong> 1000 | <strong>Run:</strong> 2025-12-31T14:03:15.037 on <code>penalized_splines</code> (b1144da)</p>
 </section>
 <section id="gompertz---panel-data-mcem---fixed-covariates" class="level4">
 <h4 class="anchored" data-anchor-id="gompertz---panel-data-mcem---fixed-covariates">Gompertz - Panel Data (MCEM) - Fixed Covariates</h4>
-<p><strong>Test:</strong> <code>gom_mcem_fixed</code> | <strong>N:</strong> 838 | <strong>Run:</strong> 2025-12-20T23:02:59.276 on <code>penalized_splines</code> (b1144da)</p>
+<p><strong>Test:</strong> <code>gom_mcem_fixed</code> | <strong>N:</strong> 984 | <strong>Run:</strong> 2025-12-31T14:07:32.031 on <code>penalized_splines</code> (b1144da)</p>
 </section>
 <section id="gompertz---panel-data-mcem---no-covariates" class="level4">
 <h4 class="anchored" data-anchor-id="gompertz---panel-data-mcem---no-covariates">Gompertz - Panel Data (MCEM) - No Covariates</h4>
-<p><strong>Test:</strong> <code>gom_mcem_nocov</code> | <strong>N:</strong> 903 | <strong>Run:</strong> 2025-12-20T23:01:08.536 on <code>penalized_splines</code> (b1144da)</p>
-<div id="5f89fd9d" class="cell" data-execution_count="5">
+<p><strong>Test:</strong> <code>gom_mcem_nocov</code> | <strong>N:</strong> 992 | <strong>Run:</strong> 2025-12-31T14:06:40.941 on <code>penalized_splines</code> (b1144da)</p>
+<div id="f1986efa" class="cell" data-execution_count="5">
 <div class="cell-output cell-output-stdout">
 <pre><code>
 ---
@@ -862,92 +850,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <pre><code>
 ---
 
-### Exponential - Exact Data - Time-Varying Covariates - Details
-
-
-**Parameter Recovery:**
-</code></pre>
-</div>
-<div class="cell-output cell-output-display">
-<div><div style="float: left;"><span>4×8 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
-<table class="data-frame caption-top table table-sm table-striped small">
-<thead>
-<tr class="header">
-<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Row</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">Parameter</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">True</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">Estimated</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">SE</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Lower</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Upper</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">RelError_pct</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">Covered</th>
-</tr>
-<tr class="subheader headerLastRow even">
-<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;"></th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
-<td style="text-align: left;">h12_beta</td>
-<td style="text-align: right;">0.5</td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: right;">100.0</td>
-<td style="text-align: left;">✗</td>
-</tr>
-<tr class="even">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
-<td style="text-align: left;">h12_log_rate</td>
-<td style="text-align: right;">-1.89712</td>
-<td style="text-align: right;">-1.84645</td>
-<td style="text-align: right;">0.0332045</td>
-<td style="text-align: right;">-1.91154</td>
-<td style="text-align: right;">-1.78137</td>
-<td style="text-align: right;">2.67065</td>
-<td style="text-align: left;">✓</td>
-</tr>
-<tr class="odd">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">3</td>
-<td style="text-align: left;">h23_beta</td>
-<td style="text-align: right;">0.5</td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: right;">100.0</td>
-<td style="text-align: left;">✗</td>
-</tr>
-<tr class="even">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
-<td style="text-align: left;">h23_log_rate</td>
-<td style="text-align: right;">-2.12026</td>
-<td style="text-align: right;">-2.09038</td>
-<td style="text-align: right;">0.0403567</td>
-<td style="text-align: right;">-2.16948</td>
-<td style="text-align: right;">-2.01128</td>
-<td style="text-align: right;">1.40959</td>
-<td style="text-align: left;">✓</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>
----
-
 ### Exponential - Panel Data (Markov) - Fixed Covariates - Details
 
 
@@ -1136,66 +1038,66 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
 <td style="text-align: left;">h12_beta</td>
 <td style="text-align: right;">0.5</td>
-<td style="text-align: right;">0.584861</td>
-<td style="text-align: right;">0.0902646</td>
-<td style="text-align: right;">0.407942</td>
-<td style="text-align: right;">0.76178</td>
-<td style="text-align: right;">16.9722</td>
+<td style="text-align: right;">0.412447</td>
+<td style="text-align: right;">0.0648108</td>
+<td style="text-align: right;">0.285418</td>
+<td style="text-align: right;">0.539476</td>
+<td style="text-align: right;">17.5106</td>
 <td style="text-align: left;">✓</td>
 </tr>
 <tr class="even">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
 <td style="text-align: left;">h12_log_rate</td>
 <td style="text-align: right;">-1.89712</td>
-<td style="text-align: right;">-1.88435</td>
-<td style="text-align: right;">0.092737</td>
-<td style="text-align: right;">-2.06612</td>
-<td style="text-align: right;">-1.70259</td>
-<td style="text-align: right;">0.673068</td>
+<td style="text-align: right;">-1.77672</td>
+<td style="text-align: right;">0.0638228</td>
+<td style="text-align: right;">-1.90181</td>
+<td style="text-align: right;">-1.65163</td>
+<td style="text-align: right;">6.34647</td>
 <td style="text-align: left;">✓</td>
 </tr>
 <tr class="odd">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">3</td>
 <td style="text-align: left;">h12_shape</td>
 <td style="text-align: right;">0.05</td>
-<td style="text-align: right;">0.00603061</td>
-<td style="text-align: right;">0.0820083</td>
-<td style="text-align: right;">-0.154706</td>
-<td style="text-align: right;">0.166767</td>
-<td style="text-align: right;">87.9388</td>
+<td style="text-align: right;">0.0371486</td>
+<td style="text-align: right;">0.00986178</td>
+<td style="text-align: right;">0.0178195</td>
+<td style="text-align: right;">0.0564777</td>
+<td style="text-align: right;">25.7028</td>
 <td style="text-align: left;">✓</td>
 </tr>
 <tr class="even">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
 <td style="text-align: left;">h23_beta</td>
 <td style="text-align: right;">0.5</td>
-<td style="text-align: right;">0.556102</td>
-<td style="text-align: right;">0.134977</td>
-<td style="text-align: right;">0.291547</td>
-<td style="text-align: right;">0.820656</td>
-<td style="text-align: right;">11.2203</td>
+<td style="text-align: right;">0.53814</td>
+<td style="text-align: right;">0.0711483</td>
+<td style="text-align: right;">0.398689</td>
+<td style="text-align: right;">0.677591</td>
+<td style="text-align: right;">7.628</td>
 <td style="text-align: left;">✓</td>
 </tr>
 <tr class="odd">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">5</td>
 <td style="text-align: left;">h23_log_rate</td>
 <td style="text-align: right;">-2.12026</td>
-<td style="text-align: right;">-2.18194</td>
-<td style="text-align: right;">0.151832</td>
-<td style="text-align: right;">-2.47953</td>
-<td style="text-align: right;">-1.88434</td>
-<td style="text-align: right;">2.90869</td>
+<td style="text-align: right;">-2.14863</td>
+<td style="text-align: right;">0.0727701</td>
+<td style="text-align: right;">-2.29126</td>
+<td style="text-align: right;">-2.006</td>
+<td style="text-align: right;">1.3377</td>
 <td style="text-align: left;">✓</td>
 </tr>
 <tr class="even">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">6</td>
 <td style="text-align: left;">h23_shape</td>
 <td style="text-align: right;">0.03</td>
-<td style="text-align: right;">0.0663068</td>
-<td style="text-align: right;">0.127546</td>
-<td style="text-align: right;">-0.183683</td>
-<td style="text-align: right;">0.316297</td>
-<td style="text-align: right;">121.023</td>
+<td style="text-align: right;">0.0384585</td>
+<td style="text-align: right;">0.0109827</td>
+<td style="text-align: right;">0.0169325</td>
+<td style="text-align: right;">0.0599845</td>
+<td style="text-align: right;">28.1951</td>
 <td style="text-align: left;">✓</td>
 </tr>
 </tbody>
@@ -1244,152 +1146,44 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
 <td style="text-align: left;">h12_log_rate</td>
 <td style="text-align: right;">-1.89712</td>
-<td style="text-align: right;">-1.80132</td>
-<td style="text-align: right;">0.0936246</td>
-<td style="text-align: right;">-1.98483</td>
-<td style="text-align: right;">-1.61782</td>
-<td style="text-align: right;">5.0495</td>
+<td style="text-align: right;">-1.87834</td>
+<td style="text-align: right;">0.0530357</td>
+<td style="text-align: right;">-1.98229</td>
+<td style="text-align: right;">-1.77439</td>
+<td style="text-align: right;">0.989759</td>
 <td style="text-align: left;">✓</td>
 </tr>
 <tr class="even">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
 <td style="text-align: left;">h12_shape</td>
 <td style="text-align: right;">0.05</td>
-<td style="text-align: right;">0.0186752</td>
-<td style="text-align: right;">0.065939</td>
-<td style="text-align: right;">-0.110565</td>
-<td style="text-align: right;">0.147916</td>
-<td style="text-align: right;">62.6495</td>
+<td style="text-align: right;">0.04426</td>
+<td style="text-align: right;">0.00878205</td>
+<td style="text-align: right;">0.0270472</td>
+<td style="text-align: right;">0.0614728</td>
+<td style="text-align: right;">11.48</td>
 <td style="text-align: left;">✓</td>
 </tr>
 <tr class="odd">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">3</td>
 <td style="text-align: left;">h23_log_rate</td>
 <td style="text-align: right;">-2.12026</td>
-<td style="text-align: right;">-2.08191</td>
-<td style="text-align: right;">0.172197</td>
-<td style="text-align: right;">-2.41942</td>
-<td style="text-align: right;">-1.74441</td>
-<td style="text-align: right;">1.80871</td>
+<td style="text-align: right;">-2.09246</td>
+<td style="text-align: right;">0.0628666</td>
+<td style="text-align: right;">-2.21568</td>
+<td style="text-align: right;">-1.96924</td>
+<td style="text-align: right;">1.31137</td>
 <td style="text-align: left;">✓</td>
 </tr>
 <tr class="even">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
 <td style="text-align: left;">h23_shape</td>
 <td style="text-align: right;">0.03</td>
-<td style="text-align: right;">0.0185745</td>
-<td style="text-align: right;">0.106198</td>
-<td style="text-align: right;">-0.189574</td>
-<td style="text-align: right;">0.226723</td>
-<td style="text-align: right;">38.0851</td>
-<td style="text-align: left;">✓</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>
----
-
-### Gompertz - Exact Data - Time-Varying Covariates - Details
-
-
-**Parameter Recovery:**
-</code></pre>
-</div>
-<div class="cell-output cell-output-display">
-<div><div style="float: left;"><span>6×8 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
-<table class="data-frame caption-top table table-sm table-striped small">
-<thead>
-<tr class="header">
-<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Row</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">Parameter</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">True</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">Estimated</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">SE</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Lower</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Upper</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">RelError_pct</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">Covered</th>
-</tr>
-<tr class="subheader headerLastRow even">
-<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;"></th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
-<td style="text-align: left;">h12_beta</td>
-<td style="text-align: right;">0.5</td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: right;">100.0</td>
-<td style="text-align: left;">✗</td>
-</tr>
-<tr class="even">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
-<td style="text-align: left;">h12_log_rate</td>
-<td style="text-align: right;">-1.89712</td>
-<td style="text-align: right;">-1.80132</td>
-<td style="text-align: right;">0.0936246</td>
-<td style="text-align: right;">-1.98483</td>
-<td style="text-align: right;">-1.61782</td>
-<td style="text-align: right;">5.0495</td>
-<td style="text-align: left;">✓</td>
-</tr>
-<tr class="odd">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">3</td>
-<td style="text-align: left;">h12_shape</td>
-<td style="text-align: right;">0.05</td>
-<td style="text-align: right;">0.0186752</td>
-<td style="text-align: right;">0.065939</td>
-<td style="text-align: right;">-0.110565</td>
-<td style="text-align: right;">0.147916</td>
-<td style="text-align: right;">62.6495</td>
-<td style="text-align: left;">✓</td>
-</tr>
-<tr class="even">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
-<td style="text-align: left;">h23_beta</td>
-<td style="text-align: right;">0.5</td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: right;">100.0</td>
-<td style="text-align: left;">✗</td>
-</tr>
-<tr class="odd">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">5</td>
-<td style="text-align: left;">h23_log_rate</td>
-<td style="text-align: right;">-2.12026</td>
-<td style="text-align: right;">-2.08191</td>
-<td style="text-align: right;">0.172197</td>
-<td style="text-align: right;">-2.41942</td>
-<td style="text-align: right;">-1.74441</td>
-<td style="text-align: right;">1.80871</td>
-<td style="text-align: left;">✓</td>
-</tr>
-<tr class="even">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">6</td>
-<td style="text-align: left;">h23_shape</td>
-<td style="text-align: right;">0.03</td>
-<td style="text-align: right;">0.0185745</td>
-<td style="text-align: right;">0.106198</td>
-<td style="text-align: right;">-0.189574</td>
-<td style="text-align: right;">0.226723</td>
-<td style="text-align: right;">38.0851</td>
+<td style="text-align: right;">0.0345311</td>
+<td style="text-align: right;">0.0117755</td>
+<td style="text-align: right;">0.0114512</td>
+<td style="text-align: right;">0.057611</td>
+<td style="text-align: right;">15.1037</td>
 <td style="text-align: left;">✓</td>
 </tr>
 </tbody>
@@ -1438,67 +1232,67 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
 <td style="text-align: left;">h12_beta</td>
 <td style="text-align: right;">0.5</td>
-<td style="text-align: right;">-0.0471565</td>
-<td style="text-align: right;">0.344318</td>
-<td style="text-align: right;">-0.72202</td>
-<td style="text-align: right;">0.627707</td>
-<td style="text-align: right;">109.431</td>
-<td style="text-align: left;">✓</td>
+<td style="text-align: right;">0.284498</td>
+<td style="text-align: right;">0.0755857</td>
+<td style="text-align: right;">0.13635</td>
+<td style="text-align: right;">0.432646</td>
+<td style="text-align: right;">43.1005</td>
+<td style="text-align: left;">✗</td>
 </tr>
 <tr class="even">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
 <td style="text-align: left;">h12_log_rate</td>
 <td style="text-align: right;">-1.89712</td>
-<td style="text-align: right;">0.737091</td>
-<td style="text-align: right;">0.692153</td>
-<td style="text-align: right;">-0.61953</td>
-<td style="text-align: right;">2.09371</td>
-<td style="text-align: right;">138.853</td>
+<td style="text-align: right;">-1.73651</td>
+<td style="text-align: right;">0.0791911</td>
+<td style="text-align: right;">-1.89172</td>
+<td style="text-align: right;">-1.58129</td>
+<td style="text-align: right;">8.46606</td>
 <td style="text-align: left;">✗</td>
 </tr>
 <tr class="odd">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">3</td>
 <td style="text-align: left;">h12_shape</td>
 <td style="text-align: right;">0.05</td>
-<td style="text-align: right;">0.326248</td>
-<td style="text-align: right;">0.496625</td>
-<td style="text-align: right;">-0.647137</td>
-<td style="text-align: right;">1.29963</td>
-<td style="text-align: right;">552.496</td>
-<td style="text-align: left;">✓</td>
+<td style="text-align: right;">0.168865</td>
+<td style="text-align: right;">0.0178191</td>
+<td style="text-align: right;">0.13394</td>
+<td style="text-align: right;">0.20379</td>
+<td style="text-align: right;">237.73</td>
+<td style="text-align: left;">✗</td>
 </tr>
 <tr class="even">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
 <td style="text-align: left;">h23_beta</td>
 <td style="text-align: right;">0.5</td>
-<td style="text-align: right;">0.0723904</td>
-<td style="text-align: right;">0.309514</td>
-<td style="text-align: right;">-0.534258</td>
-<td style="text-align: right;">0.679039</td>
-<td style="text-align: right;">85.5219</td>
-<td style="text-align: left;">✓</td>
+<td style="text-align: right;">0.119758</td>
+<td style="text-align: right;">0.0867347</td>
+<td style="text-align: right;">-0.0502423</td>
+<td style="text-align: right;">0.289758</td>
+<td style="text-align: right;">76.0485</td>
+<td style="text-align: left;">✗</td>
 </tr>
 <tr class="odd">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">5</td>
 <td style="text-align: left;">h23_log_rate</td>
 <td style="text-align: right;">-2.12026</td>
-<td style="text-align: right;">0.503514</td>
-<td style="text-align: right;">0.380604</td>
-<td style="text-align: right;">-0.242469</td>
-<td style="text-align: right;">1.2495</td>
-<td style="text-align: right;">123.748</td>
+<td style="text-align: right;">-1.69718</td>
+<td style="text-align: right;">0.0946568</td>
+<td style="text-align: right;">-1.8827</td>
+<td style="text-align: right;">-1.51165</td>
+<td style="text-align: right;">19.9545</td>
 <td style="text-align: left;">✗</td>
 </tr>
 <tr class="even">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">6</td>
 <td style="text-align: left;">h23_shape</td>
 <td style="text-align: right;">0.03</td>
-<td style="text-align: right;">0.209498</td>
-<td style="text-align: right;">0.387744</td>
-<td style="text-align: right;">-0.550481</td>
-<td style="text-align: right;">0.969477</td>
-<td style="text-align: right;">598.328</td>
-<td style="text-align: left;">✓</td>
+<td style="text-align: right;">0.191964</td>
+<td style="text-align: right;">0.0210166</td>
+<td style="text-align: right;">0.150771</td>
+<td style="text-align: right;">0.233156</td>
+<td style="text-align: right;">539.878</td>
+<td style="text-align: left;">✗</td>
 </tr>
 </tbody>
 </table>
@@ -1546,45 +1340,281 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
 <td style="text-align: left;">h12_log_rate</td>
 <td style="text-align: right;">-1.89712</td>
-<td style="text-align: right;">0.114879</td>
-<td style="text-align: right;">0.342961</td>
-<td style="text-align: right;">-0.557325</td>
-<td style="text-align: right;">0.787084</td>
-<td style="text-align: right;">106.055</td>
-<td style="text-align: left;">✗</td>
+<td style="text-align: right;">-1.84424</td>
+<td style="text-align: right;">0.0694454</td>
+<td style="text-align: right;">-1.98035</td>
+<td style="text-align: right;">-1.70812</td>
+<td style="text-align: right;">2.78757</td>
+<td style="text-align: left;">✓</td>
 </tr>
 <tr class="even">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
 <td style="text-align: left;">h12_shape</td>
 <td style="text-align: right;">0.05</td>
-<td style="text-align: right;">0.499918</td>
-<td style="text-align: right;">0.279923</td>
-<td style="text-align: right;">-0.0487301</td>
-<td style="text-align: right;">1.04857</td>
-<td style="text-align: right;">899.837</td>
-<td style="text-align: left;">✓</td>
+<td style="text-align: right;">0.190753</td>
+<td style="text-align: right;">0.0166652</td>
+<td style="text-align: right;">0.158089</td>
+<td style="text-align: right;">0.223416</td>
+<td style="text-align: right;">281.505</td>
+<td style="text-align: left;">✗</td>
 </tr>
 <tr class="odd">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">3</td>
 <td style="text-align: left;">h23_log_rate</td>
 <td style="text-align: right;">-2.12026</td>
-<td style="text-align: right;">-0.220047</td>
-<td style="text-align: right;">0.267144</td>
-<td style="text-align: right;">-0.743649</td>
-<td style="text-align: right;">0.303556</td>
-<td style="text-align: right;">89.6217</td>
+<td style="text-align: right;">-1.55959</td>
+<td style="text-align: right;">0.0871115</td>
+<td style="text-align: right;">-1.73033</td>
+<td style="text-align: right;">-1.38885</td>
+<td style="text-align: right;">26.4435</td>
 <td style="text-align: left;">✗</td>
 </tr>
 <tr class="even">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
 <td style="text-align: left;">h23_shape</td>
 <td style="text-align: right;">0.03</td>
-<td style="text-align: right;">0.793044</td>
-<td style="text-align: right;">0.231301</td>
-<td style="text-align: right;">0.339695</td>
-<td style="text-align: right;">1.24639</td>
-<td style="text-align: right;">2543.48</td>
+<td style="text-align: right;">0.199919</td>
+<td style="text-align: right;">0.0250899</td>
+<td style="text-align: right;">0.150742</td>
+<td style="text-align: right;">0.249095</td>
+<td style="text-align: right;">566.395</td>
 <td style="text-align: left;">✗</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+---
+
+### MCEM panel data: exp_panel_nocov - Details
+
+
+**Parameter Recovery:**
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div><div style="float: left;"><span>2×8 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
+<table class="data-frame caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Row</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Parameter</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">True</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Estimated</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">SE</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Lower</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Upper</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">RelError_pct</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Covered</th>
+</tr>
+<tr class="subheader headerLastRow even">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;"></th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
+<td style="text-align: left;">h12_log_rate</td>
+<td style="text-align: right;">-1.60944</td>
+<td style="text-align: right;">-1.6147</td>
+<td style="text-align: right;">0.0328068</td>
+<td style="text-align: right;">-1.679</td>
+<td style="text-align: right;">-1.5504</td>
+<td style="text-align: right;">0.327166</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
+<td style="text-align: left;">h23_log_rate</td>
+<td style="text-align: right;">-1.89712</td>
+<td style="text-align: right;">-1.94492</td>
+<td style="text-align: right;">0.03863</td>
+<td style="text-align: right;">-2.02064</td>
+<td style="text-align: right;">-1.86921</td>
+<td style="text-align: right;">2.51973</td>
+<td style="text-align: left;">✓</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+---
+
+### MCEM panel data: gom_panel_nocov - Details
+
+
+**Parameter Recovery:**
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div><div style="float: left;"><span>4×8 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
+<table class="data-frame caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Row</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Parameter</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">True</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Estimated</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">SE</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Lower</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Upper</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">RelError_pct</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Covered</th>
+</tr>
+<tr class="subheader headerLastRow even">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;"></th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
+<td style="text-align: left;">h12_log_rate</td>
+<td style="text-align: right;">-3.21888</td>
+<td style="text-align: right;">-3.24716</td>
+<td style="text-align: right;">0.0653592</td>
+<td style="text-align: right;">-3.37526</td>
+<td style="text-align: right;">-3.11906</td>
+<td style="text-align: right;">0.878688</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
+<td style="text-align: left;">h12_shape</td>
+<td style="text-align: right;">0.08</td>
+<td style="text-align: right;">0.0796684</td>
+<td style="text-align: right;">0.0051365</td>
+<td style="text-align: right;">0.0696008</td>
+<td style="text-align: right;">0.0897359</td>
+<td style="text-align: right;">0.414527</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">3</td>
+<td style="text-align: left;">h23_log_rate</td>
+<td style="text-align: right;">-3.50656</td>
+<td style="text-align: right;">-3.60303</td>
+<td style="text-align: right;">0.0920962</td>
+<td style="text-align: right;">-3.78354</td>
+<td style="text-align: right;">-3.42253</td>
+<td style="text-align: right;">2.75132</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
+<td style="text-align: left;">h23_shape</td>
+<td style="text-align: right;">0.06</td>
+<td style="text-align: right;">0.0696041</td>
+<td style="text-align: right;">0.00876165</td>
+<td style="text-align: right;">0.0524312</td>
+<td style="text-align: right;">0.0867769</td>
+<td style="text-align: right;">16.0068</td>
+<td style="text-align: left;">✓</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+---
+
+### MCEM panel data: wei_panel_nocov - Details
+
+
+**Parameter Recovery:**
+</code></pre>
+</div>
+<div class="cell-output cell-output-display">
+<div><div style="float: left;"><span>4×8 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
+<table class="data-frame caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Row</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Parameter</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">True</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Estimated</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">SE</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Lower</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Upper</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">RelError_pct</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Covered</th>
+</tr>
+<tr class="subheader headerLastRow even">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;"></th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
+<td style="text-align: left;">h12_log_scale</td>
+<td style="text-align: right;">-1.89712</td>
+<td style="text-align: right;">-1.89708</td>
+<td style="text-align: right;">0.0763037</td>
+<td style="text-align: right;">-2.04663</td>
+<td style="text-align: right;">-1.74752</td>
+<td style="text-align: right;">0.00235844</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
+<td style="text-align: left;">h12_log_shape</td>
+<td style="text-align: right;">0.262364</td>
+<td style="text-align: right;">0.229719</td>
+<td style="text-align: right;">0.0298515</td>
+<td style="text-align: right;">0.171211</td>
+<td style="text-align: right;">0.288228</td>
+<td style="text-align: right;">12.4425</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">3</td>
+<td style="text-align: left;">h23_log_scale</td>
+<td style="text-align: right;">-2.12026</td>
+<td style="text-align: right;">-2.07755</td>
+<td style="text-align: right;">0.0847646</td>
+<td style="text-align: right;">-2.24369</td>
+<td style="text-align: right;">-1.91141</td>
+<td style="text-align: right;">2.01459</td>
+<td style="text-align: left;">✓</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
+<td style="text-align: left;">h23_log_shape</td>
+<td style="text-align: right;">0.0953102</td>
+<td style="text-align: right;">0.082653</td>
+<td style="text-align: right;">0.0358501</td>
+<td style="text-align: right;">0.0123868</td>
+<td style="text-align: right;">0.152919</td>
+<td style="text-align: right;">13.28</td>
+<td style="text-align: left;">✓</td>
 </tr>
 </tbody>
 </table>
@@ -1632,67 +1662,67 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
 <td style="text-align: left;">h12_beta</td>
 <td style="text-align: right;">0.5</td>
-<td style="text-align: right;">0.440567</td>
-<td style="text-align: right;">0.0644436</td>
-<td style="text-align: right;">0.314258</td>
-<td style="text-align: right;">0.566876</td>
-<td style="text-align: right;">11.8866</td>
+<td style="text-align: right;">0.561068</td>
+<td style="text-align: right;">0.0647565</td>
+<td style="text-align: right;">0.434145</td>
+<td style="text-align: right;">0.687991</td>
+<td style="text-align: right;">12.2136</td>
 <td style="text-align: left;">✓</td>
 </tr>
 <tr class="even">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
 <td style="text-align: left;">h12_log_scale</td>
-<td style="text-align: right;">1.45932</td>
-<td style="text-align: right;">1.46481</td>
-<td style="text-align: right;">0.0246363</td>
-<td style="text-align: right;">1.41653</td>
-<td style="text-align: right;">1.5131</td>
-<td style="text-align: right;">0.376213</td>
+<td style="text-align: right;">-1.89712</td>
+<td style="text-align: right;">-1.89595</td>
+<td style="text-align: right;">0.0720161</td>
+<td style="text-align: right;">-2.0371</td>
+<td style="text-align: right;">-1.7548</td>
+<td style="text-align: right;">0.0616512</td>
 <td style="text-align: left;">✓</td>
 </tr>
 <tr class="odd">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">3</td>
 <td style="text-align: left;">h12_log_shape</td>
-<td style="text-align: right;">0.262364</td>
-<td style="text-align: right;">0.317475</td>
-<td style="text-align: right;">0.0443599</td>
-<td style="text-align: right;">0.230529</td>
-<td style="text-align: right;">0.40442</td>
-<td style="text-align: right;">21.0053</td>
+<td style="text-align: right;">0.182322</td>
+<td style="text-align: right;">0.167014</td>
+<td style="text-align: right;">0.0250907</td>
+<td style="text-align: right;">0.117836</td>
+<td style="text-align: right;">0.216192</td>
+<td style="text-align: right;">8.39594</td>
 <td style="text-align: left;">✓</td>
 </tr>
 <tr class="even">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
 <td style="text-align: left;">h23_beta</td>
 <td style="text-align: right;">0.5</td>
-<td style="text-align: right;">0.43163</td>
-<td style="text-align: right;">0.0642007</td>
-<td style="text-align: right;">0.305796</td>
-<td style="text-align: right;">0.557463</td>
-<td style="text-align: right;">13.6741</td>
+<td style="text-align: right;">0.488059</td>
+<td style="text-align: right;">0.0695899</td>
+<td style="text-align: right;">0.351662</td>
+<td style="text-align: right;">0.624455</td>
+<td style="text-align: right;">2.38828</td>
 <td style="text-align: left;">✓</td>
 </tr>
 <tr class="odd">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">5</td>
 <td style="text-align: left;">h23_log_scale</td>
-<td style="text-align: right;">2.65033</td>
-<td style="text-align: right;">2.62185</td>
-<td style="text-align: right;">0.0244304</td>
-<td style="text-align: right;">2.57397</td>
-<td style="text-align: right;">2.66974</td>
-<td style="text-align: right;">1.07441</td>
+<td style="text-align: right;">-2.12026</td>
+<td style="text-align: right;">-2.00192</td>
+<td style="text-align: right;">0.0771521</td>
+<td style="text-align: right;">-2.15314</td>
+<td style="text-align: right;">-1.8507</td>
+<td style="text-align: right;">5.58149</td>
 <td style="text-align: left;">✓</td>
 </tr>
 <tr class="even">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">6</td>
 <td style="text-align: left;">h23_log_shape</td>
-<td style="text-align: right;">-0.223144</td>
-<td style="text-align: right;">-0.160085</td>
-<td style="text-align: right;">0.0465926</td>
-<td style="text-align: right;">-0.251407</td>
-<td style="text-align: right;">-0.0687636</td>
-<td style="text-align: right;">28.2591</td>
-<td style="text-align: left;">✓</td>
+<td style="text-align: right;">0.0953102</td>
+<td style="text-align: right;">0.0382591</td>
+<td style="text-align: right;">0.0285863</td>
+<td style="text-align: right;">-0.01777</td>
+<td style="text-align: right;">0.0942882</td>
+<td style="text-align: right;">59.8583</td>
+<td style="text-align: left;">✗</td>
 </tr>
 </tbody>
 </table>
@@ -1739,153 +1769,45 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tr class="odd">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
 <td style="text-align: left;">h12_log_scale</td>
-<td style="text-align: right;">1.45932</td>
-<td style="text-align: right;">1.46478</td>
-<td style="text-align: right;">0.0246503</td>
-<td style="text-align: right;">1.41646</td>
-<td style="text-align: right;">1.51309</td>
-<td style="text-align: right;">0.373686</td>
+<td style="text-align: right;">-1.89712</td>
+<td style="text-align: right;">-1.90817</td>
+<td style="text-align: right;">0.0664495</td>
+<td style="text-align: right;">-2.03842</td>
+<td style="text-align: right;">-1.77793</td>
+<td style="text-align: right;">0.582702</td>
 <td style="text-align: left;">✓</td>
 </tr>
 <tr class="even">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
 <td style="text-align: left;">h12_log_shape</td>
-<td style="text-align: right;">0.262364</td>
-<td style="text-align: right;">0.286588</td>
-<td style="text-align: right;">0.0317991</td>
-<td style="text-align: right;">0.224261</td>
-<td style="text-align: right;">0.348914</td>
-<td style="text-align: right;">9.23273</td>
+<td style="text-align: right;">0.182322</td>
+<td style="text-align: right;">0.172548</td>
+<td style="text-align: right;">0.0255417</td>
+<td style="text-align: right;">0.122486</td>
+<td style="text-align: right;">0.22261</td>
+<td style="text-align: right;">5.36051</td>
 <td style="text-align: left;">✓</td>
 </tr>
 <tr class="odd">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">3</td>
 <td style="text-align: left;">h23_log_scale</td>
-<td style="text-align: right;">2.65033</td>
-<td style="text-align: right;">2.62155</td>
-<td style="text-align: right;">0.0244354</td>
-<td style="text-align: right;">2.57365</td>
-<td style="text-align: right;">2.66944</td>
-<td style="text-align: right;">1.08602</td>
-<td style="text-align: left;">✓</td>
+<td style="text-align: right;">-2.12026</td>
+<td style="text-align: right;">-1.92772</td>
+<td style="text-align: right;">0.0705533</td>
+<td style="text-align: right;">-2.066</td>
+<td style="text-align: right;">-1.78943</td>
+<td style="text-align: right;">9.08117</td>
+<td style="text-align: left;">✗</td>
 </tr>
 <tr class="even">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
 <td style="text-align: left;">h23_log_shape</td>
-<td style="text-align: right;">-0.223144</td>
-<td style="text-align: right;">-0.186833</td>
-<td style="text-align: right;">0.0350368</td>
-<td style="text-align: right;">-0.255505</td>
-<td style="text-align: right;">-0.118161</td>
-<td style="text-align: right;">16.2722</td>
-<td style="text-align: left;">✓</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-<div class="cell-output cell-output-stdout">
-<pre><code>
----
-
-### Weibull - Exact Data - Time-Varying Covariates - Details
-
-
-**Parameter Recovery:**
-</code></pre>
-</div>
-<div class="cell-output cell-output-display">
-<div><div style="float: left;"><span>6×8 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
-<table class="data-frame caption-top table table-sm table-striped small">
-<thead>
-<tr class="header">
-<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Row</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">Parameter</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">True</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">Estimated</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">SE</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Lower</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">CI_Upper</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">RelError_pct</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th">Covered</th>
-</tr>
-<tr class="subheader headerLastRow even">
-<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;"></th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
-<td style="text-align: left;">h12_beta</td>
-<td style="text-align: right;">0.5</td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: right;">100.0</td>
-<td style="text-align: left;">✗</td>
-</tr>
-<tr class="even">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
-<td style="text-align: left;">h12_log_scale</td>
-<td style="text-align: right;">1.45932</td>
-<td style="text-align: right;">1.46478</td>
-<td style="text-align: right;">0.0246503</td>
-<td style="text-align: right;">1.41646</td>
-<td style="text-align: right;">1.51309</td>
-<td style="text-align: right;">0.373686</td>
-<td style="text-align: left;">✓</td>
-</tr>
-<tr class="odd">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">3</td>
-<td style="text-align: left;">h12_log_shape</td>
-<td style="text-align: right;">0.262364</td>
-<td style="text-align: right;">0.286588</td>
-<td style="text-align: right;">0.0317991</td>
-<td style="text-align: right;">0.224261</td>
-<td style="text-align: right;">0.348914</td>
-<td style="text-align: right;">9.23273</td>
-<td style="text-align: left;">✓</td>
-</tr>
-<tr class="even">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
-<td style="text-align: left;">h23_beta</td>
-<td style="text-align: right;">0.5</td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: right;">100.0</td>
-<td style="text-align: left;">✗</td>
-</tr>
-<tr class="odd">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">5</td>
-<td style="text-align: left;">h23_log_scale</td>
-<td style="text-align: right;">2.65033</td>
-<td style="text-align: right;">2.62155</td>
-<td style="text-align: right;">0.0244354</td>
-<td style="text-align: right;">2.57365</td>
-<td style="text-align: right;">2.66944</td>
-<td style="text-align: right;">1.08602</td>
-<td style="text-align: left;">✓</td>
-</tr>
-<tr class="even">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">6</td>
-<td style="text-align: left;">h23_log_shape</td>
-<td style="text-align: right;">-0.223144</td>
-<td style="text-align: right;">-0.186833</td>
-<td style="text-align: right;">0.0350368</td>
-<td style="text-align: right;">-0.255505</td>
-<td style="text-align: right;">-0.118161</td>
-<td style="text-align: right;">16.2722</td>
+<td style="text-align: right;">0.0953102</td>
+<td style="text-align: right;">0.0359114</td>
+<td style="text-align: right;">0.0305228</td>
+<td style="text-align: right;">-0.0239132</td>
+<td style="text-align: right;">0.0957361</td>
+<td style="text-align: right;">62.3215</td>
 <td style="text-align: left;">✓</td>
 </tr>
 </tbody>
@@ -1934,66 +1856,66 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
 <td style="text-align: left;">h12_beta</td>
 <td style="text-align: right;">0.5</td>
-<td style="text-align: right;">0.8345</td>
-<td style="text-align: right;">0.687274</td>
-<td style="text-align: right;">-0.512557</td>
-<td style="text-align: right;">2.18156</td>
-<td style="text-align: right;">66.8999</td>
-<td style="text-align: left;">✓</td>
+<td style="text-align: right;">0.236104</td>
+<td style="text-align: right;">0.0734473</td>
+<td style="text-align: right;">0.0921474</td>
+<td style="text-align: right;">0.380061</td>
+<td style="text-align: right;">52.7792</td>
+<td style="text-align: left;">✗</td>
 </tr>
 <tr class="even">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
 <td style="text-align: left;">h12_log_scale</td>
-<td style="text-align: right;">1.45932</td>
-<td style="text-align: right;">2.00901</td>
-<td style="text-align: right;">0.558313</td>
-<td style="text-align: right;">0.91472</td>
-<td style="text-align: right;">3.10331</td>
-<td style="text-align: right;">37.6675</td>
-<td style="text-align: left;">✓</td>
+<td style="text-align: right;">-1.89712</td>
+<td style="text-align: right;">-1.52076</td>
+<td style="text-align: right;">0.080301</td>
+<td style="text-align: right;">-1.67815</td>
+<td style="text-align: right;">-1.36337</td>
+<td style="text-align: right;">19.8387</td>
+<td style="text-align: left;">✗</td>
 </tr>
 <tr class="odd">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">3</td>
 <td style="text-align: left;">h12_log_shape</td>
-<td style="text-align: right;">0.262364</td>
-<td style="text-align: right;">2.16521</td>
-<td style="text-align: right;">0.750666</td>
-<td style="text-align: right;">0.693901</td>
-<td style="text-align: right;">3.63651</td>
-<td style="text-align: right;">725.268</td>
-<td style="text-align: left;">✗</td>
+<td style="text-align: right;">0.182322</td>
+<td style="text-align: right;">0.227693</td>
+<td style="text-align: right;">0.0327314</td>
+<td style="text-align: right;">0.16354</td>
+<td style="text-align: right;">0.291847</td>
+<td style="text-align: right;">24.8855</td>
+<td style="text-align: left;">✓</td>
 </tr>
 <tr class="even">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
 <td style="text-align: left;">h23_beta</td>
 <td style="text-align: right;">0.5</td>
-<td style="text-align: right;">0.399131</td>
-<td style="text-align: right;">0.131722</td>
-<td style="text-align: right;">0.140956</td>
-<td style="text-align: right;">0.657306</td>
-<td style="text-align: right;">20.1738</td>
-<td style="text-align: left;">✓</td>
+<td style="text-align: right;">0.239506</td>
+<td style="text-align: right;">0.0835806</td>
+<td style="text-align: right;">0.0756882</td>
+<td style="text-align: right;">0.403324</td>
+<td style="text-align: right;">52.0988</td>
+<td style="text-align: left;">✗</td>
 </tr>
 <tr class="odd">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">5</td>
 <td style="text-align: left;">h23_log_scale</td>
-<td style="text-align: right;">2.65033</td>
-<td style="text-align: right;">0.729106</td>
-<td style="text-align: right;">0.29099</td>
-<td style="text-align: right;">0.158765</td>
-<td style="text-align: right;">1.29945</td>
-<td style="text-align: right;">72.49</td>
+<td style="text-align: right;">-2.12026</td>
+<td style="text-align: right;">-1.70131</td>
+<td style="text-align: right;">0.0994666</td>
+<td style="text-align: right;">-1.89626</td>
+<td style="text-align: right;">-1.50635</td>
+<td style="text-align: right;">19.7597</td>
 <td style="text-align: left;">✗</td>
 </tr>
 <tr class="even">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">6</td>
 <td style="text-align: left;">h23_log_shape</td>
-<td style="text-align: right;">-0.223144</td>
-<td style="text-align: right;">1.16784</td>
-<td style="text-align: right;">0.076834</td>
-<td style="text-align: right;">1.01724</td>
-<td style="text-align: right;">1.31843</td>
-<td style="text-align: right;">623.357</td>
+<td style="text-align: right;">0.0953102</td>
+<td style="text-align: right;">0.322336</td>
+<td style="text-align: right;">0.0369632</td>
+<td style="text-align: right;">0.249888</td>
+<td style="text-align: right;">0.394784</td>
+<td style="text-align: right;">238.197</td>
 <td style="text-align: left;">✗</td>
 </tr>
 </tbody>
@@ -2041,53 +1963,53 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tr class="odd">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
 <td style="text-align: left;">h12_log_scale</td>
-<td style="text-align: right;">1.45932</td>
-<td style="text-align: right;">2.23495</td>
-<td style="text-align: right;">NaN</td>
-<td style="text-align: right;">NaN</td>
-<td style="text-align: right;">NaN</td>
-<td style="text-align: right;">53.1495</td>
-<td style="text-align: left;">?</td>
+<td style="text-align: right;">-1.89712</td>
+<td style="text-align: right;">-1.76173</td>
+<td style="text-align: right;">0.0799154</td>
+<td style="text-align: right;">-1.91836</td>
+<td style="text-align: right;">-1.6051</td>
+<td style="text-align: right;">7.13664</td>
+<td style="text-align: left;">✓</td>
 </tr>
 <tr class="even">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
 <td style="text-align: left;">h12_log_shape</td>
-<td style="text-align: right;">0.262364</td>
-<td style="text-align: right;">3.13744</td>
-<td style="text-align: right;">NaN</td>
-<td style="text-align: right;">NaN</td>
-<td style="text-align: right;">NaN</td>
-<td style="text-align: right;">1095.83</td>
-<td style="text-align: left;">?</td>
+<td style="text-align: right;">0.182322</td>
+<td style="text-align: right;">0.320764</td>
+<td style="text-align: right;">0.0327404</td>
+<td style="text-align: right;">0.256593</td>
+<td style="text-align: right;">0.384935</td>
+<td style="text-align: right;">75.933</td>
+<td style="text-align: left;">✗</td>
 </tr>
 <tr class="odd">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">3</td>
 <td style="text-align: left;">h23_log_scale</td>
-<td style="text-align: right;">2.65033</td>
-<td style="text-align: right;">0.912191</td>
-<td style="text-align: right;">NaN</td>
-<td style="text-align: right;">NaN</td>
-<td style="text-align: right;">NaN</td>
-<td style="text-align: right;">65.582</td>
-<td style="text-align: left;">?</td>
+<td style="text-align: right;">-2.12026</td>
+<td style="text-align: right;">-1.85253</td>
+<td style="text-align: right;">0.100663</td>
+<td style="text-align: right;">-2.04983</td>
+<td style="text-align: right;">-1.65523</td>
+<td style="text-align: right;">12.6273</td>
+<td style="text-align: left;">✗</td>
 </tr>
 <tr class="even">
 <td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
 <td style="text-align: left;">h23_log_shape</td>
-<td style="text-align: right;">-0.223144</td>
-<td style="text-align: right;">1.09493</td>
-<td style="text-align: right;">NaN</td>
-<td style="text-align: right;">NaN</td>
-<td style="text-align: right;">NaN</td>
-<td style="text-align: right;">590.683</td>
-<td style="text-align: left;">?</td>
+<td style="text-align: right;">0.0953102</td>
+<td style="text-align: right;">0.395194</td>
+<td style="text-align: right;">0.0397398</td>
+<td style="text-align: right;">0.317304</td>
+<td style="text-align: right;">0.473084</td>
+<td style="text-align: right;">314.64</td>
+<td style="text-align: left;">✗</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
 </div>
-<div id="9854f718" class="cell" data-fig-height="4" data-fig-width="10" data-execution_count="6">
+<div id="04aff25b" class="cell" data-fig-height="4" data-fig-width="10" data-execution_count="6">
 <div class="cell-output cell-output-stdout">
 <pre><code>
 **State Prevalence: Exact data MLE: exp_nocov**
@@ -2160,7 +2082,7 @@ Red = true model, Blue = fitted model
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
-**State Prevalence: Exponential - Exact Data - Time-Varying Covariates**
+**State Prevalence: Exponential - Panel Data (Markov) - Fixed Covariates**
 
 Red = true model, Blue = fitted model
 </code></pre>
@@ -2174,7 +2096,7 @@ Red = true model, Blue = fitted model
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
-**State Prevalence: Exponential - Panel Data (Markov) - Fixed Covariates**
+**State Prevalence: Exponential - Panel Data (Markov) - No Covariates**
 
 Red = true model, Blue = fitted model
 </code></pre>
@@ -2188,7 +2110,7 @@ Red = true model, Blue = fitted model
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
-**State Prevalence: Exponential - Panel Data (Markov) - No Covariates**
+**State Prevalence: Gompertz - Exact Data - Fixed Covariates**
 
 Red = true model, Blue = fitted model
 </code></pre>
@@ -2202,7 +2124,7 @@ Red = true model, Blue = fitted model
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
-**State Prevalence: Gompertz - Exact Data - Fixed Covariates**
+**State Prevalence: Gompertz - Exact Data - No Covariates**
 
 Red = true model, Blue = fitted model
 </code></pre>
@@ -2216,7 +2138,7 @@ Red = true model, Blue = fitted model
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
-**State Prevalence: Gompertz - Exact Data - No Covariates**
+**State Prevalence: Gompertz - Panel Data (MCEM) - Fixed Covariates**
 
 Red = true model, Blue = fitted model
 </code></pre>
@@ -2230,7 +2152,7 @@ Red = true model, Blue = fitted model
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
-**State Prevalence: Gompertz - Exact Data - Time-Varying Covariates**
+**State Prevalence: Gompertz - Panel Data (MCEM) - No Covariates**
 
 Red = true model, Blue = fitted model
 </code></pre>
@@ -2244,7 +2166,7 @@ Red = true model, Blue = fitted model
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
-**State Prevalence: Gompertz - Panel Data (MCEM) - Fixed Covariates**
+**State Prevalence: MCEM panel data: exp_panel_nocov**
 
 Red = true model, Blue = fitted model
 </code></pre>
@@ -2258,7 +2180,7 @@ Red = true model, Blue = fitted model
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
-**State Prevalence: Gompertz - Panel Data (MCEM) - No Covariates**
+**State Prevalence: MCEM panel data: gom_panel_nocov**
 
 Red = true model, Blue = fitted model
 </code></pre>
@@ -2272,7 +2194,7 @@ Red = true model, Blue = fitted model
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
-**State Prevalence: Weibull - Exact Data - Fixed Covariates**
+**State Prevalence: MCEM panel data: wei_panel_nocov**
 
 Red = true model, Blue = fitted model
 </code></pre>
@@ -2286,7 +2208,7 @@ Red = true model, Blue = fitted model
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
-**State Prevalence: Weibull - Exact Data - No Covariates**
+**State Prevalence: Weibull - Exact Data - Fixed Covariates**
 
 Red = true model, Blue = fitted model
 </code></pre>
@@ -2300,7 +2222,7 @@ Red = true model, Blue = fitted model
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
-**State Prevalence: Weibull - Exact Data - Time-Varying Covariates**
+**State Prevalence: Weibull - Exact Data - No Covariates**
 
 Red = true model, Blue = fitted model
 </code></pre>
@@ -2341,7 +2263,7 @@ Red = true model, Blue = fitted model
 </div>
 </div>
 </div>
-<div id="e42da906" class="cell" data-fig-height="3" data-fig-width="8" data-execution_count="7">
+<div id="996e02ff" class="cell" data-fig-height="3" data-fig-width="8" data-execution_count="7">
 <div class="cell-output cell-output-stdout">
 <pre><code>
 **Cumulative Incidence: Exact data MLE: exp_nocov**
@@ -2414,7 +2336,7 @@ Transitions 1→2 and 2→3 only (progressive model)
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
-**Cumulative Incidence: Exponential - Exact Data - Time-Varying Covariates**
+**Cumulative Incidence: Exponential - Panel Data (Markov) - Fixed Covariates**
 
 Transitions 1→2 and 2→3 only (progressive model)
 </code></pre>
@@ -2428,7 +2350,7 @@ Transitions 1→2 and 2→3 only (progressive model)
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
-**Cumulative Incidence: Exponential - Panel Data (Markov) - Fixed Covariates**
+**Cumulative Incidence: Exponential - Panel Data (Markov) - No Covariates**
 
 Transitions 1→2 and 2→3 only (progressive model)
 </code></pre>
@@ -2442,7 +2364,7 @@ Transitions 1→2 and 2→3 only (progressive model)
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
-**Cumulative Incidence: Exponential - Panel Data (Markov) - No Covariates**
+**Cumulative Incidence: Gompertz - Exact Data - Fixed Covariates**
 
 Transitions 1→2 and 2→3 only (progressive model)
 </code></pre>
@@ -2456,7 +2378,7 @@ Transitions 1→2 and 2→3 only (progressive model)
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
-**Cumulative Incidence: Gompertz - Exact Data - Fixed Covariates**
+**Cumulative Incidence: Gompertz - Exact Data - No Covariates**
 
 Transitions 1→2 and 2→3 only (progressive model)
 </code></pre>
@@ -2470,7 +2392,7 @@ Transitions 1→2 and 2→3 only (progressive model)
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
-**Cumulative Incidence: Gompertz - Exact Data - No Covariates**
+**Cumulative Incidence: Gompertz - Panel Data (MCEM) - Fixed Covariates**
 
 Transitions 1→2 and 2→3 only (progressive model)
 </code></pre>
@@ -2484,7 +2406,7 @@ Transitions 1→2 and 2→3 only (progressive model)
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
-**Cumulative Incidence: Gompertz - Exact Data - Time-Varying Covariates**
+**Cumulative Incidence: Gompertz - Panel Data (MCEM) - No Covariates**
 
 Transitions 1→2 and 2→3 only (progressive model)
 </code></pre>
@@ -2498,7 +2420,7 @@ Transitions 1→2 and 2→3 only (progressive model)
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
-**Cumulative Incidence: Gompertz - Panel Data (MCEM) - Fixed Covariates**
+**Cumulative Incidence: MCEM panel data: exp_panel_nocov**
 
 Transitions 1→2 and 2→3 only (progressive model)
 </code></pre>
@@ -2512,7 +2434,7 @@ Transitions 1→2 and 2→3 only (progressive model)
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
-**Cumulative Incidence: Gompertz - Panel Data (MCEM) - No Covariates**
+**Cumulative Incidence: MCEM panel data: gom_panel_nocov**
 
 Transitions 1→2 and 2→3 only (progressive model)
 </code></pre>
@@ -2526,7 +2448,7 @@ Transitions 1→2 and 2→3 only (progressive model)
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
-**Cumulative Incidence: Weibull - Exact Data - Fixed Covariates**
+**Cumulative Incidence: MCEM panel data: wei_panel_nocov**
 
 Transitions 1→2 and 2→3 only (progressive model)
 </code></pre>
@@ -2540,7 +2462,7 @@ Transitions 1→2 and 2→3 only (progressive model)
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
-**Cumulative Incidence: Weibull - Exact Data - No Covariates**
+**Cumulative Incidence: Weibull - Exact Data - Fixed Covariates**
 
 Transitions 1→2 and 2→3 only (progressive model)
 </code></pre>
@@ -2554,7 +2476,7 @@ Transitions 1→2 and 2→3 only (progressive model)
 </div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
-**Cumulative Incidence: Weibull - Exact Data - Time-Varying Covariates**
+**Cumulative Incidence: Weibull - Exact Data - No Covariates**
 
 Transitions 1→2 and 2→3 only (progressive model)
 </code></pre>

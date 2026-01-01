@@ -158,7 +158,7 @@ end
         @test length(paths_both) == nsim
         
         # Error when neither requested
-        @test_throws ErrorException simulate(model; data = false, paths = false)
+        @test_throws ArgumentError simulate(model; data = false, paths = false)
     end
 end
 

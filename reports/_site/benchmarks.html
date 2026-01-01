@@ -227,10 +227,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="benchmark-results" class="level2">
 <h2 class="anchored" data-anchor-id="benchmark-results">Benchmark Results</h2>
 <p><strong>Note</strong>: These results are generated from <code>MultistateModelsTests/benchmarks/run_benchmarks.jl</code>. Last run: December 2025.</p>
-<div id="aaf7d93c" class="cell" data-execution_count="2">
+<div id="5843b638" class="cell" data-execution_count="2">
 <div class="cell-output cell-output-display" data-execution_count="3">
-<div><div style="float: left;"><span>1×2 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
-<table class="data-frame caption-top table table-sm table-striped small">
+<div><div style="float: left;"><span>0×2 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
+<table class="data-frame caption-top table table-sm table-striped small" style="margin-bottom: 6px;">
 <thead>
 <tr class="header">
 <th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Row</th>
@@ -239,16 +239,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="subheader headerLastRow even">
 <th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;"></th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="Int64">Int64</th>
-<th style="text-align: left;" data-quarto-table-cell-role="th" title="Float64">Float64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Union{}">Union{}</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Union{}">Union{}</th>
 </tr>
 </thead>
 <tbody>
-<tr class="odd">
-<td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
-<td style="text-align: right;">1</td>
-<td style="text-align: right;">0.012526</td>
-</tr>
 </tbody>
 </table>
 </div>
@@ -300,17 +295,17 @@ Figure&nbsp;1: Runtime Scaling with Sample Size
 </section>
 <section id="squarem-acceleration" class="level2">
 <h2 class="anchored" data-anchor-id="squarem-acceleration">SQUAREM Acceleration</h2>
-<div id="7c56281d" class="cell" data-execution_count="4">
+<div id="5498a7b3" class="cell" data-execution_count="4">
 <div class="cell-output cell-output-stdout">
-<pre><code>SQUAREM Runtime (N=200): 0.0104 seconds</code></pre>
+<pre><code>SQUAREM Runtime (N=200): 0.0108 seconds</code></pre>
 </div>
 </div>
 </section>
 <section id="threading-performance" class="level2">
 <h2 class="anchored" data-anchor-id="threading-performance">Threading Performance</h2>
-<div id="c72b2c1b" class="cell" data-execution_count="5">
+<div id="67a30b90" class="cell" data-execution_count="5">
 <div class="cell-output cell-output-stdout">
-<pre><code>Threading Runtime (Threads=1): 0.0125 seconds</code></pre>
+<pre><code>No threading data available.</code></pre>
 </div>
 </div>
 <section id="complexity-analysis" class="level3">
@@ -349,7 +344,7 @@ Figure&nbsp;1: Runtime Scaling with Sample Size
 </section>
 <section id="threading-recommendations" class="level3">
 <h3 class="anchored" data-anchor-id="threading-recommendations">Threading Recommendations</h3>
-<div id="238671b0" class="cell" data-execution_count="6">
+<div id="a6b758fa" class="cell" data-execution_count="6">
 <div class="cell-output cell-output-display" data-execution_count="7">
 <div><div style="float: left;"><span>4×3 DataFrame</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
 <table class="data-frame caption-top table table-sm table-striped small">
@@ -409,7 +404,7 @@ Figure&nbsp;1: Runtime Scaling with Sample Size
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="ex">julia</span> <span class="at">--project</span><span class="op">=</span>MultistateModelsTests MultistateModelsTests/benchmarks/run_benchmarks.jl</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <section id="benchmark-environment" class="level3">
 <h3 class="anchored" data-anchor-id="benchmark-environment">Benchmark Environment</h3>
-<div id="f127cbcc" class="cell" data-execution_count="7">
+<div id="b4b43c76" class="cell" data-execution_count="7">
 <details open="" class="code-fold">
 <summary>Show code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># System information for reproducibility</span></span>

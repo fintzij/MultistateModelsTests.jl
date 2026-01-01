@@ -1,0 +1,150 @@
+---
+title: "Long Tests Status"
+subtitle: "Statistical recovery of parameters"
+date: last-modified
+---
+
+::: {.callout-note}
+## Status: Not Started
+This report is a placeholder. Content will be added as the long test infrastructure is developed.
+:::
+
+## 1. Summary Dashboard
+
+### Pass/Fail Status
+
+| Test | Family | Observation | Status | Last Run |
+|------|--------|-------------|--------|----------|
+| `longtest_exact_markov.jl` | Mixed | Exact | ⏳ | - |
+| `longtest_mcem.jl` | Mixed | Panel | ⏳ | - |
+| `longtest_mcem_splines.jl` | B-Spline | Panel | ⏳ | - |
+| `longtest_mcem_tvc.jl` | Mixed | Panel + TVC | ⏳ | - |
+| `longtest_phasetype.jl` | Mixed | Panel | ⏳ | - |
+| `longtest_sir.jl` | Mixed | Panel | ⏳ | - |
+| `longtest_simulation_distribution.jl` | All | Simulation | ⏳ | - |
+| `longtest_variance_validation.jl` | Mixed | Panel | ⏳ | - |
+
+## 2. Parametric Models
+
+### 2.1 Exponential (Exact Observation)
+
+#### Setup
+
+*To be documented*
+
+#### Parameter Recovery
+
+| Parameter | True | Estimated | SE | Coverage |
+|-----------|------|-----------|-----|----------|
+| rate_12 | - | - | - | - |
+| rate_23 | - | - | - | - |
+
+#### Diagnostic Plots
+
+*Plots to be generated*
+
+### 2.2 Weibull (Exact Observation)
+
+#### Setup
+
+*To be documented*
+
+#### Parameter Recovery
+
+| Parameter | True | Estimated | SE | Coverage |
+|-----------|------|-----------|-----|----------|
+| shape_12 | - | - | - | - |
+| scale_12 | - | - | - | - |
+
+#### Diagnostic Plots
+
+*Plots to be generated*
+
+### 2.3 Gompertz (Exact Observation)
+
+#### Setup
+
+*To be documented*
+
+#### Parameter Recovery
+
+| Parameter | True | Estimated | SE | Coverage |
+|-----------|------|-----------|-----|----------|
+| shape_12 | - | - | - | - |
+| rate_12 | - | - | - | - |
+
+#### Diagnostic Plots
+
+*Plots to be generated*
+
+### 2.4 Markov Panel Data
+
+#### Setup
+
+*To be documented*
+
+#### Parameter Recovery
+
+*Tables to be generated*
+
+#### Diagnostic Plots
+
+*Plots to be generated*
+
+## 3. Spline Models
+
+### 3.1 B-Splines (Panel Data)
+
+#### Setup
+
+*To be documented*
+
+#### Hazard Curve Recovery
+
+*Plots to be generated: True vs Estimated hazard curves*
+
+#### Cumulative Incidence
+
+*Plots to be generated*
+
+## 4. Semi-Markov Models
+
+### 4.1 Duration-Dependent Hazards
+
+#### Setup
+
+*To be documented*
+
+#### Parameter Recovery
+
+*Tables to be generated*
+
+#### Diagnostic Plots
+
+*Plots to be generated*
+
+## 5. Time-Varying Covariates
+
+### 5.1 Step-Function TVC
+
+#### Setup
+
+*To be documented*
+
+#### Parameter Recovery
+
+*Tables to be generated*
+
+#### Diagnostic Plots
+
+*Plots to be generated*
+
+## 6. MCEM Convergence
+
+### Convergence Diagnostics
+
+*Trace plots to be generated*
+
+### Effective Sample Size
+
+*ESS plots to be generated*

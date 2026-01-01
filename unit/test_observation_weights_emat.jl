@@ -54,14 +54,14 @@ end
         @test model.ObservationWeights == obs_weights
         
         # Test: Wrong length should error
-        @test_throws ErrorException multistatemodel(h12, h23; data=dat, ObservationWeights=[1.0, 2.0])
+        @test_throws ArgumentError multistatemodel(h12, h23; data=dat, ObservationWeights=[1.0, 2.0])
         
         # Test: Non-positive weights should error
-        @test_throws ErrorException multistatemodel(h12, h23; data=dat, ObservationWeights=[1.0, 0.0, 1.0, 1.0, 1.0, 1.0])
-        @test_throws ErrorException multistatemodel(h12, h23; data=dat, ObservationWeights=[1.0, -1.0, 1.0, 1.0, 1.0, 1.0])
+        @test_throws ArgumentError multistatemodel(h12, h23; data=dat, ObservationWeights=[1.0, 0.0, 1.0, 1.0, 1.0, 1.0])
+        @test_throws ArgumentError multistatemodel(h12, h23; data=dat, ObservationWeights=[1.0, -1.0, 1.0, 1.0, 1.0, 1.0])
         
         # Test: SubjectWeights and ObservationWeights are mutually exclusive
-        @test_throws ErrorException multistatemodel(h12, h23; data=dat, 
+        @test_throws ArgumentError multistatemodel(h12, h23; data=dat, 
             SubjectWeights=[1.0, 1.0, 1.0], 
             ObservationWeights=obs_weights)
     end
@@ -238,15 +238,15 @@ end
         )
         
         # Wrong dimensions should error
-        @test_throws ErrorException multistatemodel(h12, h23; data=dat, 
+        @test_throws ArgumentError multistatemodel(h12, h23; data=dat, 
             EmissionMatrix=[1.0 0.0 0.0])  # 1 row instead of 2
         
         # Values outside [0,1] should error
-        @test_throws ErrorException multistatemodel(h12, h23; data=dat, 
+        @test_throws ArgumentError multistatemodel(h12, h23; data=dat, 
             EmissionMatrix=[0.0 1.5 0.0; 0.0 0.0 1.0])
         
         # All zeros in a row should error
-        @test_throws ErrorException multistatemodel(h12, h23; data=dat, 
+        @test_throws ArgumentError multistatemodel(h12, h23; data=dat, 
             EmissionMatrix=[0.0 0.0 0.0; 0.0 0.0 1.0])
     end
     

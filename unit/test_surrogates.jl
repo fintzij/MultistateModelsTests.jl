@@ -251,8 +251,8 @@ using Statistics
         h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
         model = multistatemodel(h12; data = dat)
         
-        @test_throws ErrorException MultistateModels._validate_surrogate_inputs(:invalid, :mle)
-        @test_throws ErrorException MultistateModels._validate_surrogate_inputs(:markov, :invalid)
+        @test_throws ArgumentError MultistateModels._validate_surrogate_inputs(:invalid, :mle)
+        @test_throws ArgumentError MultistateModels._validate_surrogate_inputs(:markov, :invalid)
     end
     
     # =========================================================================

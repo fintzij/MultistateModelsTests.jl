@@ -139,7 +139,7 @@ using LinearAlgebra
         @test all(1 .<= idx_lhs .<= 100)
         
         # Unknown method throws
-        @test_throws ErrorException MultistateModels.get_sir_subsample_indices(weights, 50, :unknown)
+        @test_throws ArgumentError MultistateModels.get_sir_subsample_indices(weights, 50, :unknown)
     end
 
     @testset "mcem_mll_sir" begin

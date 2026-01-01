@@ -12,14 +12,16 @@ using .TestFixtures
     dat = duplicate_transition_data()
     h1 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
     h2 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
-    @test_throws ErrorException multistatemodel(h1, h2; data = dat)
+    @test_throws ArgumentError multistatemodel(h1, h2; data = dat)
 end
 
 # --- State 0 handling -----------------------------------------------------------
 @testset "test_state_zero_in_data" begin
     # Validates censoring pattern handling works correctly
     dat = censoring_panel_data()
-    censoring_patterns = Int64[3 0 1 1]
+    # Censoring pattern: row sums must be <= 1 (normalized probability)
+    # Pattern 3 means equal probability of being in state 2 or 3
+    censoring_patterns = Float64[3 0 0.5 0.5]
     h1 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
     h2 = Hazard(@formula(0 ~ 1), "exp", 1, 3)
     model = multistatemodel(h1, h2; data = dat, CensoringPatterns = censoring_patterns)

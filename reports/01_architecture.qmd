@@ -1,0 +1,142 @@
+---
+title: "Package Architecture & Workflow"
+subtitle: "Internal mechanics of MultistateModels.jl"
+date: last-modified
+---
+
+::: {.callout-note}
+## Status: Not Started
+This report is a placeholder. Content will be added as the package documentation is developed.
+:::
+
+## 1. Introduction
+
+### Design Philosophy
+
+MultistateModels.jl is designed to provide flexible tools for analyzing multistate survival data. The package supports:
+
+- Multiple hazard families (Exponential, Weibull, Gompertz, B-splines)
+- Both proportional hazards (PH) and accelerated failure time (AFT) covariate effects
+- Exactly observed and panel (interval-censored) data
+- Time-varying covariates
+- Semi-Markov models with duration dependence
+
+### Package Overview
+
+```{julia}
+#| eval: false
+#| echo: true
+
+# Core workflow
+using MultistateModels
+
+# 1. Define hazards
+hazards = (
+    h12 = Hazard(@formula(0 ~ x), "wei", 1, 2),
+    h23 = Hazard(@formula(0 ~ 1), "exp", 2, 3)
+)
+
+# 2. Build model
+model = multistatemodel(hazards; data = df)
+
+# 3. Fit model
+fit!(model)
+
+# 4. Simulate from fitted model
+paths = simulate(model; nsim = 1000)
+```
+
+## 2. Model Construction
+
+### 2.1 The `MultistateProcess` Struct
+
+*To be documented*
+
+### 2.2 Hazard Specification
+
+*To be documented*
+
+### 2.3 Parameterization Conventions
+
+All hazard families follow **flexsurv** conventions:
+
+| Family | Hazard Function | Parameters |
+|--------|-----------------|------------|
+| Exponential | $h(t) = \text{rate}$ | rate > 0 |
+| Weibull | $h(t) = \text{shape} \times \text{scale} \times t^{\text{shape}-1}$ | shape > 0, scale > 0 |
+| Gompertz | $h(t) = \text{rate} \times \exp(\text{shape} \times t)$ | shape ∈ ℝ, rate > 0 |
+| B-Spline | $h(t) = \exp(\mathbf{B}(t)' \boldsymbol{\theta})$ | θ ∈ ℝ^k |
+
+### 2.4 Covariate Effects
+
+*To be documented*
+
+### 2.5 Time-Varying Covariates
+
+*To be documented*
+
+### 2.6 The `multistatemodel()` Constructor
+
+*To be documented*
+
+### 2.7 Data Requirements
+
+*To be documented*
+
+## 3. Simulation Engine
+
+### 3.1 `simulate()` vs `simulate_path()`
+
+*To be documented*
+
+### 3.2 Transform Strategies
+
+*To be documented*
+
+### 3.3 Jump Solvers
+
+*To be documented*
+
+### 3.4 Phase-Type Expansion
+
+*To be documented*
+
+## 4. Inference
+
+### 4.1 Likelihood Calculations
+
+*To be documented*
+
+### 4.2 MCEM Algorithm
+
+*To be documented*
+
+### 4.3 Optimization Wrappers
+
+*To be documented*
+
+### 4.4 Parameter Constraints
+
+*To be documented*
+
+## 5. Key Internal Functions
+
+### 5.1 Hazard Evaluation
+
+*To be documented*
+
+### 5.2 Survival Probability
+
+*To be documented*
+
+### 5.3 Parameter Handling
+
+*To be documented*
+
+### 5.4 Time Transforms
+
+*To be documented*
+
+## 6. Option Reference
+
+*To be documented*

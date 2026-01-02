@@ -267,3 +267,166 @@ using Random
     end
 
 end
+
+# =============================================================================
+# Section 7: Smoothing Parameter Selection (PIJCV / GCV)
+# =============================================================================
+
+@testset "Smoothing Parameter Selection" begin
+    using LinearAlgebra
+    
+    @testset "PIJCV criterion computation" begin
+        # Create a small test model with spline hazards
+        nsubj = 20
+        Random.seed!(12345)
+        data = DataFrame(
+            id = vcat(1:nsubj, (nsubj+1):(2*nsubj)),
+            tstart = zeros(2*nsubj),
+            tstop = vcat(fill(0.5, nsubj), fill(0.8, nsubj)),
+            statefrom = ones(Int, 2*nsubj),
+            stateto = vcat(fill(2, nsubj), fill(1, nsubj)),
+            obstype = ones(Int, 2*nsubj)
+        )
+        
+        h12 = Hazard(@formula(0 ~ 1), :sp, 1, 2)
+        model = multistatemodel(h12; data=data)
+        
+        # First fit to get reasonable parameters
+        fitted = fit(model; verbose=false, compute_vcov=false, compute_ij_vcov=false)
+        beta_hat = MultistateModels.get_parameters(fitted; scale=:flat)
+        
+        # Build penalty config
+        penalty_config = build_penalty_config(model, [SplinePenalty()]; lambda_init=1.0)
+        
+        # Create ExactData
+        samplepaths = MultistateModels.extract_paths(model)
+        exact_data = MultistateModels.ExactData(model, samplepaths)
+        
+        # Compute gradients and Hessians
+        subject_grads = MultistateModels.compute_subject_gradients(beta_hat, model, samplepaths)
+        subject_hessians = MultistateModels.compute_subject_hessians(beta_hat, model, samplepaths)
+        
+        # Aggregate Hessian
+        n_params = length(beta_hat)
+        H_unpenalized = zeros(n_params, n_params)
+        for H_i in subject_hessians
+            H_unpenalized .+= H_i
+        end
+        
+        # Create state
+        state = MultistateModels.PIJCVState(
+            beta_hat,
+            H_unpenalized,
+            subject_grads,
+            subject_hessians,
+            penalty_config,
+            2*nsubj,
+            n_params,
+            model,
+            exact_data
+        )
+        
+        # Test PIJCV criterion returns a finite value
+        log_lambda = [0.0]  # λ = 1
+        pijcv_val = MultistateModels.compute_pijcv_criterion(log_lambda, state)
+        @test isfinite(pijcv_val)
+        @test pijcv_val > 0  # Should be positive (sum of negative log-likelihoods)
+        
+        # Test GCV criterion returns a finite value
+        gcv_val = MultistateModels.compute_gcv_criterion(log_lambda, state)
+        @test isfinite(gcv_val)
+        @test gcv_val > 0  # Should be positive
+    end
+    
+    @testset "Penalty Hessian addition" begin
+        # Simple test of _add_penalty_to_hessian!
+        n = 5
+        H = zeros(n, n)
+        lambda = [2.0]
+        
+        # Create a simple penalty config with one term
+        S = [1.0 -1.0 0.0; -1.0 2.0 -1.0; 0.0 -1.0 1.0]  # 3x3 difference matrix
+        term = MultistateModels.PenaltyTerm(1:3, S, 1.0, 2, [:h12])  # Note: Symbol vector
+        config = MultistateModels.PenaltyConfig([term], MultistateModels.TotalHazardPenaltyTerm[], Dict{Int,Vector{Int}}(), 1)
+        
+        MultistateModels._add_penalty_to_hessian!(H, lambda, config)
+        
+        @test H[1:3, 1:3] ≈ 2.0 * S  # lambda[1] * S
+        @test all(H[4:5, :] .== 0)    # Other elements unchanged
+    end
+    
+    @testset "select_smoothing_parameters basic test" begin
+        # Create a small test model
+        nsubj = 30
+        Random.seed!(54321)
+        tstops = vcat([0.5 + 0.5 * rand() for _ in 1:nsubj], [0.8 + 0.5 * rand() for _ in 1:nsubj])
+        data = DataFrame(
+            id = vcat(1:nsubj, (nsubj+1):(2*nsubj)),
+            tstart = zeros(2*nsubj),
+            tstop = tstops,
+            statefrom = ones(Int, 2*nsubj),
+            stateto = vcat(fill(2, nsubj), fill(1, nsubj)),
+            obstype = ones(Int, 2*nsubj)
+        )
+        
+        h12 = Hazard(@formula(0 ~ 1), :sp, 1, 2)
+        model = multistatemodel(h12; data=data)
+        
+        # First fit to get reasonable parameters
+        fitted = fit(model; verbose=false, compute_vcov=false, compute_ij_vcov=false)
+        beta_hat = MultistateModels.get_parameters(fitted; scale=:flat)
+        
+        # Build penalty config
+        penalty_config = build_penalty_config(model, [SplinePenalty()]; lambda_init=1.0)
+        
+        # Create ExactData
+        samplepaths = MultistateModels.extract_paths(model)
+        exact_data = MultistateModels.ExactData(model, samplepaths)
+        
+        # Test that select_smoothing_parameters runs without error
+        result = select_smoothing_parameters(model, exact_data, penalty_config, beta_hat;
+                                              method=:gcv, maxiter=5, verbose=false)
+        
+        @test haskey(result, :lambda)
+        @test haskey(result, :converged)
+        @test haskey(result, :method_used)
+        @test haskey(result, :penalty_config)
+        @test length(result.lambda) == 1
+        @test result.lambda[1] > 0  # Lambda should be positive
+    end
+    
+    @testset "Empty penalty returns early" begin
+        # Model with non-spline hazard
+        nsubj = 10
+        data = DataFrame(
+            id = 1:nsubj,
+            tstart = zeros(nsubj),
+            tstop = fill(0.5, nsubj),
+            statefrom = ones(Int, nsubj),
+            stateto = fill(2, nsubj),
+            obstype = ones(Int, nsubj)
+        )
+        
+        h12 = Hazard(@formula(0 ~ 1), :exp, 1, 2)  # :exp not :Exponential
+        model = multistatemodel(h12; data=data)
+        
+        # Create empty penalty config
+        empty_config = MultistateModels.PenaltyConfig(
+            MultistateModels.PenaltyTerm[],
+            MultistateModels.TotalHazardPenaltyTerm[],
+            Dict{Int,Vector{Int}}(),
+            0
+        )
+        
+        samplepaths = MultistateModels.extract_paths(model)
+        exact_data = MultistateModels.ExactData(model, samplepaths)
+        beta_init = zeros(1)
+        
+        result = select_smoothing_parameters(model, exact_data, empty_config, beta_init)
+        
+        @test result.method_used == :none
+        @test result.converged == true
+        @test isempty(result.lambda)
+    end
+
+end

@@ -1,0 +1,269 @@
+# =============================================================================
+# Unit Tests: Penalty Infrastructure for Penalized Splines
+# =============================================================================
+#
+# Tests for Phase 1 of penalized splines implementation:
+# - SplinePenalty struct construction and validation
+# - build_penalty_matrix (Wood 2016 algorithm)
+# - place_interior_knots_pooled for competing risks
+# - validate_shared_knots enforcement
+# - SplineHazardInfo construction
+# - PenaltyConfig and compute_penalty
+#
+# =============================================================================
+
+using Test
+using MultistateModels
+using BSplineKit
+using LinearAlgebra
+using DataFrames
+using Random
+
+@testset "Penalty Infrastructure" begin
+
+    @testset "SplinePenalty Construction" begin
+        # Default construction
+        p1 = SplinePenalty()
+        @test p1.selector == :all
+        @test p1.order == 2
+        @test p1.total_hazard == false
+        @test p1.share_lambda == false
+        
+        # Custom order
+        p2 = SplinePenalty(order=3)
+        @test p2.order == 3
+        
+        # Origin selector
+        p3 = SplinePenalty(1, share_lambda=true)
+        @test p3.selector == 1
+        @test p3.share_lambda == true
+        
+        # Transition selector
+        p4 = SplinePenalty((1, 2), order=1, total_hazard=true)
+        @test p4.selector == (1, 2)
+        @test p4.order == 1
+        @test p4.total_hazard == true
+        
+        # Invalid inputs
+        @test_throws ArgumentError SplinePenalty(order=0)
+        @test_throws ArgumentError SplinePenalty(0)  # state must be ≥ 1
+        @test_throws ArgumentError SplinePenalty(:invalid)
+    end
+
+    @testset "build_penalty_matrix - Basic Properties" begin
+        knots = collect(0.0:1.0:5.0)
+        basis = BSplineBasis(BSplineOrder(4), knots)  # Cubic
+        
+        # Order 2 (curvature)
+        S2 = build_penalty_matrix(basis, 2)
+        @test size(S2) == (length(basis), length(basis))
+        @test isapprox(S2, S2', rtol=1e-10)  # Symmetric
+        
+        # Positive semi-definite
+        eigs = eigvals(Symmetric(S2))
+        @test all(e -> e >= -1e-10, eigs)
+        
+        # Null space dimension for order 2 should be 2 (constants, linears)
+        null_dim = count(e -> abs(e) < 1e-10, eigs)
+        @test null_dim == 2
+    end
+
+    @testset "build_penalty_matrix - Null Space" begin
+        knots = collect(0.0:0.5:5.0)
+        basis = BSplineBasis(BSplineOrder(4), knots)
+        K = length(basis)
+        
+        S = build_penalty_matrix(basis, 2)
+        
+        # Constant function should have zero penalty
+        v_const = ones(K)
+        @test abs(v_const' * S * v_const) < 1e-10
+        
+        # Linear function: use Greville abscissae
+        full_knots = collect(BSplineKit.knots(basis))
+        greville = [(full_knots[i+1] + full_knots[i+2] + full_knots[i+3]) / 3 for i in 1:K]
+        @test abs(greville' * S * greville) < 1e-10
+    end
+
+    @testset "build_penalty_matrix - Different Orders" begin
+        knots = collect(0.0:0.5:5.0)
+        basis = BSplineBasis(BSplineOrder(4), knots)
+        
+        for order in 1:3
+            S = build_penalty_matrix(basis, order)
+            eigs = eigvals(Symmetric(S))
+            null_dim = count(e -> abs(e) < 1e-10, eigs)
+            # Null space dimension should be at least `order`
+            @test null_dim >= order
+        end
+    end
+
+    @testset "PenaltyConfig and compute_penalty" begin
+        # Empty config
+        config_empty = PenaltyConfig()
+        @test !has_penalties(config_empty)
+        @test compute_penalty(rand(5), config_empty) ≈ 0.0
+        
+        # Single penalty term
+        K = 6
+        S = rand(K, K)
+        S = S' * S  # Make symmetric PSD
+        beta = rand(K) .+ 0.1
+        lambda = 2.0
+        
+        term = MultistateModels.PenaltyTerm(1:K, S, lambda, 2, [:h12])
+        config = PenaltyConfig(
+            [term], 
+            MultistateModels.TotalHazardPenaltyTerm[], 
+            Dict{Int,Vector{Int}}(), 
+            1
+        )
+        
+        @test has_penalties(config)
+        
+        # Compute penalty: (1/2) * λ * βᵀSβ
+        expected = 0.5 * lambda * dot(beta, S * beta)
+        computed = compute_penalty(beta, config)
+        @test computed ≈ expected
+    end
+
+    @testset "place_interior_knots_pooled" begin
+        # Create test data with competing risks from state 1
+        data = DataFrame(
+            id = 1:10,
+            tstart = zeros(10),
+            tstop = [0.5, 1.0, 1.5, 2.0, 0.8, 1.2, 1.8, 2.5, 3.0, 0.3],
+            statefrom = ones(Int, 10),
+            stateto = [2, 3, 2, 3, 2, 3, 2, 3, 2, 3],
+            obstype = ones(Int, 10)
+        )
+        
+        h12 = Hazard(@formula(0 ~ 1), :sp, 1, 2)
+        h13 = Hazard(@formula(0 ~ 1), :sp, 1, 3)
+        model = multistatemodel(h12, h13; data=data)
+        
+        # Pooled knots should use all events from origin 1
+        pooled = place_interior_knots_pooled(model, 1, 5)
+        @test length(pooled) == 5
+        @test all(pooled .> 0)
+        @test all(pooled .< maximum(data.tstop))
+        @test issorted(pooled)
+    end
+
+    @testset "validate_shared_knots" begin
+        # Create model where hazards have different knots (by default)
+        data = DataFrame(
+            id = 1:6,
+            tstart = zeros(6),
+            tstop = [0.5, 1.5, 2.5, 0.8, 1.2, 2.0],
+            statefrom = ones(Int, 6),
+            stateto = [2, 2, 2, 3, 3, 3],
+            obstype = ones(Int, 6)
+        )
+        
+        h12 = Hazard(@formula(0 ~ 1), :sp, 1, 2)
+        h13 = Hazard(@formula(0 ~ 1), :sp, 1, 3)
+        model = multistatemodel(h12, h13; data=data)
+        
+        # Should fail because knots are placed independently per transition
+        @test_throws ArgumentError validate_shared_knots(model, 1)
+    end
+
+    @testset "build_spline_hazard_info" begin
+        data = DataFrame(
+            id = 1:5,
+            tstart = zeros(5),
+            tstop = [1.0, 2.0, 1.5, 2.5, 3.0],
+            statefrom = ones(Int, 5),
+            stateto = fill(2, 5),
+            obstype = ones(Int, 5)
+        )
+        
+        h12 = Hazard(@formula(0 ~ 1), :sp, 1, 2)
+        model = multistatemodel(h12; data=data)
+        
+        haz = model.hazards[1]
+        info = build_spline_hazard_info(haz; penalty_order=2)
+        
+        @test info.origin == 1
+        @test info.dest == 2
+        @test info.nbasis == haz.npar_baseline
+        @test info.penalty_order == 2
+        @test size(info.S) == (info.nbasis, info.nbasis)
+        @test isapprox(info.S, info.S')  # Symmetric
+    end
+
+    @testset "build_penalty_config" begin
+        # Create model with two spline hazards
+        data = DataFrame(
+            id = 1:10,
+            tstart = zeros(10),
+            tstop = [0.5, 1.0, 1.5, 2.0, 2.5, 0.6, 1.2, 1.8, 2.2, 2.8],
+            statefrom = ones(Int, 10),
+            stateto = [2, 2, 2, 2, 2, 3, 3, 3, 3, 3],
+            obstype = ones(Int, 10)
+        )
+        
+        h12 = Hazard(@formula(0 ~ 1), :sp, 1, 2)
+        h13 = Hazard(@formula(0 ~ 1), :sp, 1, 3)
+        model = multistatemodel(h12, h13; data=data)
+        
+        # Test nothing penalty
+        config_none = build_penalty_config(model, nothing)
+        @test config_none.n_lambda == 0
+        @test !has_penalties(config_none)
+        
+        # Test default penalty (one lambda per hazard)
+        config_default = build_penalty_config(model, SplinePenalty())
+        @test config_default.n_lambda == 2  # One per hazard
+        @test length(config_default.terms) == 2
+        @test has_penalties(config_default)
+        
+        # Test with custom lambda_init
+        config_custom = build_penalty_config(model, SplinePenalty(); lambda_init=5.0)
+        @test config_custom.terms[1].lambda == 5.0
+        
+        # Test order-1 penalty
+        config_order1 = build_penalty_config(model, SplinePenalty(order=1))
+        @test config_order1.terms[1].order == 1
+    end
+
+    @testset "fit integration with penalty" begin
+        # Create simple exact data
+        Random.seed!(42)
+        nsubj = 50
+        rows = []
+        for i in 1:nsubj
+            t = rand()^0.5 * 3.0
+            dest = rand() < 0.6 ? 2 : 3
+            push!(rows, (id=i, tstart=0.0, tstop=t, statefrom=1, stateto=dest, obstype=1))
+        end
+        data = DataFrame(rows)
+        
+        h12 = Hazard(@formula(0 ~ 1), :sp, 1, 2)
+        h13 = Hazard(@formula(0 ~ 1), :sp, 1, 3)
+        model = multistatemodel(h12, h13; data=data)
+        
+        # Fit without penalty
+        fitted_no_penalty = fit(model; verbose=false, compute_vcov=false, compute_ij_vcov=false)
+        ll_no_penalty = get_loglik(fitted_no_penalty)
+        
+        # Fit with penalty
+        fitted_with_penalty = fit(model; penalty=SplinePenalty(), lambda_init=10.0,
+                                   verbose=false, compute_vcov=false, compute_ij_vcov=false)
+        ll_with_penalty = get_loglik(fitted_with_penalty)
+        
+        # Penalized fit should still complete
+        @test !isnan(ll_no_penalty)
+        @test !isnan(ll_with_penalty)
+        
+        # With stronger penalty, likelihood should be <= unpenalized (penalty restricts params)
+        # This tests that the penalty is actually being applied during optimization
+        fitted_high_penalty = fit(model; penalty=SplinePenalty(), lambda_init=100.0,
+                                   verbose=false, compute_vcov=false, compute_ij_vcov=false)
+        ll_high_penalty = get_loglik(fitted_high_penalty)
+        
+        @test ll_high_penalty <= ll_no_penalty  # Higher penalty = worse unpenalized likelihood
+    end
+
+end

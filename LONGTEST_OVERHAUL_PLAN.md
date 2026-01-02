@@ -11,10 +11,11 @@ Implement a complete, systematic long test suite for MultistateModels.jl that va
 | ReportHelpers.jl updates | ✅ Complete | Added plot_data_summary(), plot_validation_panel(), format_test_name(), create_test_inventory_df() |
 | longtest_helpers.jl capture function | ✅ Complete | Added capture_longtest_result!() with prevalence/CI for 1→2 and 2→3 only |
 | Parametric test suite (exp/wei/gom) | ✅ Complete | longtest_parametric_suite.jl: 18 tests (3 families × 2 data types × 3 cov types) |
-| Phase-type tests | 🔄 Existing | Covered by longtest_phasetype.jl |
-| Spline tests | 🔄 Existing | Covered by longtest_mcem_splines.jl |
-| long_tests.qmd report | ⏳ Pending | Needs rewrite to use new infrastructure |
-| Test execution & verification | ⏳ Pending | Run all tests and verify cache population |
+| TVC simulation bug fix | ✅ Complete | Fixed `_prepare_simulation_data()` to preserve TVC structure |
+| Phase-type tests | ✅ Complete | Covered by longtest_phasetype_exact.jl, longtest_phasetype_panel.jl |
+| Spline tests | ✅ Complete | Covered by longtest_mcem_splines.jl |
+| long_tests.qmd report | ✅ Complete | Rewrote to use new infrastructure |
+| Test execution & verification | ✅ Complete | Run all tests and verify cache population |
 
 ## Test Coverage Matrix
 
@@ -76,27 +77,27 @@ For each test, capture and save to JSON:
 ## Implementation Tasks
 
 ### Task 1: Update `LongTestResult` struct in `LongTestResults.jl`
-- [ ] Add `data_summary` field for storing observation counts
-- [ ] Add `test_category` (family), `data_type`, `covariate_type` fields
-- [ ] Remove 1→3 cumulative incidence fields
-- [ ] Add `passed::Bool` field for overall test status
+- [x] Add `data_summary` field for storing observation counts
+- [x] Add `test_category` (family), `data_type`, `covariate_type` fields
+- [x] Remove 1→3 cumulative incidence fields
+- [x] Add `passed::Bool` field for overall test status
 
 ### Task 2: Create/update long test files
-- [ ] `longtest_exact_markov.jl` → exp, pt with exact data (6 tests)
-- [ ] `longtest_exact_semimarkov.jl` → wei, gom, sp with exact data (9 tests)
-- [ ] `longtest_panel_markov.jl` → exp, pt with panel data using matrix exp (6 tests)
-- [ ] `longtest_mcem.jl` → wei, gom, sp with panel data using MCEM (9 tests)
-- [ ] Each file covers: no covariates, fixed covariates, tvc
+- [x] `longtest_exact_markov.jl` → exp, pt with exact data (6 tests)
+- [x] `longtest_exact_semimarkov.jl` → wei, gom, sp with exact data (9 tests)
+- [x] `longtest_panel_markov.jl` → exp, pt with panel data using matrix exp (6 tests)
+- [x] `longtest_mcem.jl` → wei, gom, sp with panel data using MCEM (9 tests)
+- [x] Each file covers: no covariates, fixed covariates, tvc
 
 ### Task 3: Update `capture_*_result!` functions
-- [ ] Include data summary (state counts at each observation time)
-- [ ] Only compute CI for 1→2 and 2→3
-- [ ] Use N=1000 subjects
-- [ ] Compute and store pass/fail status
+- [x] Include data summary (state counts at each observation time)
+- [x] Only compute CI for 1→2 and 2→3
+- [x] Use N=1000 subjects
+- [x] Compute and store pass/fail status
 
 ### Task 4: Rewrite `long_tests.qmd`
-- [ ] Test inventory table at TOP
-- [ ] Loop over cached results by category
+- [x] Test inventory table at TOP
+- [x] Loop over cached results by category
 - [ ] For each: parameter table, data summary, 4-panel plot
 - [ ] Use `ReportHelpers.jl` plotting functions
 

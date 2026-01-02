@@ -4,147 +4,152 @@ subtitle: "Statistical recovery of parameters"
 date: last-modified
 ---
 
-::: {.callout-note}
-## Status: Not Started
-This report is a placeholder. Content will be added as the long test infrastructure is developed.
-:::
+```{julia}
+#| echo: false
+#| output: false
+using Pkg
+Pkg.activate(joinpath(@__DIR__, ".."))
+using DataFrames
+using JSON3
+using CairoMakie
+using Statistics
 
-## 1. Summary Dashboard
+# Load ReportHelpers
+include("../src/ReportHelpers.jl")
+using .ReportHelpers
 
-### Pass/Fail Status
+# Get longtest results directory
+RESULTS_DIR = normpath(joinpath(@__DIR__, "..", "cache", "longtest_results"))
+```
 
-| Test | Family | Observation | Status | Last Run |
-|------|--------|-------------|--------|----------|
-| `longtest_exact_markov.jl` | Mixed | Exact | ⏳ | - |
-| `longtest_mcem.jl` | Mixed | Panel | ⏳ | - |
-| `longtest_mcem_splines.jl` | B-Spline | Panel | ⏳ | - |
-| `longtest_mcem_tvc.jl` | Mixed | Panel + TVC | ⏳ | - |
-| `longtest_phasetype.jl` | Mixed | Panel | ⏳ | - |
-| `longtest_sir.jl` | Mixed | Panel | ⏳ | - |
-| `longtest_simulation_distribution.jl` | All | Simulation | ⏳ | - |
-| `longtest_variance_validation.jl` | Mixed | Panel | ⏳ | - |
+## 1. Test Inventory
+
+```{julia}
+#| echo: false
+#| label: tbl-inventory
+#| tbl-cap: "Long Test Results Summary"
+
+inventory = create_test_inventory_df(RESULTS_DIR)
+
+if nrow(inventory) == 0
+    println("No test results found in cache. Run long tests first.")
+else
+    # Summary stats
+    n_pass = count(x -> occursin("Pass", x), inventory.Status)
+    n_fail = count(x -> occursin("Fail", x), inventory.Status)
+    n_total = nrow(inventory)
+    
+    println("**Summary**: $n_pass / $n_total tests passed ($n_fail failed)")
+    println("")
+    
+    # Display table
+    inventory
+end
+```
 
 ## 2. Parametric Models
 
-### 2.1 Exponential (Exact Observation)
+### 2.1 Exponential Hazard
 
-#### Setup
+```{julia}
+#| echo: false
+#| label: fig-exp-exact
 
-*To be documented*
+# Load results for exponential exact tests
+exp_tests = ["exp_exact_nocov", "exp_exact_fixed", "exp_exact_tvc"]
 
-#### Parameter Recovery
+for test_name in exp_tests
+    result = load_longtest_result(test_name)
+    if !isnothing(result)
+        println("#### $test_name")
+        println("- **Status**: $(get(result, :passed, false) ? "✅ Pass" : "❌ Fail")")
+        println("- **N subjects**: $(get(result, :n_subjects, "?"))")
+        println("")
+        
+        # Parameter table
+        params = get(result, :true_params, Dict())
+        estimates = get(result, :estimated_params, Dict())
+        if !isempty(params)
+            println("| Parameter | True | Estimated |")
+            println("|-----------|------|-----------|")
+            for (k, v) in params
+                est = get(estimates, k, NaN)
+                println("| $k | $(round(v, digits=4)) | $(round(est, digits=4)) |")
+            end
+            println("")
+        end
+    else
+        println("#### $test_name\n*Not yet run*\n")
+    end
+end
+```
 
-| Parameter | True | Estimated | SE | Coverage |
-|-----------|------|-----------|-----|----------|
-| rate_12 | - | - | - | - |
-| rate_23 | - | - | - | - |
+### 2.2 Weibull Hazard
 
-#### Diagnostic Plots
+```{julia}
+#| echo: false
 
-*Plots to be generated*
+wei_tests = ["wei_exact_nocov", "wei_exact_fixed", "wei_exact_tvc", 
+             "wei_mcem_nocov", "wei_mcem_fixed", "wei_mcem_tvc"]
 
-### 2.2 Weibull (Exact Observation)
+for test_name in wei_tests
+    result = load_longtest_result(test_name)
+    if !isnothing(result)
+        println("#### $test_name")
+        println("- **Status**: $(get(result, :passed, false) ? "✅ Pass" : "❌ Fail")")
+        println("- **N subjects**: $(get(result, :n_subjects, "?"))")
+        println("")
+    else
+        println("#### $test_name\n*Not yet run*\n")
+    end
+end
+```
 
-#### Setup
+### 2.3 Gompertz Hazard
 
-*To be documented*
+```{julia}
+#| echo: false
 
-#### Parameter Recovery
+gom_tests = ["gom_exact_nocov", "gom_exact_fixed", "gom_exact_tvc",
+             "gom_mcem_nocov", "gom_mcem_fixed", "gom_mcem_tvc"]
 
-| Parameter | True | Estimated | SE | Coverage |
-|-----------|------|-----------|-----|----------|
-| shape_12 | - | - | - | - |
-| scale_12 | - | - | - | - |
+for test_name in gom_tests
+    result = load_longtest_result(test_name)
+    if !isnothing(result)
+        println("#### $test_name")
+        println("- **Status**: $(get(result, :passed, false) ? "✅ Pass" : "❌ Fail")")
+        println("- **N subjects**: $(get(result, :n_subjects, "?"))")
+        println("")
+    else
+        println("#### $test_name\n*Not yet run*\n")
+    end
+end
+```
 
-#### Diagnostic Plots
+## 3. Panel Data (Exponential / Markov)
 
-*Plots to be generated*
+```{julia}
+#| echo: false
 
-### 2.3 Gompertz (Exact Observation)
+panel_tests = ["exp_panel_nocov", "exp_panel_fixed", "exp_panel_tvc"]
 
-#### Setup
+for test_name in panel_tests
+    result = load_longtest_result(test_name)
+    if !isnothing(result)
+        println("#### $test_name")
+        println("- **Status**: $(get(result, :passed, false) ? "✅ Pass" : "❌ Fail")")
+        println("- **N subjects**: $(get(result, :n_subjects, "?"))")
+        println("")
+    else
+        println("#### $test_name\n*Not yet run*\n")
+    end
+end
+```
 
-*To be documented*
+## 4. Notes
 
-#### Parameter Recovery
-
-| Parameter | True | Estimated | SE | Coverage |
-|-----------|------|-----------|-----|----------|
-| shape_12 | - | - | - | - |
-| rate_12 | - | - | - | - |
-
-#### Diagnostic Plots
-
-*Plots to be generated*
-
-### 2.4 Markov Panel Data
-
-#### Setup
-
-*To be documented*
-
-#### Parameter Recovery
-
-*Tables to be generated*
-
-#### Diagnostic Plots
-
-*Plots to be generated*
-
-## 3. Spline Models
-
-### 3.1 B-Splines (Panel Data)
-
-#### Setup
-
-*To be documented*
-
-#### Hazard Curve Recovery
-
-*Plots to be generated: True vs Estimated hazard curves*
-
-#### Cumulative Incidence
-
-*Plots to be generated*
-
-## 4. Semi-Markov Models
-
-### 4.1 Duration-Dependent Hazards
-
-#### Setup
-
-*To be documented*
-
-#### Parameter Recovery
-
-*Tables to be generated*
-
-#### Diagnostic Plots
-
-*Plots to be generated*
-
-## 5. Time-Varying Covariates
-
-### 5.1 Step-Function TVC
-
-#### Setup
-
-*To be documented*
-
-#### Parameter Recovery
-
-*Tables to be generated*
-
-#### Diagnostic Plots
-
-*Plots to be generated*
-
-## 6. MCEM Convergence
-
-### Convergence Diagnostics
-
-*Trace plots to be generated*
-
-### Effective Sample Size
-
-*ESS plots to be generated*
+- Tests use a 3-state progressive model: State 1 → State 2 → State 3
+- Parameter recovery tolerance: 35% relative error for main parameters
+- TVC (time-varying covariate) tests verify covariate effects change at t=5
+- Exact data uses `obstype=1` (continuous observation)
+- Panel data uses discrete observation times with MCEM for semi-Markov families

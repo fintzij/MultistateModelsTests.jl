@@ -352,7 +352,19 @@ Returns a CairoMakie Figure.
 Colors: Red = true model, Blue = fitted model
 """
 function plot_state_prevalence(result; figsize=(800, 400))
+    if !haskey(result, :prevalence_times) || isnothing(result[:prevalence_times])
+        return nothing
+    end
+    
+    if !haskey(result, :prevalence_true) || isnothing(result[:prevalence_true])
+        return nothing
+    end
+
     times = collect(Float64, result[:prevalence_times])
+    if isempty(times)
+        return nothing
+    end
+
     n_states = result[:n_states]
     
     fig = Figure(size=figsize)
@@ -366,25 +378,37 @@ function plot_state_prevalence(result; figsize=(800, 400))
         
         sk = string(s)
         
-        # True model (red)
-        prev_true = collect(Float64, result[:prevalence_true][sk])
-        prev_true_lo = collect(Float64, result[:prevalence_true_lower][sk])
-        prev_true_hi = collect(Float64, result[:prevalence_true_upper][sk])
-        
-        band!(ax, times, prev_true_lo, prev_true_hi, color=(:red, 0.2))
-        lines!(ax, times, prev_true, color=:red, linewidth=2, label="True")
-        
-        # Fitted model (blue)
-        prev_fit = collect(Float64, result[:prevalence_fitted][sk])
-        prev_fit_lo = collect(Float64, result[:prevalence_fitted_lower][sk])
-        prev_fit_hi = collect(Float64, result[:prevalence_fitted_upper][sk])
-        
-        band!(ax, times, prev_fit_lo, prev_fit_hi, color=(:blue, 0.2))
-        lines!(ax, times, prev_fit, color=:blue, linewidth=2, linestyle=:dash, label="Fitted")
+        # Check if data exists for this state
+        has_plots = false
+        if haskey(result[:prevalence_true], sk)
+            # True model (red)
+            prev_true = collect(Float64, result[:prevalence_true][sk])
+            
+            if !isempty(prev_true)
+                prev_true_lo = collect(Float64, result[:prevalence_true_lower][sk])
+                prev_true_hi = collect(Float64, result[:prevalence_true_upper][sk])
+                
+                band!(ax, times, prev_true_lo, prev_true_hi, color=(:red, 0.2))
+                lines!(ax, times, prev_true, color=:red, linewidth=2, label="True")
+                has_plots = true
+            end
+            
+            # Fitted model (blue)
+            if haskey(result, :prevalence_fitted) && haskey(result[:prevalence_fitted], sk)
+                prev_fit = collect(Float64, result[:prevalence_fitted][sk])
+                if !isempty(prev_fit)
+                    prev_fit_lo = collect(Float64, result[:prevalence_fitted_lower][sk])
+                    prev_fit_hi = collect(Float64, result[:prevalence_fitted_upper][sk])
+                    
+                    band!(ax, times, prev_fit_lo, prev_fit_hi, color=(:blue, 0.2))
+                    lines!(ax, times, prev_fit, color=:blue, linewidth=2, linestyle=:dash, label="Fitted")
+                end
+            end
+        end
         
         ylims!(ax, 0, 1)
         
-        if s == n_states
+        if s == n_states && has_plots
             axislegend(ax, position=:rt)
         end
     end
@@ -403,6 +427,10 @@ Note: Only transitions 1→2 and 2→3 are shown (no 1→3 for progressive model
 Colors: Red = true model, Blue = fitted model
 """
 function plot_cumulative_incidence(result; transitions=[(1,2), (2,3)], figsize=(700, 300))
+    if !haskey(result, :cumulative_incidence_times)
+        return nothing
+    end
+
     times = collect(Float64, result[:cumulative_incidence_times])
     
     fig = Figure(size=figsize)
@@ -570,8 +598,16 @@ end
 Create a 2x2 validation panel with prevalence (3 states) and cumulative incidence.
 """
 function plot_validation_panel(result; figsize=(900, 600))
+    if !haskey(result, :prevalence_times) || !haskey(result, :cumulative_incidence_times)
+        return nothing
+    end
+
     times_prev = collect(Float64, result[:prevalence_times])
     times_ci = collect(Float64, result[:cumulative_incidence_times])
+    
+    if isempty(times_prev) || isempty(times_ci)
+        return nothing
+    end
     
     fig = Figure(size=figsize)
     
@@ -585,26 +621,35 @@ function plot_validation_panel(result; figsize=(900, 600))
         
         sk = string(s)
         
-        if haskey(result[:prevalence_true], sk)
+        has_plots = false
+        if haskey(result, :prevalence_true) && haskey(result[:prevalence_true], sk)
             # True model (red)
             prev_true = collect(Float64, result[:prevalence_true][sk])
-            prev_true_lo = collect(Float64, result[:prevalence_true_lower][sk])
-            prev_true_hi = collect(Float64, result[:prevalence_true_upper][sk])
             
-            band!(ax, times_prev, prev_true_lo, prev_true_hi, color=(:red, 0.2))
-            lines!(ax, times_prev, prev_true, color=:red, linewidth=2, label="True")
+            if !isempty(prev_true)
+                prev_true_lo = collect(Float64, result[:prevalence_true_lower][sk])
+                prev_true_hi = collect(Float64, result[:prevalence_true_upper][sk])
+                
+                band!(ax, times_prev, prev_true_lo, prev_true_hi, color=(:red, 0.2))
+                lines!(ax, times_prev, prev_true, color=:red, linewidth=2, label="True")
+                has_plots = true
+            end
             
             # Fitted model (blue)
-            prev_fit = collect(Float64, result[:prevalence_fitted][sk])
-            prev_fit_lo = collect(Float64, result[:prevalence_fitted_lower][sk])
-            prev_fit_hi = collect(Float64, result[:prevalence_fitted_upper][sk])
-            
-            band!(ax, times_prev, prev_fit_lo, prev_fit_hi, color=(:blue, 0.2))
-            lines!(ax, times_prev, prev_fit, color=:blue, linewidth=2, linestyle=:dash, label="Fitted")
+            if haskey(result, :prevalence_fitted) && haskey(result[:prevalence_fitted], sk)
+                prev_fit = collect(Float64, result[:prevalence_fitted][sk])
+                if !isempty(prev_fit)
+                    prev_fit_lo = collect(Float64, result[:prevalence_fitted_lower][sk])
+                    prev_fit_hi = collect(Float64, result[:prevalence_fitted_upper][sk])
+                    
+                    band!(ax, times_prev, prev_fit_lo, prev_fit_hi, color=(:blue, 0.2))
+                    lines!(ax, times_prev, prev_fit, color=:blue, linewidth=2, linestyle=:dash, label="Fitted")
+                end
+            end
         end
         
         ylims!(ax, 0, 1)
-        if s == 3
+        if s == 3 && has_plots
             axislegend(ax, position=:rt)
         end
     end
@@ -619,26 +664,35 @@ function plot_validation_panel(result; figsize=(900, 600))
         
         key = "$from→$to"
         
-        if haskey(result[:cumulative_incidence_true], key)
+        has_ci_plots = false
+        if haskey(result, :cumulative_incidence_true) && haskey(result[:cumulative_incidence_true], key)
             # True model (red)
             ci_true = collect(Float64, result[:cumulative_incidence_true][key])
-            ci_true_lo = collect(Float64, result[:cumulative_incidence_true_lower][key])
-            ci_true_hi = collect(Float64, result[:cumulative_incidence_true_upper][key])
             
-            band!(ax, times_ci, ci_true_lo, ci_true_hi, color=(:red, 0.2))
-            lines!(ax, times_ci, ci_true, color=:red, linewidth=2, label="True")
+            if !isempty(ci_true)
+                ci_true_lo = collect(Float64, result[:cumulative_incidence_true_lower][key])
+                ci_true_hi = collect(Float64, result[:cumulative_incidence_true_upper][key])
+                
+                band!(ax, times_ci, ci_true_lo, ci_true_hi, color=(:red, 0.2))
+                lines!(ax, times_ci, ci_true, color=:red, linewidth=2, label="True")
+                has_ci_plots = true
+            end
             
             # Fitted model (blue)
-            ci_fit = collect(Float64, result[:cumulative_incidence_fitted][key])
-            ci_fit_lo = collect(Float64, result[:cumulative_incidence_fitted_lower][key])
-            ci_fit_hi = collect(Float64, result[:cumulative_incidence_fitted_upper][key])
-            
-            band!(ax, times_ci, ci_fit_lo, ci_fit_hi, color=(:blue, 0.2))
-            lines!(ax, times_ci, ci_fit, color=:blue, linewidth=2, linestyle=:dash, label="Fitted")
+            if haskey(result, :cumulative_incidence_fitted) && haskey(result[:cumulative_incidence_fitted], key)
+                ci_fit = collect(Float64, result[:cumulative_incidence_fitted][key])
+                if !isempty(ci_fit)
+                    ci_fit_lo = collect(Float64, result[:cumulative_incidence_fitted_lower][key])
+                    ci_fit_hi = collect(Float64, result[:cumulative_incidence_fitted_upper][key])
+                    
+                    band!(ax, times_ci, ci_fit_lo, ci_fit_hi, color=(:blue, 0.2))
+                    lines!(ax, times_ci, ci_fit, color=:blue, linewidth=2, linestyle=:dash, label="Fitted")
+                end
+            end
         end
         
         ylims!(ax, 0, 1)
-        if i == 2
+        if i == 2 && has_ci_plots
             axislegend(ax, position=:rb)
         end
     end

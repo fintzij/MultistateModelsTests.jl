@@ -39,6 +39,10 @@ import MultistateModels: Hazard, multistatemodel, fit, set_parameters!, simulate
 # Include longtest-only helpers (build_phasetype_model, build_phasetype_hazards, etc.)
 include("phasetype_longtest_helpers.jl")
 
+# Include shared longtest helpers for cache integration
+include("longtest_config.jl")
+include("longtest_helpers.jl")
+
 const RNG_SEED = 0xDEAD0001
 const N_SUBJECTS = 1000            # Standard sample size for longtests
 const MAX_TIME = 10.0              # Maximum follow-up time
@@ -317,6 +321,20 @@ end
         println("Fitted params (log): $(round.(fitted_params, digits=3))")
         
         @test check_parameter_recovery(fitted_params, true_log)
+        
+        # Cache results
+        param_names = ["p$i" for i in 1:length(true_log)]
+        capture_simple_longtest_result!(
+            "pt_panel_simple",
+            fitted,
+            true_log,
+            param_names;
+            hazard_family="phasetype",
+            data_type="panel",
+            covariate_type="none",
+            n_subjects=N_SUBJECTS,
+            n_states=2
+        )
     end
 end
 
@@ -385,6 +403,20 @@ end
         
         # Use more tolerant threshold for complex multi-phase models with panel data
         @test check_parameter_recovery(fitted_params, true_log; tol_rel=PARAM_TOL_REL_COMPLEX)
+        
+        # Cache results
+        param_names = ["p$i" for i in 1:length(true_log)]
+        capture_simple_longtest_result!(
+            "pt_panel_id",
+            fitted,
+            true_log,
+            param_names;
+            hazard_family="phasetype",
+            data_type="panel",
+            covariate_type="none",
+            n_subjects=N_SUBJECTS,
+            n_states=3
+        )
     end
 end
 
@@ -471,6 +503,20 @@ end
         println("Fitted params (log): $(round.(fitted_params, digits=3))")
         
         @test check_parameter_recovery(fitted_params, true_log)
+        
+        # Cache results
+        param_names = ["p$i" for i in 1:length(true_log)]
+        capture_simple_longtest_result!(
+            "pt_mixed_simple",
+            fitted,
+            true_log,
+            param_names;
+            hazard_family="phasetype",
+            data_type="mixed",
+            covariate_type="none",
+            n_subjects=n_exact + n_panel,
+            n_states=2
+        )
     end
     
     @testset "Comparison: exact-only vs panel-only vs mixed" begin
@@ -594,6 +640,20 @@ end
         println("Fitted params (log): $(round.(fitted_params, digits=3))")
         
         @test check_parameter_recovery(fitted_params, true_log)
+        
+        # Cache results
+        param_names = ["p$i" for i in 1:length(true_log)]
+        capture_simple_longtest_result!(
+            "pt_mixed_structured",
+            fitted,
+            true_log,
+            param_names;
+            hazard_family="phasetype",
+            data_type="mixed",
+            covariate_type="none",
+            n_subjects=N_SUBJECTS,
+            n_states=2
+        )
     end
 end
 
@@ -765,6 +825,26 @@ end
         
         # Panel data has higher variance - use relaxed tolerance
         @test isapprox(fitted_params[4], true_betas[2]; atol=0.5)
+        
+        # Cache results (true_params includes baseline rates and covariate effects)
+        true_params = Float64[]
+        for i in 1:length(true_rates)
+            push!(true_params, log(true_rates[i]))
+            push!(true_params, true_betas[i])
+        end
+        
+        param_names = ["p$i" for i in 1:length(true_params)]
+        capture_simple_longtest_result!(
+            "pt_panel_fixed",
+            fitted,
+            true_params,
+            param_names;
+            hazard_family="phasetype",
+            data_type="panel",
+            covariate_type="fixed",
+            n_subjects=N_SUBJECTS,
+            n_states=2
+        )
     end
 end
 
@@ -891,6 +971,26 @@ end
         # Panel + TVC has high variance, so just check direction
         @test fitted_params[4] > -0.5  # μ₁ beta
         @test fitted_params[6] > -0.5  # μ₂ beta
+        
+        # Cache results (true_params includes baseline rates and covariate effects)
+        true_params = Float64[]
+        for i in 1:length(true_rates)
+            push!(true_params, log(true_rates[i]))
+            push!(true_params, true_betas[i])
+        end
+        
+        param_names = ["p$i" for i in 1:length(true_params)]
+        capture_simple_longtest_result!(
+            "pt_panel_tvc",
+            fitted,
+            true_params,
+            param_names;
+            hazard_family="phasetype",
+            data_type="panel",
+            covariate_type="tvc",
+            n_subjects=n_subj,
+            n_states=2
+        )
     end
 end
 

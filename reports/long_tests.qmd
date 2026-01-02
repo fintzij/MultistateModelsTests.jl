@@ -197,7 +197,11 @@ for test_name in available_results
     println("Red = true model, Blue = fitted model\n")
     
     fig = plot_state_prevalence(result)
-    display(fig)
+    if !isnothing(fig)
+        display(fig)
+    else
+        println("*(Prevalence plots not available for this test)*")
+    end
 end
 ```
 
@@ -220,7 +224,11 @@ for test_name in available_results
     println("Transitions 1→2 and 2→3 only (progressive model)\n")
     
     fig = plot_cumulative_incidence(result)
-    display(fig)
+    if !isnothing(fig)
+        display(fig)
+    else
+        println("*(Cumulative incidence plots not available for this test)*")
+    end
 end
 ```
 

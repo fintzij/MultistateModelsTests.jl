@@ -21,6 +21,10 @@ using Random
 using Statistics
 using Printf
 
+# Include shared longtest helpers for cache integration
+include("longtest_config.jl")
+include("longtest_helpers.jl")
+
 # Import internal functions for testing
 import MultistateModels: Hazard, multistatemodel, fit, set_parameters!, simulate,
     get_parameters_flat, cumulative_hazard, get_parameters, PhaseTypeProposal
@@ -372,6 +376,18 @@ end
     
     # Convergence check
     @test isfinite(fitted.loglik.loglik)
+    
+    # Cache results (only covariate effect is directly comparable)
+    capture_simple_longtest_result!(
+        "sp_mcem_fixed",
+        fitted,
+        [true_beta],
+        ["beta"];
+        hazard_family = "sp",
+        data_type = "panel",
+        covariate_type = "fixed",
+        n_subjects = N_SUBJECTS
+    )
     
     println("  ✓ Spline with covariates works in MCEM")
 end

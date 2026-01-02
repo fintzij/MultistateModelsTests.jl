@@ -1,0 +1,102 @@
+{
+    "n_simulations": 0,
+    "n_tests_passed": 0,
+    "cumulative_incidence_true": {
+    },
+    "prevalence_true_upper": {
+    },
+    "estimated_params": {
+        "beta_1": -0.01849887666044823,
+        "log_rate_3": -0.5843986833010361,
+        "log_rate_1": -0.8756466808501063,
+        "log_rate_2": -1.3778885609247056,
+        "beta_3": 0.3191352342337072,
+        "beta_2": 0.4547554666268714
+    },
+    "git_branch": "penalized_splines",
+    "n_tests_failed": 0,
+    "param_passed": {
+        "beta_1": true,
+        "log_rate_3": true,
+        "log_rate_1": true,
+        "log_rate_2": true,
+        "beta_3": true,
+        "beta_2": true
+    },
+    "test_description": "pt - exact - tvc",
+    "ci_lower": {
+        "beta_1": -0.35964906100139515,
+        "log_rate_3": -0.6740469966353203,
+        "log_rate_1": -0.9570312511067715,
+        "log_rate_2": -1.4825056214106958,
+        "beta_3": 0.12584268154898534,
+        "beta_2": 0.10271432609194309
+    },
+    "cumulative_incidence_true_lower": {
+    },
+    "prevalence_true": {
+    },
+    "passed": true,
+    "ci_upper": {
+        "beta_1": 0.32265130768049866,
+        "log_rate_3": -0.49475036996675176,
+        "log_rate_1": -0.7942621105934412,
+        "log_rate_2": -1.2732715004387154,
+        "beta_3": 0.512427786918429,
+        "beta_2": 0.8067966071617997
+    },
+    "prevalence_observed": {
+    },
+    "prevalence_true_lower": {
+    },
+    "n_states": 3,
+    "prevalence_fitted_upper": {
+    },
+    "fitting_time_seconds": 0,
+    "n_subjects": 1000,
+    "prevalence_times": [
+    ],
+    "cumulative_incidence_true_upper": {
+    },
+    "prevalence_fitted_lower": {
+    },
+    "hazard_family": "pt",
+    "covariate_type": "tvc",
+    "true_params": {
+        "beta_1": 0,
+        "log_rate_3": -0.6931471805599453,
+        "log_rate_1": -0.916290731874155,
+        "log_rate_2": -1.3862943611198906,
+        "beta_3": 0.4,
+        "beta_2": 0.5
+    },
+    "cumulative_incidence_fitted_lower": {
+    },
+    "git_commit": "6b59be0",
+    "all_tests_passed": false,
+    "data_summary": {
+    },
+    "test_name": "pt_exact_tvc",
+    "data_type": "exact",
+    "prevalence_fitted": {
+    },
+    "failure_messages": [
+    ],
+    "standard_errors": {
+        "beta_1": 0.1740562165004831,
+        "log_rate_3": 0.04573893537463484,
+        "log_rate_1": 0.041522739926869945,
+        "log_rate_2": 0.05337605126836235,
+        "beta_3": 0.09861864932893973,
+        "beta_2": 0.17961282680353485
+    },
+    "cumulative_incidence_fitted": {
+    },
+    "cumulative_incidence_fitted_upper": {
+    },
+    "timestamp": "2026-01-02T13:47:20.830",
+    "cumulative_incidence_times": [
+    ],
+    "hazard_families": [
+    ]
+}

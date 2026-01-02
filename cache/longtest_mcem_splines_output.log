@@ -1,0 +1,363 @@
+
+******************************************************************************
+This program contains Ipopt, a library for large-scale nonlinear optimization.
+ Ipopt is released as open source code under the Eclipse Public License (EPL).
+         For more information visit https://github.com/coin-or/Ipopt
+******************************************************************************
+
+Using SQUAREM acceleration for MCEM.
+
+Using adaptive SIR (will switch to lhs when cost-effective).
+
+Using model's Markov surrogate for MCEM.
+
+Initializing sample paths ...
+
+Initial target ESS: 25.0 per-subject
+Initial range of the number of sample paths per-subject: [25, 50]
+Initial estimate of the marginal log-likelihood, Q: -1526.096
+Initial estimate of the log marginal likelihood: -1079.445
+
+Starting Monte Carlo EM...
+
+Iteration: 1
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1519.25
+Gain in marginal log-likelihood, ΔQ: 6.85
+MCEM asymptotic standard error: 0.273
+Ascent lower and upper bound: [6.5, 7.2]
+Estimate of the log marginal likelihood, l(θ): -1070.678
+SQUAREM: 0 accelerations, 0 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 2
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1528.373
+Gain in marginal log-likelihood, ΔQ: 0.526
+MCEM asymptotic standard error: 0.0772
+Ascent lower and upper bound: [0.427, 0.625]
+Estimate of the log marginal likelihood, l(θ): -1070.0
+SQUAREM: 0 accelerations, 1 fallbacks
+
+Iteration: 3
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1530.72
+Gain in marginal log-likelihood, ΔQ: 0.0438
+MCEM asymptotic standard error: 0.0226
+Ascent lower and upper bound: [0.0149, 0.0728]
+Estimate of the log marginal likelihood, l(θ): -1069.943
+SQUAREM: 0 accelerations, 1 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 4
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1531.384
+Gain in marginal log-likelihood, ΔQ: 0.0038
+MCEM asymptotic standard error: 0.00668
+Ascent lower and upper bound: [-0.00476, 0.0124]
+Estimate of the log marginal likelihood, l(θ): -1069.938
+SQUAREM: 0 accelerations, 2 fallbacks
+
+The MCEM algorithm has converged.
+
+  ✓ Linear spline approximates constant/exponential hazard
+Test Summary:              | Pass  Total   Time
+MCEM Spline vs Exponential |   11     11  49.2s
+Using SQUAREM acceleration for MCEM.
+
+Using adaptive SIR (will switch to lhs when cost-effective).
+
+Using model's Markov surrogate for MCEM.
+
+Initializing sample paths ...
+
+Initial target ESS: 25.0 per-subject
+Initial range of the number of sample paths per-subject: [25, 50]
+Initial estimate of the marginal log-likelihood, Q: -1542.569
+Initial estimate of the log marginal likelihood: -1048.519
+
+Starting Monte Carlo EM...
+
+Iteration: 1
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1538.23
+Gain in marginal log-likelihood, ΔQ: 4.34
+MCEM asymptotic standard error: 0.22
+Ascent lower and upper bound: [4.06, 4.62]
+Estimate of the log marginal likelihood, l(θ): -1042.934
+SQUAREM: 0 accelerations, 0 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 2
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1546.943
+Gain in marginal log-likelihood, ΔQ: 0.354
+MCEM asymptotic standard error: 0.0641
+Ascent lower and upper bound: [0.272, 0.436]
+Estimate of the log marginal likelihood, l(θ): -1042.476
+SQUAREM: 0 accelerations, 1 fallbacks
+
+Iteration: 3
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1549.325
+Gain in marginal log-likelihood, ΔQ: 0.0323
+MCEM asymptotic standard error: 0.0217
+Ascent lower and upper bound: [0.00446, 0.0601]
+Estimate of the log marginal likelihood, l(θ): -1042.432
+SQUAREM: 0 accelerations, 1 fallbacks
+
+  [SQUAREM: acceleration accepted, α=-0.989]
+
+Iteration: 4
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1550.019
+Gain in marginal log-likelihood, ΔQ: 0.00603
+MCEM asymptotic standard error: 0.0131
+Ascent lower and upper bound: [-0.0108, 0.0228]
+Estimate of the log marginal likelihood, l(θ): -1042.422
+SQUAREM: 1 accelerations, 1 fallbacks
+
+The MCEM algorithm has converged.
+
+  ✓ Spline with interior knot handles piecewise hazard
+Test Summary:                     | Pass  Total   Time
+MCEM Spline Piecewise Exponential |   12     12  12.0s
+Using SQUAREM acceleration for MCEM.
+
+Using adaptive SIR (will switch to lhs when cost-effective).
+
+Using model's Markov surrogate for MCEM.
+
+Initializing sample paths ...
+
+Initial target ESS: 25.0 per-subject
+Initial range of the number of sample paths per-subject: [25, 50]
+Initial estimate of the marginal log-likelihood, Q: -1484.27
+Initial estimate of the log marginal likelihood: -1097.473
+
+Starting Monte Carlo EM...
+
+Iteration: 1
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1471.98
+Gain in marginal log-likelihood, ΔQ: 12.3
+MCEM asymptotic standard error: 0.36
+Ascent lower and upper bound: [11.8, 12.8]
+Estimate of the log marginal likelihood, l(θ): -1081.819
+SQUAREM: 0 accelerations, 0 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 2
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1474.32
+Gain in marginal log-likelihood, ΔQ: 0.911
+MCEM asymptotic standard error: 0.0997
+Ascent lower and upper bound: [0.783, 1.04]
+Estimate of the log marginal likelihood, l(θ): -1080.669
+SQUAREM: 0 accelerations, 1 fallbacks
+
+Iteration: 3
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1474.951
+Gain in marginal log-likelihood, ΔQ: 0.0718
+MCEM asymptotic standard error: 0.0314
+Ascent lower and upper bound: [0.0315, 0.112]
+Estimate of the log marginal likelihood, l(θ): -1080.574
+SQUAREM: 0 accelerations, 1 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 4
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1475.308
+Gain in marginal log-likelihood, ΔQ: 0.0128
+MCEM asymptotic standard error: 0.0193
+Ascent lower and upper bound: [-0.0119, 0.0375]
+Estimate of the log marginal likelihood, l(θ): -1080.55
+SQUAREM: 0 accelerations, 2 fallbacks
+
+The MCEM algorithm has converged.
+
+  ✓ Cubic spline approximates Gompertz (increasing) hazard
+Test Summary:           | Pass  Total   Time
+MCEM Spline vs Gompertz |    8      8  23.4s
+Using SQUAREM acceleration for MCEM.
+
+Using adaptive SIR (will switch to lhs when cost-effective).
+
+Using model's Markov surrogate for MCEM.
+
+Initializing sample paths ...
+
+Initial target ESS: 25.0 per-subject
+Initial range of the number of sample paths per-subject: [25, 50]
+Initial estimate of the marginal log-likelihood, Q: -1560.821
+Initial estimate of the log marginal likelihood: -1251.682
+
+Starting Monte Carlo EM...
+
+Iteration: 1
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1558.554
+Gain in marginal log-likelihood, ΔQ: 2.27
+MCEM asymptotic standard error: 0.121
+Ascent lower and upper bound: [2.11, 2.42]
+Estimate of the log marginal likelihood, l(θ): -1249.042
+SQUAREM: 0 accelerations, 0 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 2
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1562.807
+Gain in marginal log-likelihood, ΔQ: 0.0633
+MCEM asymptotic standard error: 0.0209
+Ascent lower and upper bound: [0.0366, 0.0901]
+Estimate of the log marginal likelihood, l(θ): -1248.968
+SQUAREM: 0 accelerations, 1 fallbacks
+
+Iteration: 3
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1563.522
+Gain in marginal log-likelihood, ΔQ: 0.00192
+MCEM asymptotic standard error: 0.00366
+Ascent lower and upper bound: [-0.00276, 0.00661]
+Estimate of the log marginal likelihood, l(θ): -1248.966
+SQUAREM: 0 accelerations, 1 fallbacks
+
+The MCEM algorithm has converged.
+
+  ✓ Spline with covariates works in MCEM
+Test Summary:               | Pass  Total   Time
+MCEM Spline with Covariates |    5      5  17.8s
+[ Info: Natural boundary conditions are not currently compatible with monotone splines. The restrictions on second derivatives at the spline boundaries will be removed.
+Using SQUAREM acceleration for MCEM.
+
+Using adaptive SIR (will switch to lhs when cost-effective).
+
+Using model's Markov surrogate for MCEM.
+
+Initializing sample paths ...
+
+Initial target ESS: 25.0 per-subject
+Initial range of the number of sample paths per-subject: [25, 50]
+Initial estimate of the marginal log-likelihood, Q: -1523.792
+Initial estimate of the log marginal likelihood: -1070.562
+
+Starting Monte Carlo EM...
+
+Iteration: 1
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1522.051
+Gain in marginal log-likelihood, ΔQ: 1.74
+MCEM asymptotic standard error: 0.0425
+Ascent lower and upper bound: [1.69, 1.8]
+Estimate of the log marginal likelihood, l(θ): -1068.775
+SQUAREM: 0 accelerations, 0 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 2
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1523.28
+Gain in marginal log-likelihood, ΔQ: 0.00113
+MCEM asymptotic standard error: 0.00106
+Ascent lower and upper bound: [-0.000224, 0.00249]
+Estimate of the log marginal likelihood, l(θ): -1068.774
+SQUAREM: 0 accelerations, 1 fallbacks
+
+The MCEM algorithm has converged.
+
+  ✓ Monotone increasing spline enforces constraint in MCEM
+Test Summary:        | Pass  Total  Time
+MCEM Monotone Spline |    9      9  7.9s
+Using SQUAREM acceleration for MCEM.
+
+Using adaptive SIR (will switch to lhs when cost-effective).
+
+Using phase-type proposal for MCEM importance sampling.
+
+Using model's Markov surrogate for MCEM.
+
+Phase-type surrogate configuration:
+  n_phases per state: [3, 1]
+  Total expanded states: 4
+  Phase-type surrogate built successfully.
+
+Initializing sample paths ...
+
+Initial target ESS: 25.0 per-subject
+Initial range of the number of sample paths per-subject: [25, 50]
+Initial estimate of the marginal log-likelihood, Q: -1869.032
+Initial estimate of the log marginal likelihood: -1264.34
+
+Starting Monte Carlo EM...
+
+Iteration: 1
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1842.201
+Gain in marginal log-likelihood, ΔQ: 26.8
+MCEM asymptotic standard error: 0.336
+Ascent lower and upper bound: [26.4, 27.3]
+Estimate of the log marginal likelihood, l(θ): -1234.69
+SQUAREM: 0 accelerations, 0 fallbacks
+
+  [SQUAREM: no acceleration (Δ too small), using standard EM]
+
+Iteration: 2
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1835.848
+Gain in marginal log-likelihood, ΔQ: 0.491
+MCEM asymptotic standard error: 0.057
+Ascent lower and upper bound: [0.418, 0.564]
+Estimate of the log marginal likelihood, l(θ): -1234.119
+SQUAREM: 0 accelerations, 1 fallbacks
+
+Iteration: 3
+Target ESS: 25.0 per-subject
+Range of the number of sampled paths per-subject: [25, 50]
+Estimate of the marginal log-likelihood, Q: -1834.494
+Gain in marginal log-likelihood, ΔQ: 0.017
+MCEM asymptotic standard error: 0.0114
+Ascent lower and upper bound: [0.00239, 0.0317]
+Estimate of the log marginal likelihood, l(θ): -1234.1
+SQUAREM: 0 accelerations, 1 fallbacks
+
+The MCEM algorithm has converged.
+
+  ✓ Spline with PhaseType proposal works
+Test Summary:                    | Pass  Total   Time
+MCEM Spline - PhaseType Proposal |    8      8  12.8s
+
+=== MCEM Spline Long Test Suite Complete ===
+
+Tests verify:
+  - Linear spline approximates constant/exponential hazard
+  - Spline with interior knots handles piecewise hazard
+  - Cubic spline approximates Gompertz (exponential) hazard
+  - Spline with covariates recovers log hazard ratio
+  - Monotone spline constraints are enforced in MCEM
+  - Spline hazards work with PhaseType proposal

@@ -40,6 +40,10 @@ import MultistateModels: Hazard, multistatemodel, fit, set_parameters!, simulate
 # Include longtest-only helpers (build_phasetype_model, build_phasetype_hazards, etc.)
 include("phasetype_longtest_helpers.jl")
 
+# Include shared longtest helpers for cache integration
+include("longtest_config.jl")
+include("longtest_helpers.jl")
+
 const RNG_SEED = 0xABCD0001
 const N_SUBJECTS = 1000           # Large sample for MLE precision
 const N_SIM_TRAJ = 5000           # Trajectories for distributional comparison
@@ -202,13 +206,27 @@ end
     
     @testset "Parameter recovery" begin
         println("\nFitting phase-type model with direct MLE...")
-        fitted = fit(model_fit; verbose=false)
+        fitted = fit(model_fit; verbose=false, compute_vcov=true)
         
         fitted_params = get_parameters_flat(fitted)
         println("True params (log): $(round.(true_params_log, digits=3))")
         println("Fitted params (log): $(round.(fitted_params, digits=3))")
         
         @test check_parameter_recovery(fitted_params, true_params_log)
+        
+        # Cache results for reporting
+        param_names = ["log_rate_$i" for i in 1:n_hazards]
+        capture_simple_longtest_result!(
+            "pt_exact_nocov",
+            fitted,
+            true_params_log,
+            param_names;
+            hazard_family = "pt",
+            data_type = "exact",
+            covariate_type = "nocov",
+            n_subjects = N_SUBJECTS,
+            n_states = surrogate.n_expanded_states
+        )
     end
 end
 
@@ -417,6 +435,29 @@ end
         @test isapprox(fitted_params[4], true_betas[2]; atol=0.25)
         @test fitted_params[6] > 0.0  # Positive direction correct for μ₂
         @test isapprox(fitted_params[6], true_betas[3]; atol=0.25)
+        
+        # Cache results for reporting
+        # Parameters: (log_rate, beta) for each hazard
+        true_params_flat = Float64[]
+        param_names = String[]
+        for i in 1:n_hazards
+            push!(true_params_flat, log(true_rates[i]))
+            push!(true_params_flat, true_betas[i])
+            push!(param_names, "log_rate_$i")
+            push!(param_names, "beta_$i")
+        end
+        
+        capture_simple_longtest_result!(
+            "pt_exact_fixed",
+            fitted,
+            true_params_flat,
+            param_names;
+            hazard_family = "pt",
+            data_type = "exact",
+            covariate_type = "fixed",
+            n_subjects = N_SUBJECTS,
+            n_states = surrogate.n_expanded_states
+        )
     end
 end
 
@@ -491,7 +532,7 @@ end
     
     @testset "TVC parameter recovery" begin
         println("\nFitting phase-type model with TVC...")
-        fitted = fit(model_fit; verbose=false)
+        fitted = fit(model_fit; verbose=false, compute_vcov=true)
         
         fitted_params = get_parameters_flat(fitted)
         n_hazards = 3
@@ -511,6 +552,28 @@ end
         
         # Recovery tolerance is higher for TVC
         @test isapprox(fitted_params[4], true_betas[2]; atol=0.4)
+        
+        # Cache results for reporting
+        true_params_flat = Float64[]
+        param_names = String[]
+        for i in 1:n_hazards
+            push!(true_params_flat, log(true_rates[i]))
+            push!(true_params_flat, true_betas[i])
+            push!(param_names, "log_rate_$i")
+            push!(param_names, "beta_$i")
+        end
+        
+        capture_simple_longtest_result!(
+            "pt_exact_tvc",
+            fitted,
+            true_params_flat,
+            param_names;
+            hazard_family = "pt",
+            data_type = "exact",
+            covariate_type = "tvc",
+            n_subjects = n_subj,
+            n_states = surrogate.n_expanded_states
+        )
     end
 end
 

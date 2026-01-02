@@ -1,0 +1,206 @@
+
+======================================================================
+Phase-Type Hazard Models: Exact Data Long Tests
+======================================================================
+Testing inference for models with Coxian phase-type hazard structure.
+These models are Markov on the expanded state space → direct MLE.
+Default sample size: n=1000
+
+--- 2-Phase Coxian Illness-Death Model ---
+Observed states: 3, Phases per transient: 2
+Expanded states: 5 (2 + 2 + 1)
+Phase-type model structure:
+  Observed states: 3
+  Expanded states: 5
+  State 1 → phases 1:2 (2 phases)
+  State 2 → phases 3:4 (2 phases)
+  State 3 → phases 5:5 (1 phases)
+  Number of hazards: 8
+┌ Warning: Data does not contain any transitions from state 1 to state 2
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/validation.jl:114
+┌ Warning: Data does not contain any transitions from state 1 to state 3
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/validation.jl:114
+┌ Warning: Data does not contain any transitions from state 1 to state 5
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/validation.jl:114
+┌ Warning: Data does not contain any transitions from state 2 to state 3
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/validation.jl:114
+┌ Warning: Data does not contain any transitions from state 2 to state 5
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/validation.jl:114
+┌ Warning: Data does not contain any transitions from state 3 to state 4
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/validation.jl:114
+┌ Warning: Data does not contain any transitions from state 3 to state 5
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/validation.jl:114
+┌ Warning: Data does not contain any transitions from state 4 to state 5
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/validation.jl:114
+  Number of hazards in expanded model: 8
+  True rates: [0.5, 0.3, 0.4, 0.2, 0.25, 0.35, 0.3, 0.15]
+
+Simulating exact data...
+  Simulated 2089 observations
+
+Fitting phase-type model with direct MLE...
+
+******************************************************************************
+This program contains Ipopt, a library for large-scale nonlinear optimization.
+ Ipopt is released as open source code under the Eclipse Public License (EPL).
+         For more information visit https://github.com/coin-or/Ipopt
+******************************************************************************
+
+True params (log): [-0.693, -1.204, -0.916, -1.609, -1.386, -1.05, -1.204, -1.897]
+Fitted params (log): [-0.78, -1.075, -0.891, -1.559, -1.442, -1.018, -1.23, -1.752]
+Test Summary:                                         | Pass  Total   Time
+Phase-Type Hazard: 2-Phase Illness-Death (Exact Data) |   23     23  28.1s
+
+--- Distributional Fidelity Check ---
+Verify fitted phase-type model reproduces data-generating distribution
+  Quantiles (true → fitted):
+    25th: 1.137 → 1.077
+    50th: 2.358 → 2.31
+    75th: 3.977 → 4.06
+    90th: 5.991 → 5.84
+Test Summary:                             | Pass  Total  Time
+Distributional Fidelity: Phase-Type Model |    1      1  2.9s
+
+--- 2-Phase Phase-Type with Fixed Covariate ---
+Phase-type model structure:
+  Observed states: 2
+  Expanded states: 3
+  State 1 → phases 1:2 (2 phases)
+  State 2 → phases 3:3 (1 phases)
+  Number of hazards: 3
+┌ Warning: Data does not contain any transitions from state 1 to state 2
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/validation.jl:114
+┌ Warning: Data does not contain any transitions from state 1 to state 3
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/validation.jl:114
+┌ Warning: Data does not contain any transitions from state 2 to state 3
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/validation.jl:114
+  Number of hazards: 3
+  True rates: [0.5, 0.3, 0.6]
+  True betas: [0.0, 0.4, 0.3]
+
+Simulating exact data with covariate...
+  Simulated 1559 observations
+  Events: 995
+
+Fitting phase-type model with covariate...
+Test Summary:                                                | Pass  Total  Time
+Phase-Type Hazard: 2-Phase with Fixed Covariate (Exact Data) |   10     10  5.9s
+
+--- 2-Phase Phase-Type with Time-Varying Covariate ---
+  True rates: [0.4, 0.25, 0.5]
+  True TVC betas: [0.0, 0.5, 0.4]
+
+Simulating exact data with TVC...
+  Simulated 1957 observations
+
+Fitting phase-type model with TVC...
+Test Summary:                                    | Pass  Total  Time
+Phase-Type Hazard: 2-Phase with TVC (Exact Data) |    6      6  0.7s
+
+======================================================================
+Phase-Type Hazard Model Tests Complete
+======================================================================
+
+======================================================================
+Phase-Type Hazard Models: Panel & Mixed Data Long Tests
+======================================================================
+Testing inference for Coxian phase-type models with intermittent observations.
+These models are Markov on expanded state space → direct likelihood (no MCEM).
+Default sample size: n=1000
+
+--- Simple 2-State Phase-Type with Panel Data ---
+Observed states: 2, Expanded phases: 3
+State 1 → phases 1:2
+State 2 → phases 3:3
+True rates: [0.4, 0.2, 0.5]
+Observation times: [0.0, 2.5, 5.0, 7.5, 10.0]
+Simulated 1662 exact observations
+Converted to 4000 panel observations
+Panel data: 985 state changes observed, 3329 absorptions
+
+Fitting phase-type model with panel data...
+True params (log): [-0.916, -1.609, -0.693]
+Fitted params (log): [-0.84, -1.527, -0.654]
+Test Summary:                          | Pass  Total   Time
+Phase-Type Panel: Simple 2-State Model |    5      5  10.2s
+
+--- Illness-Death Phase-Type with Panel Data ---
+Observed states: 3, Expanded phases: 5
+True rates: [0.5, 0.3, 0.35, 0.4, 0.25, 0.2, 0.3, 0.35]
+Number of hazards: 8
+Sample size: 1000
+Panel observations: 2046 rows
+
+Fitting illness-death phase-type model with panel data...
+True params (log): [-0.693, -1.204, -1.05, -0.916, -1.386, -1.609, -1.204, -1.05]
+Fitted params (log): [-0.626, -1.224, -1.032, -0.953, -1.263, -1.568, -1.236, -1.04]
+Test Summary:                         | Pass  Total   Time
+Phase-Type Panel: Illness-Death Model |    1      1  12.6s
+
+--- Mixed Exact + Panel Data ---
+Some subjects observed exactly, others at panel times
+Template: 600 exact + 400 panel subjects
+True rates: [0.35, 0.25, 0.45]
+Simulated: 959 exact + 664 panel observations
+
+Fitting with mixed observation types...
+True params (log): [-1.05, -1.386, -0.799]
+Fitted params (log): [-1.038, -1.402, -0.792]
+
+Comparison of estimation approaches:
+  Exact-only:  [-1.024, -1.427, -0.831]
+  Panel-only:  [-1.084, -1.344, -0.731]
+  Mixed:       [-1.038, -1.402, -0.792]
+  True:        [-1.05, -1.386, -0.799]
+Test Summary:                        | Pass  Total   Time
+Phase-Type Mixed: Exact + Panel Data |    4      4  20.9s
+
+--- Structured Mixed Observations ---
+First half of subjects: exact observations
+Second half of subjects: panel observations
+Absorbing phase: 3
+Simulated: 805 exact + 822 panel observations
+
+Fitting with structured mixed observations...
+True params (log): [-0.916, -1.386, -0.693]
+Fitted params (log): [-0.952, -1.385, -0.726]
+Test Summary:                                  | Pass  Total  Time
+Phase-Type Mixed: Structured Mixed Observation |    1      1  8.4s
+
+--- Distributional Fidelity: Panel vs Exact ---
+  Quantiles (true → fitted from panel):
+    25th: 0.999 → 0.953
+    50th: 1.95 → 2.137
+    75th: 3.601 → 3.785
+    90th: 5.703 → 6.149
+Test Summary:                       | Pass  Total  Time
+Distributional Fidelity: Panel Data |    1      1  2.7s
+
+--- 2-Phase Phase-Type with Fixed Covariate (Panel Data) ---
+
+Fitting phase-type model with covariate from panel data...
+Test Summary:                                                | Pass  Total   Time
+Phase-Type Hazard: 2-Phase with Fixed Covariate (Panel Data) |    3      3  14.3s
+
+--- 2-Phase Phase-Type with TVC (Panel Data) ---
+
+Fitting phase-type model with TVC from panel data...
+Test Summary:                                    | Pass  Total  Time
+Phase-Type Hazard: 2-Phase with TVC (Panel Data) |    3      3  8.4s
+
+======================================================================
+Phase-Type Panel & Mixed Data Long Tests Complete
+======================================================================
+
+This test suite validated:
+  1. Simple 2-state phase-type with panel data
+  2. Illness-death phase-type with panel data
+  3. Mixed exact + panel observations
+  4. Illness-death with exactly observed absorptions
+  5. Distributional fidelity for panel data fitting
+  6. Phase-type with fixed covariates (panel data)
+  7. Phase-type with time-varying covariates (panel data)
+
+Key insight: Phase-type hazard models remain Markov on expanded space,
+so panel data can be fit with direct likelihood (no MCEM needed).
+======================================================================

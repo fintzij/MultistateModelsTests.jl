@@ -426,8 +426,8 @@ import MultistateModels: get_parameters_flat, default_nknots, place_interior_kno
         # For monotone splines, coefficients may be adjusted
         @test length(ests_after) == length(ests_before)
         
-        # Update model with rectified parameters using safe_unflatten
-        pars_nested = MultistateModels.safe_unflatten(ests_after, model)
+        # Update model with rectified parameters using unflatten_natural
+        pars_nested = MultistateModels.unflatten_natural(ests_after, model)
         for (hazname, hazidx) in model.hazkeys
             hazard_pars = pars_nested[hazname]
             # Extract full parameter vector (baseline + covariates)

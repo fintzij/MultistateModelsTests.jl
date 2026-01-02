@@ -852,7 +852,7 @@
             0.9329966997865613
         ]
     },
-    "git_commit": "b1144da",
+    "git_commit": "6b59be0",
     "all_tests_passed": false,
     "data_summary": {
         "state_3_count": 710,
@@ -2758,7 +2758,7 @@
             0.9462033002134387
         ]
     },
-    "timestamp": "2025-12-31T14:02:17.661",
+    "timestamp": "2026-01-01T16:30:59.909",
     "cumulative_incidence_times": [
         0,
         0.5,

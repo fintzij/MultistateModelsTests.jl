@@ -6,7 +6,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="dcterms.date" content="2025-12-19">
+<meta name="dcterms.date" content="2026-01-01">
 
 <title>Long Tests Status – MultistateModels Test Reports</title>
 <style>
@@ -24,7 +24,7 @@ ul.task-list li input[type="checkbox"] {
 </style>
 
 
-<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" integrity="sha384-ZvpUoO/+PpLXR1lu4jmpXWu80pZlYUAfxl5NsBMWOEPSjUn/6Z/hRTt8+pR6L4N2" crossorigin="anonymous"></script><script src="site_libs/quarto-nav/quarto-nav.js"></script>
 <script src="site_libs/quarto-nav/headroom.min.js"></script>
 <script src="site_libs/clipboard/clipboard.min.js"></script>
 <script src="site_libs/quarto-search/autocomplete.umd.js"></script>
@@ -69,6 +69,9 @@ ul.task-list li input[type="checkbox"] {
     "search-label": "Search"
   }
 }</script>
+<script src="https://cdn.jsdelivr.net/npm/requirejs@2.3.6/require.min.js" integrity="sha384-c9c+LnTbwQ3aujuU7ULEPVvgLs+Fn6fJUvIGTsuu1ZcCf11fiEubah0ttpca4ntM sha384-6V1/AdqZRWk1KAlWbKBlGhN7VG4iE/yAZcO6NZPMF8od0vukrvr0tg4qY6NSrItx" crossorigin="anonymous"></script>
+
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
 
 
 </head>
@@ -139,34 +142,15 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#summary-dashboard" id="toc-summary-dashboard" class="nav-link active" data-scroll-target="#summary-dashboard">1. Summary Dashboard</a>
-  <ul class="collapse">
-  <li><a href="#passfail-status" id="toc-passfail-status" class="nav-link" data-scroll-target="#passfail-status">Pass/Fail Status</a></li>
-  </ul></li>
+  <li><a href="#test-inventory" id="toc-test-inventory" class="nav-link active" data-scroll-target="#test-inventory">1. Test Inventory</a></li>
   <li><a href="#parametric-models" id="toc-parametric-models" class="nav-link" data-scroll-target="#parametric-models">2. Parametric Models</a>
   <ul class="collapse">
-  <li><a href="#exponential-exact-observation" id="toc-exponential-exact-observation" class="nav-link" data-scroll-target="#exponential-exact-observation">2.1 Exponential (Exact Observation)</a></li>
-  <li><a href="#weibull-exact-observation" id="toc-weibull-exact-observation" class="nav-link" data-scroll-target="#weibull-exact-observation">2.2 Weibull (Exact Observation)</a></li>
-  <li><a href="#gompertz-exact-observation" id="toc-gompertz-exact-observation" class="nav-link" data-scroll-target="#gompertz-exact-observation">2.3 Gompertz (Exact Observation)</a></li>
-  <li><a href="#markov-panel-data" id="toc-markov-panel-data" class="nav-link" data-scroll-target="#markov-panel-data">2.4 Markov Panel Data</a></li>
+  <li><a href="#exponential-hazard" id="toc-exponential-hazard" class="nav-link" data-scroll-target="#exponential-hazard">2.1 Exponential Hazard</a></li>
+  <li><a href="#weibull-hazard" id="toc-weibull-hazard" class="nav-link" data-scroll-target="#weibull-hazard">2.2 Weibull Hazard</a></li>
+  <li><a href="#gompertz-hazard" id="toc-gompertz-hazard" class="nav-link" data-scroll-target="#gompertz-hazard">2.3 Gompertz Hazard</a></li>
   </ul></li>
-  <li><a href="#spline-models" id="toc-spline-models" class="nav-link" data-scroll-target="#spline-models">3. Spline Models</a>
-  <ul class="collapse">
-  <li><a href="#b-splines-panel-data" id="toc-b-splines-panel-data" class="nav-link" data-scroll-target="#b-splines-panel-data">3.1 B-Splines (Panel Data)</a></li>
-  </ul></li>
-  <li><a href="#semi-markov-models" id="toc-semi-markov-models" class="nav-link" data-scroll-target="#semi-markov-models">4. Semi-Markov Models</a>
-  <ul class="collapse">
-  <li><a href="#duration-dependent-hazards" id="toc-duration-dependent-hazards" class="nav-link" data-scroll-target="#duration-dependent-hazards">4.1 Duration-Dependent Hazards</a></li>
-  </ul></li>
-  <li><a href="#time-varying-covariates" id="toc-time-varying-covariates" class="nav-link" data-scroll-target="#time-varying-covariates">5. Time-Varying Covariates</a>
-  <ul class="collapse">
-  <li><a href="#step-function-tvc" id="toc-step-function-tvc" class="nav-link" data-scroll-target="#step-function-tvc">5.1 Step-Function TVC</a></li>
-  </ul></li>
-  <li><a href="#mcem-convergence" id="toc-mcem-convergence" class="nav-link" data-scroll-target="#mcem-convergence">6. MCEM Convergence</a>
-  <ul class="collapse">
-  <li><a href="#convergence-diagnostics" id="toc-convergence-diagnostics" class="nav-link" data-scroll-target="#convergence-diagnostics">Convergence Diagnostics</a></li>
-  <li><a href="#effective-sample-size" id="toc-effective-sample-size" class="nav-link" data-scroll-target="#effective-sample-size">Effective Sample Size</a></li>
-  </ul></li>
+  <li><a href="#panel-data-exponential-markov" id="toc-panel-data-exponential-markov" class="nav-link" data-scroll-target="#panel-data-exponential-markov">3. Panel Data (Exponential / Markov)</a></li>
+  <li><a href="#notes" id="toc-notes" class="nav-link" data-scroll-target="#notes">4. Notes</a></li>
   </ul>
 <div class="toc-actions"><ul><li><a href="https://github.com/fintzij/MultistateModelsTests.jl/blob/main/03_long_tests.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/fintzij/MultistateModelsTests.jl/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
     </div>
@@ -187,7 +171,7 @@ ul.task-list li input[type="checkbox"] {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">December 19, 2025</p>
+      <p class="date">January 1, 2026</p>
     </div>
   </div>
   
@@ -199,301 +183,454 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
+<section id="test-inventory" class="level2">
+<h2 class="anchored" data-anchor-id="test-inventory">1. Test Inventory</h2>
+<div class="cell" data-execution_count="2">
+<div class="cell-output cell-output-stdout">
+<pre><code>**Summary**: 23 / 28 tests passed (5 failed)
+</code></pre>
 </div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>Status: Not Started
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>This report is a placeholder. Content will be added as the long test infrastructure is developed.</p>
-</div>
-</div>
-<section id="summary-dashboard" class="level2">
-<h2 class="anchored" data-anchor-id="summary-dashboard">1. Summary Dashboard</h2>
-<section id="passfail-status" class="level3">
-<h3 class="anchored" data-anchor-id="passfail-status">Pass/Fail Status</h3>
-<table class="caption-top table">
+<div id="tbl-inventory" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="2">
+<figure class="quarto-float quarto-float-tbl figure">
+<figcaption class="quarto-float-caption-top quarto-float-caption quarto-float-tbl" id="tbl-inventory-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Table&nbsp;1: Long Test Results Summary
+</figcaption>
+<div aria-describedby="tbl-inventory-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-display" data-execution_count="3">
+<div><div style="float: left;"><span>28×7 DataFrame</span></div><div style="float: right;"><span style="font-style: italic;">3 rows omitted</span></div><div style="clear: both;"></div></div><div class="data-frame" style="overflow-x: scroll;">
+<table class="data-frame do-not-create-environment cell caption-top table table-sm table-striped small">
 <thead>
 <tr class="header">
-<th>Test</th>
-<th>Family</th>
-<th>Observation</th>
-<th>Status</th>
-<th>Last Run</th>
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;">Row</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">TestName</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Family</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">DataType</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Covariates</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">NSubjects</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Status</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th">Timestamp</th>
+</tr>
+<tr class="subheader headerLastRow even">
+<th class="rowNumber" data-quarto-table-cell-role="th" style="text-align: right; font-weight: bold;"></th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="Int64">Int64</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
+<th style="text-align: left;" data-quarto-table-cell-role="th" title="String">String</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td><code>longtest_exact_markov.jl</code></td>
-<td>Mixed</td>
-<td>Exact</td>
-<td>⏳</td>
-<td>-</td>
+<td class="rowNumber" style="text-align: right; font-weight: bold;">1</td>
+<td style="text-align: left;">exp_exact_fixed</td>
+<td style="text-align: left;">exp</td>
+<td style="text-align: left;">exact</td>
+<td style="text-align: left;">fixed</td>
+<td style="text-align: right;">1000</td>
+<td style="text-align: left;">✅ Pass</td>
+<td style="text-align: left;">2026-01-01T16:30:59.909</td>
 </tr>
 <tr class="even">
-<td><code>longtest_mcem.jl</code></td>
-<td>Mixed</td>
-<td>Panel</td>
-<td>⏳</td>
-<td>-</td>
+<td class="rowNumber" style="text-align: right; font-weight: bold;">2</td>
+<td style="text-align: left;">exp_exact_nocov</td>
+<td style="text-align: left;">exp</td>
+<td style="text-align: left;">exact</td>
+<td style="text-align: left;">nocov</td>
+<td style="text-align: right;">1000</td>
+<td style="text-align: left;">✅ Pass</td>
+<td style="text-align: left;">2026-01-01T16:30:56.638</td>
 </tr>
 <tr class="odd">
-<td><code>longtest_mcem_splines.jl</code></td>
-<td>B-Spline</td>
-<td>Panel</td>
-<td>⏳</td>
-<td>-</td>
+<td class="rowNumber" style="text-align: right; font-weight: bold;">3</td>
+<td style="text-align: left;">exp_exact_tvc</td>
+<td style="text-align: left;">exp</td>
+<td style="text-align: left;">exact</td>
+<td style="text-align: left;">tvc</td>
+<td style="text-align: right;">1000</td>
+<td style="text-align: left;">✅ Pass</td>
+<td style="text-align: left;">2026-01-01T16:31:00.825</td>
 </tr>
 <tr class="even">
-<td><code>longtest_mcem_tvc.jl</code></td>
-<td>Mixed</td>
-<td>Panel + TVC</td>
-<td>⏳</td>
-<td>-</td>
+<td class="rowNumber" style="text-align: right; font-weight: bold;">4</td>
+<td style="text-align: left;">exp_panel_fixed</td>
+<td style="text-align: left;">exp</td>
+<td style="text-align: left;">panel</td>
+<td style="text-align: left;">fixed</td>
+<td style="text-align: right;">986</td>
+<td style="text-align: left;">✅ Pass</td>
+<td style="text-align: left;">2026-01-01T16:33:12.818</td>
 </tr>
 <tr class="odd">
-<td><code>longtest_phasetype.jl</code></td>
-<td>Mixed</td>
-<td>Panel</td>
-<td>⏳</td>
-<td>-</td>
+<td class="rowNumber" style="text-align: right; font-weight: bold;">5</td>
+<td style="text-align: left;">exp_panel_nocov</td>
+<td style="text-align: left;">exp</td>
+<td style="text-align: left;">panel</td>
+<td style="text-align: left;">nocov</td>
+<td style="text-align: right;">990</td>
+<td style="text-align: left;">✅ Pass</td>
+<td style="text-align: left;">2026-01-01T16:33:02.121</td>
 </tr>
 <tr class="even">
-<td><code>longtest_sir.jl</code></td>
-<td>Mixed</td>
-<td>Panel</td>
-<td>⏳</td>
-<td>-</td>
+<td class="rowNumber" style="text-align: right; font-weight: bold;">6</td>
+<td style="text-align: left;">exp_panel_tvc</td>
+<td style="text-align: left;">exp</td>
+<td style="text-align: left;">panel</td>
+<td style="text-align: left;">tvc</td>
+<td style="text-align: right;">990</td>
+<td style="text-align: left;">✅ Pass</td>
+<td style="text-align: left;">2026-01-01T16:33:23.251</td>
 </tr>
 <tr class="odd">
-<td><code>longtest_simulation_distribution.jl</code></td>
-<td>All</td>
-<td>Simulation</td>
-<td>⏳</td>
-<td>-</td>
+<td class="rowNumber" style="text-align: right; font-weight: bold;">7</td>
+<td style="text-align: left;">gom_exact_fixed</td>
+<td style="text-align: left;">gom</td>
+<td style="text-align: left;">exact</td>
+<td style="text-align: left;">fixed</td>
+<td style="text-align: right;">1000</td>
+<td style="text-align: left;">✅ Pass</td>
+<td style="text-align: left;">2026-01-01T16:32:31.437</td>
 </tr>
 <tr class="even">
-<td><code>longtest_variance_validation.jl</code></td>
-<td>Mixed</td>
-<td>Panel</td>
-<td>⏳</td>
-<td>-</td>
+<td class="rowNumber" style="text-align: right; font-weight: bold;">8</td>
+<td style="text-align: left;">gom_exact_nocov</td>
+<td style="text-align: left;">gom</td>
+<td style="text-align: left;">exact</td>
+<td style="text-align: left;">nocov</td>
+<td style="text-align: right;">1000</td>
+<td style="text-align: left;">✅ Pass</td>
+<td style="text-align: left;">2026-01-01T16:32:13.335</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">9</td>
+<td style="text-align: left;">gom_exact_tvc</td>
+<td style="text-align: left;">gom</td>
+<td style="text-align: left;">exact</td>
+<td style="text-align: left;">tvc</td>
+<td style="text-align: right;">1000</td>
+<td style="text-align: left;">✅ Pass</td>
+<td style="text-align: left;">2026-01-01T16:32:51.437</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">10</td>
+<td style="text-align: left;">gom_mcem_fixed</td>
+<td style="text-align: left;">gom</td>
+<td style="text-align: left;">mcem</td>
+<td style="text-align: left;">fixed</td>
+<td style="text-align: right;">984</td>
+<td style="text-align: left;">✅ Pass</td>
+<td style="text-align: left;">2026-01-01T16:37:58.797</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">11</td>
+<td style="text-align: left;">gom_mcem_nocov</td>
+<td style="text-align: left;">gom</td>
+<td style="text-align: left;">mcem</td>
+<td style="text-align: left;">nocov</td>
+<td style="text-align: right;">992</td>
+<td style="text-align: left;">✅ Pass</td>
+<td style="text-align: left;">2026-01-01T16:37:05.896</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">12</td>
+<td style="text-align: left;">gom_mcem_tvc</td>
+<td style="text-align: left;">gom</td>
+<td style="text-align: left;">mcem</td>
+<td style="text-align: left;">tvc</td>
+<td style="text-align: right;">993</td>
+<td style="text-align: left;">❌ Fail</td>
+<td style="text-align: left;">2026-01-01T16:38:53.898</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">13</td>
+<td style="text-align: left;">pt_mixed_simple</td>
+<td style="text-align: left;">phasetype</td>
+<td style="text-align: left;">mixed</td>
+<td style="text-align: left;">none</td>
+<td style="text-align: right;">1000</td>
+<td style="text-align: left;">✅ Pass</td>
+<td style="text-align: left;">2026-01-01T16:50:16.242</td>
+</tr>
+<tr class="even">
+<td style="text-align: right;">⋮</td>
+<td style="text-align: right;">⋮</td>
+<td style="text-align: right;">⋮</td>
+<td style="text-align: right;">⋮</td>
+<td style="text-align: right;">⋮</td>
+<td style="text-align: right;">⋮</td>
+<td style="text-align: right;">⋮</td>
+<td style="text-align: right;">⋮</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">17</td>
+<td style="text-align: left;">pt_panel_simple</td>
+<td style="text-align: left;">phasetype</td>
+<td style="text-align: left;">panel</td>
+<td style="text-align: left;">none</td>
+<td style="text-align: right;">1000</td>
+<td style="text-align: left;">✅ Pass</td>
+<td style="text-align: left;">2026-01-01T16:49:53.801</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">18</td>
+<td style="text-align: left;">pt_panel_tvc</td>
+<td style="text-align: left;">phasetype</td>
+<td style="text-align: left;">panel</td>
+<td style="text-align: left;">tvc</td>
+<td style="text-align: right;">1000</td>
+<td style="text-align: left;">❌ Fail</td>
+<td style="text-align: left;">2026-01-01T16:50:57.991</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">19</td>
+<td style="text-align: left;">pt_exact_fixed</td>
+<td style="text-align: left;">pt</td>
+<td style="text-align: left;">exact</td>
+<td style="text-align: left;">fixed</td>
+<td style="text-align: right;">1000</td>
+<td style="text-align: left;">✅ Pass</td>
+<td style="text-align: left;">2026-01-01T16:49:44.907</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">20</td>
+<td style="text-align: left;">pt_exact_nocov</td>
+<td style="text-align: left;">pt</td>
+<td style="text-align: left;">exact</td>
+<td style="text-align: left;">nocov</td>
+<td style="text-align: right;">1000</td>
+<td style="text-align: left;">✅ Pass</td>
+<td style="text-align: left;">2026-01-01T16:49:39.984</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">21</td>
+<td style="text-align: left;">pt_exact_tvc</td>
+<td style="text-align: left;">pt</td>
+<td style="text-align: left;">exact</td>
+<td style="text-align: left;">tvc</td>
+<td style="text-align: right;">1000</td>
+<td style="text-align: left;">✅ Pass</td>
+<td style="text-align: left;">2026-01-01T16:49:45.453</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">22</td>
+<td style="text-align: left;">sp_mcem_fixed</td>
+<td style="text-align: left;">sp</td>
+<td style="text-align: left;">panel</td>
+<td style="text-align: left;">fixed</td>
+<td style="text-align: right;">1000</td>
+<td style="text-align: left;">❌ Fail</td>
+<td style="text-align: left;">2026-01-01T17:08:41.835</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">23</td>
+<td style="text-align: left;">wei_exact_fixed</td>
+<td style="text-align: left;">wei</td>
+<td style="text-align: left;">exact</td>
+<td style="text-align: left;">fixed</td>
+<td style="text-align: right;">1000</td>
+<td style="text-align: left;">✅ Pass</td>
+<td style="text-align: left;">2026-01-01T16:31:38.432</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">24</td>
+<td style="text-align: left;">wei_exact_nocov</td>
+<td style="text-align: left;">wei</td>
+<td style="text-align: left;">exact</td>
+<td style="text-align: left;">nocov</td>
+<td style="text-align: right;">1000</td>
+<td style="text-align: left;">✅ Pass</td>
+<td style="text-align: left;">2026-01-01T16:31:17.325</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">25</td>
+<td style="text-align: left;">wei_exact_tvc</td>
+<td style="text-align: left;">wei</td>
+<td style="text-align: left;">exact</td>
+<td style="text-align: left;">tvc</td>
+<td style="text-align: right;">1000</td>
+<td style="text-align: left;">✅ Pass</td>
+<td style="text-align: left;">2026-01-01T16:31:58.169</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">26</td>
+<td style="text-align: left;">wei_mcem_fixed</td>
+<td style="text-align: left;">wei</td>
+<td style="text-align: left;">mcem</td>
+<td style="text-align: left;">fixed</td>
+<td style="text-align: right;">989</td>
+<td style="text-align: left;">✅ Pass</td>
+<td style="text-align: left;">2026-01-01T16:35:28.655</td>
+</tr>
+<tr class="odd">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">27</td>
+<td style="text-align: left;">wei_mcem_nocov</td>
+<td style="text-align: left;">wei</td>
+<td style="text-align: left;">mcem</td>
+<td style="text-align: left;">nocov</td>
+<td style="text-align: right;">991</td>
+<td style="text-align: left;">✅ Pass</td>
+<td style="text-align: left;">2026-01-01T16:34:12.161</td>
+</tr>
+<tr class="even">
+<td class="rowNumber" style="text-align: right; font-weight: bold;">28</td>
+<td style="text-align: left;">wei_mcem_tvc</td>
+<td style="text-align: left;">wei</td>
+<td style="text-align: left;">mcem</td>
+<td style="text-align: left;">tvc</td>
+<td style="text-align: right;">995</td>
+<td style="text-align: left;">❌ Fail</td>
+<td style="text-align: left;">2026-01-01T16:36:30.196</td>
 </tr>
 </tbody>
 </table>
-</section>
+</div>
+</div>
+</div>
+</figure>
+</div>
+</div>
 </section>
 <section id="parametric-models" class="level2">
 <h2 class="anchored" data-anchor-id="parametric-models">2. Parametric Models</h2>
-<section id="exponential-exact-observation" class="level3">
-<h3 class="anchored" data-anchor-id="exponential-exact-observation">2.1 Exponential (Exact Observation)</h3>
-<section id="setup" class="level4">
-<h4 class="anchored" data-anchor-id="setup">Setup</h4>
-<p><em>To be documented</em></p>
+<section id="exponential-hazard" class="level3">
+<h3 class="anchored" data-anchor-id="exponential-hazard">2.1 Exponential Hazard</h3>
+<div id="fig-exp-exact" class="cell quarto-float quarto-figure quarto-figure-center anchored" data-execution_count="3">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-exp-exact-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<div class="cell-output cell-output-stdout">
+<pre><code>#### exp_exact_nocov
+- **Status**: ✅ Pass
+- **N subjects**: 1000
+
+| Parameter | True | Estimated |
+|-----------|------|-----------|
+| h12_log_rate | -1.8971 | -1.8465 |
+| h23_log_rate | -2.1203 | -2.0904 |
+
+#### exp_exact_fixed
+- **Status**: ✅ Pass
+- **N subjects**: 1000
+
+| Parameter | True | Estimated |
+|-----------|------|-----------|
+| h12_beta | 0.5 | 0.5267 |
+| h23_beta | 0.5 | 0.4791 |
+| h12_log_rate | -1.8971 | -1.8898 |
+| h23_log_rate | -2.1203 | -2.067 |
+
+#### exp_exact_tvc
+- **Status**: ✅ Pass
+- **N subjects**: 1000
+
+| Parameter | True | Estimated |
+|-----------|------|-----------|
+| h12_beta | 0.5 | 0.4118 |
+| h23_beta | 0.5 | 0.3392 |
+| h12_log_rate | -1.8971 | -1.8465 |
+| h23_log_rate | -2.1203 | -1.9534 |
+</code></pre>
+</div>
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig quarto-uncaptioned" id="fig-exp-exact-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1
+</figcaption>
+</figure>
+</div>
 </section>
-<section id="parameter-recovery" class="level4">
-<h4 class="anchored" data-anchor-id="parameter-recovery">Parameter Recovery</h4>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>Parameter</th>
-<th>True</th>
-<th>Estimated</th>
-<th>SE</th>
-<th>Coverage</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>rate_12</td>
-<td>-</td>
-<td>-</td>
-<td>-</td>
-<td>-</td>
-</tr>
-<tr class="even">
-<td>rate_23</td>
-<td>-</td>
-<td>-</td>
-<td>-</td>
-<td>-</td>
-</tr>
-</tbody>
-</table>
+<section id="weibull-hazard" class="level3">
+<h3 class="anchored" data-anchor-id="weibull-hazard">2.2 Weibull Hazard</h3>
+<div id="d824b22e" class="cell" data-execution_count="4">
+<div class="cell-output cell-output-stdout">
+<pre><code>#### wei_exact_nocov
+- **Status**: ✅ Pass
+- **N subjects**: 1000
+
+#### wei_exact_fixed
+- **Status**: ✅ Pass
+- **N subjects**: 1000
+
+#### wei_exact_tvc
+- **Status**: ✅ Pass
+- **N subjects**: 1000
+
+#### wei_mcem_nocov
+- **Status**: ✅ Pass
+- **N subjects**: 991
+
+#### wei_mcem_fixed
+- **Status**: ✅ Pass
+- **N subjects**: 989
+
+#### wei_mcem_tvc
+- **Status**: ❌ Fail
+- **N subjects**: 995
+</code></pre>
+</div>
+</div>
 </section>
-<section id="diagnostic-plots" class="level4">
-<h4 class="anchored" data-anchor-id="diagnostic-plots">Diagnostic Plots</h4>
-<p><em>Plots to be generated</em></p>
-</section>
-</section>
-<section id="weibull-exact-observation" class="level3">
-<h3 class="anchored" data-anchor-id="weibull-exact-observation">2.2 Weibull (Exact Observation)</h3>
-<section id="setup-1" class="level4">
-<h4 class="anchored" data-anchor-id="setup-1">Setup</h4>
-<p><em>To be documented</em></p>
-</section>
-<section id="parameter-recovery-1" class="level4">
-<h4 class="anchored" data-anchor-id="parameter-recovery-1">Parameter Recovery</h4>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>Parameter</th>
-<th>True</th>
-<th>Estimated</th>
-<th>SE</th>
-<th>Coverage</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>shape_12</td>
-<td>-</td>
-<td>-</td>
-<td>-</td>
-<td>-</td>
-</tr>
-<tr class="even">
-<td>scale_12</td>
-<td>-</td>
-<td>-</td>
-<td>-</td>
-<td>-</td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="diagnostic-plots-1" class="level4">
-<h4 class="anchored" data-anchor-id="diagnostic-plots-1">Diagnostic Plots</h4>
-<p><em>Plots to be generated</em></p>
-</section>
-</section>
-<section id="gompertz-exact-observation" class="level3">
-<h3 class="anchored" data-anchor-id="gompertz-exact-observation">2.3 Gompertz (Exact Observation)</h3>
-<section id="setup-2" class="level4">
-<h4 class="anchored" data-anchor-id="setup-2">Setup</h4>
-<p><em>To be documented</em></p>
-</section>
-<section id="parameter-recovery-2" class="level4">
-<h4 class="anchored" data-anchor-id="parameter-recovery-2">Parameter Recovery</h4>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>Parameter</th>
-<th>True</th>
-<th>Estimated</th>
-<th>SE</th>
-<th>Coverage</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>shape_12</td>
-<td>-</td>
-<td>-</td>
-<td>-</td>
-<td>-</td>
-</tr>
-<tr class="even">
-<td>rate_12</td>
-<td>-</td>
-<td>-</td>
-<td>-</td>
-<td>-</td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="diagnostic-plots-2" class="level4">
-<h4 class="anchored" data-anchor-id="diagnostic-plots-2">Diagnostic Plots</h4>
-<p><em>Plots to be generated</em></p>
+<section id="gompertz-hazard" class="level3">
+<h3 class="anchored" data-anchor-id="gompertz-hazard">2.3 Gompertz Hazard</h3>
+<div id="776e42e5" class="cell" data-execution_count="5">
+<div class="cell-output cell-output-stdout">
+<pre><code>#### gom_exact_nocov
+- **Status**: ✅ Pass
+- **N subjects**: 1000
+
+#### gom_exact_fixed
+- **Status**: ✅ Pass
+- **N subjects**: 1000
+
+#### gom_exact_tvc
+- **Status**: ✅ Pass
+- **N subjects**: 1000
+
+#### gom_mcem_nocov
+- **Status**: ✅ Pass
+- **N subjects**: 992
+
+#### gom_mcem_fixed
+- **Status**: ✅ Pass
+- **N subjects**: 984
+
+#### gom_mcem_tvc
+- **Status**: ❌ Fail
+- **N subjects**: 993
+</code></pre>
+</div>
+</div>
 </section>
 </section>
-<section id="markov-panel-data" class="level3">
-<h3 class="anchored" data-anchor-id="markov-panel-data">2.4 Markov Panel Data</h3>
-<section id="setup-3" class="level4">
-<h4 class="anchored" data-anchor-id="setup-3">Setup</h4>
-<p><em>To be documented</em></p>
+<section id="panel-data-exponential-markov" class="level2">
+<h2 class="anchored" data-anchor-id="panel-data-exponential-markov">3. Panel Data (Exponential / Markov)</h2>
+<div id="f7c31bae" class="cell" data-execution_count="6">
+<div class="cell-output cell-output-stdout">
+<pre><code>#### exp_panel_nocov
+- **Status**: ✅ Pass
+- **N subjects**: 990
+
+#### exp_panel_fixed
+- **Status**: ✅ Pass
+- **N subjects**: 986
+
+#### exp_panel_tvc
+- **Status**: ✅ Pass
+- **N subjects**: 990
+</code></pre>
+</div>
+</div>
 </section>
-<section id="parameter-recovery-3" class="level4">
-<h4 class="anchored" data-anchor-id="parameter-recovery-3">Parameter Recovery</h4>
-<p><em>Tables to be generated</em></p>
-</section>
-<section id="diagnostic-plots-3" class="level4">
-<h4 class="anchored" data-anchor-id="diagnostic-plots-3">Diagnostic Plots</h4>
-<p><em>Plots to be generated</em></p>
-</section>
-</section>
-</section>
-<section id="spline-models" class="level2">
-<h2 class="anchored" data-anchor-id="spline-models">3. Spline Models</h2>
-<section id="b-splines-panel-data" class="level3">
-<h3 class="anchored" data-anchor-id="b-splines-panel-data">3.1 B-Splines (Panel Data)</h3>
-<section id="setup-4" class="level4">
-<h4 class="anchored" data-anchor-id="setup-4">Setup</h4>
-<p><em>To be documented</em></p>
-</section>
-<section id="hazard-curve-recovery" class="level4">
-<h4 class="anchored" data-anchor-id="hazard-curve-recovery">Hazard Curve Recovery</h4>
-<p><em>Plots to be generated: True vs Estimated hazard curves</em></p>
-</section>
-<section id="cumulative-incidence" class="level4">
-<h4 class="anchored" data-anchor-id="cumulative-incidence">Cumulative Incidence</h4>
-<p><em>Plots to be generated</em></p>
-</section>
-</section>
-</section>
-<section id="semi-markov-models" class="level2">
-<h2 class="anchored" data-anchor-id="semi-markov-models">4. Semi-Markov Models</h2>
-<section id="duration-dependent-hazards" class="level3">
-<h3 class="anchored" data-anchor-id="duration-dependent-hazards">4.1 Duration-Dependent Hazards</h3>
-<section id="setup-5" class="level4">
-<h4 class="anchored" data-anchor-id="setup-5">Setup</h4>
-<p><em>To be documented</em></p>
-</section>
-<section id="parameter-recovery-4" class="level4">
-<h4 class="anchored" data-anchor-id="parameter-recovery-4">Parameter Recovery</h4>
-<p><em>Tables to be generated</em></p>
-</section>
-<section id="diagnostic-plots-4" class="level4">
-<h4 class="anchored" data-anchor-id="diagnostic-plots-4">Diagnostic Plots</h4>
-<p><em>Plots to be generated</em></p>
-</section>
-</section>
-</section>
-<section id="time-varying-covariates" class="level2">
-<h2 class="anchored" data-anchor-id="time-varying-covariates">5. Time-Varying Covariates</h2>
-<section id="step-function-tvc" class="level3">
-<h3 class="anchored" data-anchor-id="step-function-tvc">5.1 Step-Function TVC</h3>
-<section id="setup-6" class="level4">
-<h4 class="anchored" data-anchor-id="setup-6">Setup</h4>
-<p><em>To be documented</em></p>
-</section>
-<section id="parameter-recovery-5" class="level4">
-<h4 class="anchored" data-anchor-id="parameter-recovery-5">Parameter Recovery</h4>
-<p><em>Tables to be generated</em></p>
-</section>
-<section id="diagnostic-plots-5" class="level4">
-<h4 class="anchored" data-anchor-id="diagnostic-plots-5">Diagnostic Plots</h4>
-<p><em>Plots to be generated</em></p>
-</section>
-</section>
-</section>
-<section id="mcem-convergence" class="level2">
-<h2 class="anchored" data-anchor-id="mcem-convergence">6. MCEM Convergence</h2>
-<section id="convergence-diagnostics" class="level3">
-<h3 class="anchored" data-anchor-id="convergence-diagnostics">Convergence Diagnostics</h3>
-<p><em>Trace plots to be generated</em></p>
-</section>
-<section id="effective-sample-size" class="level3">
-<h3 class="anchored" data-anchor-id="effective-sample-size">Effective Sample Size</h3>
-<p><em>ESS plots to be generated</em></p>
+<section id="notes" class="level2">
+<h2 class="anchored" data-anchor-id="notes">4. Notes</h2>
+<ul>
+<li>Tests use a 3-state progressive model: State 1 → State 2 → State 3</li>
+<li>Parameter recovery tolerance: 35% relative error for main parameters</li>
+<li>TVC (time-varying covariate) tests verify covariate effects change at t=5</li>
+<li>Exact data uses <code>obstype=1</code> (continuous observation)</li>
+<li>Panel data uses discrete observation times with MCEM for semi-Markov families</li>
+</ul>
 
 
-</section>
 </section>
 
 </main> <!-- /main -->

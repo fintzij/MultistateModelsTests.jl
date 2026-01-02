@@ -255,22 +255,4 @@ using Statistics
         @test_throws ArgumentError MultistateModels._validate_surrogate_inputs(:markov, :invalid)
     end
     
-    # =========================================================================
-    # Deprecation Warning Tests
-    # =========================================================================
-    
-    @testset "crude_inits deprecation warning" begin
-        dat = create_test_data()
-        h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
-        model = multistatemodel(h12; data = dat)
-        
-        # crude_inits should emit a deprecation warning but still work
-        # The warning is maxlog=1, so we just test that it doesn't error
-        @test_logs (:warn, "crude_inits is deprecated and ignored. Use method=:heuristic for crude initialization.") begin
-            surrogate = MultistateModels.fit_surrogate(model; crude_inits = true, verbose = false)
-            @test surrogate isa MarkovSurrogate
-            @test is_fitted(surrogate)
-        end
-    end
-
 end

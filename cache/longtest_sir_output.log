@@ -1,0 +1,48 @@
+
+======================================================================
+SIR/LHS Resampling Method Comparison Long Test
+======================================================================
+
+Generating test data (n=500)...
+
+******************************************************************************
+This program contains Ipopt, a library for large-scale nonlinear optimization.
+ Ipopt is released as open source code under the Eclipse Public License (EPL).
+         For more information visit https://github.com/coin-or/Ipopt
+******************************************************************************
+
+  Generated 3678 observations for 500 subjects
+
+Fitting: No SIR + Markov...
+  ✓ Converged in 3 iterations (16.1s)
+  Max relative error: 14.9%
+
+Fitting: SIR + Markov...
+  ✓ Converged in 4 iterations (38.9s)
+  Max relative error: 15.3%
+
+Fitting: LHS + Markov...
+  ✓ Converged in 3 iterations (33.6s)
+  Max relative error: 15.1%
+
+Fitting: No SIR + Phase-Type...
+  ✓ Converged in 4 iterations (16.3s)
+  Max relative error: 26.8%
+
+Fitting: SIR + Phase-Type...
+  ✓ Converged in 4 iterations (33.3s)
+  Max relative error: 25.2%
+
+Fitting: LHS + Phase-Type...
+  ✓ Converged in 5 iterations (47.9s)
+  Max relative error: 26.3%
+
+Report saved to: /Users/fintzij/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/longtests/../diagnostics/sir_longtest_report.md
+
+
+======================================================================
+SIR/LHS Long Test Complete
+======================================================================
+
+Test Summary:             | Pass  Total     Time
+SIR/LHS Method Comparison |    7      7  3m40.2s

@@ -216,11 +216,22 @@ end
     end
     
     @testset "extract_natural_vector" begin
-        natural_vals = extract_natural_vector(params_with_covars)
-        @test natural_vals ≈ [1.5, 0.2, 0.3, 0.1]
+        # Now requires family argument to determine transformation
+        # params_with_covars is for a Weibull-style hazard (shape, scale)
+        natural_vals = extract_natural_vector(params_with_covars, :wei)
+        @test natural_vals ≈ [1.5, 0.2, 0.3, 0.1]  # exp(log(1.5)), exp(log(0.2)), covars unchanged
         
-        natural_baseline = extract_natural_vector(params_no_covars)
-        @test natural_baseline ≈ [0.8]
+        # params_no_covars is for an exponential-style hazard (intercept only)
+        natural_baseline = extract_natural_vector(params_no_covars, :exp)
+        @test natural_baseline ≈ [0.8]  # exp(log(0.8))
+        
+        # Test Gompertz: first param identity (shape), second exp (rate)
+        params_gom = (
+            baseline = (h12_shape = -0.5, h12_rate = log(0.2)),
+            covariates = (h12_age = 0.1,)
+        )
+        natural_gom = extract_natural_vector(params_gom, :gom)
+        @test natural_gom ≈ [-0.5, 0.2, 0.1]  # identity, exp, unchanged
     end
 end
 
@@ -283,5 +294,71 @@ end
         restored = unflatten(flat)
         @test restored.h12.baseline.h12_shape == log(2.0)
         @test restored.h12.covariates.h12_trt == 0.5
+    end
+end
+# --- Parameter Transformation Tests --------------------------------------------
+# Critical: Unknown hazard families must throw ArgumentError, not silently proceed
+
+@testset "parameter_transformations" begin
+    using MultistateModels: transform_baseline_to_natural, transform_baseline_to_estimation
+    
+    @testset "unknown family throws ArgumentError" begin
+        baseline = (h12_Intercept = log(0.5),)
+        
+        # Unknown family should throw ArgumentError
+        @test_throws ArgumentError transform_baseline_to_natural(baseline, :unknown, Float64)
+        @test_throws ArgumentError transform_baseline_to_estimation(baseline, :unknown)
+        
+        # Invalid symbols
+        @test_throws ArgumentError transform_baseline_to_natural(baseline, :weibull, Float64)  # should be :wei
+        @test_throws ArgumentError transform_baseline_to_natural(baseline, :exponential, Float64)  # should be :exp
+    end
+    
+    @testset "known families work correctly" begin
+        baseline = (h12_Intercept = log(0.5),)
+        
+        # Exponential: exp applied
+        nat_exp = transform_baseline_to_natural(baseline, :exp, Float64)
+        @test nat_exp.h12_Intercept ≈ 0.5
+        
+        # Weibull: ALL params get exp() (both shape and scale are positive)
+        baseline_wei = (h12_shape = log(1.2), h12_scale = log(0.3))
+        nat_wei = transform_baseline_to_natural(baseline_wei, :wei, Float64)
+        @test nat_wei.h12_shape ≈ 1.2  # exp(log(1.2))
+        @test nat_wei.h12_scale ≈ 0.3  # exp(log(0.3))
+        
+        # Gompertz: first param identity (shape can be negative), rest exp (rate)
+        baseline_gom = (h12_shape = -0.5, h12_rate = log(0.2))
+        nat_gom = transform_baseline_to_natural(baseline_gom, :gom, Float64)
+        @test nat_gom.h12_shape ≈ -0.5  # identity (can be negative)
+        @test nat_gom.h12_rate ≈ 0.2  # exp
+        
+        # Spline: identity (handled elsewhere)
+        baseline_sp = (h12_b1 = log(0.1), h12_b2 = log(0.2))
+        nat_sp = transform_baseline_to_natural(baseline_sp, :sp, Float64)
+        @test nat_sp.h12_b1 ≈ log(0.1)  # identity
+        @test nat_sp.h12_b2 ≈ log(0.2)  # identity
+    end
+    
+    @testset "round-trip transformations" begin
+        # Exponential
+        baseline_exp = (h12_Intercept = log(0.5),)
+        nat = transform_baseline_to_natural(baseline_exp, :exp, Float64)
+        back = transform_baseline_to_estimation(nat, :exp)
+        @test back.h12_Intercept ≈ baseline_exp.h12_Intercept rtol=1e-10
+        
+        # Weibull (both shape and scale are positive, stored on log scale)
+        baseline_wei = (h12_shape = log(1.5), h12_scale = log(0.3))
+        nat = transform_baseline_to_natural(baseline_wei, :wei, Float64)
+        back = transform_baseline_to_estimation(nat, :wei)
+        @test back.h12_shape ≈ baseline_wei.h12_shape rtol=1e-10
+        @test back.h12_scale ≈ baseline_wei.h12_scale rtol=1e-10
+        
+        # Gompertz (shape is identity, rate is positive)
+        baseline_gom = (h12_shape = -0.3, h12_rate = log(0.2))
+        nat = transform_baseline_to_natural(baseline_gom, :gom, Float64)
+        back = transform_baseline_to_estimation(nat, :gom)
+        @test back.h12_shape ≈ baseline_gom.h12_shape rtol=1e-10
+        @test back.h12_rate ≈ baseline_gom.h12_rate rtol=1e-10
     end
 end

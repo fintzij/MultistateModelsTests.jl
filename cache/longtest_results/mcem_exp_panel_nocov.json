@@ -972,7 +972,7 @@
             0.934238622394542
         ]
     },
-    "git_commit": "b1144da",
+    "git_commit": "6b59be0",
     "all_tests_passed": false,
     "data_summary": {
     },
@@ -1287,7 +1287,7 @@
             0.9617613776054579
         ]
     },
-    "timestamp": "2025-12-31T21:28:52.287",
+    "timestamp": "2026-01-02T13:10:26.343",
     "cumulative_incidence_times": [
         0,
         0.5,

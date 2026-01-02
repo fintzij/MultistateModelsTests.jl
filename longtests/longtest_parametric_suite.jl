@@ -445,14 +445,10 @@ end
 const FAMILIES = ["exp", "wei", "gom"]
 const COV_TYPES = ["nocov", "fixed", "tvc"]
 
-# NOTE: TVC tests are currently broken due to a bug in observe_path() where
-# time-varying covariate values are not properly assigned when simulated 
-# transition times don't align with template interval boundaries. The simulation
-# engine (simulate_path) correctly uses TVCs, but observe_path loses the covariate
-# information when converting paths to DataFrames. This results in all covariate
-# values being set from the first interval, causing biased parameter estimates.
-# See: Issue tracking the observe_path TVC bug (TODO: file issue)
-const TVC_TESTS_BROKEN = true
+# TVC bug was fixed in src/simulation/simulate.jl by detecting TVC structure
+# and preserving covariate intervals instead of collapsing to a single row.
+# See _has_tvc_structure() and _extend_tvc_to_tmax() functions.
+const TVC_TESTS_BROKEN = false
 
 @testset "Parametric Long Test Suite" begin
     

@@ -1,0 +1,71 @@
+  ▸ [Exact Data] Section 1: Exponential hazards
+    ▸ Exponential - No Covariates
+
+******************************************************************************
+This program contains Ipopt, a library for large-scale nonlinear optimization.
+ Ipopt is released as open source code under the Eclipse Public License (EPL).
+         For more information visit https://github.com/coin-or/Ipopt
+******************************************************************************
+
+Test Summary:               | Pass  Total   Time
+Exponential - No Covariates |    3      3  24.5s
+Test Summary:                | Pass  Total  Time
+Exponential - With Covariate |    4      4  4.4s
+  ▸ [Exact Data] Section 2: Weibull hazards
+    ▸ Weibull - No Covariates
+Test Summary:           | Pass  Total   Time
+Weibull - No Covariates |    5      5  34.4s
+Test Summary:            | Pass  Total   Time
+Weibull - With Covariate |    3      3  11.4s
+Test Summary:            | Pass  Total   Time
+Gompertz - No Covariates |    5      5  32.7s
+Test Summary:             | Pass  Total   Time
+Gompertz - With Covariate |    3      3  10.4s
+Test Summary:          | Pass  Total   Time
+Spline - No Covariates |    4      4  13.5s
+Test Summary:           | Pass  Total   Time
+Spline - With Covariate |    3      3  19.1s
+Test Summary:     | Pass  Total  Time
+Exponential - TVC |    2      2  0.4s
+Test Summary: | Pass  Total  Time
+Weibull - TVC |    2      2  3.5s
+Test Summary:  | Pass  Total  Time
+Gompertz - TVC |    3      3  3.5s
+Test Summary: | Pass  Total  Time
+Spline - TVC  |    4      4  7.9s
+Test Summary:   | Pass  Total  Time
+Subject Weights |    1      1  0.2s
+Test Summary:             | Pass  Total  Time
+Log-likelihood Properties |    3      3  1.4s
+
+=== Exact Data Long Test Suite Complete ===
+
+This test suite validated:
+  - Exponential hazards: no covariate, with covariate, TVC
+  - Weibull hazards: no covariate, with covariate, TVC
+  - Gompertz hazards: no covariate, with covariate, TVC
+  - Spline hazards: no covariate, with covariate, TVC
+  - Edge cases: subject weights, likelihood properties
+Model structure: progressive 3-state (1→2→3)
+Sample size: n=1000, simulation trajectories: 10000
+
+Saving results to cache...
+┌ Warning: Failed to save result for wei_nocov: UndefVarError(:JSON3, 0x00000000000099c0, Main)
+└ @ Main ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/longtests/longtest_exact_markov.jl:940
+┌ Warning: Failed to save result for gom_nocov: UndefVarError(:JSON3, 0x00000000000099c0, Main)
+└ @ Main ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/longtests/longtest_exact_markov.jl:940
+┌ Warning: Failed to save result for exp_nocov: UndefVarError(:JSON3, 0x00000000000099c0, Main)
+└ @ Main ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/longtests/longtest_exact_markov.jl:940
+Results saved to: /Users/fintzij/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/cache/longtest_results
+Running Exact Markov Long Tests (50 reps)...
+ERROR: UndefVarError: `run_exact_markov_longtests` not defined in `Main`
+Suggestion: check for spelling errors or missing imports.
+Stacktrace:
+ [1] top-level scope
+   @ none:10
+ [2] eval(m::Module, e::Any)
+   @ Core ./boot.jl:489
+ [3] exec_options(opts::Base.JLOptions)
+   @ Base ./client.jl:283
+ [4] _start()
+   @ Base ./client.jl:550

@@ -1,0 +1,80 @@
+
+******************************************************************************
+This program contains Ipopt, a library for large-scale nonlinear optimization.
+ Ipopt is released as open source code under the Eclipse Public License (EPL).
+         For more information visit https://github.com/coin-or/Ipopt
+******************************************************************************
+
+  ✓ IJ vs model-based variance ratio: [0.978]
+  ✓ Frobenius norm ratio: 0.978
+Test Summary:                                       | Pass  Total   Time
+IJ vs Model-based Variance (Exponential Exact Data) |    4      4  22.2s
+  ✓ Weibull IJ vs model-based variance ratio: [0.979, 0.965]
+Test Summary:                                   | Pass  Total  Time
+IJ vs Model-based Variance (Weibull Exact Data) |    1      1  9.3s
+  ✓ Markov panel IJ vs model-based variance ratio: [1.04, 1.001, 1.007]
+Test Summary:                                  | Pass  Total   Time
+IJ vs Model-based Variance (Markov Panel Data) |    1      1  21.4s
+  ✓ JK = ((n-1)/n) × IJ verified (algebraic identity)
+Test Summary:                                 | Pass  Total  Time
+JK = ((n-1)/n) × IJ Relationship (Exact Data) |    3      3  3.9s
+  ✓ JK = ((n-1)/n) × IJ verified for panel data
+Test Summary:                                 | Pass  Total   Time
+JK = ((n-1)/n) × IJ Relationship (Panel Data) |    1      1  11.8s
+  Computing empirical variance from 200 replicates...
+  ✓ Model-based vs empirical variance ratio: [1.142]
+    Model-based SE: [0.0234]
+    Empirical SE: [0.0218]
+Test Summary:                                            | Pass  Total   Time
+Model-based Variance vs Empirical Variance (Exponential) |    1      1  21.0s
+  Computing empirical variance from 200 replicates...
+  ✓ Weibull model-based vs empirical variance ratio: [0.864, 0.944]
+    Model-based SE: [0.0185, 0.0448]
+    Empirical SE: [0.0199, 0.0462]
+Test Summary:                                        | Pass  Total      Time
+Model-based Variance vs Empirical Variance (Weibull) |    1      1  12m48.1s
+  Computing empirical variance from 200 replicates...
+  ✓ IJ vs empirical variance ratio: [1.055]
+Test Summary:                                   | Pass  Total   Time
+IJ Variance vs Empirical Variance (Exponential) |    1      1  21.1s
+  ✓ Covariate model IJ vs model-based ratio: [0.979, 0.992]
+Test Summary:                                | Pass  Total  Time
+IJ vs Model-based Variance (With Covariates) |    1      1  2.3s
+  Computing coverage from 100 replicates...
+  ✓ 95% CI coverage: 94.0%
+Test Summary:                 | Pass  Total   Time
+95% CI Coverage (Exponential) |    1      1  23.7s
+  ✓ All variance matrices are positive semi-definite
+    Model eigenvalues: [9.0e-5, 0.000846, 0.001984]
+    IJ eigenvalues: [9.5e-5, 0.000828, 0.001902]
+    JK eigenvalues: [9.5e-5, 0.000828, 0.001901]
+Test Summary:                         | Pass  Total  Time
+Variance Matrix Positive Definiteness |    6      6  8.9s
+  ✓ MCEM IJ vs model-based variance ratio: [0.808, 0.932]
+    Model-based SE: [0.0435, 0.1155]
+    IJ SE: [0.0391, 0.1115]
+Test Summary:                                          | Pass  Total   Time
+MCEM: IJ vs Model-based Variance (Weibull Semi-Markov) |    5      5  24.6s
+  ✓ MCEM JK = ((n-1)/n) × IJ verified (algebraic identity)
+Test Summary:                          | Pass  Total   Time
+MCEM: JK = ((n-1)/n) × IJ Relationship |    3      3  15.7s
+  Computing empirical variance from 50 MCEM replicates...
+  (This may take several minutes)
+    Completed 10 / 50 replicates (10 converged)
+    Completed 20 / 50 replicates (20 converged)
+    Completed 30 / 50 replicates (30 converged)
+    Completed 40 / 50 replicates (40 converged)
+    Completed 50 / 50 replicates (50 converged)
+  ✓ MCEM model-based vs empirical variance ratio: [1.656, 1.204]
+    Model-based SE: [0.045, 0.1073]
+    Empirical SE: [0.035, 0.0978]
+    (50 / 50 replicates converged)
+Test Summary:                                    | Pass  Total     Time
+MCEM: Model-based Variance vs Empirical Variance |    2      2  5m00.4s
+  ✓ MCEM illness-death model variance validation passed
+    IJ/Model ratio: [0.881, 1.134, 0.982, 0.961]
+    Model-based SE: [0.0462, 0.1144, 0.6608, 0.0557]
+Test Summary:                                | Pass  Total     Time
+MCEM: Illness-Death Model Variance (3-state) |    7      7  1m54.1s
+
+===== Variance Validation Long Tests Complete =====

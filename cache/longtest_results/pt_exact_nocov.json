@@ -1,0 +1,114 @@
+{
+    "n_simulations": 0,
+    "n_tests_passed": 0,
+    "cumulative_incidence_true": {
+    },
+    "prevalence_true_upper": {
+    },
+    "estimated_params": {
+        "log_rate_3": -0.8913498521748946,
+        "log_rate_7": -1.229944103900709,
+        "log_rate_1": -0.7798137544729185,
+        "log_rate_8": -1.7522726679500638,
+        "log_rate_2": -1.0754428886172314,
+        "log_rate_5": -1.4421620944615523,
+        "log_rate_4": -1.5593171866122157,
+        "log_rate_6": -1.0176971438107125
+    },
+    "git_branch": "penalized_splines",
+    "n_tests_failed": 0,
+    "param_passed": {
+        "log_rate_3": true,
+        "log_rate_7": true,
+        "log_rate_1": true,
+        "log_rate_8": true,
+        "log_rate_2": true,
+        "log_rate_5": true,
+        "log_rate_4": true,
+        "log_rate_6": true
+    },
+    "test_description": "pt - exact - nocov",
+    "ci_lower": {
+        "log_rate_3": -0.997802439707234,
+        "log_rate_7": -1.3675091355440538,
+        "log_rate_1": -0.8804921918726712,
+        "log_rate_8": -1.904398170988505,
+        "log_rate_2": -1.1921591901156126,
+        "log_rate_5": -1.5811028106431861,
+        "log_rate_4": -1.7066398081007703,
+        "log_rate_6": -1.1414112468178819
+    },
+    "cumulative_incidence_true_lower": {
+    },
+    "prevalence_true": {
+    },
+    "passed": true,
+    "ci_upper": {
+        "log_rate_3": -0.7848972646425552,
+        "log_rate_7": -1.0923790722573643,
+        "log_rate_1": -0.6791353170731657,
+        "log_rate_8": -1.6001471649116226,
+        "log_rate_2": -0.9587265871188502,
+        "log_rate_5": -1.3032213782799185,
+        "log_rate_4": -1.4119945651236612,
+        "log_rate_6": -0.8939830408035431
+    },
+    "prevalence_observed": {
+    },
+    "prevalence_true_lower": {
+    },
+    "n_states": 5,
+    "prevalence_fitted_upper": {
+    },
+    "fitting_time_seconds": 0,
+    "n_subjects": 1000,
+    "prevalence_times": [
+    ],
+    "cumulative_incidence_true_upper": {
+    },
+    "prevalence_fitted_lower": {
+    },
+    "hazard_family": "pt",
+    "covariate_type": "nocov",
+    "true_params": {
+        "log_rate_3": -0.916290731874155,
+        "log_rate_7": -1.2039728043259361,
+        "log_rate_1": -0.6931471805599453,
+        "log_rate_8": -1.8971199848858813,
+        "log_rate_2": -1.2039728043259361,
+        "log_rate_5": -1.3862943611198906,
+        "log_rate_4": -1.6094379124341003,
+        "log_rate_6": -1.0498221244986778
+    },
+    "cumulative_incidence_fitted_lower": {
+    },
+    "git_commit": "6b59be0",
+    "all_tests_passed": false,
+    "data_summary": {
+    },
+    "test_name": "pt_exact_nocov",
+    "data_type": "exact",
+    "prevalence_fitted": {
+    },
+    "failure_messages": [
+    ],
+    "standard_errors": {
+        "log_rate_3": 0.05431254465935687,
+        "log_rate_7": 0.07018624063435963,
+        "log_rate_1": 0.05136654969375142,
+        "log_rate_8": 0.07761505257063327,
+        "log_rate_2": 0.059549133417541394,
+        "log_rate_5": 0.07088812050083362,
+        "log_rate_4": 0.07516460280028293,
+        "log_rate_6": 0.06311944030978033
+    },
+    "cumulative_incidence_fitted": {
+    },
+    "cumulative_incidence_fitted_upper": {
+    },
+    "timestamp": "2026-01-02T13:47:10.768",
+    "cumulative_incidence_times": [
+    ],
+    "hazard_families": [
+    ]
+}

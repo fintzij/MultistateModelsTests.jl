@@ -6,7 +6,19 @@
 # These functions are included in the MultistateModelsTests module context,
 # so they have access to DataFrames, Distributions, LinearAlgebra, Printf,
 # Random, and Statistics via the module's imports.
+#
+# When running standalone (outside module), ensure these are imported first.
 # =============================================================================
+
+# Ensure required packages are available (safe to call multiple times)
+using DataFrames
+using Dates
+using Distributions
+using JSON3
+using LinearAlgebra
+using Printf
+using Random
+using Statistics
 
 mutable struct TestResult
     test_name::String
@@ -710,7 +722,9 @@ function capture_longtest_result!(
     n_sim::Int=N_SIM_TRAJ,
     eval_times::Vector{Float64}=EVAL_TIMES,
     beta_param_names::Vector{String}=String[],
-    shape_param_names::Vector{String}=String[]
+    shape_param_names::Vector{String}=String[],
+    n_states::Int=3,
+    transitions::Vector{Tuple{Int,Int}}=[(1, 2), (2, 3)]
 )
     result = LongTestResult(
         test_name = test_name,
@@ -720,7 +734,7 @@ function capture_longtest_result!(
         covariate_type = covariate_type,
         n_subjects = length(unique(data.id)),
         n_simulations = n_sim,
-        n_states = 3
+        n_states = n_states
     )
     
     # Flatten true params
@@ -817,7 +831,7 @@ function capture_longtest_result!(
     
     # Compute state prevalence
     result.prevalence_times = copy(eval_times)
-    for s in 1:3
+    for s in 1:n_states
         prev_true = compute_state_prevalence(paths_true, s, eval_times)
         prev_fitted = compute_state_prevalence(paths_fitted, s, eval_times)
         
@@ -829,9 +843,9 @@ function capture_longtest_result!(
         result.prevalence_fitted_upper[string(s)] = prev_fitted.upper
     end
     
-    # Compute cumulative incidence for 1→2 and 2→3 only (NOT 1→3)
+    # Compute cumulative incidence for specified transitions
     result.cumulative_incidence_times = copy(eval_times)
-    for (from, to) in [(1, 2), (2, 3)]
+    for (from, to) in transitions
         key = "$(from)→$(to)"
         ci_true = compute_cumulative_incidence(paths_true, from, to, eval_times)
         ci_fitted = compute_cumulative_incidence(paths_fitted, from, to, eval_times)
@@ -843,6 +857,87 @@ function capture_longtest_result!(
         result.cumulative_incidence_fitted_lower[key] = ci_fitted.lower
         result.cumulative_incidence_fitted_upper[key] = ci_fitted.upper
     end
+    
+    # Save to cache
+    save_longtest_result(result)
+    
+    return result
+end
+
+"""
+    capture_simple_longtest_result!(
+        test_name::String,
+        fitted,
+        true_params_flat::Vector{Float64},
+        param_names::Vector{String};
+        hazard_family::String,
+        data_type::String,
+        covariate_type::String,
+        n_subjects::Int,
+        n_states::Int=3
+    ) -> LongTestResult
+
+Simplified result capture for tests that don't fit the standard 3-state progressive model.
+Captures parameter recovery only, without prevalence/CI simulation.
+
+Useful for phase-type tests with expanded state spaces.
+"""
+function capture_simple_longtest_result!(
+    test_name::String,
+    fitted,
+    true_params_flat::Vector{Float64},
+    param_names::Vector{String};
+    hazard_family::String,
+    data_type::String,
+    covariate_type::String,
+    n_subjects::Int,
+    n_states::Int=3
+)
+    result = LongTestResult(
+        test_name = test_name,
+        test_description = "$(hazard_family) - $(data_type) - $(covariate_type)",
+        hazard_family = hazard_family,
+        data_type = data_type,
+        covariate_type = covariate_type,
+        n_subjects = n_subjects,
+        n_simulations = 0,  # No simulation comparison
+        n_states = n_states
+    )
+    
+    # Get fitted params
+    fitted_flat = get_parameters_flat(fitted)
+    
+    # Get SEs
+    if isnothing(fitted.vcov)
+        ses = fill(NaN, length(fitted_flat))
+    else
+        diag_vals = diag(fitted.vcov)
+        ses = [v >= 0 ? sqrt(v) : NaN for v in diag_vals]
+    end
+    
+    # Store parameters and check recovery
+    all_passed = true
+    for (i, name) in enumerate(param_names)
+        true_val = true_params_flat[i]
+        est_val = fitted_flat[i]
+        
+        # Use relative tolerance for non-zero, absolute for near-zero
+        if abs(true_val) < 0.1
+            passed = abs(est_val - true_val) <= 0.2
+        else
+            passed = abs((est_val - true_val) / true_val) <= PARAM_REL_TOL
+        end
+        
+        all_passed = all_passed && passed
+        
+        result.true_params[name] = true_val
+        result.estimated_params[name] = est_val
+        result.standard_errors[name] = ses[i]
+        result.ci_lower[name] = est_val - 1.96 * ses[i]
+        result.ci_upper[name] = est_val + 1.96 * ses[i]
+        result.param_passed[name] = passed
+    end
+    result.passed = all_passed
     
     # Save to cache
     save_longtest_result(result)

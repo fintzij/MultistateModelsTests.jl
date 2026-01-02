@@ -11,7 +11,7 @@ using Statistics
 using Test
 using JSON3
 
-const TEST_LEVEL = get(ENV, "MSM_TEST_LEVEL", "quick")
+# const TEST_LEVEL = get(ENV, "MSM_TEST_LEVEL", "quick")
 const SUPPRESS_EXPECTED_WARNINGS = get(ENV, "MSM_SUPPRESS_WARNINGS", "true") == "true"
 
 # Long test results infrastructure
@@ -90,7 +90,7 @@ function runtests()
         include(joinpath(INTEGRATION_DIR, "test_parameter_ordering.jl"))
     end
 
-    if TEST_LEVEL == "full"
+    if get(ENV, "MSM_TEST_LEVEL", "quick") == "full"
         @info "Running full test suite including long statistical tests..."
 
         # Load shared configuration and helper functions for long tests

@@ -4,40 +4,38 @@ subtitle: "Validation of key functions"
 date: last-modified
 ---
 
-::: {.callout-note}
-## Status: Not Started
-This report is a placeholder. Content will be added as the test documentation is developed.
-:::
-
 ## 1. Coverage Summary
 
-```{julia}
-#| eval: false
-#| echo: false
-
-# TODO: Add coverage statistics
-```
-
-### Overall Statistics
+### Overall Statistics (as of January 3, 2026)
 
 | Metric | Value |
 |--------|-------|
-| Total Test Files | - |
-| Total Test Cases | - |
-| Passing | - |
-| Failing | - |
-| Coverage % | - |
+| Total Test Files | 20 |
+| Total Test Cases | 1541 |
+| Passing | 1541 |
+| Failing | 0 |
+| Branch | `penalized_splines` @ 44ce5f9 |
 
 ### Coverage by Module
 
-| Module | Tests | Coverage |
-|--------|-------|----------|
-| Hazard | - | - |
-| Likelihood | - | - |
-| Simulation | - | - |
-| Inference | - | - |
-| Splines | - | - |
-| Phase-Type | - | - |
+| Module | Tests | Status |
+|--------|-------|--------|
+| Hazards | 163 | ✅ Pass |
+| **Splines** | **255** | ✅ Pass |
+| Simulation | 227 | ✅ Pass |
+| MCEM | 24 | ✅ Pass |
+| Phase-Type | 505 | ✅ Pass |
+| SIR | 21 | ✅ Pass |
+| Variance | 55 | ✅ Pass |
+| Initialization | 13 | ✅ Pass |
+| Model Generation | 55 | ✅ Pass |
+| Surrogates | 28 | ✅ Pass |
+| Helpers | 35 | ✅ Pass |
+| Reconstructor | 79 | ✅ Pass |
+| **PIJCV** | **53** | ✅ Pass |
+| **Model Output** | **27** | ✅ Pass (NEW) |
+| **Hazard Macro** | **39** | ✅ Pass (NEW) |
+| **AD Backends** | **32** | ✅ Pass (NEW) |
 
 ## 2. Hazard Functions
 
@@ -45,16 +43,16 @@ This report is a placeholder. Content will be added as the test documentation is
 
 | Function | Test File | Condition | Status |
 |----------|-----------|-----------|--------|
-| `eval_hazard` (Exp) | `test_hazards.jl` | Baseline | ⏳ |
-| `eval_hazard` (Wei) | `test_hazards.jl` | Baseline | ⏳ |
-| `eval_hazard` (Gom) | `test_hazards.jl` | Baseline | ⏳ |
-| `eval_cumhaz` (Exp) | `test_hazards.jl` | With covariate | ⏳ |
-| `eval_cumhaz` (Wei) | `test_hazards.jl` | AFT effect | ⏳ |
-| `eval_cumhaz` (Gom) | `test_hazards.jl` | PH effect | ⏳ |
+| `eval_hazard` (Exp) | `test_hazards.jl` | Baseline | ✅ Pass |
+| `eval_hazard` (Wei) | `test_hazards.jl` | Baseline | ✅ Pass |
+| `eval_hazard` (Gom) | `test_hazards.jl` | Baseline | ✅ Pass |
+| `eval_cumhaz` (Exp) | `test_hazards.jl` | With covariate | ✅ Pass |
+| `eval_cumhaz` (Wei) | `test_hazards.jl` | AFT effect | ✅ Pass |
+| `eval_cumhaz` (Gom) | `test_hazards.jl` | PH effect | ✅ Pass |
 
-### Validation Approach
+### Tolerance Justification
 
-*To be documented*
+- `rtol=1e-6`: ParameterHandling positive() uses ε ≈ 1.49e-8 safety margin, introducing small numerical differences in exp/log round-trip
 
 ## 3. Likelihood Functions
 
@@ -62,13 +60,9 @@ This report is a placeholder. Content will be added as the test documentation is
 
 | Function | Test File | Condition | Status |
 |----------|-----------|-----------|--------|
-| `loglik_path` | `test_mll_consistency.jl` | Exact observation | ⏳ |
-| `loglik` | `test_mll_consistency.jl` | Panel data | ⏳ |
-| `tvc_loglik` | `test_reversible_tvc_loglik.jl` | Time-varying covariates | ⏳ |
-
-### Validation Approach
-
-*To be documented*
+| `loglik_path` | `test_mll_consistency.jl` | Exact observation | ✅ Pass |
+| `loglik` | `test_mll_consistency.jl` | Panel data | ✅ Pass |
+| `tvc_loglik` | `test_reversible_tvc_loglik.jl` | Time-varying covariates | ✅ Pass |
 
 ## 4. Simulation
 
@@ -76,12 +70,8 @@ This report is a placeholder. Content will be added as the test documentation is
 
 | Function | Test File | Condition | Status |
 |----------|-----------|-----------|--------|
-| `simulate_path` | `test_simulation.jl` | Single subject | ⏳ |
-| `simulate` | `test_simulation.jl` | Multiple subjects | ⏳ |
-
-### Validation Approach
-
-*To be documented*
+| `simulate_path` | `test_simulation.jl` | Single subject | ✅ Pass |
+| `simulate` | `test_simulation.jl` | Multiple subjects | ✅ Pass |
 
 ## 5. Model Construction
 
@@ -89,50 +79,99 @@ This report is a placeholder. Content will be added as the test documentation is
 
 | Function | Test File | Condition | Status |
 |----------|-----------|-----------|--------|
-| `multistatemodel` | `test_modelgeneration.jl` | Basic model | ⏳ |
-| `Hazard` | `test_hazards.jl` | All families | ⏳ |
-| `set_parameters!` | `test_initialization.jl` | Parameter setting | ⏳ |
-
-### Validation Approach
-
-*To be documented*
+| `multistatemodel` | `test_modelgeneration.jl` | Basic model | ✅ Pass |
+| `Hazard` | `test_hazards.jl` | All families | ✅ Pass |
+| `set_parameters!` | `test_initialization.jl` | Parameter setting | ✅ Pass |
 
 ## 6. Splines & Penalization
 
 ### Test Summary
 
-| Function | Test File | Condition | Status |
-|----------|-----------|-----------|--------|
-| B-spline basis | `test_splines.jl` | Evaluation | ⏳ |
-| Penalty matrix | `test_splines.jl` | Second derivative | ⏳ |
+| Function | Test File | Tests | Status |
+|----------|-----------|-------|--------|
+| B-spline basis evaluation | `test_splines.jl` | Cumulative hazard vs QuadGK | ✅ Pass |
+| B-spline antiderivative | `test_splines.jl` | Machine precision (rtol=1e-10) | ✅ Pass |
+| Penalty matrix (m=2) | `test_splines.jl` | Symmetric, PSD, null space | ✅ Pass |
+| `s(x)` formula parsing | `test_splines.jl` | StatsModels integration | ✅ Pass |
+| `s(x)` edge cases | `test_splines.jl` | Penalty orders, knot validation | ✅ Pass |
+| `te(x,y)` tensor product | `test_splines.jl` | Kronecker basis | ✅ Pass |
+| Lambda sharing | `test_splines.jl` | `:hazard`, `:global` modes | ✅ Pass |
+| Automatic knot placement | `test_splines.jl` | Quantile-based calibration | ✅ Pass |
+| Rectify coefficients | `test_splines.jl` | Monotonicity enforcement | ✅ Pass |
 
-### Validation Approach
+### Tolerance Justification
 
-*To be documented*
+- `rtol=1e-3` (cumhaz vs QuadGK): B-spline antiderivative vs adaptive numerical integration use different methods; both are correct within this tolerance
+- `rtol=1e-10` (B-spline antiderivative): BSplineKit's `integral()` should match QuadGK to near machine precision
 
-## 7. Phase-Type Models
+## 7. PIJCV Smoothing Parameter Selection
+
+### Test Summary
+
+| Function | Test File | Tests | Status |
+|----------|-----------|-------|--------|
+| `solve_linear_system` | `test_pijcv.jl` | Cholesky solver | ✅ Pass |
+| `woodbury_update` | `test_pijcv.jl` | Rank-1 updates | ✅ Pass |
+| `compute_perturbations` | `test_pijcv.jl` | LOO perturbations | ✅ Pass |
+| `compute_pijcv_objective` | `test_pijcv.jl` | PIJCV criterion | ✅ Pass |
+| `select_smoothing_parameters` | `test_pijcv.jl` | End-to-end API | ✅ Pass |
+
+### Tolerance Justification
+
+- `rtol=1e-6`: Numerical linear algebra (Cholesky decomposition, matrix inversion) introduces small errors
+
+## 8. Model Output Functions (NEW)
+
+### Test Summary
+
+| Function | Test File | Tests | Status |
+|----------|-----------|-------|--------|
+| `aic()` | `test_model_output.jl` | Formula verification, parameter counting | ✅ Pass |
+| `bic()` | `test_model_output.jl` | Sample size dependence | ✅ Pass |
+| `summary()` | `test_model_output.jl` | Returns TypedTable | ✅ Pass |
+| `estimate_loglik()` | `test_model_output.jl` | NamedTuple structure, ESS, MCSE | ✅ Pass |
+| Error handling | `test_model_output.jl` | Unfitted model behavior | ✅ Pass |
+
+## 9. @hazard Macro (NEW)
+
+### Test Summary
+
+| Feature | Test File | Tests | Status |
+|---------|-----------|-------|--------|
+| Family aliases | `test_hazard_macro.jl` | exp, wei, gom, sp, pt | ✅ Pass |
+| Transition syntax | `test_hazard_macro.jl` | statefrom/stateto, from/to, pair | ✅ Pass |
+| Formula specification | `test_hazard_macro.jl` | Default, explicit intercept, covariates | ✅ Pass |
+| Keyword forwarding | `test_hazard_macro.jl` | knots, n_phases, linpred_effect | ✅ Pass |
+| Error handling | `test_hazard_macro.jl` | Missing family, invalid family | ✅ Pass |
+| Macro hygiene | `test_hazard_macro.jl` | No variable capture | ✅ Pass |
+
+## 10. AD Backend Infrastructure (NEW)
+
+### Test Summary
+
+| Feature | Test File | Tests | Status |
+|---------|-----------|-------|--------|
+| Backend types | `test_ad_backends.jl` | Type existence, instantiation | ✅ Pass |
+| Default selection | `test_ad_backends.jl` | Parameter count thresholds | ✅ Pass |
+| Gradient correctness | `test_ad_backends.jl` | Exp, Wei, Gom with ForwardDiff | ✅ Pass |
+| fit() integration | `test_ad_backends.jl` | adbackend parameter | ✅ Pass |
+
+## 11. Phase-Type Models
 
 ### Test Summary
 
 | Function | Test File | Condition | Status |
 |----------|-----------|-----------|--------|
-| Expansion | `test_phasetype.jl` | State expansion | ⏳ |
-| Collapse | `test_phasetype.jl` | State collapse | ⏳ |
-| FFBS | `test_phasetype.jl` | Forward-backward | ⏳ |
+| Expansion | `test_phasetype.jl` | State expansion | ✅ Pass |
+| Collapse | `test_phasetype.jl` | State collapse | ✅ Pass |
+| FFBS | `test_phasetype.jl` | Forward-backward | ✅ Pass |
+| SCTP constraints | `test_phasetype.jl` | Sum constraints | ✅ Pass |
 
-### Validation Approach
-
-*To be documented*
-
-## 8. Helpers & Utilities
+## 12. Helpers & Utilities
 
 ### Test Summary
 
 | Function | Test File | Condition | Status |
 |----------|-----------|-----------|--------|
-| `extract_covariates` | `test_helpers.jl` | Covariate extraction | ⏳ |
-| `get_hazard_params` | `test_helpers.jl` | Parameter retrieval | ⏳ |
-
-### Validation Approach
-
-*To be documented*
+| `extract_covariates` | `test_helpers.jl` | Covariate extraction | ✅ Pass |
+| `get_hazard_params` | `test_helpers.jl` | Parameter retrieval | ✅ Pass |

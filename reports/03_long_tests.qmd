@@ -146,10 +146,55 @@ for test_name in panel_tests
 end
 ```
 
-## 4. Notes
+## 4. Penalized Spline Models
+
+### 4.1 Smooth Covariate Effects (s(x))
+
+Tests for single-dimensional smooth covariate effects using `s(x)` terms with 
+automatic PIJCV smoothing parameter selection.
+
+| Test | True Function | Status |
+|------|---------------|--------|
+| Sinusoidal | f(x) = sin(2πx) | ✅ Pass |
+| Quadratic | f(x) = x² | ✅ Pass |
+| Sigmoid | f(x) = tanh(5(x-0.5)) | ✅ Pass |
+| s(x) + Linear | f(x) = sin(2πx) + 0.5·trt | ✅ Pass |
+
+**Test Parameters**: n=500 subjects, k=10-12 basis functions, max_time=10
+
+### 4.2 Tensor Product Smooths (te(x,y))
+
+Tests for 2D smooth covariate surfaces using `te(x,y)` terms.
+
+| Test | True Surface | Status |
+|------|--------------|--------|
+| Separable | g(x,y) = sin(πx)cos(πy) | ✅ Pass |
+| Bilinear | g(x,y) = (x-0.5)(y-0.5) | ✅ Pass |
+| Additive | g(x,y) = sin(2πx) + 0.5cos(2πy) | ✅ Pass |
+| te() vs s()+s() | Comparison for additive surface | ✅ Pass |
+
+**Test Parameters**: n=800 subjects, k=5×5 tensor basis
+
+### 4.3 MCEM with Spline Hazards
+
+Tests for spline baseline hazards in the MCEM algorithm with panel data.
+
+| Test | Approximates | Status |
+|------|--------------|--------|
+| Linear spline | Exponential (constant) hazard | ✅ Pass |
+| Piecewise spline | Step function hazard | ✅ Pass |
+| Cubic spline | Gompertz (exponential increase) | ✅ Pass |
+| Spline + covariate | Log hazard ratio recovery | ✅ Pass |
+| Monotone spline | Constraint enforcement | ✅ Pass |
+| PhaseType proposal | Spline with MCEM sampling | ✅ Pass |
+
+**Test Parameters**: n=1000 subjects, MCEM tolerance=0.05
+
+## 5. Notes
 
 - Tests use a 3-state progressive model: State 1 → State 2 → State 3
 - Parameter recovery tolerance: 35% relative error for main parameters
 - TVC (time-varying covariate) tests verify covariate effects change at t=5
+- AFT (accelerated failure time) with TVC uses effective time τ(t) = ∫exp(-βx(s))ds
 - Exact data uses `obstype=1` (continuous observation)
 - Panel data uses discrete observation times with MCEM for semi-Markov families

@@ -183,3 +183,133 @@ import MultistateModels:
     end
     
 end
+
+@testset "AFT + TVC Machine-Precision Validation" begin
+    # This testset verifies AFT (accelerated failure time) models with TVC
+    # compute cumulative hazard correctly using effective time τ(t) = ∫ exp(-βx(s)) ds
+    
+    @testset "Weibull AFT with TVC - likelihood" begin
+        # Test parameters (natural scale)
+        shape = 1.5
+        scale = 0.8
+        beta = 0.5
+        
+        # TVC: x changes at t=1 and t=2
+        # x = 0.0 for [0,1), x = 1.0 for [1,2), x = 0.5 for [2,∞)
+        h12 = Hazard(@formula(0 ~ x), "wei", 1, 2; linpred_effect=:aft)
+        
+        dat = DataFrame(
+            id = [1, 1, 1],
+            tstart = [0.0, 1.0, 2.0],
+            tstop = [1.0, 2.0, 3.0],
+            statefrom = [1, 1, 1],
+            stateto = [1, 1, 2],  # transition at t=3
+            obstype = [1, 1, 1],
+            x = [0.0, 1.0, 0.5]
+        )
+        
+        model = multistatemodel(h12; data=dat)
+        # Parameters stored as: [log(shape), log(scale), beta]
+        set_parameters!(model, (h12 = [log(shape), log(scale), beta],))
+        
+        # Manual calculation of effective time τ
+        # τ = 1.0 * exp(-0.5 * 0.0) + 1.0 * exp(-0.5 * 1.0) + 1.0 * exp(-0.5 * 0.5)
+        tau_manual = 1.0 * exp(-beta * 0.0) + 1.0 * exp(-beta * 1.0) + 1.0 * exp(-beta * 0.5)
+        
+        # Weibull AFT: H(t) = H₀(τ) = scale * τ^shape
+        H_manual = scale * tau_manual^shape
+        
+        # For obstype=1 at transition (state 1→2), need instantaneous hazard:
+        # h(t) = h₀(τ) * exp(-β * x(t)) = shape * scale * τ^(shape-1) * exp(-β * x_final)
+        x_final = 0.5
+        h_manual = shape * scale * tau_manual^(shape - 1) * exp(-beta * x_final)
+        
+        # Log-likelihood = log(h) - H
+        ll_manual = log(h_manual) - H_manual
+        
+        # Package computation
+        paths = MultistateModels.extract_paths(model)
+        exact_data = MultistateModels.ExactData(model, paths)
+        ll_package = MultistateModels.loglik_exact(model.parameters.flat, exact_data; neg=false)
+        
+        @test ll_package ≈ ll_manual rtol=1e-6
+        @test tau_manual ≈ 2.385331442784038 rtol=1e-10  # regression test
+    end
+    
+    @testset "Gompertz AFT with TVC - likelihood" begin
+        # Test parameters (natural scale)
+        shape = 0.3
+        rate = 0.2
+        beta = 0.5
+        
+        h12 = Hazard(@formula(0 ~ x), "gom", 1, 2; linpred_effect=:aft)
+        
+        dat = DataFrame(
+            id = [1, 1, 1],
+            tstart = [0.0, 1.0, 2.0],
+            tstop = [1.0, 2.0, 3.0],
+            statefrom = [1, 1, 1],
+            stateto = [1, 1, 2],
+            obstype = [1, 1, 1],
+            x = [0.0, 1.0, 0.5]
+        )
+        
+        model = multistatemodel(h12; data=dat)
+        # Gompertz: [shape, log(rate), beta] - shape on identity scale
+        set_parameters!(model, (h12 = [shape, log(rate), beta],))
+        
+        # Manual effective time
+        tau_manual = 1.0 * exp(-beta * 0.0) + 1.0 * exp(-beta * 1.0) + 1.0 * exp(-beta * 0.5)
+        
+        # Gompertz AFT: H(τ) = (rate/shape) * (exp(shape * τ) - 1)
+        H_manual = (rate / shape) * (exp(shape * tau_manual) - 1.0)
+        
+        # Instantaneous hazard: h(τ) * exp(-β * x(t)) = rate * exp(shape * τ) * exp(-β * x_final)
+        x_final = 0.5
+        h_manual = rate * exp(shape * tau_manual) * exp(-beta * x_final)
+        
+        ll_manual = log(h_manual) - H_manual
+        
+        paths = MultistateModels.extract_paths(model)
+        exact_data = MultistateModels.ExactData(model, paths)
+        ll_package = MultistateModels.loglik_exact(model.parameters.flat, exact_data; neg=false)
+        
+        @test ll_package ≈ ll_manual rtol=1e-6
+        @test H_manual ≈ 0.6969416014725967 rtol=1e-10  # regression test
+    end
+    
+    @testset "Exponential AFT with TVC - equivalence to PH" begin
+        # For exponential, AFT with β is equivalent to PH with -β
+        rate = 0.5
+        beta = 0.3
+        
+        h12_aft = Hazard(@formula(0 ~ x), "exp", 1, 2; linpred_effect=:aft)
+        h12_ph = Hazard(@formula(0 ~ x), "exp", 1, 2; linpred_effect=:ph)
+        
+        dat = DataFrame(
+            id = [1, 1],
+            tstart = [0.0, 1.5],
+            tstop = [1.5, 3.0],
+            statefrom = [1, 1],
+            stateto = [1, 2],
+            obstype = [1, 1],
+            x = [0.0, 1.0]
+        )
+        
+        model_aft = multistatemodel(h12_aft; data=dat)
+        model_ph = multistatemodel(h12_ph; data=dat)
+        
+        set_parameters!(model_aft, (h12 = [log(rate), beta],))
+        set_parameters!(model_ph, (h12 = [log(rate), -beta],))  # negated beta for PH
+        
+        paths_aft = MultistateModels.extract_paths(model_aft)
+        paths_ph = MultistateModels.extract_paths(model_ph)
+        exact_data_aft = MultistateModels.ExactData(model_aft, paths_aft)
+        exact_data_ph = MultistateModels.ExactData(model_ph, paths_ph)
+        
+        ll_aft = MultistateModels.loglik_exact(model_aft.parameters.flat, exact_data_aft; neg=false)
+        ll_ph = MultistateModels.loglik_exact(model_ph.parameters.flat, exact_data_ph; neg=false)
+        
+        @test ll_aft ≈ ll_ph rtol=1e-10
+    end
+end

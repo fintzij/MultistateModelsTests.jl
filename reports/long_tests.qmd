@@ -1,17 +1,7 @@
 ---
-title: "Long Test Status"
-subtitle: "Parameter Recovery and Validation Tests for MultistateModels.jl"
-format:
-  html:
-    toc: true
-    toc-depth: 3
-    toc-expand: 2
-    code-fold: true
-    code-summary: "Show code"
-execute:
-  echo: true
-  warning: false
-  freeze: auto
+title: "Long Tests Status"
+subtitle: "Statistical recovery of parameters"
+date: last-modified
 ---
 
 ```{julia}
@@ -19,289 +9,192 @@ execute:
 #| output: false
 using Pkg
 Pkg.activate(joinpath(@__DIR__, ".."))
-using MultistateModels
 using DataFrames
-using Statistics
-using CairoMakie
-using Printf
 using JSON3
-using Dates
+using CairoMakie
+using Statistics
 
-# Include ReportHelpers for cache loading and plotting
-include(joinpath(@__DIR__, "..", "src", "ReportHelpers.jl"))
-import .ReportHelpers: load_test_cache, get_cache_status, cache_status_badge,
-       results_to_dataframe, get_git_info, get_category_result,
-       load_longtest_result, list_longtest_results,
-       plot_parameter_recovery, plot_state_prevalence, plot_cumulative_incidence,
-       longtest_result_to_parameter_table,
-       plot_data_summary, plot_validation_panel, format_test_name,
-       create_test_inventory_df
+# Load ReportHelpers
+include("../src/ReportHelpers.jl")
+using .ReportHelpers
+
+# Get longtest results directory
+RESULTS_DIR = normpath(joinpath(@__DIR__, "..", "cache", "longtest_results"))
 ```
 
-## Test Inventory
-
-Long tests validate parameter recovery across all supported model configurations. Each test:
-
-1. **Simulates** data from a model with known true parameters (N=1000 subjects)
-2. **Fits** the model to the simulated data  
-3. **Compares** estimated parameters to true values
-4. **Verifies** distributional properties via prevalence and cumulative incidence plots
+## 1. Test Inventory
 
 ```{julia}
 #| echo: false
-#| output: asis
+#| label: tbl-inventory
+#| tbl-cap: "Long Test Results Summary"
 
-inventory_df = create_test_inventory_df()
+inventory = create_test_inventory_df(RESULTS_DIR)
 
-if nrow(inventory_df) == 0
-    println("::: {.callout-note}")
-    println("## No Results Available")
-    println("")
-    println("Long test results are saved to `cache/longtest_results/` after each test run.")
-    println("To populate these results, run:")
-    println("")
-    println("```bash")
-    println("cd MultistateModelsTests")
-    println("MSM_TEST_LEVEL=full julia --project=. -e 'using MultistateModelsTests; MultistateModelsTests.runtests()'")
-    println("```")
-    println(":::")
+if nrow(inventory) == 0
+    println("No test results found in cache. Run long tests first.")
 else
-    n_pass = count(r -> r == "✅ Pass", inventory_df.Status)
-    n_total = nrow(inventory_df)
+    # Summary stats
+    n_pass = count(x -> occursin("Pass", x), inventory.Status)
+    n_fail = count(x -> occursin("Fail", x), inventory.Status)
+    n_total = nrow(inventory)
     
-    println("### Summary\n")
-    println("**$(n_pass)/$(n_total) tests passing** | Last updated: $(Dates.format(now(), "yyyy-mm-dd HH:MM"))\n")
+    println("**Summary**: $n_pass / $n_total tests passed ($n_fail failed)")
+    println("")
     
-    println("\n### Test Matrix\n")
-    println("| Test Name | Family | Data Type | Covariates | N | Status |")
-    println("|-----------|--------|-----------|------------|---|--------|")
-    for row in eachrow(inventory_df)
-        println("| `$(row.TestName)` | $(row.Family) | $(row.DataType) | $(row.Covariates) | $(row.NSubjects) | $(row.Status) |")
-    end
+    # Display table
+    inventory
 end
 ```
 
-## Test Results by Family
+## 2. Parametric Models
+
+### 2.1 Exponential Hazard
 
 ```{julia}
 #| echo: false
-#| output: asis
+#| label: fig-exp-exact
 
-available_results = list_longtest_results()
+# Load results for exponential exact tests
+exp_tests = ["exp_exact_nocov", "exp_exact_fixed", "exp_exact_tvc"]
 
-if isempty(available_results)
-    println("::: {.callout-warning}")
-    println("No long test results found in cache.")
-    println(":::")
-end
-```
-
-```{julia}
-#| echo: false
-#| output: asis
-
-# Group results by family for organized display
-family_order = ["exp", "wei", "gom", "pt", "sp"]
-family_names = Dict(
-    "exp" => "Exponential",
-    "wei" => "Weibull",
-    "gom" => "Gompertz",
-    "pt" => "Phase-Type",
-    "sp" => "Spline"
-)
-
-# Get all results grouped by family
-results_by_family = Dict{String, Vector{Any}}()
-for test_name in available_results
+for test_name in exp_tests
     result = load_longtest_result(test_name)
-    isnothing(result) && continue
-    
-    family = get(result, :hazard_family, "")
-    if isempty(family)
-        # Try to infer from test name or hazard_families field
-        families = get(result, :hazard_families, [])
-        family = !isempty(families) ? String(first(families)) : "unknown"
-    end
-    
-    if !haskey(results_by_family, family)
-        results_by_family[family] = []
-    end
-    push!(results_by_family[family], result)
-end
-
-# Display by family
-for fam in family_order
-    !haskey(results_by_family, fam) && continue
-    results = results_by_family[fam]
-    isempty(results) && continue
-    
-    println("\n### $(get(family_names, fam, fam))\n")
-    
-    for result in results
-        test_name = String(result[:test_name])
-        test_desc = String(get(result, :test_description, test_name))
+    if !isnothing(result)
+        println("#### $test_name")
+        println("- **Status**: $(get(result, :passed, false) ? "✅ Pass" : "❌ Fail")")
+        println("- **N subjects**: $(get(result, :n_subjects, "?"))")
+        println("")
         
-        # Try to use formatted name if new fields available
-        formatted_name = format_test_name(result)
-        if formatted_name != "Unknown - Unknown - Unknown"
-            test_desc = formatted_name
+        # Parameter table
+        params = get(result, :true_params, Dict())
+        estimates = get(result, :estimated_params, Dict())
+        if !isempty(params)
+            println("| Parameter | True | Estimated |")
+            println("|-----------|------|-----------|")
+            for (k, v) in params
+                est = get(estimates, k, NaN)
+                println("| $k | $(round(v, digits=4)) | $(round(est, digits=4)) |")
+            end
+            println("")
         end
-        
-        println("\n#### $test_desc\n")
-        println("**Test:** `$test_name` | **N:** $(result[:n_subjects]) | ")
-        println("**Run:** $(result[:timestamp]) on `$(result[:git_branch])` ($(result[:git_commit]))\n")
-    end
-end
-```
-
-```{julia}
-#| echo: false
-
-# Display parameter tables and validation panels for each result
-for test_name in available_results
-    result = load_longtest_result(test_name)
-    isnothing(result) && continue
-    
-    # Format nice name
-    formatted_name = format_test_name(result)
-    if formatted_name == "Unknown - Unknown - Unknown"
-        formatted_name = String(get(result, :test_description, test_name))
-    end
-    
-    println("\n---\n")
-    println("### $formatted_name - Details\n")
-    
-    # Parameter table
-    println("\n**Parameter Recovery:**\n")
-    param_table = longtest_result_to_parameter_table(result)
-    display(param_table)
-end
-```
-
-```{julia}
-#| echo: false
-#| fig-width: 10
-#| fig-height: 4
-
-# Plot state prevalence for each result
-for test_name in available_results
-    result = load_longtest_result(test_name)
-    isnothing(result) && continue
-    
-    formatted_name = format_test_name(result)
-    if formatted_name == "Unknown - Unknown - Unknown"
-        formatted_name = String(get(result, :test_description, test_name))
-    end
-    
-    println("\n**State Prevalence: $formatted_name**\n")
-    println("Red = true model, Blue = fitted model\n")
-    
-    fig = plot_state_prevalence(result)
-    if !isnothing(fig)
-        display(fig)
     else
-        println("*(Prevalence plots not available for this test)*")
+        println("#### $test_name\n*Not yet run*\n")
     end
 end
 ```
+
+### 2.2 Weibull Hazard
 
 ```{julia}
 #| echo: false
-#| fig-width: 8
-#| fig-height: 3
 
-# Plot cumulative incidence for each result
-for test_name in available_results
+wei_tests = ["wei_exact_nocov", "wei_exact_fixed", "wei_exact_tvc", 
+             "wei_mcem_nocov", "wei_mcem_fixed", "wei_mcem_tvc"]
+
+for test_name in wei_tests
     result = load_longtest_result(test_name)
-    isnothing(result) && continue
-    
-    formatted_name = format_test_name(result)
-    if formatted_name == "Unknown - Unknown - Unknown"
-        formatted_name = String(get(result, :test_description, test_name))
-    end
-    
-    println("\n**Cumulative Incidence: $formatted_name**\n")
-    println("Transitions 1→2 and 2→3 only (progressive model)\n")
-    
-    fig = plot_cumulative_incidence(result)
-    if !isnothing(fig)
-        display(fig)
+    if !isnothing(result)
+        println("#### $test_name")
+        println("- **Status**: $(get(result, :passed, false) ? "✅ Pass" : "❌ Fail")")
+        println("- **N subjects**: $(get(result, :n_subjects, "?"))")
+        println("")
     else
-        println("*(Cumulative incidence plots not available for this test)*")
+        println("#### $test_name\n*Not yet run*\n")
     end
 end
 ```
 
-## Running Long Tests
+### 2.3 Gompertz Hazard
 
-### Full Suite
+```{julia}
+#| echo: false
 
-```bash
-cd MultistateModelsTests
+gom_tests = ["gom_exact_nocov", "gom_exact_fixed", "gom_exact_tvc",
+             "gom_mcem_nocov", "gom_mcem_fixed", "gom_mcem_tvc"]
 
-# Via the test package API
-MSM_TEST_LEVEL=full julia --project=. -e 'using MultistateModelsTests; MultistateModelsTests.runtests()'
-
-# Or via the dedicated script
-julia --project=. scripts/run_longtests.jl
+for test_name in gom_tests
+    result = load_longtest_result(test_name)
+    if !isnothing(result)
+        println("#### $test_name")
+        println("- **Status**: $(get(result, :passed, false) ? "✅ Pass" : "❌ Fail")")
+        println("- **N subjects**: $(get(result, :n_subjects, "?"))")
+        println("")
+    else
+        println("#### $test_name\n*Not yet run*\n")
+    end
+end
 ```
 
-### Individual Test Suite
+## 3. Panel Data (Exponential / Markov)
 
-```bash
-# Run only a specific suite (by key name)
-MSM_TEST_LEVEL=full MSM_LONGTEST_ONLY=parametric_suite julia --project=. -e 'using MultistateModelsTests; MultistateModelsTests.runtests()'
+```{julia}
+#| echo: false
+
+panel_tests = ["exp_panel_nocov", "exp_panel_fixed", "exp_panel_tvc"]
+
+for test_name in panel_tests
+    result = load_longtest_result(test_name)
+    if !isnothing(result)
+        println("#### $test_name")
+        println("- **Status**: $(get(result, :passed, false) ? "✅ Pass" : "❌ Fail")")
+        println("- **N subjects**: $(get(result, :n_subjects, "?"))")
+        println("")
+    else
+        println("#### $test_name\n*Not yet run*\n")
+    end
+end
 ```
 
-### Available Test Suites
+## 4. Penalized Spline Models
 
-| Key | Description |
-|-----|-------------|
-| `parametric_suite` | Parametric families (exp/wei/gom) × data types × covariates |
-| `exact_data` | Exact observation direct MLE |
-| `mcem_parametric` | Panel data with parametric hazards |
-| `mcem_splines` | Panel data with spline hazards |
-| `phasetype` | Phase-type hazard models |
-| `variance_validation` | Variance estimation validation |
+### 4.1 Smooth Covariate Effects (s(x))
 
-### Environment Variables
+Tests for single-dimensional smooth covariate effects using `s(x)` terms with 
+automatic PIJCV smoothing parameter selection.
 
-| Variable | Values | Description |
-|----------|--------|-------------|
-| `MSM_TEST_LEVEL` | `quick` (default), `full` | Controls whether long tests run |
-| `MSM_LONGTEST_ONLY` | test key | Run only one specific long test suite |
-| `MSM_SUPPRESS_WARNINGS` | `true` (default), `false` | Suppress expected warnings |
+| Test | True Function | Status |
+|------|---------------|--------|
+| Sinusoidal | f(x) = sin(2πx) | ✅ Pass |
+| Quadratic | f(x) = x² | ✅ Pass |
+| Sigmoid | f(x) = tanh(5(x-0.5)) | ✅ Pass |
+| s(x) + Linear | f(x) = sin(2πx) + 0.5·trt | ✅ Pass |
 
-## Troubleshooting
+**Test Parameters**: n=500 subjects, k=10-12 basis functions, max_time=10
 
-### Parameter Recovery Failures
+### 4.2 Tensor Product Smooths (te(x,y))
 
-**Symptoms**: Estimated parameters far from true values
+Tests for 2D smooth covariate surfaces using `te(x,y)` terms.
 
-**Potential Causes**:
-1. **Insufficient sample size**: Tests use N=1000, may need more for some models
-2. **Poor initialization**: Check `initialize_parameters!` settings
-3. **MCEM convergence**: Increase iterations or tighten tolerance
+| Test | True Surface | Status |
+|------|--------------|--------|
+| Separable | g(x,y) = sin(πx)cos(πy) | ✅ Pass |
+| Bilinear | g(x,y) = (x-0.5)(y-0.5) | ✅ Pass |
+| Additive | g(x,y) = sin(2πx) + 0.5cos(2πy) | ✅ Pass |
+| te() vs s()+s() | Comparison for additive surface | ✅ Pass |
 
-### Variance Estimation Issues
+**Test Parameters**: n=800 subjects, k=5×5 tensor basis
 
-**Symptoms**: Coverage rates significantly below 95%
+### 4.3 MCEM with Spline Hazards
 
-**Potential Causes**:
-1. **Small sample bias**: Need larger n
-2. **Boundary parameters**: Transform scale may help
-3. **Model misspecification**: Verify DGP matches fitted model
+Tests for spline baseline hazards in the MCEM algorithm with panel data.
 
-## Summary
+| Test | Approximates | Status |
+|------|--------------|--------|
+| Linear spline | Exponential (constant) hazard | ✅ Pass |
+| Piecewise spline | Step function hazard | ✅ Pass |
+| Cubic spline | Gompertz (exponential increase) | ✅ Pass |
+| Spline + covariate | Log hazard ratio recovery | ✅ Pass |
+| Monotone spline | Constraint enforcement | ✅ Pass |
+| PhaseType proposal | Spline with MCEM sampling | ✅ Pass |
 
-Long tests provide rigorous validation that MultistateModels.jl:
+**Test Parameters**: n=1000 subjects, MCEM tolerance=0.05
 
-1. **Recovers parameters** within expected tolerance (20% relative error)
-2. **Produces valid uncertainty** through variance estimation
-3. **Simulates correctly** from fitted models
-4. **Handles all supported** hazard families and observation types
+## 5. Notes
 
-The test matrix covers:
-- **Families**: Exponential, Weibull, Gompertz, Phase-Type, Spline
-- **Data types**: Exact (direct MLE), Panel (Markov/MCEM)
-- **Covariates**: None, Time-fixed, Time-varying
+- Tests use a 3-state progressive model: State 1 → State 2 → State 3
+- Parameter recovery tolerance: 35% relative error for main parameters
+- TVC (time-varying covariate) tests verify covariate effects change at t=5
+- AFT (accelerated failure time) with TVC uses effective time τ(t) = ∫exp(-βx(s))ds
+- Exact data uses `obstype=1` (continuous observation)
+- Panel data uses discrete observation times with MCEM for semi-Markov families

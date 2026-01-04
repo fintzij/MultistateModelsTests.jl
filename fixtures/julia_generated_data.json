@@ -1,0 +1,17 @@
+{
+  "n_events": 480,
+  "true_shape": 1.5,
+  "cumhaz_formula": "H(t) = rate * t^shape",
+  "n_subjects": 500,
+  "hazard_formula": "h(t) = shape * rate * t^(shape-1)",
+  "max_time": 30.0,
+  "hazard_type": "weibull_rate",
+  "theoretical_median": 10.629927690136514,
+  "parameters_estimation_scale": [
+    0.4054651081081644,
+    -3.912023005428146
+  ],
+  "n_censored": 20,
+  "seed": 12345,
+  "true_rate": 0.02
+}

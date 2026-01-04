@@ -16,7 +16,10 @@ const N_SUBJECTS = 1000
 
 # Time settings
 const MAX_TIME = 15.0
-const PANEL_TIMES = collect(1.0:1.0:10.0)  # Observations at t = 1, 2, ..., 10
+# IMPORTANT: Panel observations MUST start at t=0 for AFT+TVC models.
+# If panel starts later (e.g., t=1), the covariate effect from t=0 to t=1
+# cannot be captured, causing systematic bias in AFT parameter estimation.
+const PANEL_TIMES = collect(0.0:1.0:10.0)  # Observations at t = 0, 1, 2, ..., 10
 const TVC_CHANGEPOINT = 5.0                 # Time-varying covariate changes at t=5
 const EVAL_TIMES = collect(0.0:0.5:MAX_TIME)
 

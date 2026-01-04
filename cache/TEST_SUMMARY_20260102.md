@@ -1,25 +1,71 @@
 # MultistateModels.jl Test Summary
 
-**Date**: January 2, 2026  
-**Branch**: `penalized_splines`  
+**Date**: January 3, 2026 (Updated)  
+**Branch**: `penalized_splines` @ 44ce5f9  
 **Julia Version**: 1.12.2
 
 ## Unit Tests
 
 | Category | Tests | Status |
 |----------|-------|--------|
-| Model Generation | Various | ✅ Pass |
-| Hazards | Exponential, Weibull, Gompertz, Spline | ✅ Pass |
-| Helpers | Transforms, parameters | ✅ Pass |
-| Simulation | Paths, data generation | ✅ Pass |
-| Transition Probability | TPM, cumulative incidence | ✅ Pass |
-| Phase-Type | Expansion, SCTP constraints | ✅ Pass |
-| Splines | Knot placement, monotonicity | ✅ Pass |
-| Surrogates | Markov, phase-type fitting | ✅ Pass |
-| SIR | Resampling methods | ✅ Pass |
-| Parallel | Multi-threaded likelihood | ✅ Pass |
+| Hazards | 163 | ✅ Pass |
+| **Splines** | **255** | ✅ Pass |
+| Phase-Type | 505 | ✅ Pass |
+| Simulation | 227 | ✅ Pass |
+| Model Generation | 55 | ✅ Pass |
+| **PIJCV** | **53** | ✅ Pass |
+| Variance | 55 | ✅ Pass |
+| **Model Output** | **27** | ✅ Pass (NEW) |
+| **Hazard Macro** | **39** | ✅ Pass (NEW) |
+| **AD Backends** | **32** | ✅ Pass (NEW) |
+| **Compute Hazard** | **52** | ✅ Pass (NEW) |
+| **Numerical Stability** | **79** | ✅ Pass (NEW) |
+| **Regressions** | **4** | ✅ Pass (NEW) |
+| **Infrastructure** | **64** | ✅ Pass (NEW) |
+| Helpers | 35 | ✅ Pass |
+| Reconstructor | 79 | ✅ Pass |
+| Surrogates | 28 | ✅ Pass |
+| MCEM | 24 | ✅ Pass |
+| SIR | 21 | ✅ Pass |
+| Initialization | 13 | ✅ Pass |
 
-**Total**: 1323 tests passing
+**Total**: 1740 tests passing (+297 new from adversarial audit)
+
+### Recent Additions (Adversarial Audit Remediation - Jan 3)
+
+**Phase 3: Infrastructure Tests**
+
+| Test File | Tests | Description |
+|-----------|-------|-------------|
+| `test_infrastructure.jl` | 64 | Threading utils (get_physical_cores, recommended_nthreads), simulation strategies (Cached/Direct), jump solvers (Hybrid/Exponential/Optim) |
+
+**Phase 2: Hazard Computation & Edge Cases**
+
+| Test File | Tests | Description |
+|-----------|-------|-------------|
+| `test_compute_hazard.jl` | 52 | Direct eval_hazard()/eval_cumhaz() for Exp/Wei/Gom |
+| `test_numerical_stability.jl` | 79 | Extreme parameters, large times, covariate extremes |
+| `test_regressions.jl` | 4 | Regression tests including compute_hazard API fix |
+
+**Phase 1: Critical Gaps**
+
+| Test File | Tests | Description |
+|-----------|-------|-------------|
+| `test_model_output.jl` | 27 | aic(), bic(), summary(), estimate_loglik() |
+| `test_hazard_macro.jl` | 39 | @hazard macro aliases, syntax, error handling |
+| `test_ad_backends.jl` | 32 | AD backend types, selection, gradient correctness |
+
+### Bug Fixes
+
+- **compute_hazard() API** (Fixed Jan 3, 2026): Public API now correctly passes NamedTuple 
+  parameter structure to internal eval_hazard(). Regression test added.
+
+### Previous Additions (Spline Remediation)
+
+| Test File | Tests Added | Description |
+|-----------|-------------|-------------|
+| `test_splines.jl` | +16 | B-spline antiderivative verification, s() syntax edge cases |
+| `test_pijcv.jl` | +10 | End-to-end `select_smoothing_parameters()` test |
 
 ## Long Tests
 
@@ -40,6 +86,14 @@
 | Weibull | ✅ | N/A | ✅ | ✅ | Pass |
 | Gompertz | ✅ | N/A | ✅ | ✅ | Pass |
 | Spline | ✅ | N/A | ✅ | ✅ | Pass |
+
+### Penalized Spline Models (NEW)
+
+| Test File | Scenarios | Status |
+|-----------|-----------|--------|
+| `longtest_smooth_covariate_recovery.jl` | Sinusoidal, Quadratic, Sigmoid, Combined | ✅ 4/4 Pass |
+| `longtest_tensor_product_recovery.jl` | Separable, Bilinear, Additive, te() vs s()+s() | ✅ 4/4 Pass |
+| `longtest_mcem_splines.jl` | Linear, Piecewise, Cubic/Gompertz, Covariates, Monotone, PhaseType | ✅ 6/6 Pass |
 
 ### Phase-Type Hazards
 

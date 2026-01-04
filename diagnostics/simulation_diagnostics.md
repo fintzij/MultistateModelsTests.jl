@@ -21,6 +21,7 @@ All hazard families follow **flexsurv** conventions:
 - **Exponential**: h(t) = rate
 - **Weibull**: h(t) = shape × scale × t^(shape-1), using (shape, scale) parameterization
 - **Gompertz**: h(t) = rate × exp(shape × t), where shape is unconstrained (can be negative, zero, or positive) and rate > 0
+- **Spline**: h(t) = Σ βᵢ Bᵢ(t), where Bᵢ(t) are B-spline basis functions on the natural scale and βᵢ > 0 are coefficients.
 
 Each scenario emits:
 
@@ -60,11 +61,28 @@ Each table row links the two PNGs emitted for that scenario. Images render direc
 | AFT, baseline-only | ![Gom AFT baseline function](assets/function_panel_gom_aft_baseline.png) | ![Gom AFT baseline simulation](assets/simulation_panel_gom_aft_baseline.png) |
 | AFT, covariate | ![Gom AFT covariate function](assets/function_panel_gom_aft_covariate.png) | ![Gom AFT covariate simulation](assets/simulation_panel_gom_aft_covariate.png) |
 
+### Spline family
+
+| Scenario | Function panel | Simulation panel |
+| --- | --- | --- |
+| PH, baseline-only | ![Sp PH baseline function](assets/function_panel_sp_ph_baseline.png) | ![Sp PH baseline simulation](assets/simulation_panel_sp_ph_baseline.png) |
+| PH, covariate | ![Sp PH covariate function](assets/function_panel_sp_ph_covariate.png) | ![Sp PH covariate simulation](assets/simulation_panel_sp_ph_covariate.png) |
+| AFT, baseline-only | ![Sp AFT baseline function](assets/function_panel_sp_aft_baseline.png) | ![Sp AFT baseline simulation](assets/simulation_panel_sp_aft_baseline.png) |
+| AFT, covariate | ![Sp AFT covariate function](assets/function_panel_sp_aft_covariate.png) | ![Sp AFT covariate simulation](assets/simulation_panel_sp_aft_covariate.png) |
+
+### Time-Varying Covariates (PH only)
+
+| Scenario | Function panel | Simulation panel |
+| --- | --- | --- |
+| Exp PH, TVC | ![Exp PH TVC function](assets/function_panel_exp_ph_tvc.png) | ![Exp PH TVC simulation](assets/simulation_panel_exp_ph_tvc.png) |
+| Wei PH, TVC | ![Wei PH TVC function](assets/function_panel_wei_ph_tvc.png) | ![Wei PH TVC simulation](assets/simulation_panel_wei_ph_tvc.png) |
+| Sp PH, TVC | ![Sp PH TVC function](assets/function_panel_sp_ph_tvc.png) | ![Sp PH TVC simulation](assets/simulation_panel_sp_ph_tvc.png) |
+
 ## Guarantees checked by the gallery
 
 - **Call-stack accuracy:** Blue/orange solver traces are on top of the black analytic curves in every function panel, proving the PH/AFT plumbing (and Tang caches) agree with closed-form hazards.
 - **Distributional fidelity:** ECDF residuals stay within ~3×10⁻³, matching `test/longtest_simulation_distribution.jl` tolerances.
 - **Time-transform parity:** Tang-enabled simulations (green curve) match the fallback sampler, and the logged `max |ΔF|` values highlight any drift immediately.
-- **Family coverage:** `{exp, wei, gom} × {ph, aft} × {baseline, covariate}` mirrors the long-test grid, so any future change that affects a subset will light up the corresponding panels.
+- **Family coverage:** `{exp, wei, gom, sp} × {ph, aft} × {baseline, covariate}` mirrors the long-test grid, so any future change that affects a subset will light up the corresponding panels.
 
 Keep this document in sync with the assets whenever simulator or hazard changes land so reviewers can diff both code and visuals in one place.

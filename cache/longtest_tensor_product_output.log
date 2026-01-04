@@ -1,0 +1,78 @@
+======================================================================
+Running Tensor Product Recovery Long Test
+======================================================================
+
+======================================================================
+Test: Separable Surface Recovery
+  g(x,y) = sin(πx)cos(πy)
+  h(t|x,y) = 0.3 * exp(g(x,y))
+  n = 800
+======================================================================
+  Events: 736 / 800 (92.0%)
+  Empirical rates by quadrant:
+    Low-Low:   0.431
+    High-Low:  0.490
+    Low-High:  0.188
+    High-High: 0.195
+  Fitting with SplinePenalty and automatic λ selection...
+
+******************************************************************************
+This program contains Ipopt, a library for large-scale nonlinear optimization.
+ Ipopt is released as open source code under the Eclipse Public License (EPL).
+         For more information visit https://github.com/coin-or/Ipopt
+******************************************************************************
+
+  Log-likelihood: -1672.23
+  ✓ Separable surface model fits successfully
+Test Summary:                     | Pass  Total   Time
+Tensor Product: Separable Surface |    5      5  32.3s
+
+======================================================================
+Test: Bilinear Surface Recovery
+  g(x,y) = (x-0.5)(y-0.5)
+  h(t|x,y) = 0.3 * exp(g(x,y))
+  n = 800
+======================================================================
+  Events: 762 / 800 (95.2%)
+  Empirical rates by quadrant:
+    Low-Low:   0.345
+    High-Low:  0.290
+    Low-High:  0.294
+    High-High: 0.310
+  Fitting with SplinePenalty...
+  Log-likelihood: -1657.84
+  ✓ Bilinear surface model fits successfully
+Test Summary:                    | Pass  Total  Time
+Tensor Product: Bilinear Surface |    3      3  6.4s
+
+======================================================================
+Test: Additive Surface Recovery
+  g(x,y) = sin(2πx) + 0.5cos(2πy)
+  h(t|x,y) = 0.3 * exp(g(x,y))
+  n = 800
+======================================================================
+  Events: 702 / 800 (87.8%)
+  Fitting with SplinePenalty...
+  Log-likelihood: -1616.00
+  ✓ Additive surface model fits successfully
+Test Summary:                    | Pass  Total  Time
+Tensor Product: Additive Surface |    2      2  5.6s
+
+======================================================================
+Test: Comparing te(x,y) vs s(x)+s(y) for additive surface
+  g(x,y) = sin(2πx) + cos(2πy)
+  n = 800
+======================================================================
+  Events: 687 / 800
+  Fitting additive model s(x) + s(y)...
+  Fitting tensor product model te(x,y)...
+  Log-likelihood s(x)+s(y): -1585.44
+  Log-likelihood te(x,y):   -1626.03
+  Difference (te - additive): -40.59
+  ✓ Both parameterizations fit additive surface similarly
+Test Summary:                           | Pass  Total  Time
+Tensor Product: Compare te() vs s()+s() |    2      2  8.4s
+
+======================================================================
+TENSOR PRODUCT RECOVERY TESTS COMPLETE
+======================================================================

@@ -297,7 +297,17 @@ end
 end
 
 # ============================================================================
-# Test 4: Spline with Covariates
+# Test 4: Spline with Covariates - COMPREHENSIVE VALIDATION
+# ============================================================================
+# This test validates that:
+# 1. Spline hazard approximates true exponential hazard at multiple time points
+# 2. Covariate effect (beta) is correctly recovered
+# 3. Cumulative hazard H(t) matches at multiple time points
+# 4. Both x=0 and x=1 cases are validated
+#
+# True model: h(t|x) = λ * exp(β*x) = 0.3 * exp(0.5*x)
+# - h(t|x=0) = 0.3 (constant)
+# - h(t|x=1) = 0.3 * exp(0.5) ≈ 0.495 (constant)
 # ============================================================================
 
 @testset "MCEM Spline with Covariates" begin
@@ -305,7 +315,11 @@ end
     
     # True parameters
     true_baseline = 0.3
-    true_beta = 0.5  # Covariate effect
+    true_beta = 0.5  # Covariate effect (proportional hazards)
+    
+    # True hazard functions for validation
+    true_hazard(t, x) = true_baseline * exp(true_beta * x)
+    true_cumhaz(t, x) = true_baseline * exp(true_beta * x) * t  # H(t) = λ*t for exponential
     
     # Create exponential model with covariate
     h12_exp = Hazard(@formula(0 ~ 1 + x), "exp", 1, 2)
@@ -356,40 +370,119 @@ end
     # Check that spline has expected number of parameters
     # npar_baseline (spline coeffs) + 1 (covariate)
     pars_12 = MultistateModels.get_parameters(fitted, 1, scale=:log)
-    @test length(pars_12) == fitted.hazards[1].npar_baseline + 1
+    n_baseline_params = fitted.hazards[1].npar_baseline
+    @test length(pars_12) == n_baseline_params + 1
     
-    # Verify covariate effect: h(x=1) vs h(x=0) at t=2.0
+    println("\n    Parameter info:")
+    println("    - Number of baseline spline coefficients: $n_baseline_params")
+    println("    - Total parameters: $(length(pars_12))")
+    println("    - Fitted parameters: $(round.(pars_12, digits=3))")
+    
+    # Define covariate tuples
     covars_0 = (x = 0.0,)
     covars_1 = (x = 1.0,)
     
-    h_x0 = fitted.hazards[1](2.0, pars_12, covars_0)
-    h_x1 = fitted.hazards[1](2.0, pars_12, covars_1)
+    # =========================================================================
+    # COMPREHENSIVE VALIDATION: Hazard at multiple time points
+    # =========================================================================
+    # Tolerance: 50% relative error for MCEM with flexible spline baseline
+    # Justification: MCEM introduces MC error, spline may oscillate slightly
+    HAZARD_RTOL = 0.50
+    CUMHAZ_RTOL = 0.50
+    BETA_ATOL = 0.5  # Absolute tolerance for log hazard ratio
     
-    # Both hazards should be within factor of true baseline
-    @test h_x0 > true_baseline / HAZARD_TOL_FACTOR
-    @test h_x0 < true_baseline * HAZARD_TOL_FACTOR
+    test_times = [0.5, 1.0, 2.0, 3.0, 4.0]
     
-    # Log hazard ratio should be approximately true_beta
-    # log(h_x1/h_x0) ≈ true_beta (with tolerance)
-    log_hr = log(h_x1) - log(h_x0)
-    @test isapprox(log_hr, true_beta; atol=1.0)  # Within 1.0 of true beta
+    println("\n    Hazard validation at multiple time points (x=0):")
+    println("    Time      True h(t)   Fitted h(t)  Rel Diff")
+    println("    " * "-"^50)
+    
+    all_hazard_tests_passed = true
+    for t in test_times
+        h_true = true_hazard(t, 0.0)
+        h_fitted = fitted.hazards[1](t, pars_12, covars_0)
+        rel_diff = abs(h_fitted - h_true) / h_true
+        passed = rel_diff <= HAZARD_RTOL
+        all_hazard_tests_passed &= passed
+        status = passed ? "✓" : "✗"
+        println("    $(rpad(t, 9)) $(rpad(round(h_true, digits=4), 11)) $(rpad(round(h_fitted, digits=4), 12)) $(round(rel_diff, digits=3)) $status")
+        @test passed
+    end
+    
+    println("\n    Hazard validation at multiple time points (x=1):")
+    println("    Time      True h(t)   Fitted h(t)  Rel Diff")
+    println("    " * "-"^50)
+    
+    for t in test_times
+        h_true = true_hazard(t, 1.0)
+        h_fitted = fitted.hazards[1](t, pars_12, covars_1)
+        rel_diff = abs(h_fitted - h_true) / h_true
+        passed = rel_diff <= HAZARD_RTOL
+        all_hazard_tests_passed &= passed
+        status = passed ? "✓" : "✗"
+        println("    $(rpad(t, 9)) $(rpad(round(h_true, digits=4), 11)) $(rpad(round(h_fitted, digits=4), 12)) $(round(rel_diff, digits=3)) $status")
+        @test passed
+    end
+    
+    # =========================================================================
+    # COMPREHENSIVE VALIDATION: Cumulative hazard at multiple time points
+    # =========================================================================
+    println("\n    Cumulative hazard validation (x=0):")
+    println("    Time      True H(t)   Fitted H(t)  Rel Diff")
+    println("    " * "-"^50)
+    
+    all_cumhaz_tests_passed = true
+    for t in test_times
+        H_true = true_cumhaz(t, 0.0)
+        H_fitted = cumulative_hazard(fitted.hazards[1], 0.0, t, pars_12, covars_0)
+        rel_diff = abs(H_fitted - H_true) / max(H_true, 0.01)
+        passed = rel_diff <= CUMHAZ_RTOL
+        all_cumhaz_tests_passed &= passed
+        status = passed ? "✓" : "✗"
+        println("    $(rpad(t, 9)) $(rpad(round(H_true, digits=4), 11)) $(rpad(round(H_fitted, digits=4), 12)) $(round(rel_diff, digits=3)) $status")
+        @test passed
+    end
+    
+    # =========================================================================
+    # COMPREHENSIVE VALIDATION: Covariate effect (log hazard ratio)
+    # =========================================================================
+    println("\n    Covariate effect (beta) validation:")
+    println("    Time      True log(HR)  Fitted log(HR)  Diff")
+    println("    " * "-"^55)
+    
+    all_beta_tests_passed = true
+    for t in test_times
+        h_x0 = fitted.hazards[1](t, pars_12, covars_0)
+        h_x1 = fitted.hazards[1](t, pars_12, covars_1)
+        log_hr_fitted = log(h_x1) - log(h_x0)
+        diff = abs(log_hr_fitted - true_beta)
+        passed = diff <= BETA_ATOL
+        all_beta_tests_passed &= passed
+        status = passed ? "✓" : "✗"
+        println("    $(rpad(t, 9)) $(rpad(round(true_beta, digits=4), 13)) $(rpad(round(log_hr_fitted, digits=4), 15)) $(round(diff, digits=3)) $status")
+        @test passed
+    end
+    
+    # =========================================================================
+    # Summary
+    # =========================================================================
+    println("\n    Summary:")
+    println("    - Hazard h(t) tests: $(all_hazard_tests_passed ? "PASS" : "FAIL")")
+    println("    - Cumulative hazard H(t) tests: $(all_cumhaz_tests_passed ? "PASS" : "FAIL")")
+    println("    - Covariate effect tests: $(all_beta_tests_passed ? "PASS" : "FAIL")")
     
     # Convergence check
     @test isfinite(fitted.loglik.loglik)
     
-    # Cache results (only covariate effect is directly comparable)
-    capture_simple_longtest_result!(
-        "sp_mcem_fixed",
-        fitted,
-        [true_beta],
-        ["beta"];
-        hazard_family = "sp",
-        data_type = "panel",
-        covariate_type = "fixed",
-        n_subjects = N_SUBJECTS
-    )
+    # Note: We no longer cache results since spline coefficients are not directly
+    # comparable to the true exponential parameters. The validation above tests
+    # the functional form which is the correct statistical comparison.
+    #
+    # If needed for reporting, create a result with functional metrics instead:
+    # result = LongTestResult(...)
+    # result.passed = all_hazard_tests_passed && all_cumhaz_tests_passed && all_beta_tests_passed
     
-    println("  ✓ Spline with covariates works in MCEM")
+    println("  ✓ Spline with covariates: comprehensive validation complete")
 end
 
 # ============================================================================

@@ -1,3 +1,6 @@
+======================================================================
+Running MCEM Splines Long Test
+======================================================================
 
 ******************************************************************************
 This program contains Ipopt, a library for large-scale nonlinear optimization.
@@ -68,7 +71,7 @@ The MCEM algorithm has converged.
 
   ✓ Linear spline approximates constant/exponential hazard
 Test Summary:              | Pass  Total   Time
-MCEM Spline vs Exponential |   11     11  49.2s
+MCEM Spline vs Exponential |   11     11  46.6s
 Using SQUAREM acceleration for MCEM.
 
 Using adaptive SIR (will switch to lhs when cost-effective).
@@ -131,8 +134,8 @@ SQUAREM: 1 accelerations, 1 fallbacks
 The MCEM algorithm has converged.
 
   ✓ Spline with interior knot handles piecewise hazard
-Test Summary:                     | Pass  Total   Time
-MCEM Spline Piecewise Exponential |   12     12  12.0s
+Test Summary:                     | Pass  Total  Time
+MCEM Spline Piecewise Exponential |   12     12  9.1s
 Using SQUAREM acceleration for MCEM.
 
 Using adaptive SIR (will switch to lhs when cost-effective).
@@ -196,7 +199,7 @@ The MCEM algorithm has converged.
 
   ✓ Cubic spline approximates Gompertz (increasing) hazard
 Test Summary:           | Pass  Total   Time
-MCEM Spline vs Gompertz |    8      8  23.4s
+MCEM Spline vs Gompertz |    8      8  17.0s
 Using SQUAREM acceleration for MCEM.
 
 Using adaptive SIR (will switch to lhs when cost-effective).
@@ -246,9 +249,55 @@ SQUAREM: 0 accelerations, 1 fallbacks
 
 The MCEM algorithm has converged.
 
-  ✓ Spline with covariates works in MCEM
+
+    Parameter info:
+    - Number of baseline spline coefficients: 2
+    - Total parameters: 3
+    - Fitted parameters: [-1.257, -1.272, 0.601]
+
+    Hazard validation at multiple time points (x=0):
+    Time      True h(t)   Fitted h(t)  Rel Diff
+    --------------------------------------------------
+    0.5       0.3         0.284        0.053 ✓
+    1.0       0.3         0.2836       0.055 ✓
+    2.0       0.3         0.2828       0.057 ✓
+    3.0       0.3         0.2819       0.06 ✓
+    4.0       0.3         0.2811       0.063 ✓
+
+    Hazard validation at multiple time points (x=1):
+    Time      True h(t)   Fitted h(t)  Rel Diff
+    --------------------------------------------------
+    0.5       0.4946      0.5179       0.047 ✓
+    1.0       0.4946      0.5171       0.046 ✓
+    2.0       0.4946      0.5156       0.042 ✓
+    3.0       0.4946      0.5141       0.039 ✓
+    4.0       0.4946      0.5126       0.036 ✓
+
+    Cumulative hazard validation (x=0):
+    Time      True H(t)   Fitted H(t)  Rel Diff
+    --------------------------------------------------
+    0.5       0.15        0.1421       0.053 ✓
+    1.0       0.3         0.284        0.053 ✓
+    2.0       0.6         0.5672       0.055 ✓
+    3.0       0.9         0.8495       0.056 ✓
+    4.0       1.2         1.131        0.057 ✓
+
+    Covariate effect (beta) validation:
+    Time      True log(HR)  Fitted log(HR)  Diff
+    -------------------------------------------------------
+    0.5       0.5           0.6008          0.101 ✓
+    1.0       0.5           0.6008          0.101 ✓
+    2.0       0.5           0.6008          0.101 ✓
+    3.0       0.5           0.6008          0.101 ✓
+    4.0       0.5           0.6008          0.101 ✓
+
+    Summary:
+    - Hazard h(t) tests: PASS
+    - Cumulative hazard H(t) tests: PASS
+    - Covariate effect tests: PASS
+  ✓ Spline with covariates: comprehensive validation complete
 Test Summary:               | Pass  Total   Time
-MCEM Spline with Covariates |    5      5  17.8s
+MCEM Spline with Covariates |   22     22  17.0s
 [ Info: Natural boundary conditions are not currently compatible with monotone splines. The restrictions on second derivatives at the spline boundaries will be removed.
 Using SQUAREM acceleration for MCEM.
 
@@ -291,7 +340,7 @@ The MCEM algorithm has converged.
 
   ✓ Monotone increasing spline enforces constraint in MCEM
 Test Summary:        | Pass  Total  Time
-MCEM Monotone Spline |    9      9  7.9s
+MCEM Monotone Spline |    9      9  3.9s
 Using SQUAREM acceleration for MCEM.
 
 Using adaptive SIR (will switch to lhs when cost-effective).
@@ -349,8 +398,8 @@ SQUAREM: 0 accelerations, 1 fallbacks
 The MCEM algorithm has converged.
 
   ✓ Spline with PhaseType proposal works
-Test Summary:                    | Pass  Total   Time
-MCEM Spline - PhaseType Proposal |    8      8  12.8s
+Test Summary:                    | Pass  Total  Time
+MCEM Spline - PhaseType Proposal |    8      8  8.5s
 
 === MCEM Spline Long Test Suite Complete ===
 

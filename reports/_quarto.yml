@@ -24,8 +24,12 @@ website:
         text: Long Tests
       - href: simulation_diagnostics.qmd
         text: Simulation
-      - href: benchmarks.qmd
-        text: Benchmarks
+      - text: Benchmarks
+        menu:
+          - href: performance_benchmarks.qmd
+            text: Performance
+          - href: spline_comparison_benchmark.qmd
+            text: Spline Methods Comparison
     right:
       - icon: github
         href: https://github.com/fintzij/MultistateModels.jl

@@ -149,36 +149,21 @@ end
 # Save/Load Functions
 # =============================================================================
 
+# CACHING DISABLED - See TEST_OVERHAUL_PROMPT.md
+# Tests must run fresh every time to avoid stale results masking failures.
+# Results are now returned directly without persistence.
+
 """
     save_longtest_result(result::LongTestResult)
 
-Save a long test result to JSON in the cache directory.
-NaN values are converted to null for JSON compatibility.
+DEPRECATED: Caching has been disabled. This function is now a no-op.
+Results should be computed fresh every time tests run.
+See TEST_OVERHAUL_PROMPT.md for rationale.
 """
 function save_longtest_result(result::LongTestResult)
-    # Ensure directory exists
-    mkpath(LONGTEST_RESULTS_DIR)
-    
-    # Add git info if not set
-    if isempty(result.git_commit)
-        git = get_git_info()
-        result.git_commit = git.hash
-        result.git_branch = git.branch
-    end
-    
-    # Update timestamp
-    result.timestamp = string(now())
-    
-    # Convert to dict and sanitize NaN values
-    result_dict = _result_to_dict(result)
-    
-    # Save to JSON
-    filepath = joinpath(LONGTEST_RESULTS_DIR, "$(result.test_name).json")
-    open(filepath, "w") do io
-        JSON3.pretty(io, result_dict)
-    end
-    
-    return filepath
+    @warn "save_longtest_result() is deprecated. Caching disabled - results computed fresh each run." maxlog=1
+    # Return result without saving to enforce fresh computation
+    return result
 end
 
 """
@@ -260,35 +245,23 @@ end
 """
     load_longtest_result(test_name::String) -> Union{LongTestResult, Nothing}
 
-Load a long test result from the cache directory.
+DEPRECATED: Caching has been disabled. This function now returns nothing.
+Tests should run fresh and results should be computed inline.
+See TEST_OVERHAUL_PROMPT.md for rationale.
 """
 function load_longtest_result(test_name::String)
-    filepath = joinpath(LONGTEST_RESULTS_DIR, "$(test_name).json")
-    if !isfile(filepath)
-        return nothing
-    end
-    
-    try
-        json = JSON3.read(read(filepath, String))
-        return _json_to_result(json)
-    catch e
-        @warn "Failed to load longtest result for $test_name: $e"
-        return nothing
-    end
+    @warn "load_longtest_result() is deprecated. Caching disabled - run tests directly instead." maxlog=1
+    return nothing
 end
 
 """
     list_available_results() -> Vector{String}
 
-List all available long test results in the cache.
+DEPRECATED: Caching has been disabled. Returns empty vector.
 """
 function list_available_results()
-    if !isdir(LONGTEST_RESULTS_DIR)
-        return String[]
-    end
-    
-    files = filter(f -> endswith(f, ".json"), readdir(LONGTEST_RESULTS_DIR))
-    return [replace(f, ".json" => "") for f in files]
+    @warn "list_available_results() is deprecated. Caching disabled." maxlog=1
+    return String[]
 end
 
 # Helper to convert JSON back to result struct

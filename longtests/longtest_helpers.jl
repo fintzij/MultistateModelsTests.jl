@@ -858,8 +858,9 @@ function capture_longtest_result!(
         result.cumulative_incidence_fitted_upper[key] = ci_fitted.upper
     end
     
-    # Save to cache
-    save_longtest_result(result)
+    # Note: Caching disabled - results are returned but not saved to disk.
+    # See TEST_OVERHAUL_PROMPT.md for rationale.
+    # save_longtest_result(result)  # DISABLED
     
     return result
 end
@@ -935,12 +936,13 @@ function capture_simple_longtest_result!(
         result.standard_errors[name] = ses[i]
         result.ci_lower[name] = est_val - 1.96 * ses[i]
         result.ci_upper[name] = est_val + 1.96 * ses[i]
-        result.param_passed[name] = passed
+    result.param_passed[name] = passed
     end
     result.passed = all_passed
     
-    # Save to cache
-    save_longtest_result(result)
+    # Note: Caching disabled - results are returned but not saved to disk.
+    # See TEST_OVERHAUL_PROMPT.md for rationale.
+    # save_longtest_result(result)  # DISABLED
     
     return result
 end

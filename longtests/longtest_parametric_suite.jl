@@ -46,8 +46,10 @@ import MultistateModels: Hazard, @formula, multistatemodel, fit, set_parameters!
 # Functions available: create_baseline_template, create_tfc_template, create_tvc_template,
 #                      create_panel_data, capture_longtest_result!, etc.
 
-# LongTestResults loaded from MultistateModelsTests module
-# Types available: LongTestResult, save_longtest_result, etc.
+# LongTestResults (include for standalone runs)
+if !isdefined(Main, :LongTestResult) && !@isdefined(LongTestResult)
+    include(joinpath(@__DIR__, "..", "src", "LongTestResults.jl"))
+end
 
 # =============================================================================
 # True Parameter Values (consistent across tests)

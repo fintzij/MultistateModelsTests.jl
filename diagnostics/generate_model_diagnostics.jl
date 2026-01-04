@@ -7,6 +7,7 @@ using Random
 using StatsBase
 using StatsModels
 using Pkg
+using BSplineKit
 
 # Ensure we use the local version of MultistateModels
 Pkg.develop(path=normpath(joinpath(@__DIR__, "..", "..")))
@@ -29,6 +30,7 @@ const FAMILY_CONFIG = Dict(
     "exp" => (; rate = 0.35, beta = 0.6, horizon = 5.0, hazard_start = 0.0),
     "wei" => (; shape = 1.35, scale = 0.4, beta = -0.35, horizon = 5.0, hazard_start = 0.02),
     "gom" => (; shape = 0.6, rate = 0.4, beta = 0.5, horizon = 5.0, hazard_start = 0.0),
+    "sp"  => (; degree = 3, knots = [1.5, 3.5], boundaryknots = [0.0, 5.0], beta = 0.5, horizon = 5.0, hazard_start = 0.0, coefs = [0.1, 0.2, 0.4, 0.4, 0.2, 0.1]),
 )
 
 # Time-varying covariate configuration: covariate changes at t_changes boundaries
@@ -37,6 +39,7 @@ const TVC_CONFIG = Dict(
     "exp" => (; rate = 0.35, beta = 0.6, horizon = 5.0, hazard_start = 0.0, t_changes = [1.5, 3.0], x_values = [0.5, 1.5, 2.5]),
     "wei" => (; rate = 0.0, shape = 1.35, scale = 0.4, beta = -0.35, horizon = 5.0, hazard_start = 0.02, t_changes = [1.5, 3.0], x_values = [0.5, 1.5, 2.5]),
     "gom" => (; rate = 0.4, shape = 0.6, beta = 0.5, horizon = 5.0, hazard_start = 0.0, t_changes = [1.5, 3.0], x_values = [0.5, 1.5, 2.5]),
+    "sp"  => (; degree = 3, knots = [1.5, 3.5], boundaryknots = [0.0, 5.0], beta = 0.5, horizon = 5.0, hazard_start = 0.0, coefs = [0.1, 0.2, 0.4, 0.4, 0.2, 0.1], t_changes = [1.5, 3.0], x_values = [0.5, 1.5, 2.5]),
 )
 
 struct Scenario
@@ -64,7 +67,7 @@ end
 # Gompertz TVC requires more complex piecewise integration and is omitted for now
 const SCENARIOS = vcat(
     [Scenario(fam, eff, cov) for fam in keys(FAMILY_CONFIG) for eff in (:ph, :aft) for cov in (:baseline, :covariate)],
-    [Scenario(fam, :ph, :tvc) for fam in ["exp", "wei"]]  # TVC scenarios - PH only
+    [Scenario(fam, :ph, :tvc) for fam in ["exp", "wei", "sp"]]  # TVC scenarios - PH only
 )
 
 function scenario_subject_df(scenario::Scenario)
@@ -117,6 +120,9 @@ function scenario_parameter_vector(scenario::Scenario)
     elseif scenario.family == "gom"
         # flexsurv parameterization: shape is unconstrained, rate is log-transformed
         base = [cfg.shape, log(cfg.rate)]
+    elseif scenario.family == "sp"
+        # Spline coefficients are on natural scale (non-negative)
+        base = cfg.coefs
     else
         error("Unsupported family $(scenario.family)")
     end
@@ -125,13 +131,26 @@ end
 
 function build_model(scenario::Scenario)
     data = scenario_subject_df(scenario)
+    
+    kwargs = Dict{Symbol,Any}(
+        :linpred_effect => scenario.effect,
+        :time_transform => true,
+    )
+    
+    if scenario.family == "sp"
+        kwargs[:degree] = scenario.config.degree
+        kwargs[:knots] = scenario.config.knots
+        kwargs[:boundaryknots] = scenario.config.boundaryknots
+        kwargs[:natural_spline] = false # Disable natural spline to match simple BSplineBasis in tests
+        kwargs[:extrapolation] = "flat" # Disable constant extrapolation (which enforces D1=0) to match simple BSplineBasis
+    end
+    
     hazard = Hazard(
         hazard_formula(scenario),
         scenario.family,
         1,
         2;
-        linpred_effect = scenario.effect,
-        time_transform = true,
+        kwargs...
     )
     model = multistatemodel(hazard; data = data)
     pars = scenario_parameter_vector(scenario)
@@ -194,6 +213,26 @@ function piecewise_wei_ph_cumhaz(t, shape, scale, beta, t_changes, x_values)
     return cumhaz
 end
 
+# Helper for spline evaluation
+function make_spline_basis(cfg)
+    # Reconstruct the basis used by MultistateModels
+    # knots + boundaryknots -> full breakpoints
+    breakpoints = vcat(cfg.boundaryknots[1], cfg.knots, cfg.boundaryknots[2])
+    return BSplineBasis(BSplineOrder(cfg.degree + 1), breakpoints)
+end
+
+function eval_spline_hazard(t, coefs, basis)
+    spline = Spline(basis, coefs)
+    return spline(t)
+end
+
+function eval_spline_cumhaz(t, coefs, basis)
+    spline = Spline(basis, coefs)
+    # Integral from first knot (0.0) to t
+    int_spline = integral(spline)
+    return int_spline(t)
+end
+
 function expected_curves(scenario::Scenario, times_h::Vector{Float64}, times_cs::Vector{Float64})
     cfg = scenario.config
     
@@ -235,6 +274,42 @@ function expected_curves(scenario::Scenario, times_h::Vector{Float64}, times_cs:
             
             haz_expected = [wei_ph_hazard(t, shape, scale, beta, get_x_at_t_wei(t)) for t in times_h]
             cum_expected = [piecewise_wei_ph_cumhaz(t, shape, scale, beta, t_changes, x_values) for t in times_cs]
+        elseif scenario.family == "sp"
+            basis = make_spline_basis(cfg)
+            coefs = cfg.coefs
+            
+            function get_x_at_t_sp(t)
+                for (i, tc) in enumerate(t_changes)
+                    if t < tc
+                        return x_values[i]
+                    end
+                end
+                return x_values[end]
+            end
+            
+            # Hazard: h0(t) * exp(beta * x(t))
+            haz_expected = [eval_spline_hazard(t, coefs, basis) * exp(beta * get_x_at_t_sp(t)) for t in times_h]
+            
+            # Cumulative hazard: piecewise integration
+            function piecewise_sp_cumhaz(t)
+                cumhaz = 0.0
+                prev_t = 0.0
+                H0 = u -> eval_spline_cumhaz(u, coefs, basis)
+                
+                for (i, tc) in enumerate(t_changes)
+                    if t <= tc
+                        cumhaz += (H0(t) - H0(prev_t)) * exp(beta * x_values[i])
+                        return cumhaz
+                    else
+                        cumhaz += (H0(tc) - H0(prev_t)) * exp(beta * x_values[i])
+                        prev_t = tc
+                    end
+                end
+                cumhaz += (H0(t) - H0(prev_t)) * exp(beta * x_values[end])
+                return cumhaz
+            end
+            
+            cum_expected = [piecewise_sp_cumhaz(t) for t in times_cs]
         else
             error("TVC not implemented for family $(scenario.family)")
         end
@@ -270,6 +345,21 @@ function expected_curves(scenario::Scenario, times_h::Vector{Float64}, times_cs:
                 scaled_rate = rate * time_scale
                 haz_expected = scaled_rate .* exp.(scaled_shape .* times_h)
                 cum_expected = (scaled_rate / scaled_shape) .* (exp.(scaled_shape .* times_cs) .- 1)
+            end
+        elseif scenario.family == "sp"
+            basis = make_spline_basis(cfg)
+            coefs = cfg.coefs
+            linpred = beta * xval
+            
+            if scenario.effect == :ph
+                # PH: h(t|x) = h0(t) * exp(linpred)
+                haz_expected = [eval_spline_hazard(t, coefs, basis) for t in times_h] .* exp(linpred)
+                cum_expected = [eval_spline_cumhaz(t, coefs, basis) for t in times_cs] .* exp(linpred)
+            else
+                # AFT: h(t|x) = h0(t * exp(-linpred)) * exp(-linpred)
+                scale = exp(-linpred)
+                haz_expected = [eval_spline_hazard(t * scale, coefs, basis) for t in times_h] .* scale
+                cum_expected = [eval_spline_cumhaz(t * scale, coefs, basis) for t in times_cs]
             end
         else
             error("Unsupported family $(scenario.family)")
@@ -312,6 +402,50 @@ function distribution_functions(scenario::Scenario)
                 end
                 return shape * scale * exp(beta * x_values[end]) * (t^(shape - 1))
             end
+        elseif scenario.family == "sp"
+            basis = make_spline_basis(cfg)
+            coefs = cfg.coefs
+            
+            cumhaz = t -> begin
+                total_H = 0.0
+                
+                # Intervals defined by [0, t_changes..., Inf]
+                boundaries = vcat(0.0, t_changes, Inf)
+                
+                for i in 1:length(x_values)
+                    t_start = boundaries[i]
+                    t_end = boundaries[i+1]
+                    x = x_values[i]
+                    linpred = beta * x
+                    
+                    if t <= t_start
+                        break
+                    end
+                    
+                    # Interval contribution
+                    eff_end = min(t, t_end)
+                    
+                    # PH: H(t2) - H(t1) = (H0(t2) - H0(t1)) * exp(linpred)
+                    delta_H0 = eval_spline_cumhaz(eff_end, coefs, basis) - eval_spline_cumhaz(t_start, coefs, basis)
+                    total_H += delta_H0 * exp(linpred)
+                    
+                    if t <= t_end
+                        break
+                    end
+                end
+                return total_H
+            end
+            
+            hazard = t -> begin
+                for (i, tc) in enumerate(t_changes)
+                    if t < tc
+                        linpred = beta * x_values[i]
+                        return eval_spline_hazard(t, coefs, basis) * exp(linpred)
+                    end
+                end
+                linpred = beta * x_values[end]
+                return eval_spline_hazard(t, coefs, basis) * exp(linpred)
+            end
         else
             error("TVC not implemented for family $(scenario.family)")
         end
@@ -346,6 +480,21 @@ function distribution_functions(scenario::Scenario)
                 scaled_rate = rate * time_scale
                 cumhaz = t -> (scaled_rate / scaled_shape) * (exp(scaled_shape * t) - 1)
                 hazard = t -> scaled_rate * exp(scaled_shape * t)
+            end
+        elseif scenario.family == "sp"
+            basis = make_spline_basis(cfg)
+            coefs = cfg.coefs
+            linpred = beta * xval
+            
+            if scenario.effect == :ph
+                # PH: h(t|x) = h0(t) * exp(linpred)
+                cumhaz = t -> eval_spline_cumhaz(t, coefs, basis) * exp(linpred)
+                hazard = t -> eval_spline_hazard(t, coefs, basis) * exp(linpred)
+            else
+                # AFT: h(t|x) = h0(t * exp(-linpred)) * exp(-linpred)
+                scale = exp(-linpred)
+                cumhaz = t -> eval_spline_cumhaz(t * scale, coefs, basis)
+                hazard = t -> eval_spline_hazard(t * scale, coefs, basis) * scale
             end
         else
             error("Unsupported family $(scenario.family)")

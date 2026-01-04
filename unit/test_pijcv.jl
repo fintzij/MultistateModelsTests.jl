@@ -10,13 +10,20 @@
 using LinearAlgebra
 using Random
 using Test
+using DataFrames
+using Distributions
+using MultistateModels
+using StatsModels: @formula
 
 # Import internal functions for testing
 import MultistateModels: cholesky_downdate!, cholesky_downdate_copy,
                           pijcv_loo_perturbation_direct, pijcv_loo_perturbation_cholesky,
                           pijcv_loo_perturbation_woodbury,
                           PIJCVState, compute_pijcv_perturbations!, pijcv_criterion,
-                          loo_perturbations_direct, pijcv_get_loo_estimates, pijcv_vcov
+                          loo_perturbations_direct, pijcv_get_loo_estimates, pijcv_vcov,
+                          multistatemodel, Hazard, set_parameters!, 
+                          ExactData, extract_paths, get_parameters_flat, build_penalty_config,
+                          select_smoothing_parameters, PenaltyConfig, SplinePenalty
 
 # =============================================================================
 # 1. Cholesky Downdate Algorithm
@@ -380,5 +387,117 @@ end
                    (norm(loo_deltas_ij[:, k]) * norm(state.deltas[:, k]))
             @test corr > 0.9
         end
+    end
+end
+# =============================================================================
+# 7. End-to-End Public API Test: select_smoothing_parameters
+# =============================================================================
+
+@testset "select_smoothing_parameters Public API" begin
+    
+    @testset "Basic spline model λ selection runs without error" begin
+        # Create a simple spline hazard model
+        Random.seed!(42424)
+        
+        # Generate test data with some transition events
+        n_subjects = 30
+        data = DataFrame(
+            id = 1:n_subjects,
+            tstart = zeros(n_subjects),
+            tstop = rand(Uniform(0.5, 2.0), n_subjects),
+            statefrom = ones(Int, n_subjects),
+            stateto = fill(2, n_subjects),
+            obstype = ones(Int, n_subjects)
+        )
+        
+        # Create spline hazard with penalty
+        h12 = Hazard(@formula(0 ~ 1), "sp", 1, 2;
+                     degree = 3,
+                     knots = [0.5, 1.0, 1.5],
+                     boundaryknots = [0.0, 2.0],
+                     natural_spline = true)
+        
+        model = multistatemodel(h12; data = data)
+        
+        # Initialize parameters
+        npar = model.hazards[1].npar_total
+        set_parameters!(model, 1, fill(0.0, npar))
+        
+        # Build penalty config with SplinePenalty (required for spline hazards)
+        penalty_config = build_penalty_config(model, SplinePenalty(); lambda_init = 1.0)
+        
+        # Verify penalty config is valid
+        @test penalty_config.n_lambda >= 1
+        @test !isempty(penalty_config.terms) || !isempty(penalty_config.smooth_covariate_terms)
+        
+        # Extract data for selection
+        paths = extract_paths(model)
+        exact_data = ExactData(model, paths)
+        beta_init = get_parameters_flat(model)
+        
+        # Run select_smoothing_parameters - should complete without error
+        result = select_smoothing_parameters(
+            model, exact_data, penalty_config, beta_init;
+            method = :gcv,  # Use GCV for speed
+            maxiter = 5,
+            verbose = false
+        )
+        
+        # Verify result structure
+        @test haskey(result, :lambda) || hasproperty(result, :lambda)
+        @test haskey(result, :beta) || hasproperty(result, :beta)
+        @test haskey(result, :criterion) || hasproperty(result, :criterion)
+        @test haskey(result, :converged) || hasproperty(result, :converged)
+        @test haskey(result, :method_used) || hasproperty(result, :method_used)
+        
+        # Lambda should be positive
+        @test all(result.lambda .> 0)
+        
+        # Beta should be finite
+        @test all(isfinite.(result.beta))
+        
+        # Criterion should be finite or NaN (NaN indicates optimization didn't converge,
+        # but the API should still return a valid result structure)
+        @test isfinite(result.criterion) || isnan(result.criterion)
+    end
+    
+    @testset "Method fallback from PIJCV to GCV works" begin
+        Random.seed!(31313)
+        
+        # Small dataset that might cause PIJCV numerical issues
+        n_subjects = 15
+        data = DataFrame(
+            id = 1:n_subjects,
+            tstart = zeros(n_subjects),
+            tstop = rand(Uniform(0.3, 1.0), n_subjects),
+            statefrom = ones(Int, n_subjects),
+            stateto = fill(2, n_subjects),
+            obstype = ones(Int, n_subjects)
+        )
+        
+        h12 = Hazard(@formula(0 ~ 1), "sp", 1, 2;
+                     degree = 3,
+                     knots = [0.4, 0.6],
+                     boundaryknots = [0.0, 1.0])
+        
+        model = multistatemodel(h12; data = data)
+        set_parameters!(model, 1, fill(0.0, model.hazards[1].npar_total))
+        
+        penalty_config = build_penalty_config(model, SplinePenalty(); lambda_init = 0.1)
+        paths = extract_paths(model)
+        exact_data = ExactData(model, paths)
+        beta_init = get_parameters_flat(model)
+        
+        # Request PIJCV - may fall back to GCV
+        result = select_smoothing_parameters(
+            model, exact_data, penalty_config, beta_init;
+            method = :pijcv,
+            maxiter = 3,
+            verbose = false
+        )
+        
+        # Should return valid result regardless of which method was used
+        @test result.method_used ∈ (:pijcv, :gcv, :none)
+        @test all(isfinite.(result.beta))
     end
 end

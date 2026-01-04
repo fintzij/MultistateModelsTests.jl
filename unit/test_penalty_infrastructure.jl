@@ -314,7 +314,7 @@ end
         end
         
         # Create state
-        state = MultistateModels.PIJCVState(
+        state = MultistateModels.SmoothingSelectionState(
             beta_hat,
             H_unpenalized,
             subject_grads,

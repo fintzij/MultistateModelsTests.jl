@@ -16,10 +16,15 @@ using Distributions
 using MultistateModels
 using Random
 using QuadGK
+using LinearAlgebra
+using StatsModels
 
 # Import internal functions for testing
 import MultistateModels: get_parameters_flat, default_nknots, place_interior_knots,
-    ReConstructor, unflatten, flatten
+    ReConstructor, unflatten, flatten,
+    SmoothTerm, TensorProductTerm, SmoothTermInfo, SmoothCovariatePenaltyTerm,
+    build_penalty_config, expand_smooth_term_columns!, build_tensor_penalty_matrix
+import StatsModels: apply_schema, coefnames, modelcols, termvars
 
 @testset "Spline Hazards" begin
 
@@ -106,6 +111,60 @@ import MultistateModels: get_parameters_flat, default_nknots, place_interior_kno
                 
                 @test isapprox(H_impl, H_quad; rtol=1e-6)
             end
+        end
+    end
+    
+    # =========================================================================
+    # B-SPLINE ANTIDERIVATIVE VERIFICATION (Machine Precision)
+    # =========================================================================
+    # The spline cumulative hazard uses B-spline antiderivative (analytical),
+    # which should match numerical integration to high precision when both
+    # are computed with tight tolerances. This test verifies the antiderivative
+    # implementation is correct.
+    
+    @testset "B-spline antiderivative correctness (machine precision)" begin
+        using BSplineKit
+        
+        # Test that B-spline antiderivative matches high-precision QuadGK
+        # for simple polynomial cases where both should agree to ~1e-10
+        
+        # Create a simple natural cubic spline with uniform coefficients
+        # (approximately constant hazard - easy to verify)
+        knots = [0.0, 0.25, 0.5, 0.75, 1.0]
+        degree = 3
+        B = BSplineBasis(BSplineOrder(degree + 1), knots)
+        B_natural = RecombinedBSplineBasis(B, Natural())
+        
+        # Coefficients for approximately constant hazard = 1
+        n_coefs = length(B_natural)
+        coefs = ones(n_coefs)  # Uniform coefficients
+        
+        spline = Spline(B_natural, coefs)
+        
+        # Integrate the spline directly using QuadGK
+        for (lb, ub) in [(0.0, 0.5), (0.1, 0.9), (0.25, 0.75)]
+            integral_quad, err = quadgk(t -> spline(t), lb, ub; rtol=1e-12)
+            
+            # BSplineKit provides integral() which uses antiderivative
+            antideriv = BSplineKit.integral(spline)
+            integral_bspline = antideriv(ub) - antideriv(lb)
+            
+            # These should match to machine precision since both are exact for polynomials
+            @test isapprox(integral_bspline, integral_quad; rtol=1e-10)
+        end
+        
+        # Test with varying coefficients (typical spline hazard)
+        Random.seed!(77777)
+        coefs_varied = exp.(0.5 .* randn(n_coefs))  # Log-normal for positive hazard
+        spline_varied = Spline(B_natural, coefs_varied)
+        
+        for (lb, ub) in [(0.0, 0.5), (0.1, 0.9), (0.2, 0.8)]
+            integral_quad, err = quadgk(t -> spline_varied(t), lb, ub; rtol=1e-12)
+            
+            antideriv = BSplineKit.integral(spline_varied)
+            integral_bspline = antideriv(ub) - antideriv(lb)
+            
+            @test isapprox(integral_bspline, integral_quad; rtol=1e-10)
         end
     end
     
@@ -770,6 +829,491 @@ import MultistateModels: get_parameters_flat, default_nknots, place_interior_kno
             nt_params = (h12 = randn(npar_h12), h13 = randn(npar_h13))
             set_parameters!(model, nt_params)
             @test model.parameters.flat[1:npar_h12] ≈ collect(nt_params.h12)
+        end
+    end
+
+    # =========================================================================
+    # SMOOTH COVARIATE TERMS: s(x) and te(x,y)
+    # =========================================================================
+    # Tests for smooth covariate effects in hazard formulas (Phase 3)
+    
+    @testset "Smooth Covariate Terms s(x)" begin
+        # Test data with continuous covariates
+        Random.seed!(42)
+        n_obs = 100
+        smooth_data = DataFrame(
+            id = 1:n_obs,
+            tstart = zeros(n_obs),
+            tstop = rand(n_obs) .* 5 .+ 0.1,
+            statefrom = ones(Int, n_obs),
+            stateto = fill(2, n_obs),
+            obstype = ones(Int, n_obs),
+            age = rand(n_obs) .* 50 .+ 20,
+            bmi = rand(n_obs) .* 15 .+ 20,
+            trt = rand([0.0, 1.0], n_obs)
+        )
+        
+        @testset "s(x) formula parsing" begin
+            # Basic s(x) parsing
+            f = @formula(0 ~ s(age, 5, 2))
+            schema = StatsModels.schema(f, smooth_data)
+            fs = apply_schema(f, schema)
+            
+            term = fs.rhs.terms[1]
+            @test term isa SmoothTerm
+            @test term.knots == 5
+            @test term.penalty_order == 2
+            @test term.label == "s(age)"
+            
+            # Coefficient names
+            cnames = coefnames(term)
+            @test length(cnames) == 5
+            @test cnames[1] == "s(age)_1"
+            @test cnames[end] == "s(age)_5"
+        end
+        
+        @testset "s(x) syntax edge cases" begin
+            # Verify s() constructor with various argument counts
+            
+            # Default penalty order (should be 2)
+            f_default = @formula(0 ~ s(age, 5))
+            schema = StatsModels.schema(f_default, smooth_data)
+            fs = apply_schema(f_default, schema)
+            term = fs.rhs.terms[1]
+            @test term isa SmoothTerm
+            @test term.penalty_order == 2  # Default penalty order
+            
+            # Different penalty orders
+            f_pen1 = @formula(0 ~ s(age, 5, 1))
+            fs_pen1 = apply_schema(f_pen1, StatsModels.schema(f_pen1, smooth_data))
+            @test fs_pen1.rhs.terms[1].penalty_order == 1
+            
+            f_pen2 = @formula(0 ~ s(age, 5, 2))
+            fs_pen2 = apply_schema(f_pen2, StatsModels.schema(f_pen2, smooth_data))
+            @test fs_pen2.rhs.terms[1].penalty_order == 2
+            
+            f_pen3 = @formula(0 ~ s(age, 5, 3))
+            fs_pen3 = apply_schema(f_pen3, StatsModels.schema(f_pen3, smooth_data))
+            @test fs_pen3.rhs.terms[1].penalty_order == 3
+            
+            # s() with different knot counts - minimum is 4 for cubic splines
+            # Test that k=3 (too few) throws an error
+            f_k3 = @formula(0 ~ s(age, 3, 2))
+            @test_throws ArgumentError apply_schema(f_k3, StatsModels.schema(f_k3, smooth_data))
+            
+            # k=4 is minimum valid
+            f_k4 = @formula(0 ~ s(age, 4, 2))
+            fs_k4 = apply_schema(f_k4, StatsModels.schema(f_k4, smooth_data))
+            @test fs_k4.rhs.terms[1].knots == 4
+            @test length(coefnames(fs_k4.rhs.terms[1])) == 4
+            
+            f_k10 = @formula(0 ~ s(age, 10, 2))
+            fs_k10 = apply_schema(f_k10, StatsModels.schema(f_k10, smooth_data))
+            @test fs_k10.rhs.terms[1].knots == 10
+            @test length(coefnames(fs_k10.rhs.terms[1])) == 10
+        end
+        
+        @testset "s(x) penalty matrix properties" begin
+            f = @formula(0 ~ s(age, 6, 2))
+            schema = StatsModels.schema(f, smooth_data)
+            fs = apply_schema(f, schema)
+            term = fs.rhs.terms[1]
+            
+            S = term.S
+            
+            # Penalty matrix should be symmetric
+            @test issymmetric(S)
+            
+            # Penalty matrix should be positive semi-definite
+            eigvals = eigen(Symmetric(S)).values
+            @test all(eigvals .>= -1e-10)
+            
+            # Size should be k × k
+            @test size(S) == (6, 6)
+        end
+        
+        @testset "s(x) modelcols basis evaluation" begin
+            f = @formula(0 ~ s(age, 5, 2))
+            schema = StatsModels.schema(f, smooth_data)
+            fs = apply_schema(f, schema)
+            term = fs.rhs.terms[1]
+            
+            # Evaluate basis on columns
+            cols = (age = smooth_data.age,)
+            B = modelcols(term, cols)
+            
+            @test size(B) == (n_obs, 5)
+            
+            # B-splines should sum to approximately 1 at each point
+            row_sums = sum(B, dims=2)
+            @test all(x -> 0.99 < x < 1.01, row_sums)
+            
+            # All basis values should be non-negative
+            @test all(B .>= 0)
+        end
+        
+        @testset "s(x) column expansion" begin
+            h12 = Hazard(@formula(0 ~ s(age, 5, 2)), :exp, 1, 2)
+            data_copy = copy(smooth_data)
+            
+            expand_smooth_term_columns!(data_copy, h12)
+            
+            # Should have added 5 new columns
+            @test Symbol("s(age)_1") in propertynames(data_copy)
+            @test Symbol("s(age)_5") in propertynames(data_copy)
+            
+            # Values should be valid basis function values
+            @test all(data_copy[!, Symbol("s(age)_1")] .>= 0)
+        end
+        
+        @testset "s(x) model creation" begin
+            h12 = Hazard(@formula(0 ~ s(age, 5, 2)), :exp, 1, 2)
+            model = multistatemodel(h12; data=smooth_data)
+            
+            # Should have 1 intercept + 5 basis coefficients
+            @test length(model.parameters.flat) == 6
+            
+            # Check parameter names
+            parnames = get_parnames(model)[1]
+            @test :h12_Intercept in parnames
+            @test Symbol("h12_s(age)_1") in parnames
+            @test Symbol("h12_s(age)_5") in parnames
+        end
+        
+        @testset "s(x) smooth_info extraction" begin
+            h12 = Hazard(@formula(0 ~ s(age, 5, 2)), :exp, 1, 2)
+            model = multistatemodel(h12; data=smooth_data)
+            
+            haz = model.hazards[1]
+            @test hasproperty(haz, :smooth_info)
+            @test length(haz.smooth_info) == 1
+            
+            info = haz.smooth_info[1]
+            @test info.label == "s(age)"
+            @test length(info.par_indices) == 5
+            @test size(info.S) == (5, 5)
+        end
+        
+        @testset "s(x) penalty config building" begin
+            h12 = Hazard(@formula(0 ~ s(age, 5, 2)), :exp, 1, 2)
+            model = multistatemodel(h12; data=smooth_data)
+            
+            config = build_penalty_config(model, SplinePenalty())
+            
+            @test length(config.smooth_covariate_terms) == 1
+            @test config.n_lambda == 1
+            
+            term = config.smooth_covariate_terms[1]
+            @test term.label == "s(age)"
+            @test length(term.param_indices) == 5
+        end
+        
+        @testset "s(x) + linear term" begin
+            h12 = Hazard(@formula(0 ~ s(age, 5, 2) + trt), :exp, 1, 2)
+            model = multistatemodel(h12; data=smooth_data)
+            
+            # Should have 1 intercept + 5 basis + 1 trt
+            @test length(model.parameters.flat) == 7
+            
+            # Penalty config should only have smooth term, not linear term
+            config = build_penalty_config(model, SplinePenalty())
+            @test length(config.smooth_covariate_terms) == 1
+        end
+        
+        @testset "Multiple s(x) terms" begin
+            h12 = Hazard(@formula(0 ~ s(age, 5, 2) + s(bmi, 4, 2)), :exp, 1, 2)
+            model = multistatemodel(h12; data=smooth_data)
+            
+            # 1 intercept + 5 (age) + 4 (bmi)
+            @test length(model.parameters.flat) == 10
+            
+            # Two smooth terms in penalty config
+            config = build_penalty_config(model, SplinePenalty())
+            @test length(config.smooth_covariate_terms) == 2
+            @test config.n_lambda == 2
+            
+            labels = [t.label for t in config.smooth_covariate_terms]
+            @test "s(age)" in labels
+            @test "s(bmi)" in labels
+        end
+    end
+    
+    @testset "Tensor Product Smooths te(x,y)" begin
+        # Test data
+        Random.seed!(42)
+        n_obs = 100
+        tensor_data = DataFrame(
+            id = 1:n_obs,
+            tstart = zeros(n_obs),
+            tstop = rand(n_obs) .* 5 .+ 0.1,
+            statefrom = ones(Int, n_obs),
+            stateto = fill(2, n_obs),
+            obstype = ones(Int, n_obs),
+            age = rand(n_obs) .* 50 .+ 20,
+            bmi = rand(n_obs) .* 15 .+ 20
+        )
+        
+        @testset "te(x,y) formula parsing - same k" begin
+            # te(x, y, k, m) - same k for both dimensions
+            f = @formula(0 ~ te(age, bmi, 4, 2))
+            schema = StatsModels.schema(f, tensor_data)
+            fs = apply_schema(f, schema)
+            
+            term = fs.rhs.terms[1]
+            @test term isa TensorProductTerm
+            @test term.kx == 4
+            @test term.ky == 4
+            @test term.penalty_order == 2
+            @test term.label == "te(age,bmi)"
+        end
+        
+        @testset "te(x,y) formula parsing - different k" begin
+            # te(x, y, kx, ky, m) - different k per dimension
+            f = @formula(0 ~ te(age, bmi, 5, 6, 2))
+            schema = StatsModels.schema(f, tensor_data)
+            fs = apply_schema(f, schema)
+            
+            term = fs.rhs.terms[1]
+            @test term.kx == 5
+            @test term.ky == 6
+            @test size(term.S) == (30, 30)  # 5*6
+        end
+        
+        @testset "te(x,y) coefficient names" begin
+            f = @formula(0 ~ te(age, bmi, 4, 2))
+            schema = StatsModels.schema(f, tensor_data)
+            fs = apply_schema(f, schema)
+            term = fs.rhs.terms[1]
+            
+            cnames = coefnames(term)
+            @test length(cnames) == 16  # 4*4
+            @test cnames[1] == "te(age,bmi)_1"
+            @test cnames[end] == "te(age,bmi)_16"
+        end
+        
+        @testset "te(x,y) penalty matrix properties" begin
+            f = @formula(0 ~ te(age, bmi, 4, 2))
+            schema = StatsModels.schema(f, tensor_data)
+            fs = apply_schema(f, schema)
+            term = fs.rhs.terms[1]
+            
+            S = term.S
+            
+            # Should be symmetric
+            @test issymmetric(S)
+            
+            # Should be positive semi-definite
+            eigvals = eigen(Symmetric(S)).values
+            @test all(eigvals .>= -1e-10)
+            
+            # Size: (kx*ky) × (kx*ky)
+            @test size(S) == (16, 16)
+        end
+        
+        @testset "te(x,y) modelcols - Kronecker product" begin
+            f = @formula(0 ~ te(age, bmi, 4, 2))
+            schema = StatsModels.schema(f, tensor_data)
+            fs = apply_schema(f, schema)
+            term = fs.rhs.terms[1]
+            
+            cols = (age = tensor_data.age, bmi = tensor_data.bmi)
+            B = modelcols(term, cols)
+            
+            @test size(B) == (n_obs, 16)
+            
+            # Tensor product of B-splines should sum to approximately 1
+            row_sums = sum(B, dims=2)
+            @test all(x -> 0.99 < x < 1.01, row_sums)
+        end
+        
+        @testset "te(x,y) column expansion" begin
+            h12 = Hazard(@formula(0 ~ te(age, bmi, 4, 2)), :exp, 1, 2)
+            data_copy = copy(tensor_data)
+            
+            expand_smooth_term_columns!(data_copy, h12)
+            
+            @test Symbol("te(age,bmi)_1") in propertynames(data_copy)
+            @test Symbol("te(age,bmi)_16") in propertynames(data_copy)
+        end
+        
+        @testset "te(x,y) model creation" begin
+            h12 = Hazard(@formula(0 ~ te(age, bmi, 4, 2)), :exp, 1, 2)
+            model = multistatemodel(h12; data=tensor_data)
+            
+            # 1 intercept + 16 tensor basis
+            @test length(model.parameters.flat) == 17
+            
+            # Check smooth_info
+            haz = model.hazards[1]
+            @test length(haz.smooth_info) == 1
+            @test haz.smooth_info[1].label == "te(age,bmi)"
+            @test size(haz.smooth_info[1].S) == (16, 16)
+        end
+        
+        @testset "te(x,y) penalty config" begin
+            h12 = Hazard(@formula(0 ~ te(age, bmi, 4, 2)), :exp, 1, 2)
+            model = multistatemodel(h12; data=tensor_data)
+            
+            config = build_penalty_config(model, SplinePenalty())
+            
+            @test length(config.smooth_covariate_terms) == 1
+            @test config.n_lambda == 1
+            @test config.smooth_covariate_terms[1].label == "te(age,bmi)"
+        end
+        
+        @testset "build_tensor_penalty_matrix" begin
+            # Manual test of tensor penalty construction
+            kx, ky = 3, 4
+            Sx = randn(kx, kx)
+            Sx = Sx * Sx'  # Make symmetric PD
+            Sy = randn(ky, ky)
+            Sy = Sy * Sy'
+            
+            S_te = build_tensor_penalty_matrix(Sx, Sy)
+            
+            # Size check
+            @test size(S_te) == (kx * ky, kx * ky)
+            
+            # Symmetry
+            @test issymmetric(S_te)
+        end
+    end
+    
+    @testset "Lambda Sharing for Smooth Covariates" begin
+        Random.seed!(42)
+        n_obs = 100
+        share_data = DataFrame(
+            id = 1:n_obs,
+            tstart = zeros(n_obs),
+            tstop = rand(n_obs) .* 5 .+ 0.1,
+            statefrom = ones(Int, n_obs),
+            stateto = fill(2, n_obs),
+            obstype = ones(Int, n_obs),
+            age = rand(n_obs) .* 50 .+ 20,
+            bmi = rand(n_obs) .* 15 .+ 20
+        )
+        
+        @testset "Default: separate lambda per term" begin
+            h12 = Hazard(@formula(0 ~ s(age, 5, 2) + s(bmi, 4, 2)), :exp, 1, 2)
+            model = multistatemodel(h12; data=share_data)
+            
+            # Default: share_covariate_lambda=false
+            config = build_penalty_config(model, SplinePenalty())
+            
+            @test length(config.smooth_covariate_terms) == 2
+            @test config.n_lambda == 2  # One per term
+            @test isempty(config.shared_smooth_groups)
+        end
+        
+        @testset "share_covariate_lambda=:global" begin
+            h12 = Hazard(@formula(0 ~ s(age, 5, 2) + s(bmi, 4, 2)), :exp, 1, 2)
+            model = multistatemodel(h12; data=share_data)
+            
+            config = build_penalty_config(model, SplinePenalty(share_covariate_lambda=:global))
+            
+            @test length(config.smooth_covariate_terms) == 2
+            @test config.n_lambda == 1  # One shared lambda
+            @test length(config.shared_smooth_groups) == 1
+            @test config.shared_smooth_groups[1] == [1, 2]
+        end
+        
+        @testset "share_covariate_lambda=:hazard" begin
+            h12 = Hazard(@formula(0 ~ s(age, 5, 2) + s(bmi, 4, 2)), :exp, 1, 2)
+            model = multistatemodel(h12; data=share_data)
+            
+            config = build_penalty_config(model, SplinePenalty(share_covariate_lambda=:hazard))
+            
+            @test length(config.smooth_covariate_terms) == 2
+            @test config.n_lambda == 1  # One per hazard (only h12)
+            @test length(config.shared_smooth_groups) == 1
+        end
+    end
+    
+    @testset "Combined s(x) + te(x,y)" begin
+        Random.seed!(42)
+        n_obs = 100
+        combined_data = DataFrame(
+            id = 1:n_obs,
+            tstart = zeros(n_obs),
+            tstop = rand(n_obs) .* 5 .+ 0.1,
+            statefrom = ones(Int, n_obs),
+            stateto = fill(2, n_obs),
+            obstype = ones(Int, n_obs),
+            age = rand(n_obs) .* 50 .+ 20,
+            bmi = rand(n_obs) .* 15 .+ 20,
+            trt = rand([0.0, 1.0], n_obs)
+        )
+        
+        @testset "s(x) + te(x,y) model creation" begin
+            h12 = Hazard(@formula(0 ~ s(age, 5, 2) + te(age, bmi, 4, 2)), :exp, 1, 2)
+            model = multistatemodel(h12; data=combined_data)
+            
+            # 1 intercept + 5 (s(age)) + 16 (te(age,bmi))
+            @test length(model.parameters.flat) == 22
+            
+            # Two smooth terms
+            haz = model.hazards[1]
+            @test length(haz.smooth_info) == 2
+            
+            labels = [info.label for info in haz.smooth_info]
+            @test "s(age)" in labels
+            @test "te(age,bmi)" in labels
+        end
+        
+        @testset "s(x) + te(x,y) + linear term" begin
+            h12 = Hazard(@formula(0 ~ s(age, 5, 2) + te(age, bmi, 4, 2) + trt), :exp, 1, 2)
+            model = multistatemodel(h12; data=combined_data)
+            
+            # 1 intercept + 5 + 16 + 1 trt
+            @test length(model.parameters.flat) == 23
+            
+            config = build_penalty_config(model, SplinePenalty())
+            @test length(config.smooth_covariate_terms) == 2
+            @test config.n_lambda == 2
+        end
+        
+        @testset "s(x) + te(x,y) penalty config" begin
+            h12 = Hazard(@formula(0 ~ s(age, 5, 2) + te(age, bmi, 4, 2)), :exp, 1, 2)
+            model = multistatemodel(h12; data=combined_data)
+            
+            config = build_penalty_config(model, SplinePenalty())
+            
+            @test length(config.smooth_covariate_terms) == 2
+            @test config.n_lambda == 2
+            
+            labels = [t.label for t in config.smooth_covariate_terms]
+            @test "s(age)" in labels
+            @test "te(age,bmi)" in labels
+        end
+    end
+    
+    @testset "Smooth Covariates with Spline Baseline" begin
+        Random.seed!(42)
+        n_obs = 100
+        sp_data = DataFrame(
+            id = 1:n_obs,
+            tstart = zeros(n_obs),
+            tstop = rand(n_obs) .* 5 .+ 0.1,
+            statefrom = ones(Int, n_obs),
+            stateto = fill(2, n_obs),
+            obstype = ones(Int, n_obs),
+            age = rand(n_obs) .* 50 .+ 20
+        )
+        
+        @testset "Spline baseline + s(x)" begin
+            # Spline baseline hazard with smooth covariate
+            h12 = Hazard(@formula(0 ~ s(age, 5, 2)), :sp, 1, 2;
+                         knots=[1.0, 2.0, 3.0], boundaryknots=[0.0, 5.0])
+            model = multistatemodel(h12; data=sp_data)
+            
+            config = build_penalty_config(model, SplinePenalty())
+            
+            # Should have both baseline penalty and smooth covariate penalty
+            @test length(config.terms) >= 1  # Baseline spline penalty
+            @test length(config.smooth_covariate_terms) == 1  # s(age)
+            
+            # Total lambda count
+            @test config.n_lambda >= 2
         end
     end
 end

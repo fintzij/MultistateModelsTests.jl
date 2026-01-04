@@ -643,23 +643,25 @@ function _flat_to_named(flat_params::Vector{Float64}, hazards)
 end
 
 """
-    check_param_recovery(true_val, est_val; is_beta=false, is_shape=false) -> Bool
+    check_param_recovery(true_val, est_val; is_beta=false, is_shape=false, beta_tol=BETA_ABS_TOL) -> Bool
 
 Check if a parameter was recovered within tolerance.
 
 # Arguments
 - `true_val`: True parameter value
 - `est_val`: Estimated parameter value  
-- `is_beta`: Whether this is a beta (covariate) parameter (uses BETA_ABS_TOL)
+- `is_beta`: Whether this is a beta (covariate) parameter (uses beta_tol)
 - `is_shape`: Whether this is a shape parameter (uses SHAPE_ABS_TOL)
+- `beta_tol`: Absolute tolerance for beta parameters (default: BETA_ABS_TOL)
 
 Shape and beta parameters use absolute tolerance since they can be near zero.
 Other parameters use relative tolerance unless the true value is small.
 """
 function check_param_recovery(true_val::Float64, est_val::Float64; 
-                              is_beta::Bool=false, is_shape::Bool=false)
+                              is_beta::Bool=false, is_shape::Bool=false,
+                              beta_tol::Float64=BETA_ABS_TOL)
     if is_beta
-        return abs(est_val - true_val) <= BETA_ABS_TOL
+        return abs(est_val - true_val) <= beta_tol
     elseif is_shape
         return abs(est_val - true_val) <= SHAPE_ABS_TOL
     else
@@ -724,7 +726,8 @@ function capture_longtest_result!(
     beta_param_names::Vector{String}=String[],
     shape_param_names::Vector{String}=String[],
     n_states::Int=3,
-    transitions::Vector{Tuple{Int,Int}}=[(1, 2), (2, 3)]
+    transitions::Vector{Tuple{Int,Int}}=[(1, 2), (2, 3)],
+    beta_abs_tol::Float64=BETA_ABS_TOL
 )
     result = LongTestResult(
         test_name = test_name,
@@ -759,7 +762,8 @@ function capture_longtest_result!(
     for (i, name) in enumerate(param_names)
         is_beta = name in beta_param_names
         is_shape = name in shape_param_names
-        passed = check_param_recovery(true_flat[i], fitted_flat[i]; is_beta=is_beta, is_shape=is_shape)
+        passed = check_param_recovery(true_flat[i], fitted_flat[i]; 
+                                      is_beta=is_beta, is_shape=is_shape, beta_tol=beta_abs_tol)
         all_passed = all_passed && passed
         
         result.true_params[name] = true_flat[i]

@@ -73,7 +73,8 @@ const PARAM_RTOL = 1e-6
     model = fixture.model
     
     # Set exponential rates: h12 has rate 0.1, h13 has rate 0.1 (no covariate effect)
-    MultistateModels.set_parameters!(model, (h12 = [log(0.1),], h13 = [log(0.1), 0.0, 0.0, 0.0]))
+    # v0.3.0+: Parameters on natural scale (rates directly, not log-transformed)
+    MultistateModels.set_parameters!(model, (h12 = [0.1,], h13 = [0.1, 0.0, 0.0, 0.0]))
 
     subjdat_row = model.data[1, :]
     params = MultistateModels.get_hazard_params(model.parameters, model.hazards)
@@ -99,39 +100,42 @@ end
     # -------------------------------------------------------------------------
     # Test 1: Exponential hazard without covariates
     # -------------------------------------------------------------------------
-    # Formula: h(t) = exp(log_rate) = exp(0.8)
-    # This is constant in t for exponential
+    # Formula: h(t) = rate (constant in t for exponential)
+    # v0.3.0+: Parameters on natural scale
     
     fixture = toy_expwei_model()
     model = fixture.model
     data = fixture.data
 
-    # Parameters: h12 = [log_rate], h13 = [log_rate, β_trt, β_age, β_trt:age]
-    MultistateModels.set_parameters!(model, (h12 = [0.8,], h13 = [0.3, 0.6, -0.4, 0.15]))
+    # Parameters: h12 = [rate], h13 = [rate, β_trt, β_age, β_trt:age]
+    # v0.3.0+: Set rates directly on natural scale
+    rate_h12 = exp(0.8)  # ≈ 2.23
+    rate_h13 = exp(0.3)  # ≈ 1.35
+    MultistateModels.set_parameters!(model, (h12 = [rate_h12,], h13 = [rate_h13, 0.6, -0.4, 0.15]))
 
     @test isa(model.hazards[1], MultistateModels.MarkovHazard)
     subjdat_row = model.data[1, :]
     hazard1 = model.hazards[1]
     covars1 = MultistateModels.extract_covariates_fast(subjdat_row, hazard1.covar_names)
     
-    # Verify: log h(t) = 0.8, h(t) = exp(0.8) for intercept-only model
+    # Verify: h(t) = rate_h12 for intercept-only model
     @test log(MultistateModels.eval_hazard(hazard1, 0.0, get_hazard_params(model.parameters, model.hazards)[1], covars1)) ≈ 0.8
-    @test MultistateModels.eval_hazard(hazard1, 0.0, get_hazard_params(model.parameters, model.hazards)[1], covars1) ≈ exp(0.8)
+    @test MultistateModels.eval_hazard(hazard1, 0.0, get_hazard_params(model.parameters, model.hazards)[1], covars1) ≈ rate_h12
     
     # Verify DataFrameRow interface gives identical results (zero-copy approach)
-    @test MultistateModels.eval_hazard(hazard1, 0.0, get_hazard_params(model.parameters, model.hazards)[1], subjdat_row) ≈ exp(0.8)
+    @test MultistateModels.eval_hazard(hazard1, 0.0, get_hazard_params(model.parameters, model.hazards)[1], subjdat_row) ≈ rate_h12
 
     # -------------------------------------------------------------------------
     # Test 2: Exponential hazard with covariates (PH model)
     # -------------------------------------------------------------------------
-    # Formula: log h(t|x) = β₀ + β₁·trt + β₂·age + β₃·trt·age
-    # where β₀ = 0.3, β₁ = 0.6, β₂ = -0.4, β₃ = 0.15
+    # Formula: log h(t|x) = log(rate) + β₁·trt + β₂·age + β₃·trt·age
+    # where rate = exp(0.3), β₁ = 0.6, β₂ = -0.4, β₃ = 0.15
     
     pars_nt = get_hazard_params(model.parameters, model.hazards)[2]
     pars = MultistateModels.extract_params_vector(pars_nt)
     
     # Compute analytical log-hazard for each row
-    # pars[1] is now natural-scale (exp applied), so use log(pars[1]) for log-hazard
+    # pars[1] is now natural-scale rate, use log(pars[1]) for log-hazard
     # pars[2:end] are covariate coefficients (unchanged)
     trueval = [
         log(pars[1]) + data.trt[1] * pars[2] + data.age[1] * pars[3] + data.trt[1] * data.age[1] * pars[4],
@@ -164,14 +168,13 @@ end
     # -------------------------------------------------------------------------
     # Test 1: Weibull hazard without covariates
     # -------------------------------------------------------------------------
-    # Parameters: log(shape) = -0.25, log(scale) = 0.2
+    # Parameters: shape = exp(-0.25) ≈ 0.779, scale = exp(0.2) ≈ 1.221 (natural scale)
     # Formula: log h(t) = log(scale) + log(shape) + (shape - 1) * log(t)
-    #        = 0.2 + (-0.25) + (exp(-0.25) - 1) * log(t)
     
     fixture = toy_expwei_model()
     model = fixture.model
 
-    MultistateModels.set_parameters!(model, (h21 = [-0.25, 0.2],))
+    MultistateModels.set_parameters!(model, (h21 = [exp(-0.25), exp(0.2)],))
 
     subjdat_row = model.data[1, :]
     hazard3 = model.hazards[3]
@@ -195,12 +198,12 @@ end
     # -------------------------------------------------------------------------
     # Test 2: Weibull hazard with covariates (PH model)
     # -------------------------------------------------------------------------
-    # Parameters: log(shape) = 0.2, log(scale) = 0.25, β_trt = -0.3
+    # Parameters: shape = exp(0.2) ≈ 1.221, scale = exp(0.25) ≈ 1.284, β_trt = -0.3 (natural scale)
     # Formula: log h(t|x) = log(κ) + (κ-1)log(t) + log(λ) + β_trt·trt
     # Note: expm1(x) = exp(x) - 1, so shape - 1 = expm1(log_shape)
     
     t = 1.0
-    MultistateModels.set_parameters!(model, (h23 = [0.2, 0.25, -0.3],))
+    MultistateModels.set_parameters!(model, (h23 = [exp(0.2), exp(0.25), -0.3],))
     pars_h23_nt = get_hazard_params(model.parameters, model.hazards)[4]
     pars_h23 = MultistateModels.extract_params_vector(pars_h23_nt)
     
@@ -237,14 +240,17 @@ end
     model = fixture.model
     data = fixture.data
 
-    MultistateModels.set_parameters!(model, (h12 = [0.8,], h13 = [0.0, 0.6, -0.4, 0.15]))
+    # v0.3.0+: Parameters on natural scale
+    # h12 rate = exp(0.8), h13 rate = exp(0.0) = 1.0 with covariates
+    MultistateModels.set_parameters!(model, (h12 = [exp(0.8),], h13 = [1.0, 0.6, -0.4, 0.15]))
     lb = 0
     ub = 5
 
     # -------------------------------------------------------------------------
     # Test 1: Cumulative hazard without covariates
     # -------------------------------------------------------------------------
-    # Formula: log H(0,5) = log(rate) + log(5-0) = 0.8 + log(5)
+    # Formula: log H(0,5) = log(rate) + log(5-0)
+    # With rate = exp(0.8), log(rate) = 0.8
     
     subjdat_row = model.data[1, :]
     hazard1 = model.hazards[1]
@@ -293,7 +299,10 @@ end
 @testset "test_cumulativehazards_weibull" begin
     fixture = toy_expwei_model()
     model = fixture.model
-    MultistateModels.set_parameters!(model, (h21 = [-0.25, 0.2], h23 = [0.2, 0.25, -0.3]))
+    # v0.3.0+: Parameters on natural scale
+    # h21: shape = exp(-0.25), scale = exp(0.2)
+    # h23: shape = exp(0.2), scale = exp(0.25), β_trt = -0.3
+    MultistateModels.set_parameters!(model, (h21 = [exp(-0.25), exp(0.2)], h23 = [exp(0.2), exp(0.25), -0.3]))
     lb = 0
     ub = 5
 
@@ -452,15 +461,15 @@ end
     # -------------------------------------------------------------------------
     # Test 1: Gompertz hazard without covariates
     # -------------------------------------------------------------------------
-    # Parameters: log(shape) = log(1.5), log(scale) = log(0.5)
-    # flexsurv formula: h(t) = scale * exp(shape * t)
+    # Parameters: shape = 1.5, rate = 0.5 (natural scale)
+    # flexsurv formula: h(t) = rate * exp(shape * t)
     #        = 0.5 * exp(1.5 * t)
     
     fixture = toy_gompertz_model()
     model = fixture.model
-    MultistateModels.set_parameters!(model, (h12 = [log(1.5), log(0.5)], 
-                                             h13 = [log(0.5), log(0.5), 1.5], 
-                                             h23 = [log(1), log(2/3)]))    
+    MultistateModels.set_parameters!(model, (h12 = [1.5, 0.5], 
+                                             h13 = [0.5, 0.5, 1.5], 
+                                             h23 = [1.0, 2/3]))    
 
     pars_h12_nt = get_hazard_params(model.parameters, model.hazards)[1]
     pars_h13_nt = get_hazard_params(model.parameters, model.hazards)[2]
@@ -508,9 +517,9 @@ end
 @testset "test_cumulativehazards_gompertz" begin
     fixture = toy_gompertz_model()
     model = fixture.model
-    MultistateModels.set_parameters!(model, (h12 = [log(1.5), log(0.5)], 
-                                             h13 = [log(0.5), log(0.5), 1.5], 
-                                             h23 = [log(1), log(2/3)]))
+    MultistateModels.set_parameters!(model, (h12 = [1.5, 0.5], 
+                                             h13 = [0.5, 0.5, 1.5], 
+                                             h23 = [1.0, 2/3]))
     lb = 0.0
     ub = 5.0
 
@@ -598,9 +607,9 @@ end
     h_exp_aft = Hazard(@formula(0 ~ x), "exp", 1, 2; linpred_effect = :aft)
     model_exp_ph = multistatemodel(h_exp_ph; data = dat)
     model_exp_aft = multistatemodel(h_exp_aft; data = dat)
-    MultistateModels.set_parameters!(model_exp_ph, (h12 = [log(0.4), 0.7],))
+    MultistateModels.set_parameters!(model_exp_ph, (h12 = [0.4, 0.7],))
 
-    MultistateModels.set_parameters!(model_exp_aft, (h12 = [log(0.4), 0.7],))
+    MultistateModels.set_parameters!(model_exp_aft, (h12 = [0.4, 0.7],))
 
     # Use retrieved params for expected value calculation
     pars_exp_ph_nt = get_hazard_params(model_exp_ph.parameters, model_exp_ph.hazards)[1]
@@ -638,8 +647,8 @@ end
     h_wei_aft = Hazard(@formula(0 ~ x), "wei", 1, 2; linpred_effect = :aft)
     model_wei_ph = multistatemodel(h_wei_ph; data = dat)
     model_wei_aft = multistatemodel(h_wei_aft; data = dat)
-    MultistateModels.set_parameters!(model_wei_ph, (h12 = [log(1.4), log(0.6), -0.3],))
-    MultistateModels.set_parameters!(model_wei_aft, (h12 = [log(1.4), log(0.6), -0.3],))
+    MultistateModels.set_parameters!(model_wei_ph, (h12 = [1.4, 0.6, -0.3],))
+    MultistateModels.set_parameters!(model_wei_aft, (h12 = [1.4, 0.6, -0.3],))
 
     # Use retrieved params for expected value calculation
     pars_wei_ph_nt = get_hazard_params(model_wei_ph.parameters, model_wei_ph.hazards)[1]
@@ -677,8 +686,8 @@ end
     h_gom_aft = Hazard(@formula(0 ~ x), "gom", 1, 2; linpred_effect = :aft)
     model_gom_ph = multistatemodel(h_gom_ph; data = dat)
     model_gom_aft = multistatemodel(h_gom_aft; data = dat)
-    MultistateModels.set_parameters!(model_gom_ph, (h12 = [log(0.2), log(0.3), 0.5],))
-    MultistateModels.set_parameters!(model_gom_aft, (h12 = [log(0.2), log(0.3), 0.5],))
+    MultistateModels.set_parameters!(model_gom_ph, (h12 = [0.2, 0.3, 0.5],))
+    MultistateModels.set_parameters!(model_gom_aft, (h12 = [0.2, 0.3, 0.5],))
 
     # Use retrieved params for expected value calculation
     pars_gom_ph_nt = get_hazard_params(model_gom_ph.parameters, model_gom_ph.hazards)[1]
@@ -747,7 +756,7 @@ end
     # Exponential PH hazard with Tang toggle
     h_exp_tt = Hazard(@formula(0 ~ x), "exp", 1, 2; time_transform = true)
     model_exp_tt = multistatemodel(h_exp_tt; data = dat)
-    MultistateModels.set_parameters!(model_exp_tt, (h12 = [log(0.4), 0.7],))
+    MultistateModels.set_parameters!(model_exp_tt, (h12 = [0.4, 0.7],))
     
     # Use retrieved params for expected value calculation
     pars_exp_tt_nt = get_hazard_params(model_exp_tt.parameters, model_exp_tt.hazards)[1]
@@ -775,7 +784,7 @@ end
     # Weibull PH hazard with Tang toggle
     h_wei_tt = Hazard(@formula(0 ~ x), "wei", 1, 2; time_transform = true)
     model_wei_tt = multistatemodel(h_wei_tt; data = dat)
-    MultistateModels.set_parameters!(model_wei_tt, (h12 = [log(1.3), log(0.6), -0.4],))
+    MultistateModels.set_parameters!(model_wei_tt, (h12 = [1.3, 0.6, -0.4],))
     
     # Use retrieved params for expected value calculation
     pars_wei_tt_nt = get_hazard_params(model_wei_tt.parameters, model_wei_tt.hazards)[1]
@@ -799,7 +808,7 @@ end
     # Gompertz PH hazard with Tang toggle
     h_gom_tt = Hazard(@formula(0 ~ x), "gom", 1, 2; time_transform = true)
     model_gom_tt = multistatemodel(h_gom_tt; data = dat)
-    MultistateModels.set_parameters!(model_gom_tt, (h12 = [log(0.5), log(0.8), 0.25],))
+    MultistateModels.set_parameters!(model_gom_tt, (h12 = [0.5, 0.8, 0.25],))
     
     # Use retrieved params for expected value calculation
     pars_gom_tt_nt = get_hazard_params(model_gom_tt.parameters, model_gom_tt.hazards)[1]
@@ -824,7 +833,7 @@ end
     # Cache ownership: shared-baseline table per origin state/family
     h_cache = Hazard(@formula(0 ~ x), "exp", 1, 2; time_transform = true)
     model_cache = multistatemodel(h_cache; data = dat)
-    MultistateModels.set_parameters!(model_cache, (h12 = [log(0.5), 0.3],))
+    MultistateModels.set_parameters!(model_cache, (h12 = [0.5, 0.3],))
     pars_cache_nt = get_hazard_params(model_cache.parameters, model_cache.hazards)[1]
     pars_cache_vec = MultistateModels.extract_params_vector(pars_cache_nt)
     t_cache = 0.7
@@ -850,7 +859,7 @@ end
     @test length(cache.hazard_values) == 1
     
     # For mutation test, we update model parameters and get new NamedTuple
-    MultistateModels.set_parameters!(model_cache, (h12 = [log(0.5), 0.5],))  # Changed from 0.3 to 0.5
+    MultistateModels.set_parameters!(model_cache, (h12 = [0.5, 0.5],))  # Changed from 0.3 to 0.5
     pars_cache_nt_new = get_hazard_params(model_cache.parameters, model_cache.hazards)[1]
     _ = MultistateModels.eval_hazard(hazard_cache, t_cache, pars_cache_nt_new, covars_cache; apply_transform = true, cache_context = ctx, hazard_slot = hazard_slot)
     @test length(cache.hazard_values) == 2
@@ -878,7 +887,7 @@ end
     h12_shared = Hazard(@formula(0 ~ x), "exp", 1, 2; time_transform = true)
     h13_shared = Hazard(@formula(0 ~ x), "exp", 1, 3; time_transform = true)
     model_shared = multistatemodel(h12_shared, h13_shared; data = dat_shared)
-    MultistateModels.set_parameters!(model_shared, (h12 = [log(0.4), 0.2], h13 = [log(0.4), -0.1]))
+    MultistateModels.set_parameters!(model_shared, (h12 = [0.4, 0.2], h13 = [0.4, -0.1]))
 
     key12 = model_shared.hazards[1].shared_baseline_key
     key13 = model_shared.hazards[2].shared_baseline_key

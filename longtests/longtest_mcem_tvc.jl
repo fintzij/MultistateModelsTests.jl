@@ -737,7 +737,7 @@ end
     # Simulate from Weibull with TVC
     h12_wei = Hazard(@formula(0 ~ x), "wei", 1, 2)
     model_sim = multistatemodel(h12_wei; data=panel_data, surrogate=:markov)
-    set_parameters!(model_sim, (h12 = [log(true_shape), log(true_scale), true_beta],))
+    set_parameters!(model_sim, (h12 = [true_shape, true_scale, true_beta],))
     
     # For 2-state model (1→2 absorbing), transition 1 is exact
     obstype_map = Dict(1 => 1)
@@ -909,7 +909,7 @@ end
     h12 = Hazard(@formula(0 ~ x), "gom", 1, 2)
     
     model_sim = multistatemodel(h12; data=template_data, surrogate=:markov)
-    set_parameters!(model_sim, (h12 = [true_shape, log(true_rate), true_beta],))
+    set_parameters!(model_sim, (h12 = [true_shape, true_rate, true_beta],))
     
     # For 2-state model (1→2 absorbing), transition 1 is exact
     obstype_map = Dict(1 => 1)

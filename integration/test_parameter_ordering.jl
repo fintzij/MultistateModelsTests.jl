@@ -188,7 +188,7 @@ end
         )
         
         model = multistatemodel(h12; data=template)
-        set_parameters!(model, (h12=[log(rate)],))
+        set_parameters!(model, (h12=[rate],))
         
         sim = simulate(model; paths=false, data=true, nsim=1)
         times = sim[1].tstop .- sim[1].tstart
@@ -220,7 +220,7 @@ end
         )
         
         model = multistatemodel(h12; data=template)
-        set_parameters!(model, (h12=[log(shape), log(scale)],))
+        set_parameters!(model, (h12=[shape, scale],))
         
         sim = simulate(model; paths=false, data=true, nsim=1)
         times = sim[1].tstop .- sim[1].tstart
@@ -258,8 +258,8 @@ end
         )
         
         model = multistatemodel(h12; data=template)
-        # Shape is on natural scale (identity transform), rate is log-transformed
-        set_parameters!(model, (h12=[shape, log(rate)],))
+        # Shape and rate are both on natural scale now
+        set_parameters!(model, (h12=[shape, rate],))
         
         sim = simulate(model; paths=false, data=true, nsim=1)
         times = sim[1].tstop .- sim[1].tstart
@@ -299,7 +299,7 @@ end
         )
         
         model_sim = multistatemodel(h12; data=template)
-        set_parameters!(model_sim, (h12=[log(true_rate)],))
+        set_parameters!(model_sim, (h12=[true_rate],))
         
         sim = simulate(model_sim; paths=false, data=true, nsim=1)
         data = sim[1]
@@ -307,7 +307,7 @@ end
         model_fit = multistatemodel(h12; data=data)
         fitted = fit(model_fit; parallel=true, verbose=false)
         
-        est_rate = exp(get_parameters_flat(fitted)[1])
+        est_rate = get_parameters_flat(fitted)[1]  # Already on natural scale
         relative_error = abs(est_rate - true_rate) / true_rate
         
         @test relative_error < 0.15  # Less than 15% error with N=500
@@ -334,7 +334,7 @@ end
         )
         
         model_sim = multistatemodel(h12; data=template)
-        set_parameters!(model_sim, (h12=[log(true_shape), log(true_scale)],))
+        set_parameters!(model_sim, (h12=[true_shape, true_scale],))
         
         sim = simulate(model_sim; paths=false, data=true, nsim=1)
         data = sim[1]
@@ -343,8 +343,8 @@ end
         fitted = fit(model_fit; parallel=true, verbose=false)
         
         flat = get_parameters_flat(fitted)
-        est_shape = exp(flat[1])
-        est_scale = exp(flat[2])
+        est_shape = flat[1]  # Already on natural scale
+        est_scale = flat[2]  # Already on natural scale
         
         shape_error = abs(est_shape - true_shape) / true_shape
         scale_error = abs(est_scale - true_scale) / true_scale
@@ -378,9 +378,9 @@ end
         
         model_sim = multistatemodel(h12, h13, h23; data=template)
         set_parameters!(model_sim, (
-            h12=[log(true_h12)], 
-            h13=[log(true_h13)], 
-            h23=[log(true_h23)]
+            h12=[true_h12], 
+            h13=[true_h13], 
+            h23=[true_h23]
         ))
         
         sim = simulate(model_sim; paths=false, data=true, nsim=1)
@@ -390,9 +390,9 @@ end
         fitted = fit(model_fit; parallel=true, verbose=false)
         
         flat = get_parameters_flat(fitted)
-        est_h12 = exp(flat[1])
-        est_h13 = exp(flat[2])
-        est_h23 = exp(flat[3])
+        est_h12 = flat[1]  # Already on natural scale
+        est_h13 = flat[2]  # Already on natural scale
+        est_h23 = flat[3]  # Already on natural scale
         
         err_h12 = abs(est_h12 - true_h12) / true_h12
         err_h13 = abs(est_h13 - true_h13) / true_h13
@@ -425,7 +425,7 @@ end
         )
         
         model_sim = multistatemodel(h12; data=template)
-        set_parameters!(model_sim, (h12=[log(0.15)],))
+        set_parameters!(model_sim, (h12=[0.15],))
         
         sim = simulate(model_sim; paths=false, data=true, nsim=1)
         data = sim[1]
@@ -464,7 +464,7 @@ end
         
         # Simulate from true model
         model_sim = multistatemodel(h12; data=template)
-        set_parameters!(model_sim, (h12=[log(true_rate)],))
+        set_parameters!(model_sim, (h12=[true_rate],))
         sim1 = simulate(model_sim; paths=false, data=true, nsim=1)
         data = sim1[1]
         
@@ -473,9 +473,9 @@ end
         fitted = fit(model_fit; parallel=true, verbose=false)
         
         # Re-simulate from fitted model using same template
-        est_rate = exp(get_parameters_flat(fitted)[1])
+        est_rate = get_parameters_flat(fitted)[1]  # Already on natural scale
         model_resim = multistatemodel(h12; data=template)
-        set_parameters!(model_resim, (h12=[log(est_rate)],))
+        set_parameters!(model_resim, (h12=[est_rate],))
         
         Random.seed!(54321)
         sim2 = simulate(model_resim; paths=false, data=true, nsim=1)

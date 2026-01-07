@@ -198,26 +198,31 @@ h12_sp = Hazard(@formula(0 ~ 1), "sp", 1, 2; knots=collect(interior_knots))
 h13_sp = Hazard(@formula(0 ~ 1), "sp", 1, 3; knots=collect(interior_knots))
 h23_sp = Hazard(@formula(0 ~ 1), "sp", 2, 3; knots=collect(interior_knots))
 
-model_sp = multistatemodel(h12_sp, h13_sp, h23_sp; data=sim_data, surrogate=:markov)
+# For exact data (obstype=1), don't use surrogate - this enables automatic smoothing selection
+model_sp = multistatemodel(h12_sp, h13_sp, h23_sp; data=sim_data)
 
 # Set up penalization for spline smoothing
 # SplinePenalty() applies 2nd order difference penalty to all spline hazards
-# share_lambda=true means all hazards share the same smoothing parameter
+# Using share_lambda=true for a shared smoothing parameter across hazards
 penalty_spec = SplinePenalty(:all; order=2, share_lambda=true)
 
-# Fit the model with penalization
-println("\nFitting spline model with penalized likelihood (this may take a few minutes)...")
+# Note: Automatic smoothing selection via PIJCV is available but requires 
+# positive definite Hessians at the initial estimate. For this benchmark,
+# we use a fixed lambda value. In practice, lambda can be tuned via:
+#   1. select_smoothing_parameters() for exact data
+#   2. Cross-validation on held-out data
+#   3. AIC/BIC selection
+# A reasonable starting point is lambda ~ 10-100 for well-scaled problems.
+
+# Fit the model with penalized likelihood
+println("\nFitting spline model with penalized likelihood...")
 t_start = time()
 fitted_sp = fit(model_sp;
-    proposal=:markov,
     verbose=true,
-    maxiter=150,
-    tol=1e-4,
-    ess_target_initial=100,
-    max_ess=1000,
-    compute_vcov=false,
     penalty=penalty_spec,
-    lambda_init=10.0)
+    lambda_init=100.0)  # Higher lambda = more smoothing
+t_elapsed = time() - t_start
+println("Fitting complete in $(round(t_elapsed, digits=1)) seconds")
 t_elapsed = time() - t_start
 println("Fitting complete in $(round(t_elapsed, digits=1)) seconds")
 

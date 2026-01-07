@@ -49,8 +49,8 @@ end
     @testset "Very small rates (rare events)" begin
         model = create_simple_model("exp")
         
-        for log_rate in [-10.0, -15.0, -18.0]
-            set_parameters!(model, (h12 = [log_rate],))
+        for rate in [1e-5, 1e-7, 1e-8]
+            set_parameters!(model, (h12 = [rate],))
             
             hazard = model.hazards[1]
             pars = get_hazard_params(model.parameters, model.hazards)[1]
@@ -60,15 +60,15 @@ end
             h = eval_hazard(hazard, 1.0, pars, covars)
             @test isfinite(h)
             @test h > 0
-            @test h ≈ exp(log_rate) rtol=1e-6
+            @test h ≈ rate rtol=1e-6
         end
     end
     
     @testset "Moderate-large rates" begin
         model = create_simple_model("exp")
         
-        for log_rate in [0.0, 1.0, 2.0, 3.0]
-            set_parameters!(model, (h12 = [log_rate],))
+        for rate in [1.0, exp(1.0), exp(2.0), exp(3.0)]
+            set_parameters!(model, (h12 = [rate],))
             
             hazard = model.hazards[1]
             pars = get_hazard_params(model.parameters, model.hazards)[1]
@@ -77,7 +77,7 @@ end
             
             h = eval_hazard(hazard, 1.0, pars, covars)
             @test isfinite(h)
-            @test h ≈ exp(log_rate) rtol=1e-6
+            @test h ≈ rate rtol=1e-6
         end
     end
 end
@@ -88,7 +88,7 @@ end
         model = create_simple_model("wei")
         κ = 0.1
         λ = 0.1
-        set_parameters!(model, (h12 = [log(κ), log(λ)],))
+        set_parameters!(model, (h12 = [κ, λ],))
         
         hazard = model.hazards[1]
         pars = get_hazard_params(model.parameters, model.hazards)[1]
@@ -107,7 +107,7 @@ end
         model = create_simple_model("wei")
         κ = 5.0
         λ = 0.1
-        set_parameters!(model, (h12 = [log(κ), log(λ)],))
+        set_parameters!(model, (h12 = [κ, λ],))
         
         hazard = model.hazards[1]
         pars = get_hazard_params(model.parameters, model.hazards)[1]
@@ -128,7 +128,7 @@ end
         model = create_simple_model("gom")
         a = 1.0  # Large positive shape
         b = 0.01
-        set_parameters!(model, (h12 = [a, log(b)],))
+        set_parameters!(model, (h12 = [a, b],))
         
         hazard = model.hazards[1]
         pars = get_hazard_params(model.parameters, model.hazards)[1]
@@ -147,7 +147,7 @@ end
         model = create_simple_model("gom")
         a = -1.0
         b = 1.0
-        set_parameters!(model, (h12 = [a, log(b)],))
+        set_parameters!(model, (h12 = [a, b],))
         
         hazard = model.hazards[1]
         pars = get_hazard_params(model.parameters, model.hazards)[1]
@@ -177,7 +177,7 @@ end
     @testset "Exponential at large times" begin
         model = create_simple_model("exp")
         λ = 0.1
-        set_parameters!(model, (h12 = [log(λ)],))
+        set_parameters!(model, (h12 = [λ],))
         
         hazard = model.hazards[1]
         pars = get_hazard_params(model.parameters, model.hazards)[1]
@@ -196,7 +196,7 @@ end
         model = create_simple_model("wei")
         κ = 1.5
         λ = 0.01  # Small rate to keep hazard bounded
-        set_parameters!(model, (h12 = [log(κ), log(λ)],))
+        set_parameters!(model, (h12 = [κ, λ],))
         
         hazard = model.hazards[1]
         pars = get_hazard_params(model.parameters, model.hazards)[1]
@@ -213,7 +213,7 @@ end
     @testset "Cumulative hazard over large intervals" begin
         model = create_simple_model("exp")
         λ = 0.1
-        set_parameters!(model, (h12 = [log(λ)],))
+        set_parameters!(model, (h12 = [λ],))
         
         hazard = model.hazards[1]
         pars = get_hazard_params(model.parameters, model.hazards)[1]
@@ -239,7 +239,7 @@ end
         model = create_simple_model("exp"; with_covariate=true)
         λ = 0.1
         β = 2.0  # Large positive effect
-        set_parameters!(model, (h12 = [log(λ), β],))
+        set_parameters!(model, (h12 = [λ, β],))
         
         hazard = model.hazards[1]
         pars = get_hazard_params(model.parameters, model.hazards)[1]
@@ -257,7 +257,7 @@ end
         model = create_simple_model("exp"; with_covariate=true)
         λ = 0.1
         β = -2.0  # Large negative effect
-        set_parameters!(model, (h12 = [log(λ), β],))
+        set_parameters!(model, (h12 = [λ, β],))
         
         hazard = model.hazards[1]
         pars = get_hazard_params(model.parameters, model.hazards)[1]
@@ -274,7 +274,7 @@ end
         model = create_simple_model("exp"; with_covariate=true)
         λ = 0.1
         β = 1.0
-        set_parameters!(model, (h12 = [log(λ), β],))
+        set_parameters!(model, (h12 = [λ, β],))
         
         hazard = model.hazards[1]
         pars = get_hazard_params(model.parameters, model.hazards)[1]
@@ -296,7 +296,7 @@ end
     @testset "Exponential at t=0" begin
         model = create_simple_model("exp")
         λ = 0.5
-        set_parameters!(model, (h12 = [log(λ)],))
+        set_parameters!(model, (h12 = [λ],))
         
         hazard = model.hazards[1]
         pars = get_hazard_params(model.parameters, model.hazards)[1]
@@ -312,7 +312,7 @@ end
         model = create_simple_model("gom")
         a = 0.1
         b = 0.2
-        set_parameters!(model, (h12 = [a, log(b)],))
+        set_parameters!(model, (h12 = [a, b],))
         
         hazard = model.hazards[1]
         pars = get_hazard_params(model.parameters, model.hazards)[1]
@@ -326,7 +326,7 @@ end
     
     @testset "Cumulative hazard from 0 to 0" begin
         model = create_simple_model("exp")
-        set_parameters!(model, (h12 = [log(0.5)],))
+        set_parameters!(model, (h12 = [0.5],))
         
         hazard = model.hazards[1]
         pars = get_hazard_params(model.parameters, model.hazards)[1]
@@ -347,7 +347,7 @@ end
     
     @testset "eval_hazard returns Real" begin
         model = create_simple_model("exp")
-        set_parameters!(model, (h12 = [log(0.1)],))
+        set_parameters!(model, (h12 = [0.1],))
         
         hazard = model.hazards[1]
         pars = get_hazard_params(model.parameters, model.hazards)[1]
@@ -361,7 +361,7 @@ end
     
     @testset "eval_cumhaz returns Real" begin
         model = create_simple_model("exp")
-        set_parameters!(model, (h12 = [log(0.1)],))
+        set_parameters!(model, (h12 = [0.1],))
         
         hazard = model.hazards[1]
         pars = get_hazard_params(model.parameters, model.hazards)[1]

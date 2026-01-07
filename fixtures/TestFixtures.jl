@@ -208,8 +208,8 @@ function toy_two_state_transition_model()
     model = multistatemodel(h12, h21; data = data)
     set_parameters!(
         model,
-        (h12 = [log(0.1), log(2.0)],
-         h21 = [log(1.0), log(0.1), log(2.0)])
+        (h12 = [0.1, 2.0],  # exp: rate, beta (natural scale)
+         h21 = [1.0, 0.1, 2.0])  # wei: shape, scale, beta (natural scale)
     )
 
     path1 = SamplePath(1, [0.0, 8.2, 13.2, 30.0], [1, 2, 1, 1])
@@ -231,7 +231,7 @@ function toy_two_state_exp_model(; rate = 0.2, horizon = 50.0, time_transform::B
 
     h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2; time_transform = time_transform)
     model = multistatemodel(h12; data = data)
-    set_parameters!(model, (h12 = [log(rate)],))
+    set_parameters!(model, (h12 = [rate],))
     return (; model, rate, data)
 end
 
@@ -411,7 +411,7 @@ function toy_tvc_exp_model(;
     
     h12 = Hazard(@formula(0 ~ x), "exp", 1, 2; linpred_effect = linpred_effect, time_transform = true)
     model = multistatemodel(h12; data = data)
-    set_parameters!(model, (h12 = [log(rate), beta],))
+    set_parameters!(model, (h12 = [rate, beta],))
     
     return (; model, data, config = (; t_changes, x_values, horizon, rate, beta, linpred_effect))
 end
@@ -433,7 +433,7 @@ function toy_tvc_wei_model(;
     
     h12 = Hazard(@formula(0 ~ x), "wei", 1, 2; linpred_effect = linpred_effect, time_transform = true)
     model = multistatemodel(h12; data = data)
-    set_parameters!(model, (h12 = [log(shape), log(scale), beta],))
+    set_parameters!(model, (h12 = [shape, scale, beta],))
     
     return (; model, data, config = (; t_changes, x_values, horizon, shape, scale, beta, linpred_effect))
 end
@@ -455,8 +455,8 @@ function toy_tvc_gom_model(;
     
     h12 = Hazard(@formula(0 ~ x), "gom", 1, 2; linpred_effect = linpred_effect, time_transform = true)
     model = multistatemodel(h12; data = data)
-    # Gompertz: shape is unconstrained (stored as-is), scale is positive (stored as log)
-    set_parameters!(model, (h12 = [shape, log(scale), beta],))
+    # Gompertz: both shape and scale now on natural scale (scale is positive via box constraints)
+    set_parameters!(model, (h12 = [shape, scale, beta],))
     
     return (; model, data, config = (; t_changes, x_values, horizon, shape, scale, beta, linpred_effect))
 end
@@ -497,9 +497,9 @@ function toy_illness_death_tvc_model(;
     
     model = multistatemodel(h12, h13, h23; data = data)
     set_parameters!(model, (
-        h12 = [log(0.3), 0.4],   # exp: log(rate), beta
-        h13 = [log(1.2), log(0.2), 0.3],  # wei: log(shape), log(scale), beta
-        h23 = [log(0.5), 0.2]    # exp: log(rate), beta
+        h12 = [0.3, 0.4],   # exp: rate, beta (natural scale)
+        h13 = [1.2, 0.2, 0.3],  # wei: shape, scale, beta (natural scale)
+        h23 = [0.5, 0.2]    # exp: rate, beta (natural scale)
     ))
     
     return (; model, data, config = (; t_changes, x_values, horizon, linpred_effect))
@@ -541,8 +541,8 @@ function toy_semi_markov_tvc_model(;
     
     model = multistatemodel(h12, h21; data = data)
     set_parameters!(model, (
-        h12 = [log(1.5), log(0.5), 0.3],  # wei: log(shape), log(scale), beta
-        h21 = [log(1.3), log(0.4), 0.2]   # wei: log(shape), log(scale), beta
+        h12 = [1.5, 0.5, 0.3],  # wei: shape, scale, beta (natural scale)
+        h21 = [1.3, 0.4, 0.2]   # wei: shape, scale, beta (natural scale)
     ))
     
     return (; model, data, config = (; t_changes, x_values, horizon, linpred_effect))

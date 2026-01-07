@@ -175,7 +175,7 @@ end
         obstype = [1, 1, 1, 1, 1]
     )
     model = multistatemodel(h12; data=template)
-    set_parameters!(model, (h12 = [-1.0],))
+    set_parameters!(model, (h12 = [exp(-1.0)],))  # rate ≈ 0.37
     
     @testset "autotmax=true (default)" begin
         Random.seed!(12345)

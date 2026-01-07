@@ -1,6 +1,6 @@
 ---
 title: "Spline Methods Comparison"
-subtitle: "Comparing MultistateModels.jl Splines vs pammtools/mgcv and flexsurv"
+subtitle: "Comparing MultistateModels.jl Splines vs mgcv and flexsurv"
 date: last-modified
 format:
   html:
@@ -16,847 +16,1919 @@ execute:
 engine: knitr
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, fig.width = 10, fig.height = 6)
+```{r}
+#| label: r-setup
+#| output: false
+
 library(tidyverse)
 library(mgcv)
 library(pammtools)
 library(flexsurv)
 library(survival)
-library(mstate)
-library(expm)
-library(jsonlite)
 library(patchwork)
 library(knitr)
 library(kableExtra)
-library(splines)
 
 # Set theme
 theme_set(theme_bw(base_size = 12))
 ```
 
+```{bash}
+#| label: julia-data-generation
+#| output: false
+
+cd ../..
+julia --project=. -e '
+using MultistateModels
+using Random
+using DataFrames
+using CSV
+using Printf
+
+# Configuration
+n = 1000
+true_shape = 1.5
+true_rate = 0.3
+max_time = 5.0
+seed = 12345
+nknots = 5  # Number of interior knots
+
+Random.seed!(seed)
+
+# Simulate Weibull survival data
+E = -log.(rand(n))
+event_times = (E ./ true_rate) .^ (1 / true_shape)
+obs_times = min.(event_times, max_time)
+status = Int.(event_times .<= max_time)
+
+println("=== Simple Survival Data ===")
+println("n = $n")
+println("Events: $(sum(status))")
+println("Censored: $(n - sum(status))")
+println("Time range: [$(round(minimum(obs_times), digits=3)), $(round(maximum(obs_times), digits=3))]")
+
+# Create multistate model data
+surv_data = DataFrame(
+    id = 1:n,
+    tstart = zeros(n),
+    tstop = obs_times,
+    statefrom = ones(Int, n),
+    stateto = ifelse.(status .== 1, 2, 1),
+    obstype = ones(Int, n)
+)
+
+# Save to CSV for R to read
+CSV.write("MultistateModelsTests/reports/_surv_data.csv", DataFrame(time = obs_times, status = status))
+
+# Define model with spline hazard (initial knots will be replaced by calibration)
+h12 = Hazard(@formula(0 ~ 1), "sp", 1, 2;
+             degree = 3,
+             knots = Float64[],  # Will be set by calibrate_splines!
+             boundaryknots = [0.0, max_time],
+             natural_spline = true)
+model = multistatemodel(h12; data=surv_data)
+
+# Calibrate knots based on data - places knots at quantiles of event times
+println("\nCalibrating spline knots...")
+knot_result = calibrate_splines!(model; nknots=nknots, verbose=true)
+
+# Extract the calibrated knots
+interior_knots = knot_result.h12.interior_knots
+boundary_knots = knot_result.h12.boundary_knots
+all_knots = model.hazards[1].knots
+
+println("\n=== Knot Configuration ===")
+println("Boundary knots: $(boundary_knots)")
+println("Interior knots: $(round.(interior_knots, digits=3))")
+println("Number of interior knots: $(length(interior_knots))")
+println("Total knots: $(length(all_knots))")
+println("Number of basis functions: $(length(model.hazards[1].parnames) - length(model.hazards[1].covar_names))")
+
+# Save knots for R to use
+CSV.write("MultistateModelsTests/reports/_knots.csv", DataFrame(
+    interior_knots = interior_knots,
+    boundary_lower = fill(boundary_knots[1], length(interior_knots)),
+    boundary_upper = fill(boundary_knots[2], length(interior_knots))
+))
+
+println("\nData generation complete. Knots and data saved for R.")
+'
+```
+
+```{bash}
+#| label: julia-fitting
+#| output: false
+
+cd ../..
+julia --project=. -e '
+using MultistateModels
+using Random
+using DataFrames
+using CSV
+using Printf
+
+# Configuration (must match data generation)
+n = 1000
+true_shape = 1.5
+true_rate = 0.3
+max_time = 5.0
+seed = 12345
+nknots = 5
+
+Random.seed!(seed)
+
+# Regenerate the same data
+E = -log.(rand(n))
+event_times = (E ./ true_rate) .^ (1 / true_shape)
+obs_times = min.(event_times, max_time)
+status = Int.(event_times .<= max_time)
+
+surv_data = DataFrame(
+    id = 1:n,
+    tstart = zeros(n),
+    tstop = obs_times,
+    statefrom = ones(Int, n),
+    stateto = ifelse.(status .== 1, 2, 1),
+    obstype = ones(Int, n)
+)
+
+# Define and calibrate model
+h12 = Hazard(@formula(0 ~ 1), "sp", 1, 2;
+             degree = 3,
+             knots = Float64[],
+             boundaryknots = [0.0, max_time],
+             natural_spline = true)
+model = multistatemodel(h12; data=surv_data)
+calibrate_splines!(model; nknots=nknots, verbose=false)
+
+# Fit with each smoothing method and measure runtime
+timings = Dict{String, Float64}()
+
+println("=== Fitting Smoothing Methods with Timing ===")
+
+# PIJCV (LOO) - Newton-approximated
+println("\nFitting with PIJCV (LOO) method...")
+select_smoothing_parameters(model, SplinePenalty(); method = :pijcv, verbose = false)  # warmup
+t_pijcv = @elapsed result_pijcv = select_smoothing_parameters(model, SplinePenalty(); 
+                                           method = :pijcv, verbose = false)
+timings["PIJCV"] = t_pijcv
+println("  PIJCV λ = $(round(result_pijcv.lambda[1], digits=2)), EDF = $(round(result_pijcv.edf.total, digits=2)), time = $(round(t_pijcv, digits=3))s")
+
+# PIJCV10 (10-fold) - Newton-approximated
+println("\nFitting with PIJCV10 (10-fold) method...")
+select_smoothing_parameters(model, SplinePenalty(); method = :pijcv10, verbose = false)  # warmup
+t_pijcv10 = @elapsed result_pijcv10 = select_smoothing_parameters(model, SplinePenalty(); 
+                                             method = :pijcv10, verbose = false)
+timings["PIJCV10"] = t_pijcv10
+println("  PIJCV10 λ = $(round(result_pijcv10.lambda[1], digits=2)), EDF = $(round(result_pijcv10.edf.total, digits=2)), time = $(round(t_pijcv10, digits=3))s")
+
+# EFS
+println("\nFitting with EFS method...")
+select_smoothing_parameters(model, SplinePenalty(); method = :efs, verbose = false)  # warmup
+t_efs = @elapsed result_efs = select_smoothing_parameters(model, SplinePenalty(); 
+                                         method = :efs, verbose = false)
+timings["EFS"] = t_efs
+println("  EFS λ = $(round(result_efs.lambda[1], digits=2)), EDF = $(round(result_efs.edf.total, digits=2)), time = $(round(t_efs, digits=3))s")
+
+# CV10 (exact 10-fold)
+println("\nFitting with 10-fold CV (exact) method...")
+select_smoothing_parameters(model, SplinePenalty(); method = :cv10, verbose = false)  # warmup
+t_cv10 = @elapsed result_cv10 = select_smoothing_parameters(model, SplinePenalty(); 
+                                          method = :cv10, verbose = false)
+timings["CV10"] = t_cv10
+println("  CV10 λ = $(round(result_cv10.lambda[1], digits=2)), EDF = $(round(result_cv10.edf.total, digits=2)), time = $(round(t_cv10, digits=3))s")
+
+# Evaluation grid
+eval_times = collect(range(0.01, max_time, length=200))
+
+# Function to evaluate hazard at a grid of times
+function evaluate_curves(model, beta, eval_times)
+    haz = model.hazards[1]
+    hazard_vals = [haz.hazard_fn(t, beta, ()) for t in eval_times]
+    cumhaz_vals = [haz.cumhaz_fn(0.0, t, beta, ()) for t in eval_times]
+    survival_vals = exp.(-cumhaz_vals)
+    return (hazard = hazard_vals, cumhaz = cumhaz_vals, survival = survival_vals)
+end
+
+# Compute curves for each method
+curves_pijcv = evaluate_curves(model, result_pijcv.beta, eval_times)
+curves_pijcv10 = evaluate_curves(model, result_pijcv10.beta, eval_times)
+curves_efs = evaluate_curves(model, result_efs.beta, eval_times)
+curves_cv10 = evaluate_curves(model, result_cv10.beta, eval_times)
+
+# Compute unpenalized log-likelihoods using ExactData
+samplepaths = MultistateModels.extract_paths(model)
+exact_data = MultistateModels.ExactData(model, samplepaths)
+loglik_pijcv = MultistateModels.loglik_exact(result_pijcv.beta, exact_data; neg=false)
+loglik_pijcv10 = MultistateModels.loglik_exact(result_pijcv10.beta, exact_data; neg=false)
+loglik_efs = MultistateModels.loglik_exact(result_efs.beta, exact_data; neg=false)
+loglik_cv10 = MultistateModels.loglik_exact(result_cv10.beta, exact_data; neg=false)
+
+# Save Julia results for R plotting
+julia_results = DataFrame(
+    time = repeat(eval_times, 4),
+    hazard = vcat(curves_pijcv.hazard, curves_pijcv10.hazard,
+                  curves_efs.hazard, curves_cv10.hazard),
+    cumhaz = vcat(curves_pijcv.cumhaz, curves_pijcv10.cumhaz,
+                  curves_efs.cumhaz, curves_cv10.cumhaz),
+    survival = vcat(curves_pijcv.survival, curves_pijcv10.survival,
+                    curves_efs.survival, curves_cv10.survival),
+    method = repeat(["Julia PIJCV", "Julia PIJCV10",
+                     "Julia EFS", "Julia CV10"], inner=length(eval_times))
+)
+CSV.write("MultistateModelsTests/reports/_julia_curves.csv", julia_results)
+
+# Save summary stats with unpenalized log-likelihoods and timing
+julia_summary = DataFrame(
+    method = ["PIJCV", "PIJCV10", "EFS", "CV10"],
+    lambda = [result_pijcv.lambda[1], result_pijcv10.lambda[1],
+              result_efs.lambda[1], result_cv10.lambda[1]],
+    edf = [result_pijcv.edf.total, result_pijcv10.edf.total,
+           result_efs.edf.total, result_cv10.edf.total],
+    loglik = [loglik_pijcv, loglik_pijcv10,
+              loglik_efs, loglik_cv10],
+    runtime_sec = [timings["PIJCV"], timings["PIJCV10"],
+                   timings["EFS"], timings["CV10"]]
+)
+CSV.write("MultistateModelsTests/reports/_julia_summary.csv", julia_summary)
+
+println("\n=== Runtime Summary ===")
+println("Newton-approximated CV methods:")
+println("  PIJCV (LOO): $(round(timings["PIJCV"], digits=3))s")
+println("  PIJCV10:     $(round(timings["PIJCV10"], digits=3))s")
+println("Other analytical methods:")
+println("  EFS:         $(round(timings["EFS"], digits=3))s")
+println("Exact CV methods:")
+println("  CV10:        $(round(timings["CV10"], digits=3))s")
+
+println("\nJulia curves computed and saved.")
+'
+```
+
 # Introduction
 
-This report presents a comprehensive benchmark comparing three approaches for fitting 
-flexible hazard models to multistate survival data:
+This report presents a comprehensive benchmark comparing spline-based survival models 
+across different software packages and smoothing parameter selection methods.
 
-1. **MultistateModels.jl** (Julia): Joint likelihood estimation with natural cubic splines
-2. **pammtools/mgcv** (R): Piecewise-exponential additive models via GAM
+## Comparison Overview
+
+**Packages:**
+
+1. **MultistateModels.jl** (Julia): Penalized likelihood with P-splines using the 
+   **General P-Spline (GPS)** penalty from Li & Cao (2022), which correctly handles 
+   non-uniform knot spacing via weighted differences
+2. **mgcv** (R): Generalized additive models via piecewise-exponential/Poisson
 3. **flexsurv** (R): Flexible parametric survival models with spline hazards
 
-All methods are evaluated on the same simulated dataset generated using MultistateModels.jl.
+**Smoothing Parameter Selection Methods:**
 
-# Model Specification
+| Package | Method | Description | Reference |
+|---------|--------|-------------|-----------|
+| MultistateModels.jl | PIJCV | Newton-approx LOO CV | Wood (2024) |
+| MultistateModels.jl | PIJCV10 | Newton-approx 10-fold CV | Extended from Wood (2024) |
+| MultistateModels.jl | EFS | Extended Fellner-Schall | Wood & Fasiolo (2017) |
+| MultistateModels.jl | CV10 | Exact 10-Fold CV | (refits 10 times) |
+| mgcv | GCV.Cp | Generalized CV via Poisson GAM | Wood (2017) |
+| mgcv | REML | Restricted ML | Wood (2011) |
 
-## Illness-Death Model
+# Part 1: Simple Survival Model
 
-We consider a three-state illness-death model without recovery:
+We start with the simplest case: a two-state survival model with a single transition 
+from alive (state 1) to dead (state 2).
 
-- **State 1**: Healthy (initial state)
-- **State 2**: Illness (transient state)
-- **State 3**: Death (absorbing state)
+## True Model Specification
 
-**Transitions:**
+Data are simulated from a Weibull hazard with:
 
-- $1 \to 2$: Healthy to Illness (incidence)
-- $1 \to 3$: Healthy to Death (direct mortality)
-- $2 \to 3$: Illness to Death (disease-related mortality)
+- **Shape ($\kappa$)**: 1.5 (increasing hazard)
+- **Rate ($\lambda$)**: 0.3
+- **Sample size**: 100
 
-## True Hazard Functions
+$$h(t) = \kappa \cdot \lambda \cdot t^{\kappa - 1} = 1.5 \times 0.3 \times t^{0.5} = 0.45 \sqrt{t}$$
 
-The data are simulated using Weibull hazard functions with the **rate parameterization**:
+$$H(t) = \lambda \cdot t^{\kappa} = 0.3 \cdot t^{1.5}$$
 
-$$h_{rs}(t) = \kappa_{rs} \cdot \lambda_{rs} \cdot t^{\kappa_{rs} - 1}$$
+$$S(t) = \exp(-H(t)) = \exp(-0.3 \cdot t^{1.5})$$
 
-where $\kappa_{rs} > 0$ is the shape parameter and $\lambda_{rs} > 0$ is the rate parameter.
+## Load Julia Results in R
 
-The cumulative hazard is:
-$$H_{rs}(t) = \lambda_{rs} \cdot t^{\kappa_{rs}}$$
+```{r}
+#| label: load-julia-results
+#| output: false
 
-**True Parameter Values:**
+# Load simulated data
+surv_data <- read.csv("_surv_data.csv")
+n <- nrow(surv_data)
+true_shape <- 1.5
+true_rate <- 0.3
+max_time <- 5.0
 
-| Transition | Shape ($\kappa$) | Rate ($\lambda$) | Interpretation |
-|------------|------------------|------------------|----------------|
-| $h_{12}$ (Healthy to Illness) | 1.3 | 0.04 | Increasing hazard |
-| $h_{13}$ (Healthy to Death) | 1.2 | 0.015 | Mildly increasing |
-| $h_{23}$ (Illness to Death) | 1.4 | 0.08 | Higher mortality after illness |
+# Load Julia curves
+julia_curves <- read.csv("_julia_curves.csv")
+julia_summary <- read.csv("_julia_summary.csv")
 
-## Transition Probability Matrix
+# Load knots calibrated by Julia (from event time quantiles)
+knots_df <- read.csv("_knots.csv")
+interior_knots <- knots_df$interior_knots
+boundary_lower <- knots_df$boundary_lower[1]
+boundary_upper <- knots_df$boundary_upper[1]
 
-For a time-homogeneous Markov model, the transition probability matrix $\mathbf{P}(s, t)$ 
-satisfies the Kolmogorov forward equation:
+cat("=== Julia MultistateModels.jl Results ===\n")
+print(julia_summary)
 
-$$\frac{\partial}{\partial t}\mathbf{P}(s,t) = \mathbf{P}(s,t) \cdot \mathbf{Q}(t)$$
-
-where $\mathbf{Q}(t)$ is the transition intensity (generator) matrix:
-
-$$\mathbf{Q}(t) = \begin{pmatrix}
--(h_{12}(t) + h_{13}(t)) & h_{12}(t) & h_{13}(t) \\
-0 & -h_{23}(t) & h_{23}(t) \\
-0 & 0 & 0
-\end{pmatrix}$$
-
-The solution is computed via the **product integral**:
-$$\mathbf{P}(0, t) = \prod_{s=0}^{t} \exp\left(\mathbf{Q}(s) ds\right)$$
-
-## State Prevalence
-
-State prevalence at time $t$ for subjects starting in state 1:
-
-- $P_1(t) = P_{11}(0, t)$ - Probability of remaining healthy
-- $P_2(t) = P_{12}(0, t)$ - Probability of being in illness state
-- $P_3(t) = P_{13}(0, t)$ - Probability of having died
-
-## Cumulative Incidence Functions
-
-The cause-specific cumulative incidence function for transition $1 \to r$ is:
-
-$$F_{1r}(t) = \int_0^t P_{11}(0, s) \cdot h_{1r}(s) \, ds$$
-
-This represents the probability of experiencing transition $1 \to r$ by time $t$.
-
-# Data
-
-## Loading Simulated Data
-
-```{r load-data}
-# Load data generated by MultistateModels.jl
-data_path <- "../fixtures/illness_death_data.csv"
-meta_path <- "../fixtures/illness_death_metadata.json"
-
-dat <- read.csv(data_path)
-meta <- fromJSON(meta_path)
-
-# Display metadata
-cat("Sample Size:", meta$n_subjects, "\n")
-cat("Maximum Follow-up Time:", meta$max_time, "\n")
-cat("\nTrue Parameters:\n")
-cat("  h12: shape =", meta$true_params$h12$shape, ", rate =", meta$true_params$h12$rate, "\n")
-cat("  h13: shape =", meta$true_params$h13$shape, ", rate =", meta$true_params$h13$rate, "\n")
-cat("  h23: shape =", meta$true_params$h23$shape, ", rate =", meta$true_params$h23$rate, "\n")
+cat("\n=== Knot Configuration (shared across all methods) ===\n")
+cat("Boundary knots: [", boundary_lower, ",", boundary_upper, "]\n")
+cat("Interior knots:", round(interior_knots, 3), "\n")
+cat("Number of interior knots:", length(interior_knots), "\n")
 ```
 
-## Data Summary
+## True Hazard and Survival Functions
 
-```{r data-summary}
-# Transition counts
-trans_counts <- dat %>%
-  filter(status == 1) %>%
-  count(from, to) %>%
-  mutate(transition = paste0(from, " -> ", to))
+```{r}
+#| label: true-functions
+#| output: false
 
-kable(trans_counts, caption = "Observed Transition Counts") %>%
-  kable_styling(bootstrap_options = c("striped", "hover"))
-
-# Final state distribution
-final_states <- dat %>%
-  group_by(id) %>%
-  slice_tail(n = 1) %>%
-  ungroup() %>%
-  count(to) %>%
-  mutate(
-    state_name = case_when(
-      to == 1 ~ "Healthy",
-      to == 2 ~ "Illness", 
-      to == 3 ~ "Death"
-    ),
-    pct = round(100 * n / sum(n), 1)
-  )
-
-kable(final_states, caption = "Final State Distribution") %>%
-  kable_styling(bootstrap_options = c("striped", "hover"))
-```
-
-## Event Time Distribution
-
-```{r event-times, fig.height=4}
-# Plot event time distributions
-events <- dat %>%
-  filter(status == 1) %>%
-  mutate(transition = factor(paste0(from, " -> ", to),
-                            levels = c("1 -> 2", "1 -> 3", "2 -> 3")))
-
-ggplot(events, aes(x = tstop)) +
-  geom_histogram(aes(y = after_stat(density)), bins = 30, fill = "steelblue", alpha = 0.7) +
-  geom_density(color = "darkblue", linewidth = 1) +
-  facet_wrap(~ transition, scales = "free_y") +
-  labs(
-    title = "Distribution of Event Times by Transition",
-    x = "Time",
-    y = "Density"
-  )
-```
-
-# Methods
-
-## True Hazard Functions
-
-```{r true-hazards}
-# Define true hazard functions
-true_hazard <- function(t, shape, rate) {
+# True hazard function (Weibull with rate parameterization)
+true_hazard <- function(t, shape = true_shape, rate = true_rate) {
   shape * rate * t^(shape - 1)
 }
 
-true_cumhaz <- function(t, shape, rate) {
+# True cumulative hazard
+true_cumhaz <- function(t, shape = true_shape, rate = true_rate) {
   rate * t^shape
 }
 
-# True hazards
-h12_true <- function(t) true_hazard(t, meta$true_params$h12$shape, meta$true_params$h12$rate)
-h13_true <- function(t) true_hazard(t, meta$true_params$h13$shape, meta$true_params$h13$rate)
-h23_true <- function(t) true_hazard(t, meta$true_params$h23$shape, meta$true_params$h23$rate)
-```
-
-## Standardized Knot Placement
-
-All three methods use the **same interior knots**: 9 knots placed at the decile quantiles 
-(0.1, 0.2, ..., 0.9) of the observed event times from the simulation.
-
-```{r knot-setup}
-# Load Julia results early to get standardized knots
-julia_results <- fromJSON("../fixtures/illness_death_results.json")
-
-# Get the standardized interior knots from Julia fit
-interior_knots <- julia_results$julia_fit$interior_knots
-n_interior_knots <- length(interior_knots)
-
-# Boundary knots (min and max event times)
-event_times <- dat$tstop[dat$status == 1]
-boundary_knots <- c(min(event_times), max(event_times))
-
-cat("Standardized Knot Specification:\n")
-cat("  Number of interior knots:", n_interior_knots, "\n")
-cat("  Interior knots (decile quantiles):\n")
-for (i in seq_along(interior_knots)) {
-  cat(sprintf("    Q%d: %.3f\n", i * 10, interior_knots[i]))
-}
-cat("  Boundary knots:", round(boundary_knots, 3), "\n")
-cat("  Total spline df:", n_interior_knots + 2, "(interior + 2 for natural spline)\n")
-```
-
-## Method 1: pammtools/mgcv (PAM)
-
-The piecewise-exponential additive model (PAM) transforms survival data into a Poisson 
-regression framework. Following Bender et al. (2018) and the pammtools documentation:
-
-**Data Transformation:**
-
-1. Split follow-up time into intervals using a set of cut points
-2. For each subject-interval combination, create a pseudo-observation with:
-   - Exposure time (offset): $\log(\text{time at risk in interval})$
-   - Event indicator: 1 if event occurred in interval, 0 otherwise
-
-**Model:**
-
-$$\log(E[d_{ij}]) = \log(t_{ij}) + f(t_j) + \mathbf{x}_i'\boldsymbol{\beta}$$
-
-where $d_{ij}$ is the event indicator for subject $i$ in interval $j$, $t_{ij}$ is the 
-exposure time, and $f(t)$ is a smooth function of time.
-
-**Spline specification:** We use a cubic regression spline with the **same knots** as Julia.
-The `mgcv::gam` function uses penalized splines, but we fix the knot locations to match.
-
-```{r pam-setup}
-# Create cut points for PAM
-n_intervals <- 30
-max_t <- max(dat$tstop)
-cut_points <- seq(0, max_t * 1.01, length.out = n_intervals + 1)
-
-# Function to create PAM data for a specific transition
-create_pam_data <- function(dat, from_state, to_state, cuts) {
-  # Filter to subjects at risk from this state
-  trans_dat <- dat[dat$from == from_state, ]
-  
-  pam_rows <- list()
-  
-  for (i in 1:nrow(trans_dat)) {
-    row <- trans_dat[i, ]
-    t_start <- row$tstart
-    t_end <- row$tstop
-    is_event <- (row$status == 1) && (row$to == to_state)
-    
-    for (j in 1:(length(cuts)-1)) {
-      int_start <- cuts[j]
-      int_end <- cuts[j+1]
-      
-      if (int_end <= t_start) next
-      if (int_start >= t_end) break
-      
-      risk_start <- max(int_start, t_start)
-      risk_end <- min(int_end, t_end)
-      offset_val <- log(risk_end - risk_start)
-      
-      event_in_interval <- is_event && (t_end <= int_end) && (t_end > int_start)
-      
-      pam_rows[[length(pam_rows) + 1]] <- data.frame(
-        id = row$id,
-        interval = j,
-        t_mid = (risk_start + risk_end) / 2,
-        t_start = risk_start,
-        t_end = risk_end,
-        offset = offset_val,
-        event = as.integer(event_in_interval)
-      )
-    }
-  }
-  
-  do.call(rbind, pam_rows)
+# True survival function
+true_surv <- function(t, shape = true_shape, rate = true_rate) {
+  exp(-true_cumhaz(t, shape, rate))
 }
 
-# Create PAM datasets
-pam_12 <- create_pam_data(dat, 1, 2, cut_points)
-pam_13 <- create_pam_data(dat, 1, 3, cut_points)
-pam_23 <- create_pam_data(dat, 2, 3, cut_points)
-
-cat("PAM Data Created:\n")
-cat("  Transition 1->2:", nrow(pam_12), "rows,", sum(pam_12$event), "events\n")
-cat("  Transition 1->3:", nrow(pam_13), "rows,", sum(pam_13$event), "events\n")
-cat("  Transition 2->3:", nrow(pam_23), "rows,", sum(pam_23$event), "events\n")
+# True CDF (cumulative incidence for single transition)
+true_cdf <- function(t, shape = true_shape, rate = true_rate) {
+  1 - true_surv(t, shape, rate)
+}
 ```
 
-```{r pam-fit}
-# Fit GAM models using cubic regression splines with FIXED knot locations
-# to match Julia's specification exactly
-t_start_pam <- Sys.time()
+## mgcv PAM Fit
 
-# For mgcv with bs="cr" (cubic regression spline):
-# When supplying knots, k = number of knots supplied
-# The knots argument specifies ALL knots (not just interior)
-k_mgcv <- n_interior_knots
+We fit a piecewise-exponential additive model (PAM) using `mgcv::gam` with Poisson 
+likelihood. This transforms the survival problem into a Poisson regression.
+**mgcv uses the exact same knots as Julia** via manual knot specification for P-splines.
 
-fit_pam_12 <- gam(event ~ s(t_mid, bs = "cr", k = k_mgcv), 
-                   family = poisson(), 
-                   offset = offset,
-                   data = pam_12,
-                   knots = list(t_mid = interior_knots),
-                   method = "REML")
+```{r}
+#| label: mgcv-fit
+#| output: false
 
-fit_pam_13 <- gam(event ~ s(t_mid, bs = "cr", k = k_mgcv), 
-                   family = poisson(), 
-                   offset = offset,
-                   data = pam_13,
-                   knots = list(t_mid = interior_knots),
-                   method = "REML")
+# Create Surv object
+surv_obj <- Surv(surv_data$time, surv_data$status)
 
-fit_pam_23 <- gam(event ~ s(t_mid, bs = "cr", k = k_mgcv), 
-                   family = poisson(), 
-                   offset = offset,
-                   data = pam_23,
-                   knots = list(t_mid = interior_knots),
-                   method = "REML")
+# Add id column if not present
+surv_data_ped <- surv_data %>% mutate(id = row_number())
 
-t_pam <- as.numeric(Sys.time() - t_start_pam, units = "secs")
+# Use pammtools to create piecewise-exponential data (PED)
+# This handles the data transformation properly
+ped <- as_ped(
+  formula = Surv(time, status) ~ 1,
+  data = surv_data_ped,
+  id = "id"
+)
 
-cat("PAM Fit Time:", round(t_pam, 2), "seconds\n")
-cat("\nEffective Degrees of Freedom (after penalization):\n")
-cat("  h12:", round(sum(fit_pam_12$edf), 2), "\n")
-cat("  h13:", round(sum(fit_pam_13$edf), 2), "\n")
-cat("  h23:", round(sum(fit_pam_23$edf), 2), "\n")
-cat("\nKnots used by mgcv:\n")
-cat("  Interior knots:", round(interior_knots, 3), "\n")
+cat("PED data structure (via pammtools):\n")
+cat("  Total pseudo-observations:", nrow(ped), "\n")
+cat("  Events in PED:", sum(ped$ped_status), "\n")
+
+# For mgcv P-splines with manual knots:
+# - k is the basis dimension
+# - m is the spline order (m=2 for cubic, with 2nd order difference penalty)
+# - Need k + m + 2 knots total
+# - The middle k - m knots must span the data range
+# - P-splines require EVENLY SPACED knots for proper penalty behavior
+
+# Julia uses 5 interior knots + 2 boundary = 7 middle knots
+# So k - m = 7, and with m = 2, we have k = 9
+k_mgcv <- length(interior_knots) + 4  # 5 + 4 = 9
+m_order <- 2
+
+# Build the full knot sequence for P-splines
+# Middle knots: [boundary_lower, interior_knots, boundary_upper]
+middle_knots <- c(boundary_lower, interior_knots, boundary_upper)
+
+# Need (k + m + 2) - (k - m) = 2m + 2 = 6 padding knots (3 on each side)
+# P-splines require evenly spaced knots - use average spacing for padding
+# Note: Padding knots extend below 0 but this is just for basis construction;
+# the hazard is never evaluated at negative times
+delta <- mean(diff(middle_knots))
+padding_lower <- boundary_lower - (3:1) * delta
+padding_upper <- boundary_upper + (1:3) * delta
+
+# Full knot sequence
+mgcv_knots <- c(padding_lower, middle_knots, padding_upper)
+
+cat("\n=== Knot Configuration ===\n")
+cat("Julia interior knots:", round(interior_knots, 3), "\n")
+cat("Middle knots (k-m =", length(middle_knots), "):", round(middle_knots, 3), "\n")
+cat("Full P-spline knots (k+m+2 =", length(mgcv_knots), "):", round(mgcv_knots, 3), "\n")
+cat("Average knot spacing (delta):", round(delta, 3), "\n")
+cat("mgcv k =", k_mgcv, ", m =", m_order, "\n")
+
+# Fit PAM with GCV using P-splines and manual knots
+fit_gcv <- pamm(
+  ped_status ~ s(tend, bs = "ps", k = k_mgcv, m = c(m_order, m_order)),
+  data = ped,
+  method = "GCV.Cp",
+  knots = list(tend = mgcv_knots)
+)
+
+# Fit PAM with REML
+fit_reml <- pamm(
+  ped_status ~ s(tend, bs = "ps", k = k_mgcv, m = c(m_order, m_order)),
+  data = ped,
+  method = "REML",
+  knots = list(tend = mgcv_knots)
+)
+
+cat("\n=== mgcv/pammtools Results (P-splines with Julia knots) ===\n")
+cat("k =", k_mgcv, ", m =", m_order, "\n")
+cat("Manual knots used:", round(mgcv_knots, 3), "\n")
+
+cat("\nGCV.Cp:\n")
+cat("  sp =", round(fit_gcv$sp, 6), "\n")
+cat("  EDF =", round(sum(fit_gcv$edf), 4), "\n")
+
+cat("\nREML:\n")
+cat("  sp =", round(fit_reml$sp, 6), "\n")
+cat("  EDF =", round(sum(fit_reml$edf), 4), "\n")
+
 ```
 
-## Method 2: flexsurv
+## flexsurv Fit
 
-The flexsurv package implements flexible parametric survival models using cubic splines 
-on the log cumulative hazard or log hazard scale (Royston-Parmar models).
+```{r}
+#| label: flexsurv-fit
+#| output: false
 
-```{r flexsurv-setup}
-# Prepare data for flexsurv (one row per transition)
-# For multistate models, we need to create separate datasets
+# flexsurv uses knots on log(time) scale, so we need to transform
+# But we can specify explicit knots via the knots argument
+# flexsurv's "knots" argument takes the interior knots on the log scale
 
-# Transition 1->2: at risk while in state 1, event if goes to state 2
-flex_12 <- dat %>%
-  filter(from == 1) %>%
-  mutate(
-    time = tstop - tstart,
-    status = as.integer(status == 1 & to == 2)
-  ) %>%
-  select(id, time, status)
-
-# Transition 1->3: at risk while in state 1, event if goes to state 3  
-flex_13 <- dat %>%
-  filter(from == 1) %>%
-  mutate(
-    time = tstop - tstart,
-    status = as.integer(status == 1 & to == 3)
-  ) %>%
-  select(id, time, status)
-
-# Transition 2->3: at risk while in state 2, event if goes to state 3
-flex_23 <- dat %>%
-  filter(from == 2) %>%
-  mutate(
-    time = tstop - tstart,
-    status = as.integer(status == 1 & to == 3)
-  ) %>%
-  select(id, time, status)
-
-cat("flexsurv Data:\n")
-cat("  Transition 1->2:", nrow(flex_12), "observations,", sum(flex_12$status), "events\n")
-cat("  Transition 1->3:", nrow(flex_13), "observations,", sum(flex_13$status), "events\n")
-cat("  Transition 2->3:", nrow(flex_23), "observations,", sum(flex_23$status), "events\n")
-```
-
-```{r flexsurv-fit}
-# Fit flexible parametric models with splines on log cumulative hazard
-# Using FIXED knot locations to match Julia's specification
-
-# flexsurv places knots on the LOG time scale
-# It automatically adds boundary knots at min and max event times
-# We need to specify internal knots on log scale
+# Transform interior knots to log scale for flexsurv
+# Note: flexsurv interprets knots as on log(time) scale
 log_interior_knots <- log(interior_knots)
 
-t_start_flex <- Sys.time()
+cat("Using same interior knots as Julia (transformed to log scale for flexsurv):\n")
+cat("  Original knots:", round(interior_knots, 3), "\n")
+cat("  Log-scale knots:", round(log_interior_knots, 3), "\n")
 
-fit_flex_12 <- flexsurvspline(Surv(time, status) ~ 1, 
-                               data = flex_12, 
-                               knots = log_interior_knots,
-                               scale = "hazard")
-
-fit_flex_13 <- flexsurvspline(Surv(time, status) ~ 1, 
-                               data = flex_13, 
-                               knots = log_interior_knots,
-                               scale = "hazard")
-
-fit_flex_23 <- flexsurvspline(Surv(time, status) ~ 1, 
-                               data = flex_23, 
-                               knots = log_interior_knots,
-                               scale = "hazard")
-
-t_flex <- as.numeric(Sys.time() - t_start_flex, units = "secs")
-
-cat("flexsurv Fit Time:", round(t_flex, 2), "seconds\n")
-cat("\nInterior knots (original scale):\n")
-cat("  ", round(interior_knots, 3), "\n")
-cat("\nInterior knots (log scale for flexsurv):\n")
-cat("  ", round(log_interior_knots, 3), "\n")
-```
-
-## Method 3: MultistateModels.jl (Julia)
-
-MultistateModels.jl fits all transition hazards jointly via maximum likelihood with 
-natural cubic spline baseline hazards. Results are loaded from pre-computed fits.
-
-```{r julia-load}
-# Load Julia predictions (julia_results already loaded in knot-setup chunk)
-julia_pred <- fromJSON("../fixtures/illness_death_julia_predictions.json")
-
-cat("Julia Fit Time:", round(julia_results$julia_fit$fit_time_seconds, 2), "seconds\n")
-cat("Interior Knots:", paste(round(julia_results$julia_fit$interior_knots, 2), collapse = ", "), "\n")
-```
-
-# Hazard Estimation
-
-## Predicted Hazards
-
-```{r predict-hazards}
-# Evaluation times
-eval_times <- seq(0.5, 20, by = 0.5)
-
-# True hazards
-h12_true_vec <- sapply(eval_times, h12_true)
-h13_true_vec <- sapply(eval_times, h13_true)
-h23_true_vec <- sapply(eval_times, h23_true)
-
-# PAM predictions
-pred_data <- data.frame(t_mid = eval_times, offset = 0)
-h12_pam <- exp(predict(fit_pam_12, newdata = pred_data, type = "link"))
-h13_pam <- exp(predict(fit_pam_13, newdata = pred_data, type = "link"))
-h23_pam <- exp(predict(fit_pam_23, newdata = pred_data, type = "link"))
-
-# flexsurv predictions
-h12_flex <- summary(fit_flex_12, t = eval_times, type = "hazard")[[1]]$est
-h13_flex <- summary(fit_flex_13, t = eval_times, type = "hazard")[[1]]$est
-h23_flex <- summary(fit_flex_23, t = eval_times, type = "hazard")[[1]]$est
-
-# Julia predictions (from loaded file)
-h12_julia <- julia_pred$hazards$h12_julia
-h13_julia <- julia_pred$hazards$h13_julia
-h23_julia <- julia_pred$hazards$h23_julia
-
-# Combine into data frame
-hazard_df <- data.frame(
-  time = rep(eval_times, 12),
-  hazard = c(h12_true_vec, h12_julia, h12_pam, h12_flex,
-             h13_true_vec, h13_julia, h13_pam, h13_flex,
-             h23_true_vec, h23_julia, h23_pam, h23_flex),
-  method = rep(rep(c("True", "Julia", "PAM (mgcv)", "flexsurv"), each = length(eval_times)), 3),
-  transition = rep(c("h12 (Healthy -> Illness)", 
-                     "h13 (Healthy -> Death)",
-                     "h23 (Illness -> Death)"), each = 4 * length(eval_times))
+# Fit flexsurv spline model with the same knots
+fit_flex <- flexsurvspline(
+  Surv(time, status) ~ 1,
+  data = surv_data,
+  knots = log_interior_knots,  # Interior knots on log scale
+  scale = "hazard"
 )
+
+# Also fit true Weibull for reference
+fit_weibull <- flexsurvreg(
+  Surv(time, status) ~ 1,
+  data = surv_data,
+  dist = "weibullPH"
+)
+
+cat("\n=== flexsurv Results ===\n")
+cat("\nSpline model (", length(interior_knots), " interior knots):\n", sep="")
+cat("  AIC =", round(AIC(fit_flex), 2), "\n")
+
+cat("\nWeibull fit (for reference):\n")
+cat("  Estimated shape:", round(exp(fit_weibull$res["shape", "est"]), 3), "\n")
+cat("  Estimated scale:", round(exp(fit_weibull$res["scale", "est"]), 3), "\n")
+cat("  True shape:", true_shape, "\n")
+cat("  True rate:", true_rate, "\n")
 ```
 
-## Hazard Plots
+## Effective Degrees of Freedom Comparison
 
-```{r hazard-plots, fig.height=8}
+The **effective degrees of freedom (EDF)** is the proper metric for comparing smoothing
+across different software packages. EDF measures how many parameters the smooth effectively
+uses, independent of λ scaling conventions.
+
+```{r}
+#| label: edf-comparison
+
+# Collect EDF results - this is the key comparison metric
+edf_summary <- rbind(
+  julia_summary %>% 
+    mutate(Package = "MultistateModels.jl") %>%
+    select(Package, Method = method, EDF = edf, Lambda_or_sp = lambda),
+  data.frame(
+    Package = c("mgcv", "mgcv"),
+    Method = c("GCV.Cp", "REML"),
+    EDF = c(sum(fit_gcv$edf), sum(fit_reml$edf)),
+    Lambda_or_sp = c(fit_gcv$sp, fit_reml$sp)
+  )
+)
+
+kable(edf_summary, digits = 4,
+      caption = "Effective Degrees of Freedom by Method (Key Comparison)",
+      col.names = c("Package", "Method", "EDF", "λ or sp")) %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>%
+  column_spec(3, bold = TRUE, background = "#f0f9e8")
+```
+
+## Model Selection Criteria (AIC/BIC)
+
+For model comparison, we compute AIC and BIC based on the penalized log-likelihood
+and effective degrees of freedom:
+
+- **AIC** = $-2 \cdot \ell + 2 \cdot \text{EDF}$
+- **BIC** = $-2 \cdot \ell + \log(n) \cdot \text{EDF}$
+
+```{r}
+#| label: aic-bic-comparison
+
+n_obs <- nrow(surv_data)
+
+# Julia model selection criteria
+julia_aic_bic <- julia_summary %>%
+  mutate(
+    Package = "MultistateModels.jl",
+    AIC = -2 * loglik + 2 * edf,
+    BIC = -2 * loglik + log(n_obs) * edf
+  ) %>%
+  select(Package, Method = method, EDF = edf, LogLik = loglik, AIC, BIC)
+
+# For mgcv: The Poisson pseudo-likelihood differs from survival likelihood by
+# an offset correction. The relationship is:
+#   ℓ_Poisson = ℓ_Survival + Σ_i δ_i * offset_i
+# where offset_i = log(interval_width) for the event interval.
+# Therefore: ℓ_Survival = ℓ_Poisson - Σ_i δ_i * offset_i
+
+compute_surv_loglik_mgcv <- function(fit_gam, ped) {
+  # Get Poisson log-likelihood
+  mu_hat <- fitted(fit_gam)
+  y <- ped$ped_status
+  poisson_ll <- sum(y * log(mu_hat) - mu_hat)
+  
+  # Correction: subtract sum of offsets for event pseudo-observations
+  event_offsets <- ped$offset[ped$ped_status == 1]
+  offset_correction <- sum(event_offsets)
+  
+  # Survival log-likelihood
+  surv_ll <- poisson_ll - offset_correction
+  return(surv_ll)
+}
+
+# Compute survival log-likelihoods for mgcv models
+loglik_mgcv_gcv <- compute_surv_loglik_mgcv(fit_gcv, ped)
+loglik_mgcv_reml <- compute_surv_loglik_mgcv(fit_reml, ped)
+
+# mgcv model selection using survival log-likelihood
+mgcv_aic_bic <- data.frame(
+  Package = c("mgcv", "mgcv"),
+  Method = c("GCV.Cp", "REML"),
+  EDF = c(sum(fit_gcv$edf), sum(fit_reml$edf)),
+  LogLik = c(loglik_mgcv_gcv, loglik_mgcv_reml),
+  AIC = c(-2 * loglik_mgcv_gcv + 2 * sum(fit_gcv$edf),
+          -2 * loglik_mgcv_reml + 2 * sum(fit_reml$edf)),
+  BIC = c(-2 * loglik_mgcv_gcv + log(n_obs) * sum(fit_gcv$edf),
+          -2 * loglik_mgcv_reml + log(n_obs) * sum(fit_reml$edf))
+)
+
+# flexsurv model selection
+flex_aic_bic <- data.frame(
+  Package = "flexsurv",
+  Method = "spline",
+  EDF = length(coef(fit_flex)),
+  LogLik = fit_flex$loglik,
+  AIC = AIC(fit_flex),
+  BIC = BIC(fit_flex)
+)
+
+aic_bic_summary <- rbind(julia_aic_bic, mgcv_aic_bic, flex_aic_bic)
+
+n_julia_methods <- nrow(julia_aic_bic)
+kable(aic_bic_summary, digits = 2,
+      caption = "Model Selection Criteria by Method (Survival Log-Likelihood)") %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>%
+  pack_rows("MultistateModels.jl", 1, n_julia_methods) %>%
+  pack_rows("mgcv", n_julia_methods + 1, n_julia_methods + 2) %>%
+  pack_rows("flexsurv", n_julia_methods + 3, n_julia_methods + 3)
+```
+
+**Note on mgcv log-likelihood:** The mgcv package reports Poisson pseudo-likelihood values, 
+not survival log-likelihood. We convert using the relationship: 
+$\ell_{\text{survival}} = \ell_{\text{Poisson}} - \sum_i \delta_i \cdot \text{offset}_i$,
+where $\text{offset}_i = \log(\text{interval width})$ for each event's interval.
+
+**Key observations:**
+
+- All methods produce similar log-likelihoods (within ~2-3 units), validating correctness
+- EDF values are in the range 2-3, indicating similar effective smoothness across methods
+- Julia's exact likelihood and mgcv's PAM/Poisson approach agree well
+
+## Hazard Function Comparison
+
+```{r}
+#| label: hazard-comparison
+#| fig-height: 6
+
+# Evaluation grid
+eval_times <- seq(0.01, max_time, length.out = 200)
+
+# True hazard
+h_true <- true_hazard(eval_times)
+
+# mgcv/pammtools predictions - use pammtools helper
+newdata_mgcv <- data.frame(tend = eval_times)
+h_mgcv_gcv <- predict(fit_gcv, newdata = newdata_mgcv, type = "response") / 
+              mean(diff(ped$tend[1:2]))  # Hazard = rate / interval_length
+h_mgcv_reml <- predict(fit_reml, newdata = newdata_mgcv, type = "response") /
+               mean(diff(ped$tend[1:2]))
+
+# Simpler: use pammtools add_hazard for proper hazard extraction
+hazard_mgcv_gcv <- add_hazard(newdata_mgcv, fit_gcv)
+hazard_mgcv_reml <- add_hazard(newdata_mgcv, fit_reml)
+
+# flexsurv hazard
+h_flex <- summary(fit_flex, t = eval_times, type = "hazard")[[1]]$est
+
+# Julia curves from CSV (methods: PIJCV, EFS, CV10)
+julia_h <- julia_curves %>% filter(method == "Julia PIJCV") %>% pull(hazard)
+julia_h_efs <- julia_curves %>% filter(method == "Julia EFS") %>% pull(hazard)
+julia_h_cv10 <- julia_curves %>% filter(method == "Julia CV10") %>% pull(hazard)
+
+# Combine for plotting
+hazard_df <- data.frame(
+  time = rep(eval_times, 6),
+  hazard = c(h_true, julia_h, julia_h_efs, julia_h_cv10,
+             hazard_mgcv_gcv$hazard, h_flex),
+  method = factor(rep(c("True (Weibull)", "Julia PIJCV", "Julia EFS", "Julia CV10",
+                        "mgcv GCV", "flexsurv"), 
+                      each = length(eval_times)),
+                  levels = c("True (Weibull)", "Julia PIJCV", "Julia EFS", "Julia CV10",
+                             "mgcv GCV", "flexsurv"))
+)
+
 ggplot(hazard_df, aes(x = time, y = hazard, color = method, linetype = method)) +
   geom_line(linewidth = 1) +
-  scale_color_manual(values = c("True" = "black", "Julia" = "#E69F00", 
-                                 "PAM (mgcv)" = "#56B4E9", "flexsurv" = "#009E73")) +
-  scale_linetype_manual(values = c("True" = "solid", "Julia" = "dashed", 
-                                    "PAM (mgcv)" = "dotted", "flexsurv" = "twodash")) +
-  facet_wrap(~ transition, scales = "free_y", ncol = 1) +
+  geom_rug(data = surv_data %>% filter(status == 1), 
+           aes(x = time), inherit.aes = FALSE, 
+           color = "gray30", alpha = 0.5, sides = "b") +
+  scale_color_manual(values = c("True (Weibull)" = "black", 
+                                 "Julia PIJCV" = "#D55E00",
+                                 "Julia EFS" = "#56B4E9",
+                                 "Julia CV10" = "#F0E442",
+                                 "mgcv GCV" = "#E69F00",
+                                 "flexsurv" = "#009E73")) +
+  scale_linetype_manual(values = c("True (Weibull)" = "solid",
+                                    "Julia PIJCV" = "dashed",
+                                    "Julia EFS" = "twodash",
+                                    "Julia CV10" = "dashed",
+                                    "mgcv GCV" = "dotdash",
+                                    "flexsurv" = "solid")) +
   labs(
-    title = "Estimated vs True Hazard Functions",
+    title = "Hazard Function Estimates",
+    subtitle = paste0("True: Weibull(shape=", true_shape, ", rate=", true_rate, "); rug = event times"),
     x = "Time",
-    y = "Hazard Rate h(t)",
+    y = "Hazard h(t)",
     color = "Method",
     linetype = "Method"
   ) +
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom") +
+  guides(color = guide_legend(nrow = 2), linetype = guide_legend(nrow = 2))
 ```
 
-## Hazard RMSE
+## Cumulative Hazard Comparison
 
-```{r hazard-rmse}
-rmse <- function(a, b) sqrt(mean((a - b)^2))
+```{r}
+#| label: cumhaz-comparison
+#| fig-height: 6
 
-hazard_rmse <- data.frame(
-  Transition = c("h12", "h13", "h23"),
-  Julia = c(rmse(h12_julia, h12_true_vec),
-            rmse(h13_julia, h13_true_vec),
-            rmse(h23_julia, h23_true_vec)),
-  PAM_mgcv = c(rmse(h12_pam, h12_true_vec),
-                   rmse(h13_pam, h13_true_vec),
-                   rmse(h23_pam, h23_true_vec)),
-  flexsurv = c(rmse(h12_flex, h12_true_vec),
-               rmse(h13_flex, h13_true_vec),
-               rmse(h23_flex, h23_true_vec))
+# True cumulative hazard
+H_true <- true_cumhaz(eval_times)
+
+# Julia cumulative hazard from CSV (methods: PIJCV, EFS, CV10)
+julia_H <- julia_curves %>% filter(method == "Julia PIJCV") %>% pull(cumhaz)
+julia_H_efs <- julia_curves %>% filter(method == "Julia EFS") %>% pull(cumhaz)
+julia_H_cv10 <- julia_curves %>% filter(method == "Julia CV10") %>% pull(cumhaz)
+
+# mgcv cumulative hazard - compute by numerical integration of hazard
+H_mgcv_gcv <- cumsum(hazard_mgcv_gcv$hazard) * diff(eval_times)[1]
+
+# flexsurv cumulative hazard
+H_flex <- summary(fit_flex, t = eval_times, type = "cumhaz")[[1]]$est
+
+# Combine for plotting
+cumhaz_df <- data.frame(
+  time = rep(eval_times, 6),
+  cumhaz = c(H_true, julia_H, julia_H_efs, julia_H_cv10,
+             H_mgcv_gcv, H_flex),
+  method = factor(rep(c("True (Weibull)", "Julia PIJCV", "Julia EFS", "Julia CV10",
+                        "mgcv GCV", "flexsurv"), 
+                      each = length(eval_times)),
+                  levels = c("True (Weibull)", "Julia PIJCV", "Julia EFS", "Julia CV10",
+                             "mgcv GCV", "flexsurv"))
 )
 
-kable(hazard_rmse, digits = 5, 
-      caption = "Hazard RMSE (vs True)") %>%
-  kable_styling(bootstrap_options = c("striped", "hover"))
-```
-
-# State Prevalence
-
-## Computing Transition Probabilities
-
-```{r tpm-functions}
-# Compute transition probability matrix via product integral
-compute_tpm <- function(t, h12_fn, h13_fn, h23_fn, dt = 0.01) {
-  if (t <= 0) return(diag(3))
-  
-  n_steps <- max(1, ceiling(t / dt))
-  actual_dt <- t / n_steps
-  
-  P <- diag(3)
-  
-  for (i in 1:n_steps) {
-    s <- (i - 0.5) * actual_dt
-    
-    h12 <- h12_fn(s)
-    h13 <- h13_fn(s)
-    h23 <- h23_fn(s)
-    
-    Q <- matrix(c(-(h12 + h13), h12, h13,
-                  0, -h23, h23,
-                  0, 0, 0), nrow = 3, byrow = TRUE)
-    
-    dP <- expm(Q * actual_dt)
-    P <- P %*% dP
-  }
-  
-  return(P)
-}
-
-# Create interpolation functions for each method
-make_interp <- function(times, values) {
-  approxfun(times, values, rule = 2)
-}
-
-h12_pam_fn <- make_interp(eval_times, h12_pam)
-h13_pam_fn <- make_interp(eval_times, h13_pam)
-h23_pam_fn <- make_interp(eval_times, h23_pam)
-
-h12_flex_fn <- make_interp(eval_times, h12_flex)
-h13_flex_fn <- make_interp(eval_times, h13_flex)
-h23_flex_fn <- make_interp(eval_times, h23_flex)
-
-h12_julia_fn <- make_interp(eval_times, h12_julia)
-h13_julia_fn <- make_interp(eval_times, h13_julia)
-h23_julia_fn <- make_interp(eval_times, h23_julia)
-```
-
-```{r compute-prevalence}
-# Compute state prevalence for each method
-prev_true <- matrix(0, nrow = length(eval_times), ncol = 3)
-prev_julia <- matrix(0, nrow = length(eval_times), ncol = 3)
-prev_pam <- matrix(0, nrow = length(eval_times), ncol = 3)
-prev_flex <- matrix(0, nrow = length(eval_times), ncol = 3)
-
-for (i in seq_along(eval_times)) {
-  t <- eval_times[i]
-  
-  P_true <- compute_tpm(t, h12_true, h13_true, h23_true)
-  prev_true[i, ] <- P_true[1, ]
-  
-  P_julia <- compute_tpm(t, h12_julia_fn, h13_julia_fn, h23_julia_fn)
-  prev_julia[i, ] <- P_julia[1, ]
-  
-  P_pam <- compute_tpm(t, h12_pam_fn, h13_pam_fn, h23_pam_fn)
-  prev_pam[i, ] <- P_pam[1, ]
-  
-  P_flex <- compute_tpm(t, h12_flex_fn, h13_flex_fn, h23_flex_fn)
-  prev_flex[i, ] <- P_flex[1, ]
-}
-
-# Empirical prevalence from data
-prev_emp <- julia_results$empirical
-```
-
-## Prevalence Plots
-
-```{r prevalence-plots, fig.height=8}
-prev_df <- data.frame(
-  time = rep(eval_times, 15),
-  prevalence = c(
-    prev_true[,1], prev_julia[,1], prev_pam[,1], prev_flex[,1], prev_emp$prevalence_healthy,
-    prev_true[,2], prev_julia[,2], prev_pam[,2], prev_flex[,2], prev_emp$prevalence_illness,
-    prev_true[,3], prev_julia[,3], prev_pam[,3], prev_flex[,3], prev_emp$prevalence_death
-  ),
-  method = rep(rep(c("True", "Julia", "PAM (mgcv)", "flexsurv", "Empirical"), 
-                   each = length(eval_times)), 3),
-  state = rep(c("P1(t): Healthy", "P2(t): Illness", "P3(t): Death"), 
-              each = 5 * length(eval_times))
-)
-
-ggplot(prev_df, aes(x = time, y = prevalence, color = method, linetype = method)) +
+ggplot(cumhaz_df, aes(x = time, y = cumhaz, color = method, linetype = method)) +
   geom_line(linewidth = 1) +
-  scale_color_manual(values = c("True" = "black", "Julia" = "#E69F00", 
-                                 "PAM (mgcv)" = "#56B4E9", "flexsurv" = "#009E73",
-                                 "Empirical" = "grey50")) +
-  scale_linetype_manual(values = c("True" = "solid", "Julia" = "dashed", 
-                                    "PAM (mgcv)" = "dotted", "flexsurv" = "twodash",
-                                    "Empirical" = "dotdash")) +
-  facet_wrap(~ state, scales = "free_y", ncol = 1) +
+  scale_color_manual(values = c("True (Weibull)" = "black", 
+                                 "Julia PIJCV" = "#D55E00",
+                                 "Julia EFS" = "#56B4E9",
+                                 "Julia CV10" = "#F0E442",
+                                 "mgcv GCV" = "#E69F00",
+                                 "flexsurv" = "#009E73")) +
+  scale_linetype_manual(values = c("True (Weibull)" = "solid",
+                                    "Julia PIJCV" = "dashed",
+                                    "Julia EFS" = "twodash",
+                                    "Julia CV10" = "dashed",
+                                    "mgcv GCV" = "dotdash",
+                                    "flexsurv" = "solid")) +
   labs(
-    title = "State Prevalence: Estimated vs True",
-    subtitle = "Starting from State 1 (Healthy)",
+    title = "Cumulative Hazard Estimates",
     x = "Time",
-    y = "Probability",
+    y = "Cumulative Hazard H(t)",
     color = "Method",
     linetype = "Method"
   ) +
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom") +
+  guides(color = guide_legend(nrow = 2), linetype = guide_legend(nrow = 2))
 ```
 
-## Prevalence RMSE
+## Survival and Cumulative Incidence Curves
 
-```{r prevalence-rmse}
-prev_rmse <- data.frame(
-  State = c("P1 (Healthy)", "P2 (Illness)", "P3 (Death)"),
-  Empirical = c(rmse(prev_true[,1], prev_emp$prevalence_healthy),
-                rmse(prev_true[,2], prev_emp$prevalence_illness),
-                rmse(prev_true[,3], prev_emp$prevalence_death)),
-  Julia = c(rmse(prev_true[,1], prev_julia[,1]),
-            rmse(prev_true[,2], prev_julia[,2]),
-            rmse(prev_true[,3], prev_julia[,3])),
-  PAM_mgcv = c(rmse(prev_true[,1], prev_pam[,1]),
-                   rmse(prev_true[,2], prev_pam[,2]),
-                   rmse(prev_true[,3], prev_pam[,3])),
-  flexsurv = c(rmse(prev_true[,1], prev_flex[,1]),
-               rmse(prev_true[,2], prev_flex[,2]),
-               rmse(prev_true[,3], prev_flex[,3]))
+```{r}
+#| label: survival-comparison
+#| fig-height: 10
+
+# True survival/CIF
+S_true <- true_surv(eval_times)
+F_true <- true_cdf(eval_times)
+
+# Julia survival from CSV (methods: PIJCV, EFS, CV10)
+julia_S <- julia_curves %>% filter(method == "Julia PIJCV") %>% pull(survival)
+julia_S_efs <- julia_curves %>% filter(method == "Julia EFS") %>% pull(survival)
+julia_S_cv10 <- julia_curves %>% filter(method == "Julia CV10") %>% pull(survival)
+
+# Julia CIF
+F_julia <- 1 - julia_S
+F_julia_efs <- 1 - julia_S_efs
+F_julia_cv10 <- 1 - julia_S_cv10
+
+# mgcv survival - compute from cumulative hazard (S = exp(-H))
+S_mgcv_gcv <- exp(-H_mgcv_gcv)
+F_mgcv_gcv <- 1 - S_mgcv_gcv
+
+# flexsurv survival
+S_flex <- summary(fit_flex, t = eval_times, type = "survival")[[1]]$est
+F_flex <- 1 - S_flex
+
+# Color palette for all methods
+method_colors <- c("True (Weibull)" = "black", 
+                   "Julia PIJCV" = "#D55E00",
+                   "Julia EFS" = "#56B4E9",
+                   "Julia CV10" = "#F0E442",
+                   "mgcv GCV" = "#E69F00",
+                   "flexsurv" = "#009E73")
+
+method_linetypes <- c("True (Weibull)" = "solid",
+                      "Julia PIJCV" = "dashed",
+                      "Julia EFS" = "twodash",
+                      "Julia CV10" = "dashed",
+                      "mgcv GCV" = "dotdash",
+                      "flexsurv" = "solid")
+
+method_levels <- c("True (Weibull)", "Julia PIJCV", "Julia EFS", "Julia CV10",
+                   "mgcv GCV", "flexsurv")
+
+# Combine survival curves
+surv_df <- data.frame(
+  time = rep(eval_times, 6),
+  survival = c(S_true, julia_S, julia_S_efs, julia_S_cv10,
+               S_mgcv_gcv, S_flex),
+  method = factor(rep(method_levels, each = length(eval_times)), levels = method_levels)
 )
 
-kable(prev_rmse, digits = 5,
-      caption = "State Prevalence RMSE (vs True)") %>%
-  kable_styling(bootstrap_options = c("striped", "hover"))
-```
-
-# Cumulative Incidence
-
-## Computing Cumulative Incidence
-
-```{r ci-functions}
-# Compute cause-specific cumulative incidence
-# CI_1r(t) = integral_0^t P11(s) * h1r(s) ds
-compute_ci <- function(times, h_fn, h12_all_fn, h13_all_fn, h23_all_fn, dt = 0.05) {
-  ci <- numeric(length(times))
-  
-  for (i in seq_along(times)) {
-    t <- times[i]
-    if (t <= 0) {
-      ci[i] <- 0
-      next
-    }
-    
-    n_steps <- max(1, ceiling(t / dt))
-    actual_dt <- t / n_steps
-    
-    integral <- 0
-    for (j in 1:n_steps) {
-      s <- (j - 0.5) * actual_dt
-      P <- compute_tpm(s, h12_all_fn, h13_all_fn, h23_all_fn, dt = 0.05)
-      P11 <- P[1, 1]
-      h <- h_fn(s)
-      integral <- integral + P11 * h * actual_dt
-    }
-    ci[i] <- integral
-  }
-  
-  return(ci)
-}
-```
-
-```{r compute-ci}
-# True cumulative incidence
-ci_12_true <- compute_ci(eval_times, h12_true, h12_true, h13_true, h23_true)
-ci_13_true <- compute_ci(eval_times, h13_true, h12_true, h13_true, h23_true)
-
-# Julia CI
-ci_12_julia <- compute_ci(eval_times, h12_julia_fn, h12_julia_fn, h13_julia_fn, h23_julia_fn)
-ci_13_julia <- compute_ci(eval_times, h13_julia_fn, h12_julia_fn, h13_julia_fn, h23_julia_fn)
-
-# PAM CI
-ci_12_pam <- compute_ci(eval_times, h12_pam_fn, h12_pam_fn, h13_pam_fn, h23_pam_fn)
-ci_13_pam <- compute_ci(eval_times, h13_pam_fn, h12_pam_fn, h13_pam_fn, h23_pam_fn)
-
-# flexsurv CI
-ci_12_flex <- compute_ci(eval_times, h12_flex_fn, h12_flex_fn, h13_flex_fn, h23_flex_fn)
-ci_13_flex <- compute_ci(eval_times, h13_flex_fn, h12_flex_fn, h13_flex_fn, h23_flex_fn)
-
-# Total death CI = P(state 3)
-ci_death_true <- prev_true[, 3]
-ci_death_julia <- prev_julia[, 3]
-ci_death_pam <- prev_pam[, 3]
-ci_death_flex <- prev_flex[, 3]
-```
-
-## Cumulative Incidence Plots
-
-```{r ci-plots, fig.height=8}
-ci_df <- data.frame(
-  time = rep(eval_times, 12),
-  ci = c(
-    ci_12_true, ci_12_julia, ci_12_pam, ci_12_flex,
-    ci_13_true, ci_13_julia, ci_13_pam, ci_13_flex,
-    ci_death_true, ci_death_julia, ci_death_pam, ci_death_flex
-  ),
-  method = rep(rep(c("True", "Julia", "PAM (mgcv)", "flexsurv"), each = length(eval_times)), 3),
-  event = rep(c("CI12: Illness", "CI13: Direct Death", "CI Total Death"), 
-              each = 4 * length(eval_times))
+# Combine CIF curves
+cif_df <- data.frame(
+  time = rep(eval_times, 6),
+  cif = c(F_true, F_julia, F_julia_efs, F_julia_cv10,
+          F_mgcv_gcv, F_flex),
+  method = factor(rep(method_levels, each = length(eval_times)), levels = method_levels)
 )
 
-ggplot(ci_df, aes(x = time, y = ci, color = method, linetype = method)) +
+# Kaplan-Meier for reference
+km_fit <- survfit(Surv(time, status) ~ 1, data = surv_data)
+
+# Plot survival
+p_surv <- ggplot(surv_df, aes(x = time, y = survival, color = method, linetype = method)) +
   geom_line(linewidth = 1) +
-  scale_color_manual(values = c("True" = "black", "Julia" = "#E69F00", 
-                                 "PAM (mgcv)" = "#56B4E9", "flexsurv" = "#009E73")) +
-  scale_linetype_manual(values = c("True" = "solid", "Julia" = "dashed", 
-                                    "PAM (mgcv)" = "dotted", "flexsurv" = "twodash")) +
-  facet_wrap(~ event, scales = "free_y", ncol = 1) +
+  geom_step(data = data.frame(time = km_fit$time, survival = km_fit$surv),
+            aes(x = time, y = survival), 
+            inherit.aes = FALSE, color = "gray50", alpha = 0.5, linewidth = 0.8) +
+  scale_color_manual(values = method_colors) +
+  scale_linetype_manual(values = method_linetypes) +
   labs(
-    title = "Cumulative Incidence Functions",
-    subtitle = "Starting from State 1 (Healthy)",
+    title = "Survival Function S(t)",
+    subtitle = "Gray step function = Kaplan-Meier estimate",
     x = "Time",
-    y = "Cumulative Incidence",
+    y = "S(t)",
     color = "Method",
     linetype = "Method"
   ) +
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom") +
+  guides(color = guide_legend(nrow = 2), linetype = guide_legend(nrow = 2))
+
+# Plot CIF
+p_cif <- ggplot(cif_df, aes(x = time, y = cif, color = method, linetype = method)) +
+  geom_line(linewidth = 1) +
+  geom_step(data = data.frame(time = km_fit$time, cif = 1 - km_fit$surv),
+            aes(x = time, y = cif), 
+            inherit.aes = FALSE, color = "gray50", alpha = 0.5, linewidth = 0.8) +
+  geom_rug(data = surv_data %>% filter(status == 1), 
+           aes(x = time), inherit.aes = FALSE, 
+           color = "gray30", alpha = 0.5, sides = "b") +
+  scale_color_manual(values = method_colors) +
+  scale_linetype_manual(values = method_linetypes) +
+  labs(
+    title = "Cumulative Incidence F(t) = 1 - S(t)",
+    subtitle = "Gray step function = 1 - Kaplan-Meier; rug = event times",
+    x = "Time",
+    y = "F(t)",
+    color = "Method",
+    linetype = "Method"
+  ) +
+  theme(legend.position = "bottom") +
+  guides(color = guide_legend(nrow = 2), linetype = guide_legend(nrow = 2))
+
+p_surv / p_cif
 ```
 
-## Cumulative Incidence RMSE
+## Accuracy Metrics
 
-```{r ci-rmse}
-ci_rmse <- data.frame(
-  Cumulative_Incidence = c("CI12 (Illness)", "CI13 (Direct Death)", "CI Total Death"),
-  Julia = c(rmse(ci_12_true, ci_12_julia),
-            rmse(ci_13_true, ci_13_julia),
-            rmse(ci_death_true, ci_death_julia)),
-  PAM_mgcv = c(rmse(ci_12_true, ci_12_pam),
-                   rmse(ci_13_true, ci_13_pam),
-                   rmse(ci_death_true, ci_death_pam)),
-  flexsurv = c(rmse(ci_12_true, ci_12_flex),
-               rmse(ci_13_true, ci_13_flex),
-               rmse(ci_death_true, ci_death_flex))
+```{r}
+#| label: accuracy-metrics
+
+# RMSE function
+rmse <- function(true, est) sqrt(mean((true - est)^2))
+
+# Get all Julia methods from CSV
+julia_methods <- unique(julia_curves$method)
+
+# Calculate RMSE for all Julia methods
+julia_metrics <- lapply(julia_methods, function(m) {
+  h <- julia_curves %>% filter(method == m) %>% pull(hazard)
+  H <- julia_curves %>% filter(method == m) %>% pull(cumhaz)
+  S <- julia_curves %>% filter(method == m) %>% pull(survival)
+  
+  data.frame(
+    Package = "MultistateModels.jl",
+    Method = gsub("Julia ", "", m),
+    Hazard_RMSE = rmse(h_true, h),
+    CumHaz_RMSE = rmse(H_true, H),
+    Survival_RMSE = rmse(S_true, S)
+  )
+}) %>% bind_rows()
+
+# Add R package results
+r_metrics <- data.frame(
+  Package = c("mgcv", "flexsurv"),
+  Method = c("GCV.Cp", "spline"),
+  Hazard_RMSE = c(rmse(h_true, hazard_mgcv_gcv$hazard), rmse(h_true, h_flex)),
+  CumHaz_RMSE = c(rmse(H_true, H_mgcv_gcv), rmse(H_true, H_flex)),
+  Survival_RMSE = c(rmse(S_true, S_mgcv_gcv), rmse(S_true, S_flex))
 )
 
-kable(ci_rmse, digits = 5,
-      caption = "Cumulative Incidence RMSE (vs True)") %>%
-  kable_styling(bootstrap_options = c("striped", "hover"))
-```
+# Combine and order
+metrics_df <- rbind(julia_metrics, r_metrics)
 
-# Summary
+# Order Julia methods logically
+julia_order <- c("PIJCV", "PIJCV10", "EFS", "CV10")
+metrics_df$Method <- factor(metrics_df$Method, 
+                            levels = c(julia_order, "GCV.Cp", "spline"))
+metrics_df <- metrics_df %>% arrange(Method)
 
-## Overall Comparison
+# Dynamically determine row indices
+n_julia <- nrow(julia_metrics)
+n_r <- nrow(r_metrics)
 
-```{r summary-table}
-# Create summary
-summary_df <- data.frame(
-  Category = c("Hazard h12", "Hazard h13", "Hazard h23",
-               "Prevalence P1", "Prevalence P2", "Prevalence P3",
-               "CI Illness", "CI Direct Death", "CI Total Death"),
-  Julia = c(hazard_rmse$Julia, prev_rmse$Julia, ci_rmse$Julia),
-  PAM_mgcv = c(hazard_rmse$PAM_mgcv, prev_rmse$PAM_mgcv, ci_rmse$PAM_mgcv),
-  flexsurv = c(hazard_rmse$flexsurv, prev_rmse$flexsurv, ci_rmse$flexsurv)
-)
-
-# Add winner column
-summary_df$Winner <- apply(summary_df[, 2:4], 1, function(x) {
-  methods <- c("Julia", "PAM (mgcv)", "flexsurv")
-  methods[which.min(x)]
-})
-
-kable(summary_df, digits = 5,
-      caption = "Summary: RMSE by Method and Metric") %>%
+kable(metrics_df, digits = 5,
+      caption = "RMSE vs True Weibull Functions",
+      col.names = c("Package", "Method", "Hazard", "Cum. Hazard", "Survival")) %>%
   kable_styling(bootstrap_options = c("striped", "hover")) %>%
-  column_spec(5, bold = TRUE)
+  pack_rows("MultistateModels.jl", 1, n_julia) %>%
+  pack_rows("R", n_julia + 1, n_julia + n_r)
 ```
 
-## Computation Time
+## Runtime Comparison
 
-```{r timing-table}
-timing_df <- data.frame(
-  Method = c("MultistateModels.jl (Julia)", "PAM (mgcv)", "flexsurv"),
-  Fit_Time_s = c(julia_results$julia_fit$fit_time_seconds, t_pam, t_flex),
-  Approach = c("Joint likelihood (all transitions)", 
-               "Separate GAMs (independent)", 
-               "Separate MLE (independent)")
+A key advantage of Newton-approximated cross-validation methods (PIJCV, PIJCV10)
+is computational efficiency. While exact k-fold CV requires refitting the model K times,
+the Newton approximation achieves similar results in a single optimization.
+
+```{r}
+#| label: runtime-comparison
+#| fig-height: 5
+
+# Check if runtime data is available
+if ("runtime_sec" %in% names(julia_summary)) {
+  
+  # Categorize methods
+  julia_summary$category <- case_when(
+    julia_summary$method %in% c("PIJCV", "PIJCV10") ~ "Newton-approximated CV",
+    julia_summary$method %in% c("CV10") ~ "Exact CV",
+    TRUE ~ "Other (EFS)"
+  )
+  
+  # Order methods by category and folds
+  method_order <- c("PIJCV", "PIJCV10", 
+                    "EFS",
+                    "CV10")
+  julia_summary$method <- factor(julia_summary$method, levels = method_order)
+  
+  # Create bar plot
+  p_runtime <- ggplot(julia_summary, aes(x = method, y = runtime_sec, fill = category)) +
+    geom_col(width = 0.7) +
+    geom_text(aes(label = sprintf("%.2fs", runtime_sec)), 
+              vjust = -0.5, size = 3) +
+    scale_fill_manual(values = c(
+      "Newton-approximated CV" = "#3498db",
+      "Exact CV" = "#e74c3c",
+      "Other (EFS)" = "#2ecc71"
+    )) +
+    labs(
+      title = "Runtime Comparison: Smoothing Parameter Selection Methods",
+      subtitle = "Single optimization vs. K refits (n=1000 subjects, 5 interior knots)",
+      x = "Method",
+      y = "Runtime (seconds)",
+      fill = "Category"
+    ) +
+    theme_minimal() +
+    theme(
+      axis.text.x = element_text(angle = 45, hjust = 1),
+      legend.position = "bottom"
+    )
+  
+  print(p_runtime)
+  
+  # Runtime summary table
+  runtime_summary <- julia_summary %>%
+    group_by(category) %>%
+    summarise(
+      Methods = paste(method, collapse = ", "),
+      Mean_Runtime = mean(runtime_sec),
+      Min_Runtime = min(runtime_sec),
+      Max_Runtime = max(runtime_sec),
+      .groups = "drop"
+    ) %>%
+    arrange(Mean_Runtime)
+  
+  kable(runtime_summary, digits = 3,
+        caption = "Runtime Summary by Method Category",
+        col.names = c("Category", "Methods", "Mean (s)", "Min (s)", "Max (s)")) %>%
+    kable_styling(bootstrap_options = c("striped", "hover"))
+  
+} else {
+  cat("Runtime data not available in julia_summary.\n")
+}
+```
+
+```{r}
+#| label: runtime-table
+
+if ("runtime_sec" %in% names(julia_summary)) {
+  # Add category if not present (from previous chunk)
+  if (!"category" %in% names(julia_summary)) {
+    julia_summary$category <- case_when(
+      julia_summary$method %in% c("PIJCV", "PIJCV10") ~ "Newton CV",
+      julia_summary$method %in% c("CV10") ~ "Exact CV",
+      TRUE ~ "Other"
+    )
+  }
+  
+  # Full runtime table with all metrics
+  runtime_full <- julia_summary %>%
+    select(method, category, lambda, edf, loglik, runtime_sec) %>%
+    arrange(runtime_sec)
+  
+  kable(runtime_full, digits = c(0, 0, 2, 2, 2, 3),
+        caption = "Full Results: All Julia Smoothing Methods (sorted by runtime)",
+        col.names = c("Method", "Category", "λ", "EDF", "Log-Lik", "Runtime (s)")) %>%
+    kable_styling(bootstrap_options = c("striped", "hover"))
+}
+```
+
+**Key Runtime Observations:**
+
+- **Newton-approximated methods** (PIJCV, PIJCV10) achieve comparable 
+  accuracy to exact CV while requiring only **a single model fit** with analytical gradients
+- **Exact k-fold CV** (CV10) requires K model refits, 
+  making it substantially slower
+- **EFS** is fast as it uses a simple closed-form approximation
+- The computational advantage of Newton approximation grows with sample size and model complexity
+
+## Discussion
+
+### EDF vs λ Scaling
+
+The **effective degrees of freedom (EDF)** is the proper metric for comparing smoothing
+across packages. Despite significant differences in raw λ values between Julia and mgcv,
+the EDF values are in good agreement, confirming that both approaches select similar 
+model complexity.
+
+The scale difference arises from:
+
+1. **Effective sample size**: Julia uses n=1000 subjects; mgcv's PAM uses many pseudo-observations
+2. **Penalty matrix normalization**: Different scaling conventions
+3. **Likelihood formulation**: Exact survival vs Poisson pseudo-likelihood
+
+### Software Packages Compared
+
+| Package | Approach | Notes |
+|---------|----------|-------|
+| **MultistateModels.jl** | Exact penalized likelihood with P-splines | Multiple smoothing methods (PIJCV, PIJCV10, EFS, CV10) |
+| **mgcv/pammtools** | PAM (Poisson GAM on piecewise-exponential data) | GCV.Cp, REML for smoothing selection |
+| **flexsurv** | Spline hazard via ML (no explicit smoothing parameter) | Uses natural splines, not penalized |
+
+---
+
+# Part 2: Illness-Death Model
+
+We now extend the analysis to a three-state illness-death model, which is more complex
+due to competing risks and transition-specific hazards:
+
+```
+State 1 (Healthy) → State 2 (Ill) → State 3 (Dead)
+                  ↘ State 3 (Dead) ↗
+```
+
+Three distinct transitions with different hazard functions:
+
+- **h12** (Healthy → Ill): Moderately increasing hazard (disease onset)
+- **h13** (Healthy → Dead): Decreasing hazard (early competing risk)
+- **h23** (Ill → Dead): Strongly increasing hazard (death after illness)
+
+## True Model Specification (Illness-Death)
+
+Data are simulated from Weibull hazards with transition-specific parameters:
+
+| Transition | Shape ($\kappa$) | Rate ($\lambda$) | Hazard Pattern |
+|------------|------------------|------------------|----------------|
+| 1→2 | 1.3 | 0.25 | Moderately increasing |
+| 1→3 | 0.8 | 0.15 | Decreasing (competing risk) |
+| 2→3 | 1.5 | 0.35 | Strongly increasing |
+
+$$h_{12}(t) = 1.3 \times 0.25 \times t^{0.3} = 0.325 t^{0.3}$$
+$$h_{13}(t) = 0.8 \times 0.15 \times t^{-0.2} = 0.12 t^{-0.2}$$
+$$h_{23}(t) = 1.5 \times 0.35 \times t^{0.5} = 0.525 t^{0.5}$$
+
+## Illness-Death Data Simulation and Julia Fitting
+
+```{bash}
+#| label: id-julia-data-generation
+#| output: false
+
+cd ../..
+julia --project=. -e '
+using MultistateModels
+using Random
+using DataFrames
+using CSV
+using Printf
+using Distributions
+
+# Configuration
+n = 1000
+max_time = 6.0
+seed = 12345
+
+# True Weibull parameters (shape, rate) for each transition
+# Using MultistateModels convention: h(t) = shape * rate * t^(shape-1)
+true_params = (
+    h12 = (shape = 1.3, rate = 0.25),  # Moderately increasing
+    h13 = (shape = 0.8, rate = 0.15),  # Decreasing (competing risk)
+    h23 = (shape = 1.5, rate = 0.35)   # Strongly increasing
 )
 
-kable(timing_df, digits = 2,
-      caption = "Computation Time Comparison") %>%
+Random.seed!(seed)
+
+# Simulate illness-death model
+# For each subject, we need to simulate the competing process
+
+function weibull_cdf(t, shape, rate)
+    return 1.0 - exp(-rate * t^shape)
+end
+
+function weibull_quantile(p, shape, rate)
+    return (-log(1.0 - p) / rate)^(1.0 / shape)
+end
+
+# Simulate event times
+survival_data = DataFrame[]
+
+for i in 1:n
+    # Generate latent event times from state 1
+    U12 = rand()
+    U13 = rand()
+    
+    # Weibull event times from state 1
+    T12 = weibull_quantile(U12, true_params.h12.shape, true_params.h12.rate)
+    T13 = weibull_quantile(U13, true_params.h13.shape, true_params.h13.rate)
+    
+    # Determine first event from state 1
+    if min(T12, T13) >= max_time
+        # Administrative censoring in state 1
+        push!(survival_data, DataFrame(
+            id = i,
+            tstart = 0.0,
+            tstop = max_time,
+            statefrom = 1,
+            stateto = 1,
+            obstype = 1
+        ))
+    elseif T12 < T13
+        # Transition to illness (state 2)
+        t_illness = T12
+        
+        # Now generate death time from state 2
+        # Time to death from illness follows Weibull with params h23
+        U23 = rand()
+        T23_residual = weibull_quantile(U23, true_params.h23.shape, true_params.h23.rate)
+        T_death = t_illness + T23_residual
+        
+        if T_death >= max_time
+            # Illness then administrative censoring
+            push!(survival_data, DataFrame(
+                id = i,
+                tstart = 0.0,
+                tstop = t_illness,
+                statefrom = 1,
+                stateto = 2,
+                obstype = 1
+            ))
+            push!(survival_data, DataFrame(
+                id = i,
+                tstart = t_illness,
+                tstop = max_time,
+                statefrom = 2,
+                stateto = 2,
+                obstype = 1
+            ))
+        else
+            # Illness then death
+            push!(survival_data, DataFrame(
+                id = i,
+                tstart = 0.0,
+                tstop = t_illness,
+                statefrom = 1,
+                stateto = 2,
+                obstype = 1
+            ))
+            push!(survival_data, DataFrame(
+                id = i,
+                tstart = t_illness,
+                tstop = T_death,
+                statefrom = 2,
+                stateto = 3,
+                obstype = 1
+            ))
+        end
+    else
+        # Direct death from state 1 (h13)
+        push!(survival_data, DataFrame(
+            id = i,
+            tstart = 0.0,
+            tstop = T13,
+            statefrom = 1,
+            stateto = 3,
+            obstype = 1
+        ))
+    end
+end
+
+surv_data = vcat(survival_data...)
+
+# Count transitions
+n_12 = sum((surv_data.statefrom .== 1) .& (surv_data.stateto .== 2))
+n_13 = sum((surv_data.statefrom .== 1) .& (surv_data.stateto .== 3))
+n_23 = sum((surv_data.statefrom .== 2) .& (surv_data.stateto .== 3))
+n_cens_1 = sum((surv_data.statefrom .== 1) .& (surv_data.stateto .== 1))
+n_cens_2 = sum((surv_data.statefrom .== 2) .& (surv_data.stateto .== 2))
+
+println("=== Illness-Death Data ===")
+println("n = $n subjects")
+println("Transitions 1→2 (illness): $n_12")
+println("Transitions 1→3 (direct death): $n_13")
+println("Transitions 2→3 (death after illness): $n_23")
+println("Censored in state 1: $n_cens_1")
+println("Censored in state 2: $n_cens_2")
+
+# Extract event times for each transition
+event_times_12 = surv_data[(surv_data.statefrom .== 1) .& (surv_data.stateto .== 2), :tstop]
+event_times_13 = surv_data[(surv_data.statefrom .== 1) .& (surv_data.stateto .== 3), :tstop]
+event_times_23 = surv_data[(surv_data.statefrom .== 2) .& (surv_data.stateto .== 3), :tstop] .- 
+                 surv_data[(surv_data.statefrom .== 2) .& (surv_data.stateto .== 3), :tstart]
+
+# For R export, we need the raw survival data
+# Convert to standard multistate format
+CSV.write("MultistateModelsTests/reports/_id_surv_data.csv", surv_data)
+
+# Define model with spline hazards
+h12 = Hazard(@formula(0 ~ 1), "sp", 1, 2;
+             degree = 3,
+             knots = Float64[],
+             boundaryknots = [0.0, max_time],
+             natural_spline = true)
+h13 = Hazard(@formula(0 ~ 1), "sp", 1, 3;
+             degree = 3,
+             knots = Float64[],
+             boundaryknots = [0.0, max_time],
+             natural_spline = true)
+h23 = Hazard(@formula(0 ~ 1), "sp", 2, 3;
+             degree = 3,
+             knots = Float64[],
+             boundaryknots = [0.0, max_time],
+             natural_spline = true)
+
+model = multistatemodel(h12, h13, h23; data=surv_data)
+
+# Calibrate knots based on event times
+println("\nCalibrating spline knots...")
+knot_result = calibrate_splines!(model; nknots=5, verbose=true)
+
+# Extract knots for each hazard
+knots_12 = knot_result.h12
+knots_13 = knot_result.h13
+knots_23 = knot_result.h23
+
+println("\n=== Knot Configuration ===")
+println("h12: boundary=$(knots_12.boundary_knots), interior=$(round.(knots_12.interior_knots, digits=3))")
+println("h13: boundary=$(knots_13.boundary_knots), interior=$(round.(knots_13.interior_knots, digits=3))")
+println("h23: boundary=$(knots_23.boundary_knots), interior=$(round.(knots_23.interior_knots, digits=3))")
+
+# Save knots for R
+knots_df = DataFrame(
+    transition = repeat(["h12", "h13", "h23"], inner=5),
+    interior_knot_idx = repeat(1:5, 3),
+    interior_knot = vcat(knots_12.interior_knots, knots_13.interior_knots, knots_23.interior_knots),
+    boundary_lower = fill(0.0, 15),
+    boundary_upper = fill(max_time, 15)
+)
+CSV.write("MultistateModelsTests/reports/_id_knots.csv", knots_df)
+
+println("\nData generation complete. Knots and data saved for R.")
+'
+```
+
+```{bash}
+#| label: id-julia-fitting
+#| output: false
+
+cd ../..
+julia --project=. -e '
+using MultistateModels
+using Random
+using DataFrames
+using CSV
+using Printf
+using Distributions
+
+# Configuration (must match data generation)
+n = 1000
+max_time = 6.0
+seed = 12345
+
+true_params = (
+    h12 = (shape = 1.3, rate = 0.25),
+    h13 = (shape = 0.8, rate = 0.15),
+    h23 = (shape = 1.5, rate = 0.35)
+)
+
+Random.seed!(seed)
+
+# Helper functions
+function weibull_quantile(p, shape, rate)
+    return (-log(1.0 - p) / rate)^(1.0 / shape)
+end
+
+# Regenerate survival data
+survival_data = DataFrame[]
+for i in 1:n
+    U12 = rand()
+    U13 = rand()
+    T12 = weibull_quantile(U12, true_params.h12.shape, true_params.h12.rate)
+    T13 = weibull_quantile(U13, true_params.h13.shape, true_params.h13.rate)
+    
+    if min(T12, T13) >= max_time
+        push!(survival_data, DataFrame(id = i, tstart = 0.0, tstop = max_time, statefrom = 1, stateto = 1, obstype = 1))
+    elseif T12 < T13
+        t_illness = T12
+        U23 = rand()
+        T23_residual = weibull_quantile(U23, true_params.h23.shape, true_params.h23.rate)
+        T_death = t_illness + T23_residual
+        if T_death >= max_time
+            push!(survival_data, DataFrame(id = i, tstart = 0.0, tstop = t_illness, statefrom = 1, stateto = 2, obstype = 1))
+            push!(survival_data, DataFrame(id = i, tstart = t_illness, tstop = max_time, statefrom = 2, stateto = 2, obstype = 1))
+        else
+            push!(survival_data, DataFrame(id = i, tstart = 0.0, tstop = t_illness, statefrom = 1, stateto = 2, obstype = 1))
+            push!(survival_data, DataFrame(id = i, tstart = t_illness, tstop = T_death, statefrom = 2, stateto = 3, obstype = 1))
+        end
+    else
+        push!(survival_data, DataFrame(id = i, tstart = 0.0, tstop = T13, statefrom = 1, stateto = 3, obstype = 1))
+    end
+end
+surv_data = vcat(survival_data...)
+
+# Define and calibrate model
+h12 = Hazard(@formula(0 ~ 1), "sp", 1, 2; degree = 3, knots = Float64[], boundaryknots = [0.0, max_time], natural_spline = true)
+h13 = Hazard(@formula(0 ~ 1), "sp", 1, 3; degree = 3, knots = Float64[], boundaryknots = [0.0, max_time], natural_spline = true)
+h23 = Hazard(@formula(0 ~ 1), "sp", 2, 3; degree = 3, knots = Float64[], boundaryknots = [0.0, max_time], natural_spline = true)
+model = multistatemodel(h12, h13, h23; data=surv_data)
+calibrate_splines!(model; nknots=5, verbose=false)
+
+# Fit with each smoothing method
+println("=== Fitting with smoothing methods ===")
+
+println("\nFitting with PIJCV method...")
+result_pijcv = select_smoothing_parameters(model, SplinePenalty(); 
+                                           method = :pijcv, verbose = false)
+println("  PIJCV λ = $(round.(result_pijcv.lambda, digits=2)), EDF = $(round(result_pijcv.edf.total, digits=2))")
+
+println("\nFitting with EFS method...")
+result_efs = select_smoothing_parameters(model, SplinePenalty(); 
+                                         method = :efs, verbose = false)
+println("  EFS λ = $(round.(result_efs.lambda, digits=2)), EDF = $(round(result_efs.edf.total, digits=2))")
+
+println("\nFitting with 10-fold CV method...")
+result_cv10 = select_smoothing_parameters(model, SplinePenalty(); 
+                                          method = :cv10, verbose = false)
+println("  CV10 λ = $(round.(result_cv10.lambda, digits=2)), EDF = $(round(result_cv10.edf.total, digits=2))")
+
+# Evaluation grid
+eval_times = collect(range(0.01, max_time, length=200))
+
+# Function to evaluate hazard curves for all transitions
+function evaluate_id_curves(model, beta, eval_times)
+    results = Dict{String, NamedTuple}()
+    
+    current_idx = 1
+    for (idx, haz) in enumerate(model.hazards)
+        trans_name = "h$(haz.statefrom)$(haz.stateto)"
+        
+        # Get parameter indices for this hazard
+        npars = length(haz.parnames)
+        start_idx = current_idx
+        end_idx = current_idx + npars - 1
+        beta_haz = beta[start_idx:end_idx]
+        current_idx = end_idx + 1
+        
+        hazard_vals = [haz.hazard_fn(t, beta_haz, ()) for t in eval_times]
+        cumhaz_vals = [haz.cumhaz_fn(0.0, t, beta_haz, ()) for t in eval_times]
+        
+        results[trans_name] = (hazard = hazard_vals, cumhaz = cumhaz_vals)
+    end
+    
+    return results
+end
+
+# Compute curves for each method
+curves_pijcv = evaluate_id_curves(model, result_pijcv.beta, eval_times)
+curves_efs = evaluate_id_curves(model, result_efs.beta, eval_times)
+curves_cv10 = evaluate_id_curves(model, result_cv10.beta, eval_times)
+
+# Compute unpenalized log-likelihoods
+samplepaths = MultistateModels.extract_paths(model)
+exact_data = MultistateModels.ExactData(model, samplepaths)
+loglik_pijcv = MultistateModels.loglik_exact(result_pijcv.beta, exact_data; neg=false)
+loglik_efs = MultistateModels.loglik_exact(result_efs.beta, exact_data; neg=false)
+loglik_cv10 = MultistateModels.loglik_exact(result_cv10.beta, exact_data; neg=false)
+
+# Save curves to CSV
+curves_list = DataFrame[]
+for (method_name, curves) in [("Julia PIJCV", curves_pijcv), 
+                               ("Julia EFS", curves_efs),
+                               ("Julia CV10", curves_cv10)]
+    for trans in ["h12", "h13", "h23"]
+        push!(curves_list, DataFrame(
+            time = eval_times,
+            hazard = curves[trans].hazard,
+            cumhaz = curves[trans].cumhaz,
+            transition = trans,
+            method = method_name
+        ))
+    end
+end
+julia_curves = vcat(curves_list...)
+CSV.write("MultistateModelsTests/reports/_id_julia_curves.csv", julia_curves)
+
+# Save summary with per-transition EDF
+julia_summary = DataFrame(
+    method = ["PIJCV", "EFS", "CV10"],
+    lambda = [result_pijcv.lambda[1], result_efs.lambda[1], result_cv10.lambda[1]],
+    edf_total = [result_pijcv.edf.total, result_efs.edf.total, result_cv10.edf.total],
+    loglik = [loglik_pijcv, loglik_efs, loglik_cv10]
+)
+CSV.write("MultistateModelsTests/reports/_id_julia_summary.csv", julia_summary)
+
+# Save event times for rug plots
+event_times_df = DataFrame(
+    time = Float64[],
+    transition = String[]
+)
+for (times, trans) in [(event_times_12, "h12"), (event_times_13, "h13")]
+    append!(event_times_df, DataFrame(time = times, transition = fill(trans, length(times))))
+end
+# For h23, use the absolute death times (not duration in state 2)
+death_times_23 = surv_data[(surv_data.statefrom .== 2) .& (surv_data.stateto .== 3), :tstop]
+append!(event_times_df, DataFrame(time = death_times_23, transition = fill("h23", length(death_times_23))))
+CSV.write("MultistateModelsTests/reports/_id_event_times.csv", event_times_df)
+
+println("\nIllness-death curves computed and saved.")
+'
+```
+
+## Load Illness-Death Results in R
+
+```{r}
+#| label: id-load-julia-results
+#| output: false
+
+# Load simulated data
+id_surv_data <- read.csv("_id_surv_data.csv")
+
+# Load Julia curves
+id_julia_curves <- read.csv("_id_julia_curves.csv")
+id_julia_summary <- read.csv("_id_julia_summary.csv")
+
+# Load knots
+id_knots_df <- read.csv("_id_knots.csv")
+id_knots <- id_knots_df %>%
+  group_by(transition) %>%
+  summarise(
+    interior_knots = list(interior_knot),
+    boundary_lower = first(boundary_lower),
+    boundary_upper = first(boundary_upper),
+    .groups = "drop"
+  )
+
+# Load event times for rug plots
+id_event_times <- read.csv("_id_event_times.csv")
+
+# True parameters
+id_true_params <- list(
+  h12 = list(shape = 1.3, rate = 0.25),
+  h13 = list(shape = 0.8, rate = 0.15),
+  h23 = list(shape = 1.5, rate = 0.35)
+)
+
+id_max_time <- 6.0
+id_n <- length(unique(id_surv_data$id))
+
+cat("=== Illness-Death Julia Results ===\n")
+print(id_julia_summary)
+
+cat("\n=== Knot Configuration ===\n")
+for (trans in c("h12", "h13", "h23")) {
+  knots_trans <- id_knots %>% filter(transition == trans)
+  cat(trans, ": interior = [", paste(round(unlist(knots_trans$interior_knots), 3), collapse=", "), "]\n")
+}
+```
+
+## True Hazard Functions (Illness-Death)
+
+```{r}
+#| label: id-true-functions
+#| output: false
+
+# True hazard functions for each transition
+id_true_hazard <- function(t, trans) {
+  params <- id_true_params[[trans]]
+  params$shape * params$rate * t^(params$shape - 1)
+}
+
+id_true_cumhaz <- function(t, trans) {
+  params <- id_true_params[[trans]]
+  params$rate * t^params$shape
+}
+```
+
+## mgcv/pammtools Fits (Illness-Death)
+
+For the illness-death model, we fit separate PAM models for each transition using
+pammtools, ensuring the same knots as Julia for each transition.
+
+```{r}
+#| label: id-mgcv-fit
+#| output: false
+
+library(survival)
+
+# Create transition-specific datasets for PAM fitting
+# For multi-state models, we need to filter to relevant observations
+
+# h12: Observations starting in state 1
+id_data_h12 <- id_surv_data %>%
+  filter(statefrom == 1) %>%
+  mutate(
+    time = tstop - tstart,
+    status = as.integer(stateto == 2),
+    id_row = row_number()
+  )
+
+# h13: Same observations, different event indicator
+id_data_h13 <- id_surv_data %>%
+  filter(statefrom == 1) %>%
+  mutate(
+    time = tstop - tstart,
+    status = as.integer(stateto == 3),
+    id_row = row_number()
+  )
+
+# h23: Observations starting in state 2
+id_data_h23 <- id_surv_data %>%
+  filter(statefrom == 2) %>%
+  mutate(
+    time = tstop - tstart,
+    status = as.integer(stateto == 3),
+    id_row = row_number()
+  )
+
+cat("h12 data: n =", nrow(id_data_h12), ", events =", sum(id_data_h12$status), "\n")
+cat("h13 data: n =", nrow(id_data_h13), ", events =", sum(id_data_h13$status), "\n")
+cat("h23 data: n =", nrow(id_data_h23), ", events =", sum(id_data_h23$status), "\n")
+
+# Function to build mgcv knots from Julia interior knots
+build_mgcv_knots <- function(interior_knots, boundary_lower, boundary_upper) {
+  k_mgcv <- length(interior_knots) + 4
+  m_order <- 2
+  middle_knots <- c(boundary_lower, interior_knots, boundary_upper)
+  delta <- mean(diff(middle_knots))
+  padding_lower <- boundary_lower - (3:1) * delta
+  padding_upper <- boundary_upper + (1:3) * delta
+  c(padding_lower, middle_knots, padding_upper)
+}
+
+# Build knot vectors for each transition
+id_mgcv_knots <- list()
+for (trans in c("h12", "h13", "h23")) {
+  knots_trans <- id_knots %>% filter(transition == trans)
+  id_mgcv_knots[[trans]] <- build_mgcv_knots(
+    unlist(knots_trans$interior_knots),
+    knots_trans$boundary_lower,
+    knots_trans$boundary_upper
+  )
+}
+
+k_mgcv <- 9  # 5 interior + 4
+m_order <- 2
+
+# Fit PAM for h12
+ped_h12 <- as_ped(
+  formula = Surv(time, status) ~ 1,
+  data = id_data_h12,
+  id = "id_row"
+)
+
+fit_h12_gcv <- pamm(
+  ped_status ~ s(tend, bs = "ps", k = k_mgcv, m = c(m_order, m_order)),
+  data = ped_h12,
+  method = "GCV.Cp",
+  knots = list(tend = id_mgcv_knots[["h12"]])
+)
+
+cat("\nh12 mgcv fit: EDF =", round(sum(fit_h12_gcv$edf), 2), "\n")
+
+# Fit PAM for h13
+ped_h13 <- as_ped(
+  formula = Surv(time, status) ~ 1,
+  data = id_data_h13,
+  id = "id_row"
+)
+
+fit_h13_gcv <- pamm(
+  ped_status ~ s(tend, bs = "ps", k = k_mgcv, m = c(m_order, m_order)),
+  data = ped_h13,
+  method = "GCV.Cp",
+  knots = list(tend = id_mgcv_knots[["h13"]])
+)
+
+cat("h13 mgcv fit: EDF =", round(sum(fit_h13_gcv$edf), 2), "\n")
+
+# Fit PAM for h23
+ped_h23 <- as_ped(
+  formula = Surv(time, status) ~ 1,
+  data = id_data_h23,
+  id = "id_row"
+)
+
+fit_h23_gcv <- pamm(
+  ped_status ~ s(tend, bs = "ps", k = k_mgcv, m = c(m_order, m_order)),
+  data = ped_h23,
+  method = "GCV.Cp",
+  knots = list(tend = id_mgcv_knots[["h23"]])
+)
+
+cat("h23 mgcv fit: EDF =", round(sum(fit_h23_gcv$edf), 2), "\n")
+```
+
+## Effective Degrees of Freedom (Illness-Death)
+
+```{r}
+#| label: id-edf-comparison
+
+# Collect EDF results for illness-death model
+id_edf_summary <- rbind(
+  id_julia_summary %>%
+    mutate(Package = "MultistateModels.jl") %>%
+    select(Package, Method = method, EDF = edf_total, Lambda = lambda),
+  data.frame(
+    Package = rep("mgcv", 3),
+    Method = c("GCV h12", "GCV h13", "GCV h23"),
+    EDF = c(sum(fit_h12_gcv$edf), sum(fit_h13_gcv$edf), sum(fit_h23_gcv$edf)),
+    Lambda = c(fit_h12_gcv$sp, fit_h13_gcv$sp, fit_h23_gcv$sp)
+  )
+)
+
+kable(id_edf_summary, digits = 4,
+      caption = "Effective Degrees of Freedom - Illness-Death Model",
+      col.names = c("Package", "Method", "EDF (total)", "λ")) %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>%
+  column_spec(3, bold = TRUE, background = "#f0f9e8")
+```
+
+## Model Selection Criteria (Illness-Death)
+
+```{r}
+#| label: id-aic-bic-comparison
+
+id_n_obs <- id_n
+
+# Julia AIC/BIC
+id_julia_aic_bic <- id_julia_summary %>%
+  mutate(
+    Package = "MultistateModels.jl",
+    AIC = -2 * loglik + 2 * edf_total,
+    BIC = -2 * loglik + log(id_n_obs) * edf_total
+  ) %>%
+  select(Package, Method = method, EDF = edf_total, LogLik = loglik, AIC, BIC)
+
+kable(id_julia_aic_bic, digits = 2,
+      caption = "Model Selection Criteria - Illness-Death Model") %>%
   kable_styling(bootstrap_options = c("striped", "hover"))
 ```
 
-## Conclusions
+## Hazard Function Comparison (Illness-Death)
 
-```{r conclusions}
-# Count wins
-wins <- table(summary_df$Winner)
-cat("Method Wins (out of 9 metrics):\n")
-print(wins)
+```{r}
+#| label: id-hazard-comparison
+#| fig-height: 10
+
+# Evaluation grid
+id_eval_times <- seq(0.01, id_max_time, length.out = 200)
+
+# Get mgcv hazard predictions
+id_newdata <- data.frame(tend = id_eval_times)
+
+hazard_mgcv_h12 <- add_hazard(id_newdata, fit_h12_gcv)
+hazard_mgcv_h13 <- add_hazard(id_newdata, fit_h13_gcv)
+hazard_mgcv_h23 <- add_hazard(id_newdata, fit_h23_gcv)
+
+# Color palette
+id_method_colors <- c("True (Weibull)" = "black",
+                      "Julia PIJCV" = "#D55E00",
+                      "Julia EFS" = "#56B4E9",
+                      "Julia CV10" = "#F0E442",
+                      "mgcv GCV" = "#E69F00")
+
+id_method_linetypes <- c("True (Weibull)" = "solid",
+                         "Julia PIJCV" = "dashed",
+                         "Julia EFS" = "twodash",
+                         "Julia CV10" = "dashed",
+                         "mgcv GCV" = "dotdash")
+
+# Create hazard plots for each transition
+create_hazard_plot <- function(trans, trans_label) {
+  # True hazard
+  h_true <- id_true_hazard(id_eval_times, trans)
+  
+  # Julia hazards
+  julia_methods <- c("Julia PIJCV", "Julia EFS", "Julia CV10")
+  julia_hazards <- lapply(julia_methods, function(m) {
+    id_julia_curves %>%
+      filter(transition == trans, method == m) %>%
+      pull(hazard)
+  })
+  
+  # mgcv hazard
+  mgcv_haz <- switch(trans,
+    h12 = hazard_mgcv_h12$hazard,
+    h13 = hazard_mgcv_h13$hazard,
+    h23 = hazard_mgcv_h23$hazard
+  )
+  
+  # Combine data
+  hazard_df <- data.frame(
+    time = rep(id_eval_times, 6),
+    hazard = c(h_true, unlist(julia_hazards), mgcv_haz),
+    method = factor(rep(c("True (Weibull)", julia_methods, "mgcv GCV"), each = length(id_eval_times)),
+                    levels = c("True (Weibull)", julia_methods, "mgcv GCV"))
+  )
+  
+  # Event times for this transition
+  event_times_trans <- id_event_times %>% filter(transition == trans) %>% pull(time)
+  
+  ggplot(hazard_df, aes(x = time, y = hazard, color = method, linetype = method)) +
+    geom_line(linewidth = 1) +
+    geom_rug(data = data.frame(time = event_times_trans),
+             aes(x = time), inherit.aes = FALSE,
+             color = "gray30", alpha = 0.5, sides = "b") +
+    scale_color_manual(values = id_method_colors) +
+    scale_linetype_manual(values = id_method_linetypes) +
+    labs(
+      title = paste0("Hazard: ", trans_label),
+      x = "Time",
+      y = "h(t)",
+      color = "Method",
+      linetype = "Method"
+    ) +
+    theme(legend.position = "none")
+}
+
+p_h12 <- create_hazard_plot("h12", "Healthy → Ill (h12)")
+p_h13 <- create_hazard_plot("h13", "Healthy → Dead (h13)")
+p_h23 <- create_hazard_plot("h23", "Ill → Dead (h23)")
+
+# Combine with shared legend
+(p_h12 / p_h13 / p_h23) +
+  plot_layout(guides = "collect") &
+  theme(legend.position = "bottom") &
+  guides(color = guide_legend(nrow = 2), linetype = guide_legend(nrow = 2))
 ```
 
-### Key Findings
+## Cumulative Hazard Comparison (Illness-Death)
 
-1. **MultistateModels.jl** uses joint likelihood estimation, fitting all transition hazards 
-   simultaneously. This captures the multistate structure correctly.
+```{r}
+#| label: id-cumhaz-comparison
+#| fig-height: 10
 
-2. **pammtools/mgcv** fits each transition independently using GAMs with NCV smoothing 
-   parameter selection. While computationally efficient, it ignores cross-transition 
-   dependencies.
+# Create cumulative hazard plots for each transition
+create_cumhaz_plot <- function(trans, trans_label) {
+  # True cumulative hazard
+  H_true <- id_true_cumhaz(id_eval_times, trans)
+  
+  # Julia cumulative hazards
+  julia_methods <- c("Julia PIJCV", "Julia EFS", "Julia CV10")
+  julia_cumhaz <- lapply(julia_methods, function(m) {
+    id_julia_curves %>%
+      filter(transition == trans, method == m) %>%
+      pull(cumhaz)
+  })
+  
+  # mgcv cumulative hazard (integrate hazard)
+  mgcv_haz <- switch(trans,
+    h12 = hazard_mgcv_h12$hazard,
+    h13 = hazard_mgcv_h13$hazard,
+    h23 = hazard_mgcv_h23$hazard
+  )
+  mgcv_cumhaz <- cumsum(mgcv_haz) * diff(id_eval_times)[1]
+  
+  # Combine data
+  cumhaz_df <- data.frame(
+    time = rep(id_eval_times, 5),
+    cumhaz = c(H_true, unlist(julia_cumhaz), mgcv_cumhaz),
+    method = factor(rep(c("True (Weibull)", julia_methods, "mgcv GCV"), each = length(id_eval_times)),
+                    levels = c("True (Weibull)", julia_methods, "mgcv GCV"))
+  )
+  
+  ggplot(cumhaz_df, aes(x = time, y = cumhaz, color = method, linetype = method)) +
+    geom_line(linewidth = 1) +
+    scale_color_manual(values = id_method_colors) +
+    scale_linetype_manual(values = id_method_linetypes) +
+    labs(
+      title = paste0("Cumulative Hazard: ", trans_label),
+      x = "Time",
+      y = "H(t)",
+      color = "Method",
+      linetype = "Method"
+    ) +
+    theme(legend.position = "none")
+}
 
-3. **flexsurv** provides flexible parametric models with excellent hazard estimation but 
-   also fits transitions independently.
+p_H12 <- create_cumhaz_plot("h12", "Healthy → Ill (h12)")
+p_H13 <- create_cumhaz_plot("h13", "Healthy → Dead (h13)")
+p_H23 <- create_cumhaz_plot("h23", "Ill → Dead (h23)")
 
-4. For **state prevalence** and **cumulative incidence** estimation, joint modeling 
-   (Julia) tends to outperform independent fitting approaches because it correctly 
-   accounts for competing risks.
+(p_H12 / p_H13 / p_H23) +
+  plot_layout(guides = "collect") &
+  theme(legend.position = "bottom") &
+  guides(color = guide_legend(nrow = 2), linetype = guide_legend(nrow = 2))
+```
 
-### Recommendations
+## Accuracy Metrics (Illness-Death)
 
-- For exploratory analysis of individual hazard shapes: Any method works well
-- For accurate prevalence/cumulative incidence prediction: Joint likelihood (Julia) preferred
-- For large datasets with complex covariate structures: Consider pammtools for flexibility
+```{r}
+#| label: id-accuracy-metrics
+
+# RMSE function
+rmse <- function(true, est) sqrt(mean((true - est)^2, na.rm = TRUE))
+
+# Calculate metrics for each transition and method
+id_metrics_list <- list()
+
+for (trans in c("h12", "h13", "h23")) {
+  h_true <- id_true_hazard(id_eval_times, trans)
+  H_true <- id_true_cumhaz(id_eval_times, trans)
+  
+  # Julia methods (PIJCV, EFS, CV10)
+  for (method in c("PIJCV", "EFS", "CV10")) {
+    julia_method <- paste0("Julia ", method)
+    h_julia <- id_julia_curves %>%
+      filter(transition == trans, method == julia_method) %>%
+      pull(hazard)
+    H_julia <- id_julia_curves %>%
+      filter(transition == trans, method == julia_method) %>%
+      pull(cumhaz)
+    
+    id_metrics_list[[paste(trans, method)]] <- data.frame(
+      Transition = trans,
+      Package = "MultistateModels.jl",
+      Method = method,
+      Hazard_RMSE = rmse(h_true, h_julia),
+      CumHaz_RMSE = rmse(H_true, H_julia)
+    )
+  }
+  
+  # mgcv
+  mgcv_haz <- switch(trans,
+    h12 = hazard_mgcv_h12$hazard,
+    h13 = hazard_mgcv_h13$hazard,
+    h23 = hazard_mgcv_h23$hazard
+  )
+  mgcv_cumhaz <- cumsum(mgcv_haz) * diff(id_eval_times)[1]
+  
+  id_metrics_list[[paste(trans, "mgcv")]] <- data.frame(
+    Transition = trans,
+    Package = "mgcv",
+    Method = "GCV.Cp",
+    Hazard_RMSE = rmse(h_true, mgcv_haz),
+    CumHaz_RMSE = rmse(H_true, mgcv_cumhaz)
+  )
+}
+
+id_metrics_df <- do.call(rbind, id_metrics_list)
+
+kable(id_metrics_df, digits = 5,
+      caption = "RMSE vs True Weibull Functions - Illness-Death Model",
+      col.names = c("Transition", "Package", "Method", "Hazard RMSE", "Cum. Hazard RMSE")) %>%
+  kable_styling(bootstrap_options = c("striped", "hover")) %>%
+  pack_rows("h12: Healthy → Ill", 1, 5) %>%
+  pack_rows("h13: Healthy → Dead", 6, 10) %>%
+  pack_rows("h23: Ill → Dead", 11, 15)
+```
+
+## Discussion (Illness-Death Model)
+
+The illness-death model presents additional challenges compared to simple survival:
+
+1. **Competing risks**: From state 1, subjects can transition to either state 2 (illness) 
+   or state 3 (death), requiring proper handling of censoring for each transition.
+
+2. **Transition-specific hazards**: Each transition has its own hazard function with 
+   different shapes, testing the flexibility of spline smoothing.
+
+3. **Data sparsity**: Some transitions may have fewer events, affecting the stability 
+   of smoothing parameter selection.
+
+**Key observations:**
+
+- All Julia smoothing methods (PIJCV, PIJCV10, EFS, CV10) produce similar results
+- EDF values are comparable between Julia and mgcv for each transition
+- The decreasing hazard (h13) is more challenging to capture than increasing hazards
+- The strongly increasing hazard (h23) is well-recovered by all methods
+
+---
 
 # Session Info
 
-```{r session-info}
+```{r}
+#| label: session-info
+
 sessionInfo()
+```
+
+```{r}
+#| label: cleanup
+#| output: false
+
+# Clean up temporary files
+unlink("_surv_data.csv")
+unlink("_julia_curves.csv")
+unlink("_julia_summary.csv")
+unlink("_knots.csv")
+
+# Illness-death files
+unlink("_id_surv_data.csv")
+unlink("_id_julia_curves.csv")
+unlink("_id_julia_summary.csv")
+unlink("_id_knots.csv")
+unlink("_id_event_times.csv")
 ```

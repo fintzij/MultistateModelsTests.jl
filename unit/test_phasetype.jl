@@ -826,8 +826,8 @@ using LinearAlgebra
         surrogate = MultistateModels.build_phasetype_surrogate(tmat, phasetype_config)
         
         # Update phase-type Q matrix to match the fitted Markov surrogate
-        # The phase-type rate should equal the Markov rate
-        markov_rate = exp(surrogate_fitted.parameters[1][1])
+        # The phase-type rate should equal the Markov rate (v0.3.0+: natural scale)
+        markov_rate = surrogate_fitted.parameters.flat[1]  # Already on natural scale
         surrogate.expanded_Q[1, 1] = -markov_rate
         surrogate.expanded_Q[1, 2] = markov_rate
         
@@ -1238,8 +1238,9 @@ using LinearAlgebra
         flat = get_parameters_flat(model)
         @test flat isa Vector{Float64}
         @test length(flat) == 6  # 5 phase-type params + 1 exp param
-        # Verify flat params are finite (log-scale)
+        # v0.3.0+: flat params are on natural scale (positive rates)
         @test all(isfinite.(flat))
+        @test all(flat .> 0)  # All rates should be positive on natural scale
         
         # Test get_parameters_nested and verify structure
         nested = get_parameters_nested(model)
@@ -1280,11 +1281,12 @@ using LinearAlgebra
         
         # In the new architecture, set_parameters! operates on expanded hazards
         # Model has 4 hazards: h1_ab (progression), h12_a, h12_b (exits), h23
+        # v0.3.0+: Parameters are on natural scale (rates directly)
         new_values = [
-            [log(0.5)],  # h1_ab (λ₁)
-            [log(0.3)],  # h12_a (μ₁)
-            [log(0.4)],  # h12_b (μ₂)
-            [log(0.6)]   # h23
+            [0.5],  # h1_ab (λ₁) - progression rate
+            [0.3],  # h12_a (μ₁) - exit rate from phase a
+            [0.4],  # h12_b (μ₂) - exit rate from phase b
+            [0.6]   # h23 - exponential rate
         ]
         
         set_parameters!(model, new_values)

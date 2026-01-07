@@ -31,7 +31,7 @@ end
 # --- Hazard boundaries ----------------------------------------------------------
 @testset "test_hazard_state_zero" begin
     # Guards against invalid hazard construction
-    @test_throws AssertionError Hazard(@formula(0 ~ 1), "exp", 0, 1)
-    @test_throws AssertionError Hazard(@formula(0 ~ 1), "exp", 1, 0)
-    @test_throws AssertionError Hazard(@formula(0 ~ 1), "exp", 1, 1)
+    @test_throws ArgumentError Hazard(@formula(0 ~ 1), "exp", 0, 1)
+    @test_throws ArgumentError Hazard(@formula(0 ~ 1), "exp", 1, 0)
+    @test_throws ArgumentError Hazard(@formula(0 ~ 1), "exp", 1, 1)
 end

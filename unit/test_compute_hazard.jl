@@ -54,7 +54,7 @@ end
     @testset "Constant hazard (intercept only)" begin
         model = create_test_model("exp")
         λ = 0.2
-        set_parameters!(model, (h12 = [log(λ)],))
+        set_parameters!(model, (h12 = [λ],))
         
         hazard = model.hazards[1]
         pars = get_hazard_params(model.parameters, model.hazards)[1]
@@ -72,7 +72,7 @@ end
         model = create_test_model("exp"; with_covariate=true)
         λ = 0.2
         β = 0.5
-        set_parameters!(model, (h12 = [log(λ), β],))
+        set_parameters!(model, (h12 = [λ, β],))
         
         hazard = model.hazards[1]
         pars = get_hazard_params(model.parameters, model.hazards)[1]
@@ -100,7 +100,7 @@ end
         model = create_test_model("wei")
         κ = 0.7  # shape
         λ = 0.2  # rate
-        set_parameters!(model, (h12 = [log(κ), log(λ)],))
+        set_parameters!(model, (h12 = [κ, λ],))
         
         hazard = model.hazards[1]
         pars = get_hazard_params(model.parameters, model.hazards)[1]
@@ -125,7 +125,7 @@ end
         model = create_test_model("wei")
         κ = 1.5
         λ = 0.1
-        set_parameters!(model, (h12 = [log(κ), log(λ)],))
+        set_parameters!(model, (h12 = [κ, λ],))
         
         hazard = model.hazards[1]
         pars = get_hazard_params(model.parameters, model.hazards)[1]
@@ -148,7 +148,7 @@ end
         model = create_test_model("wei")
         κ = 1.0
         λ = 0.25
-        set_parameters!(model, (h12 = [log(κ), log(λ)],))
+        set_parameters!(model, (h12 = [κ, λ],))
         
         hazard = model.hazards[1]
         pars = get_hazard_params(model.parameters, model.hazards)[1]
@@ -173,7 +173,7 @@ end
         model = create_test_model("gom")
         a = 0.1   # shape
         b = 0.05  # rate
-        set_parameters!(model, (h12 = [a, log(b)],))
+        set_parameters!(model, (h12 = [a, b],))
         
         hazard = model.hazards[1]
         pars = get_hazard_params(model.parameters, model.hazards)[1]
@@ -197,7 +197,7 @@ end
         model = create_test_model("gom")
         a = -0.1
         b = 0.2
-        set_parameters!(model, (h12 = [a, log(b)],))
+        set_parameters!(model, (h12 = [a, b],))
         
         hazard = model.hazards[1]
         pars = get_hazard_params(model.parameters, model.hazards)[1]
@@ -220,7 +220,7 @@ end
         model = create_test_model("gom")
         a = 0.0
         b = 0.15
-        set_parameters!(model, (h12 = [a, log(b)],))
+        set_parameters!(model, (h12 = [a, b],))
         
         hazard = model.hazards[1]
         pars = get_hazard_params(model.parameters, model.hazards)[1]
@@ -243,7 +243,7 @@ end
     @testset "Exponential: H(0,t) = λt" begin
         model = create_test_model("exp")
         λ = 0.3
-        set_parameters!(model, (h12 = [log(λ)],))
+        set_parameters!(model, (h12 = [λ],))
         
         hazard = model.hazards[1]
         pars = get_hazard_params(model.parameters, model.hazards)[1]
@@ -261,7 +261,7 @@ end
         model = create_test_model("wei")
         κ = 1.5
         λ = 0.2
-        set_parameters!(model, (h12 = [log(κ), log(λ)],))
+        set_parameters!(model, (h12 = [κ, λ],))
         
         hazard = model.hazards[1]
         pars = get_hazard_params(model.parameters, model.hazards)[1]
@@ -279,7 +279,7 @@ end
         model = create_test_model("gom")
         a = 0.1
         b = 0.05
-        set_parameters!(model, (h12 = [a, log(b)],))
+        set_parameters!(model, (h12 = [a, b],))
         
         hazard = model.hazards[1]
         pars = get_hazard_params(model.parameters, model.hazards)[1]
@@ -295,7 +295,7 @@ end
     
     @testset "Cumulative hazard with matching start/stop is zero" begin
         model = create_test_model("exp")
-        set_parameters!(model, (h12 = [log(0.1)],))
+        set_parameters!(model, (h12 = [0.1],))
         
         hazard = model.hazards[1]
         pars = get_hazard_params(model.parameters, model.hazards)[1]
@@ -331,9 +331,9 @@ end
         model = multistatemodel(h12, h13, h23; data=dat)
         
         set_parameters!(model, (
-            h12 = [log(0.1)],
-            h13 = [log(1.5), log(0.05)],
-            h23 = [0.1, log(0.02)]
+            h12 = [0.1],
+            h13 = [1.5, 0.05],
+            h23 = [0.1, 0.02]
         ))
         
         subjdat_row = model.data[1, :]
@@ -369,7 +369,7 @@ end
         model = create_test_model("wei")
         κ = 1.5
         λ = 0.1
-        set_parameters!(model, (h12 = [log(κ), log(λ)],))
+        set_parameters!(model, (h12 = [κ, λ],))
         
         hazard = model.hazards[1]
         pars = get_hazard_params(model.parameters, model.hazards)[1]
@@ -383,7 +383,7 @@ end
     @testset "Very small rate" begin
         model = create_test_model("exp")
         λ = 1e-8
-        set_parameters!(model, (h12 = [log(λ)],))
+        set_parameters!(model, (h12 = [λ],))
         
         hazard = model.hazards[1]
         pars = get_hazard_params(model.parameters, model.hazards)[1]

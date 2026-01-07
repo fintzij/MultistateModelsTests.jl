@@ -177,7 +177,7 @@ using MultistateModels: _interpolate_covariates!, _is_semimarkov,
         natural = model_init.parameters.natural
         
         @test flat[1] ≈ nested.h12.baseline.h12_Intercept
-        @test natural.h12[1] ≈ exp(flat[1])
+        @test natural.h12[1] ≈ flat[1]  # Both on natural scale now
     end
 
     @testset "initialize=false skips initialization" begin
@@ -244,8 +244,8 @@ using MultistateModels: _interpolate_covariates!, _is_semimarkov,
         
         @test nested.h12.baseline.h12_shape ≈ flat[1]
         @test nested.h12.baseline.h12_scale ≈ flat[2]
-        @test natural.h12[1] ≈ exp(flat[1])
-        @test natural.h12[2] ≈ exp(flat[2])
+        @test natural.h12[1] ≈ flat[1]  # Both on natural scale now
+        @test natural.h12[2] ≈ flat[2]  # Both on natural scale now
     end
 
     @testset "Semi-Markov panel - no recursive initialization" begin
@@ -327,8 +327,8 @@ using MultistateModels: _interpolate_covariates!, _is_semimarkov,
         model1 = multistatemodel(h12; data = data1, surrogate = :markov, initialize = false)
         model2 = multistatemodel(h12; data = data2, surrogate = :markov, initialize = false)
         
-        # Set known parameters on model2
-        known_params = [0.3, 0.5, -0.2]  # log_shape, log_scale, coef
+        # Set known parameters on model2 (natural scale: shape, scale, coef)
+        known_params = [exp(0.3), exp(0.5), -0.2]  # shape, scale, coef
         set_parameters!(model2, (h12 = known_params,))
         
         # Transfer to model1
@@ -343,11 +343,11 @@ using MultistateModels: _interpolate_covariates!, _is_semimarkov,
         @test nested1.h12.baseline.h12_scale ≈ known_params[2]
         @test nested1.h12.covariates.h12_x ≈ known_params[3]
         
-        # Verify natural scale is consistent (exp transform for baseline)
+        # Verify natural scale is consistent (no transform needed now)
         natural1 = model1.parameters.natural
-        @test natural1.h12[1] ≈ exp(known_params[1])  # shape
-        @test natural1.h12[2] ≈ exp(known_params[2])  # scale
-        @test natural1.h12[3] ≈ known_params[3]       # coef (no transform)
+        @test natural1.h12[1] ≈ known_params[1]  # shape
+        @test natural1.h12[2] ≈ known_params[2]  # scale
+        @test natural1.h12[3] ≈ known_params[3]  # coef (no transform)
     end
 
     @testset "Parameter transfer - all scales consistent" begin
@@ -363,19 +363,19 @@ using MultistateModels: _interpolate_covariates!, _is_semimarkov,
         model1 = multistatemodel(h12; data = data1, initialize = false)
         model2 = multistatemodel(h12; data = data2, initialize = false)
         
-        # Set specific parameter on model2
-        set_parameters!(model2, (h12 = [-1.5],))
+        # Set specific parameter on model2 (natural scale rate)
+        set_parameters!(model2, (h12 = [exp(-1.5)],))
         
         # Transfer
         _transfer_parameters!(model1, model2)
         
-        # All three views must be consistent
+        # All three views must be consistent (now all natural scale)
         flat1 = model1.parameters.flat
         nested1 = model1.parameters.nested
         natural1 = model1.parameters.natural
         
-        @test flat1[1] ≈ -1.5
-        @test nested1.h12.baseline.h12_Intercept ≈ -1.5
+        @test flat1[1] ≈ exp(-1.5)
+        @test nested1.h12.baseline.h12_Intercept ≈ exp(-1.5)
         @test natural1.h12[1] ≈ exp(-1.5)
     end
 
@@ -386,9 +386,10 @@ end
     @testset "Weibull hazard - exact data" begin
         Random.seed!(12345)
         
-        # True parameters (log scale for baseline)
-        true_log_shape = 0.3   # log(shape) for Weibull
-        true_log_scale = -0.5  # log(scale) for Weibull
+        # True parameters (natural scale)
+        # v0.3.0+: parameters stored on natural scale
+        true_shape = exp(0.3)   # shape ≈ 1.35
+        true_scale = exp(-0.5)  # scale ≈ 0.61
         
         # Create simple 2-state model with Weibull hazard
         n_subj = 100
@@ -407,8 +408,8 @@ end
         
         model = multistatemodel(h12; data = template_data, surrogate = :markov)
         
-        # Set true parameters
-        set_parameters!(model, (h12 = [true_log_shape, true_log_scale],))
+        # Set true parameters (natural scale: shape, scale)
+        set_parameters!(model, (h12 = [true_shape, true_scale],))
         
         # Simulate one dataset with exact paths
         sim_data, sim_paths = simulate(model; nsim=1, paths=true)
@@ -423,13 +424,14 @@ end
             set_crude_init!(exact_model)
             fitted = fit(exact_model; verbose=false, compute_vcov=false, compute_ij_vcov=false)
             
-            # Get fitted parameters
+            # Get fitted parameters (natural scale)
             fitted_params = get_parameters(fitted; scale = :flat)
             
             # Check that estimates are in reasonable range of true values
             # (single dataset won't match exactly, but should be close)
-            @test abs(fitted_params[1] - true_log_shape) < 0.5  # shape
-            @test abs(fitted_params[2] - true_log_scale) < 0.5  # scale
+            # Using relative tolerance since parameters are on natural scale
+            @test isapprox(fitted_params[1], true_shape, rtol=0.5)  # shape
+            @test isapprox(fitted_params[2], true_scale, rtol=0.5)  # scale
         else
             @warn "Too few transitions for reliable test"
         end
@@ -438,8 +440,9 @@ end
     @testset "Exponential with covariate - MLE consistency" begin
         Random.seed!(54321)
         
-        # True parameters
-        true_log_rate = -0.5
+        # True parameters (natural scale)
+        # v0.3.0+: rate stored on natural scale
+        true_rate = exp(-0.5)  # rate ≈ 0.61
         true_coef = 0.8
         
         n_subj = 200
@@ -458,7 +461,7 @@ end
         )
         
         model = multistatemodel(h12; data = template_data)
-        set_parameters!(model, (h12 = [true_log_rate, true_coef],))
+        set_parameters!(model, (h12 = [true_rate, true_coef],))
         
         # Simulate multiple datasets and average MLEs
         n_sim = 20
@@ -504,8 +507,8 @@ end
         if sum(valid) >= 10
             mean_mles = mean(mles[valid, :], dims=1)[:]
             
-            # Mean of MLEs should be close to true values
-            @test isapprox(mean_mles[1], true_log_rate, atol=0.3)
+            # Mean of MLEs should be close to true values (natural scale)
+            @test isapprox(mean_mles[1], true_rate, rtol=0.3)
             @test isapprox(mean_mles[2], true_coef, atol=0.3)
         else
             @warn "Too few successful fits for MLE consistency test"

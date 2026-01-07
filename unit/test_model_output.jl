@@ -41,7 +41,7 @@ function create_fitted_exponential_model(; n_subj=100, seed=12345)
     true_rate = 0.3
     h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
     model = multistatemodel(h12; data=dat)
-    set_parameters!(model, (h12 = [log(true_rate)],))
+    set_parameters!(model, (h12 = [true_rate],))
     
     sim_result = simulate(model; paths=false, data=true, nsim=1)
     exact_data = sim_result[1, 1]
@@ -74,7 +74,7 @@ function create_fitted_covariate_model(; n_subj=100, seed=54321)
     true_beta = 0.5
     h12 = Hazard(@formula(0 ~ x), "exp", 1, 2)
     model = multistatemodel(h12; data=dat)
-    set_parameters!(model, (h12 = [log(true_rate), true_beta],))
+    set_parameters!(model, (h12 = [true_rate, true_beta],))
     
     sim_result = simulate(model; paths=false, data=true, nsim=1)
     exact_data = sim_result[1, 1]
@@ -319,7 +319,7 @@ end
         # True model has covariate effect
         h12_true = Hazard(@formula(0 ~ x), "exp", 1, 2)
         model_true = multistatemodel(h12_true; data=dat)
-        set_parameters!(model_true, (h12 = [log(0.3), 0.7],))
+        set_parameters!(model_true, (h12 = [0.3, 0.7],))
         
         sim_result = simulate(model_true; paths=false, data=true, nsim=1)
         exact_data = sim_result[1, 1]

@@ -108,7 +108,8 @@ using Statistics
         model = multistatemodel(h12; data = dat)
         
         # Providing fixed parameters should still return MarkovSurrogate
-        fixed_params = (h12 = [log(0.3)],)
+        # v0.3.0+: Parameters are on natural scale (rates directly)
+        fixed_params = (h12 = [0.3],)  # rate = 0.3
         surrogate = MultistateModels.fit_surrogate(model; 
             surrogate_parameters = fixed_params, verbose = false)
         

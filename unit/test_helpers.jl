@@ -25,7 +25,7 @@ using ForwardDiff
             age = [30.0, 50.0]
         )
         model = multistatemodel(h12; data = dat)
-        set_parameters!(model, (h12 = [log(0.1), log(1.0), 0.01],))
+        set_parameters!(model, (h12 = [0.1, 1.0, 0.01],))
         paths = MultistateModels.extract_paths(model)
         exact_data = ExactData(model, paths)
         pars = model.parameters.flat
@@ -47,7 +47,7 @@ using ForwardDiff
             trt = [0.0, 1.0, 0.0]
         )
         model = multistatemodel(h12; data = dat)
-        set_parameters!(model, (h12 = [log(0.2), 0.3],))
+        set_parameters!(model, (h12 = [0.2, 0.3],))
         paths = MultistateModels.extract_paths(model)
         exact_data = ExactData(model, paths)
         pars = model.parameters.flat
@@ -84,9 +84,9 @@ end
     h23 = Hazard(@formula(0 ~ 1 + age), "gom", 2, 3)
     model = multistatemodel(h12, h13, h23; data = dat)
     set_parameters!(model, (
-        h12 = [log(0.1), log(1.2), 0.01],
-        h13 = [log(0.05)],
-        h23 = [log(0.15), 0.02, 0.01]
+        h12 = [0.1, 1.2, 0.01],
+        h13 = [0.05],
+        h23 = [0.15, 0.02, 0.01]
     ))
     
     base_paths = MultistateModels.extract_paths(model)
@@ -179,22 +179,23 @@ end
     using MultistateModels: extract_baseline_values, extract_covariate_values, 
                             extract_params_vector, extract_natural_vector
     
+    # v0.3.0+: Parameters on natural scale
     params_with_covars = (
-        baseline = (h12_shape = log(1.5), h12_scale = log(0.2)),
+        baseline = (h12_shape = 1.5, h12_scale = 0.2),
         covariates = (h12_age = 0.3, h12_sex = 0.1)
     )
     
     params_no_covars = (
-        baseline = (h13_intercept = log(0.8),),
+        baseline = (h13_intercept = 0.8,),
     )
     
     @testset "extract_baseline_values" begin
         baseline_vals = extract_baseline_values(params_with_covars)
-        @test baseline_vals ≈ [log(1.5), log(0.2)]
+        @test baseline_vals ≈ [1.5, 0.2]
         @test baseline_vals isa Vector{Float64}
         
         baseline_vals_single = extract_baseline_values(params_no_covars)
-        @test baseline_vals_single ≈ [log(0.8)]
+        @test baseline_vals_single ≈ [0.8]
     end
     
     @testset "extract_covariate_values" begin
@@ -209,29 +210,29 @@ end
     
     @testset "extract_params_vector" begin
         all_params = extract_params_vector(params_with_covars)
-        @test all_params ≈ [log(1.5), log(0.2), 0.3, 0.1]
+        @test all_params ≈ [1.5, 0.2, 0.3, 0.1]
         
         baseline_only = extract_params_vector(params_no_covars)
-        @test baseline_only ≈ [log(0.8)]
+        @test baseline_only ≈ [0.8]
     end
     
     @testset "extract_natural_vector" begin
-        # Now requires family argument to determine transformation
+        # v0.3.0+: All params on natural scale, no transformation needed
         # params_with_covars is for a Weibull-style hazard (shape, scale)
         natural_vals = extract_natural_vector(params_with_covars, :wei)
-        @test natural_vals ≈ [1.5, 0.2, 0.3, 0.1]  # exp(log(1.5)), exp(log(0.2)), covars unchanged
+        @test natural_vals ≈ [1.5, 0.2, 0.3, 0.1]  # all unchanged (already natural scale)
         
         # params_no_covars is for an exponential-style hazard (intercept only)
         natural_baseline = extract_natural_vector(params_no_covars, :exp)
-        @test natural_baseline ≈ [0.8]  # exp(log(0.8))
+        @test natural_baseline ≈ [0.8]  # unchanged
         
-        # Test Gompertz: first param identity (shape), second exp (rate)
+        # Test Gompertz: shape unconstrained (can be negative), rate positive
         params_gom = (
-            baseline = (h12_shape = -0.5, h12_rate = log(0.2)),
+            baseline = (h12_shape = -0.5, h12_rate = 0.2),
             covariates = (h12_age = 0.1,)
         )
         natural_gom = extract_natural_vector(params_gom, :gom)
-        @test natural_gom ≈ [-0.5, 0.2, 0.1]  # identity, exp, unchanged
+        @test natural_gom ≈ [-0.5, 0.2, 0.1]  # all unchanged
     end
 end
 
@@ -297,65 +298,73 @@ end
     end
 end
 # --- Parameter Transformation Tests --------------------------------------------
-# Critical: Unknown hazard families must throw ArgumentError, not silently proceed
+# v0.3.0+: All parameters stored on natural scale, transform functions are identity
 
 @testset "parameter_transformations" begin
     using MultistateModels: transform_baseline_to_natural, transform_baseline_to_estimation
     
-    @testset "unknown family throws ArgumentError" begin
-        baseline = (h12_Intercept = log(0.5),)
+    @testset "any family works (identity transform)" begin
+        # v0.3.0+: Parameters stored on natural scale, transformations are identity
+        # The functions don't throw for unknown families anymore
+        baseline = (h12_Intercept = 0.5,)
         
-        # Unknown family should throw ArgumentError
-        @test_throws ArgumentError transform_baseline_to_natural(baseline, :unknown, Float64)
-        @test_throws ArgumentError transform_baseline_to_estimation(baseline, :unknown)
-        
-        # Invalid symbols
-        @test_throws ArgumentError transform_baseline_to_natural(baseline, :weibull, Float64)  # should be :wei
-        @test_throws ArgumentError transform_baseline_to_natural(baseline, :exponential, Float64)  # should be :exp
-    end
-    
-    @testset "known families work correctly" begin
-        baseline = (h12_Intercept = log(0.5),)
-        
-        # Exponential: exp applied
+        # All families now return identity (parameters already on natural scale)
+        # These should NOT throw - they're all identity transforms
         nat_exp = transform_baseline_to_natural(baseline, :exp, Float64)
         @test nat_exp.h12_Intercept ≈ 0.5
         
-        # Weibull: ALL params get exp() (both shape and scale are positive)
-        baseline_wei = (h12_shape = log(1.2), h12_scale = log(0.3))
+        nat_wei = transform_baseline_to_natural(baseline, :wei, Float64)
+        @test nat_wei.h12_Intercept ≈ 0.5
+        
+        nat_unknown = transform_baseline_to_natural(baseline, :unknown, Float64)
+        @test nat_unknown.h12_Intercept ≈ 0.5
+    end
+    
+    @testset "known families work correctly (identity)" begin
+        # v0.3.0+: All transforms are identity - params already on natural scale
+        baseline = (h12_Intercept = 0.5,)
+        
+        # Exponential: identity
+        nat_exp = transform_baseline_to_natural(baseline, :exp, Float64)
+        @test nat_exp.h12_Intercept ≈ 0.5
+        
+        # Weibull: identity (params already natural scale)
+        baseline_wei = (h12_shape = 1.2, h12_scale = 0.3)
         nat_wei = transform_baseline_to_natural(baseline_wei, :wei, Float64)
-        @test nat_wei.h12_shape ≈ 1.2  # exp(log(1.2))
-        @test nat_wei.h12_scale ≈ 0.3  # exp(log(0.3))
+        @test nat_wei.h12_shape ≈ 1.2  # identity
+        @test nat_wei.h12_scale ≈ 0.3  # identity
         
-        # Gompertz: first param identity (shape can be negative), rest exp (rate)
-        baseline_gom = (h12_shape = -0.5, h12_rate = log(0.2))
+        # Gompertz: identity (shape can be negative, rate positive)
+        baseline_gom = (h12_shape = -0.5, h12_rate = 0.2)
         nat_gom = transform_baseline_to_natural(baseline_gom, :gom, Float64)
-        @test nat_gom.h12_shape ≈ -0.5  # identity (can be negative)
-        @test nat_gom.h12_rate ≈ 0.2  # exp
+        @test nat_gom.h12_shape ≈ -0.5  # identity
+        @test nat_gom.h12_rate ≈ 0.2  # identity
         
-        # Spline: identity (handled elsewhere)
-        baseline_sp = (h12_b1 = log(0.1), h12_b2 = log(0.2))
+        # Spline: identity
+        baseline_sp = (h12_b1 = 0.1, h12_b2 = 0.2)
         nat_sp = transform_baseline_to_natural(baseline_sp, :sp, Float64)
-        @test nat_sp.h12_b1 ≈ log(0.1)  # identity
-        @test nat_sp.h12_b2 ≈ log(0.2)  # identity
+        @test nat_sp.h12_b1 ≈ 0.1  # identity
+        @test nat_sp.h12_b2 ≈ 0.2  # identity
     end
     
     @testset "round-trip transformations" begin
+        # v0.3.0+: Both transforms are identity, so round-trip is always exact
+        
         # Exponential
-        baseline_exp = (h12_Intercept = log(0.5),)
+        baseline_exp = (h12_Intercept = 0.5,)
         nat = transform_baseline_to_natural(baseline_exp, :exp, Float64)
         back = transform_baseline_to_estimation(nat, :exp)
         @test back.h12_Intercept ≈ baseline_exp.h12_Intercept rtol=1e-10
         
-        # Weibull (both shape and scale are positive, stored on log scale)
-        baseline_wei = (h12_shape = log(1.5), h12_scale = log(0.3))
+        # Weibull (shape and scale both positive)
+        baseline_wei = (h12_shape = 1.5, h12_scale = 0.3)
         nat = transform_baseline_to_natural(baseline_wei, :wei, Float64)
         back = transform_baseline_to_estimation(nat, :wei)
         @test back.h12_shape ≈ baseline_wei.h12_shape rtol=1e-10
         @test back.h12_scale ≈ baseline_wei.h12_scale rtol=1e-10
         
-        # Gompertz (shape is identity, rate is positive)
-        baseline_gom = (h12_shape = -0.3, h12_rate = log(0.2))
+        # Gompertz (shape can be negative, rate positive)
+        baseline_gom = (h12_shape = -0.3, h12_rate = 0.2)
         nat = transform_baseline_to_natural(baseline_gom, :gom, Float64)
         back = transform_baseline_to_estimation(nat, :gom)
         @test back.h12_shape ≈ baseline_gom.h12_shape rtol=1e-10

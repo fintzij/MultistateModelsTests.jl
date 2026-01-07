@@ -156,7 +156,7 @@ using StatsModels: @formula
     @testset "Simulation with both data=false and paths=false" begin
         h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
         model = multistatemodel(h12; data=dat)
-        set_parameters!(model, (h12 = [log(0.1)],))
+        set_parameters!(model, (h12 = [0.1],))
         
         try
             result = simulate(model; data=false, paths=false)
@@ -171,7 +171,7 @@ using StatsModels: @formula
     @testset "Simulation with negative tmax" begin
         h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
         model = multistatemodel(h12; data=dat)
-        set_parameters!(model, (h12 = [log(0.1)],))
+        set_parameters!(model, (h12 = [0.1],))
         
         try
             result = simulate(model; tmax=-1.0)

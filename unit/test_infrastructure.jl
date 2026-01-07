@@ -169,7 +169,7 @@ end
     
     h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
     model = multistatemodel(h12; data=dat)
-    set_parameters!(model, (h12 = [log(0.1)],))
+    set_parameters!(model, (h12 = [0.1],))
     
     @testset "simulate() with CachedTransformStrategy" begin
         result = simulate(model; nsim=5, strategy=CachedTransformStrategy())
@@ -222,7 +222,7 @@ end
         
         h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
         model = multistatemodel(h12; data=dat)
-        set_parameters!(model, (h12 = [log(0.2)],))
+        set_parameters!(model, (h12 = [0.2],))
         
         # Simulate with HybridJumpSolver (via default solver selection)
         result = simulate(model; nsim=5)
@@ -243,7 +243,7 @@ end
         
         h12 = Hazard(@formula(0 ~ 1), "wei", 1, 2)
         model = multistatemodel(h12; data=dat)
-        set_parameters!(model, (h12 = [log(1.5), log(0.1)],))
+        set_parameters!(model, (h12 = [1.5, 0.1],))
         
         result = simulate(model; nsim=5)
         @test length(result) == 5
@@ -264,7 +264,7 @@ end
         h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)  # Exponential
         h13 = Hazard(@formula(0 ~ 1), "wei", 1, 3)  # Weibull
         model = multistatemodel(h12, h13; data=dat)
-        set_parameters!(model, (h12 = [log(0.1)], h13 = [log(1.5), log(0.05)]))
+        set_parameters!(model, (h12 = [0.1], h13 = [1.5, 0.05]))
         
         result = simulate(model; nsim=5)
         @test length(result) == 5

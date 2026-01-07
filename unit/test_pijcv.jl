@@ -23,7 +23,11 @@ import MultistateModels: cholesky_downdate!, cholesky_downdate_copy,
                           loo_perturbations_direct, pijcv_get_loo_estimates, pijcv_vcov,
                           multistatemodel, Hazard, set_parameters!, 
                           ExactData, extract_paths, get_parameters_flat, build_penalty_config,
-                          select_smoothing_parameters, PenaltyConfig, SplinePenalty
+                          select_smoothing_parameters, PenaltyConfig, SplinePenalty,
+                          _cholesky_downdate!, _solve_loo_newton_step,
+                          compute_pijcv_criterion, SmoothingSelectionState,
+                          _build_penalized_hessian, compute_subject_gradients,
+                          compute_subject_hessians_fast
 
 # =============================================================================
 # 1. Cholesky Downdate Algorithm
@@ -114,6 +118,180 @@ import MultistateModels: cholesky_downdate!, cholesky_downdate_copy,
         
         @test all_success == true
         @test L_copy * L_copy' ≈ H_expected atol=1e-9
+    end
+end
+
+# =============================================================================
+# 1b. NCV Cholesky Downdate Algorithm (smoothing_selection.jl)
+# =============================================================================
+# Tests for _cholesky_downdate! and _solve_loo_newton_step used in NCV criterion
+
+@testset "NCV Cholesky Downdate (_cholesky_downdate!)" begin
+    
+    @testset "Rank-1 downdate correctness" begin
+        # Verify L*L' ≈ H - v*v' after downdate
+        Random.seed!(11111)
+        n = 6
+        A = randn(n, n)
+        H = A' * A + 3.0 * I  # Positive definite
+        v = 0.3 * randn(n)
+        
+        L = Matrix(cholesky(Symmetric(H)).L)
+        success = _cholesky_downdate!(L, v)
+        
+        @test success == true
+        @test L * L' ≈ H - v * v' atol=1e-10
+    end
+    
+    @testset "Downdate preserves positive definiteness" begin
+        Random.seed!(22222)
+        n = 5
+        A = randn(n, n)
+        H = A' * A + 5.0 * I
+        v_small = 0.15 * randn(n)
+        
+        L = Matrix(cholesky(Symmetric(H)).L)
+        success = _cholesky_downdate!(L, v_small)
+        
+        @test success == true
+        H_new = L * L'
+        @test all(eigvals(Symmetric(H_new)) .> 0)
+    end
+    
+    @testset "Downdate detects indefiniteness" begin
+        Random.seed!(33333)
+        n = 4
+        A = randn(n, n)
+        H = A' * A + 0.5 * I  # Weakly positive definite
+        v_large = 3.0 * randn(n)  # Large enough to make indefinite
+        
+        L = Matrix(cholesky(Symmetric(H)).L)
+        success = _cholesky_downdate!(L, v_large)
+        
+        @test success == false
+    end
+    
+    @testset "Sequential rank-1 downdates accumulate correctly" begin
+        Random.seed!(44444)
+        n = 5
+        A = randn(n, n)
+        H = A' * A + 10.0 * I
+        vs = [0.15 * randn(n) for _ in 1:4]
+        
+        L = Matrix(cholesky(Symmetric(H)).L)
+        
+        H_expected = copy(H)
+        all_success = true
+        for v in vs
+            success = _cholesky_downdate!(L, v)
+            all_success &= success
+            H_expected -= v * v'
+        end
+        
+        @test all_success == true
+        @test L * L' ≈ H_expected atol=1e-9
+    end
+end
+
+@testset "NCV LOO Newton Step Solver (_solve_loo_newton_step)" begin
+    
+    @testset "Matches direct solve for simple case" begin
+        # Compare Cholesky downdate solve to direct (H - H_i)^{-1} g
+        Random.seed!(55555)
+        p = 6
+        
+        # Create positive definite penalized Hessian (larger eigenvalues)
+        A = randn(p, p)
+        H_lambda = A' * A + 10.0 * I
+        
+        # Create subject Hessian (much smaller than total Hessian)
+        B = 0.2 * randn(p, 2)  # Low rank, scaled down
+        H_i = B * B' + 0.01 * I
+        
+        # Gradient
+        g_i = randn(p)
+        
+        # Cholesky of full Hessian
+        chol_H = cholesky(Symmetric(H_lambda))
+        
+        # Direct solve (ground truth)
+        delta_direct = Symmetric(H_lambda - H_i) \ g_i
+        
+        # Downdate solve
+        delta_downdate = _solve_loo_newton_step(chol_H, H_i, g_i)
+        
+        @test delta_downdate !== nothing
+        @test delta_downdate ≈ delta_direct rtol=1e-4
+    end
+    
+    @testset "Handles full-rank subject Hessian" begin
+        Random.seed!(66666)
+        p = 5
+        
+        # Penalized Hessian with larger eigenvalues
+        A = randn(p, p)
+        H_lambda = A' * A + 10.0 * I
+        
+        # Full rank subject Hessian (much smaller than H_lambda)
+        B = 0.2 * randn(p, p)
+        H_i = B' * B + 0.01 * I
+        
+        g_i = randn(p)
+        
+        chol_H = cholesky(Symmetric(H_lambda))
+        
+        delta_direct = Symmetric(H_lambda - H_i) \ g_i
+        delta_downdate = _solve_loo_newton_step(chol_H, H_i, g_i)
+        
+        @test delta_downdate !== nothing
+        @test delta_downdate ≈ delta_direct rtol=1e-3
+    end
+    
+    @testset "Returns nothing when LOO Hessian is indefinite" begin
+        Random.seed!(77777)
+        p = 4
+        
+        # Small penalized Hessian
+        A = randn(p, p)
+        H_lambda = A' * A + 0.5 * I
+        
+        # Subject Hessian larger than H_lambda (will cause indefinite LOO Hessian)
+        B = randn(p, p)
+        H_i = B' * B + 3.0 * I
+        
+        g_i = randn(p)
+        
+        chol_H = cholesky(Symmetric(H_lambda))
+        
+        delta = _solve_loo_newton_step(chol_H, H_i, g_i)
+        
+        @test delta === nothing
+    end
+    
+    @testset "Multiple subjects give consistent results" begin
+        Random.seed!(88888)
+        p = 6
+        n_subjects = 5
+        
+        # Penalized Hessian (represent sum of n subjects + penalty)
+        # Total Hessian should be ~n times larger than individual subject Hessians
+        A = randn(p, p)
+        H_lambda = A' * A + 15.0 * I
+        
+        chol_H = cholesky(Symmetric(H_lambda))
+        
+        # Generate multiple subjects with small individual Hessians
+        for _ in 1:n_subjects
+            B = 0.15 * randn(p, 2)  # Scaled to be small relative to total
+            H_i = B * B' + 0.005 * I
+            g_i = randn(p)
+            
+            delta_direct = Symmetric(H_lambda - H_i) \ g_i
+            delta_downdate = _solve_loo_newton_step(chol_H, H_i, g_i)
+            
+            @test delta_downdate !== nothing
+            @test delta_downdate ≈ delta_direct rtol=1e-3
+        end
     end
 end
 
@@ -438,8 +616,8 @@ end
         # Run select_smoothing_parameters - should complete without error
         result = select_smoothing_parameters(
             model, exact_data, penalty_config, beta_init;
-            method = :gcv,  # Use GCV for speed
-            maxiter = 5,
+            method = :efs,  # Use EFS for speed
+            max_outer_iter = 3,
             verbose = false
         )
         
@@ -461,7 +639,7 @@ end
         @test isfinite(result.criterion) || isnan(result.criterion)
     end
     
-    @testset "Method fallback from PIJCV to GCV works" begin
+    @testset "Method fallback from PIJCV to EFS works" begin
         Random.seed!(31313)
         
         # Small dataset that might cause PIJCV numerical issues
@@ -488,16 +666,16 @@ end
         exact_data = ExactData(model, paths)
         beta_init = get_parameters_flat(model)
         
-        # Request PIJCV - may fall back to GCV
+        # Request PIJCV - may fall back to EFS
         result = select_smoothing_parameters(
             model, exact_data, penalty_config, beta_init;
             method = :pijcv,
-            maxiter = 3,
+            max_outer_iter = 3,
             verbose = false
         )
         
         # Should return valid result regardless of which method was used
-        @test result.method_used ∈ (:pijcv, :gcv, :none)
+        @test result.method_used ∈ (:pijcv, :efs, :none)
         @test all(isfinite.(result.beta))
     end
 end

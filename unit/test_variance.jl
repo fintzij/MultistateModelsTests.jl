@@ -84,7 +84,7 @@ end
     )
     
     model = multistatemodel(h12; data=dat)
-    set_parameters!(model, (h12 = [log(1.2), log(0.15)],))
+    set_parameters!(model, (h12 = [1.2, 0.15],))
     
     # Simulate and fit
     sim_result = simulate(model; paths=false, data=true, nsim=1)
@@ -118,7 +118,7 @@ end
     )
     
     model = multistatemodel(h12; data=dat)
-    set_parameters!(model, (h12 = [log(1.1), log(0.20)],))
+    set_parameters!(model, (h12 = [1.1, 0.20],))
     
     sim_result = simulate(model; paths=false, data=true, nsim=1)
     simdat = sim_result[1, 1]
@@ -154,7 +154,7 @@ end
     )
     
     model = multistatemodel(h12, h23; data=dat)
-    set_parameters!(model, (h12 = [log(0.2)], h23 = [log(0.15)]))
+    set_parameters!(model, (h12 = [0.2], h23 = [0.15]))
     
     sim_result = simulate(model; paths=false, data=true, nsim=1, autotmax=false)
     simdat = sim_result[1]

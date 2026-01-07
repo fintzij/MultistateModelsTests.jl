@@ -44,7 +44,7 @@ function create_exact_dataset(; n_subj=50, seed=12345)
     true_beta = 0.5
     h12 = Hazard(@formula(0 ~ x), "exp", 1, 2)
     model_sim = multistatemodel(h12; data=dat)
-    set_parameters!(model_sim, (h12 = [log(true_rate), true_beta],))
+    set_parameters!(model_sim, (h12 = [true_rate, true_beta],))
     
     sim_result = simulate(model_sim; paths=false, data=true, nsim=1)
     return sim_result[1, 1]
@@ -120,8 +120,8 @@ end
         h12 = Hazard(@formula(0 ~ x), "exp", 1, 2)
         model = multistatemodel(h12; data=exact_data)
         
-        # Set parameters and compute gradient
-        params = [log(0.2), 0.5]
+        # Set parameters and compute gradient (natural scale)
+        params = [0.2, 0.5]
         set_parameters!(model, (h12 = params,))
         
         # The fit should work with ForwardDiff (default)
@@ -148,7 +148,7 @@ end
         # Simulate Weibull data
         h12_sim = Hazard(@formula(0 ~ 1), "wei", 1, 2)
         model_sim = multistatemodel(h12_sim; data=dat)
-        set_parameters!(model_sim, (h12 = [log(1.5), log(0.3)],))  # shape, scale
+        set_parameters!(model_sim, (h12 = [1.5, 0.3],))  # shape, scale (natural)
         
         sim_result = simulate(model_sim; paths=false, data=true, nsim=1)
         exact_data = sim_result[1, 1]
@@ -180,7 +180,7 @@ end
         # Simulate Gompertz data
         h12_sim = Hazard(@formula(0 ~ 1), "gom", 1, 2)
         model_sim = multistatemodel(h12_sim; data=dat)
-        set_parameters!(model_sim, (h12 = [0.1, log(0.2)],))  # shape, log(rate)
+        set_parameters!(model_sim, (h12 = [0.1, 0.2],))  # shape, rate (natural)
         
         sim_result = simulate(model_sim; paths=false, data=true, nsim=1)
         exact_data = sim_result[1, 1]

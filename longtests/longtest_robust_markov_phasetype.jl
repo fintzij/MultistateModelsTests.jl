@@ -191,7 +191,7 @@ end
     # Set true rate and simulate
     true_rate = 0.3
     model_sim = multistatemodel(h12; data=template)
-    set_parameters!(model_sim, (h12 = [log(true_rate)],))
+    set_parameters!(model_sim, (h12 = [true_rate],))
     sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false)
     dat = sim_result[1]
     
@@ -262,7 +262,7 @@ end
     # Set true params and simulate
     true_shape, true_scale = 1.2, 0.2
     model_sim = multistatemodel(h12; data=template)
-    set_parameters!(model_sim, (h12 = [log(true_shape), log(true_scale)],))
+    set_parameters!(model_sim, (h12 = [true_shape, true_scale],))
     sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false)
     dat = sim_result[1]
     

@@ -167,7 +167,7 @@ end
     # Use average rate for simulation
     avg_rate = (true_rate_early + true_rate_late) / 2
     model_sim = multistatemodel(h12_exp; data=sim_data)
-    MultistateModels.set_parameters!(model_sim, (h12 = [log(avg_rate)],))
+    MultistateModels.set_parameters!(model_sim, (h12 = [avg_rate],))
     
     # For 2-state model (1→2 absorbing), transition 1 is exact
     obstype_map = Dict(1 => 1)
@@ -339,7 +339,7 @@ end
     )
     
     model_sim = multistatemodel(h12_exp; data=sim_data)
-    MultistateModels.set_parameters!(model_sim, (h12 = [log(true_baseline), true_beta],))
+    MultistateModels.set_parameters!(model_sim, (h12 = [true_baseline, true_beta],))
     
     # For 2-state model (1→2 absorbing), transition 1 is exact
     obstype_map = Dict(1 => 1)
@@ -508,7 +508,7 @@ end
     )
     
     model_sim = multistatemodel(h12_exp; data=sim_data)
-    MultistateModels.set_parameters!(model_sim, (h12 = [log(0.3)],))
+    MultistateModels.set_parameters!(model_sim, (h12 = [0.3],))
     
     # For 2-state model (1→2 absorbing), transition 1 is exact
     obstype_map = Dict(1 => 1)
@@ -591,7 +591,7 @@ end
     # Simulate from Weibull
     h12_wei = Hazard(@formula(0 ~ 1), "wei", 1, 2)
     model_sim = multistatemodel(h12_wei; data=template, surrogate=:markov)
-    set_parameters!(model_sim, (h12 = [log(true_shape), log(true_scale)],))
+    set_parameters!(model_sim, (h12 = [true_shape, true_scale],))
     
     # For 2-state model (1→2 absorbing), transition 1 is exact
     obstype_map = Dict(1 => 1)

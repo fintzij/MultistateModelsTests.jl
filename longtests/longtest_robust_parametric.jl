@@ -432,7 +432,7 @@ end
     
     # Test that fitted hazards evaluate correctly at specific times
     true_rate = 0.25
-    true_params = (h12 = [log(true_rate)],)
+    true_params = (h12 = [true_rate],)  # Natural scale
     
     h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
     exact_data = generate_exact_data((h12,), true_params; n_subj=N_SUBJECTS_LARGE)
@@ -440,7 +440,7 @@ end
     model_fit = multistatemodel(h12; data=exact_data)
     fitted = fit(model_fit; verbose=false)
     
-    fitted_rate = exp(get_parameters_flat(fitted)[1])
+    fitted_rate = get_parameters_flat(fitted)[1]  # Already natural scale
     
     # Verify hazard function evaluation matches parameter
     # pars must be NamedTuple on natural scale for hazard_fn

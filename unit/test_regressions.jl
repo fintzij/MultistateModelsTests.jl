@@ -61,7 +61,7 @@ using StatsModels
         model = multistatemodel(h12; data=dat)
         
         λ = 0.3
-        set_parameters!(model, (h12 = [log(λ)],))
+        set_parameters!(model, (h12 = [λ],))
         
         # This used to throw: FieldError: type Array has no field 'baseline'
         hazards = compute_hazard([1.0, 2.0], model, :h12)

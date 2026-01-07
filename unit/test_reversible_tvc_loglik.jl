@@ -34,7 +34,7 @@ import MultistateModels:
         )
         
         model = multistatemodel(h12, h21; data=dat)
-        set_parameters!(model, (h12 = [log(2.0), log(0.3)], h21 = [log(1.5), log(0.25)]))
+        set_parameters!(model, (h12 = [2.0, 0.3], h21 = [1.5, 0.25]))
         
         paths = MultistateModels.extract_paths(model)
         @test length(paths) == 1
@@ -68,12 +68,12 @@ import MultistateModels:
         
         model = multistatemodel(h12, h21; data=dat)
         
-        # Parameters: log(shape), log(scale)
+        # Parameters: shape, scale (natural scale)
         shape_12, scale_12 = 1.5, 0.2
         shape_21, scale_21 = 1.2, 0.3
         set_parameters!(model, (
-            h12 = [log(shape_12), log(scale_12)],
-            h21 = [log(shape_21), log(scale_21)]
+            h12 = [shape_12, scale_12],
+            h21 = [shape_21, scale_21]
         ))
         
         # Path: state 1 for [0, 5], then state 2 for [5, 10]
@@ -138,8 +138,8 @@ import MultistateModels:
         
         model = multistatemodel(h12, h21; data=dat)
         set_parameters!(model, (
-            h12 = [log(shape_12), log(scale_12), beta_12],
-            h21 = [log(shape_21), log(scale_21), beta_21]
+            h12 = [shape_12, scale_12, beta_12],
+            h21 = [shape_21, scale_21, beta_21]
         ))
         
         # Manual calculation:
@@ -188,6 +188,92 @@ end
     # This testset verifies AFT (accelerated failure time) models with TVC
     # compute cumulative hazard correctly using effective time τ(t) = ∫ exp(-βx(s)) ds
     
+    @testset "Weibull AFT with TVC and sojourn reset - comprehensive" begin
+        # This is the most complex case: AFT + TVC + multiple sojourns
+        # Tests that effective time τ resets when entering a new state
+        # 
+        # Path: 1 (t=0-2, x=0.5) → 2 (t=2-4, x=1.0) → 2 (t=4-6, x=0.0)
+        #       transition at t=2, right-censored at t=6
+        #
+        # For AFT in a semi-Markov model:
+        # - Each sojourn starts with τ = 0
+        # - τ accumulates as τ(s) = ∫₀ˢ exp(-β·x(u)) du where s is sojourn time
+        # - Cumulative hazard H(s) = H₀(τ(s))
+        # - Instantaneous hazard h(s|x) = h₀(τ) · exp(-β·x(s))
+        
+        shape_12 = 1.5
+        scale_12 = 0.8
+        beta_12 = 0.5
+        
+        shape_21 = 1.2  # for completeness, though no 2→1 transition
+        scale_21 = 0.3
+        beta_21 = -0.2
+        
+        h12 = Hazard(@formula(0 ~ x), "wei", 1, 2; linpred_effect=:aft)
+        h21 = Hazard(@formula(0 ~ x), "wei", 2, 1; linpred_effect=:aft)
+        
+        dat = DataFrame(
+            id = [1, 1, 1],
+            tstart = [0.0, 2.0, 4.0],
+            tstop = [2.0, 4.0, 6.0],
+            statefrom = [1, 2, 2],
+            stateto = [2, 2, 2],  # transition at t=2, then right-censored
+            obstype = [1, 1, 1],
+            x = [0.5, 1.0, 0.0]
+        )
+        
+        model = multistatemodel(h12, h21; data=dat)
+        set_parameters!(model, (
+            h12 = [shape_12, scale_12, beta_12],
+            h21 = [shape_21, scale_21, beta_21]
+        ))
+        
+        # === Manual calculation ===
+        
+        # Sojourn 1: State 1, interval [0, 2), x=0.5, transition to state 2
+        # Effective time: τ₁ = 2 * exp(-0.5 * 0.5) = 2 * exp(-0.25)
+        sojourn_1_duration = 2.0
+        x_sojourn_1 = 0.5
+        tau_sojourn_1 = sojourn_1_duration * exp(-beta_12 * x_sojourn_1)
+        
+        # Weibull AFT cumulative hazard: H₀(τ) = scale * τ^shape
+        H_12_sojourn_1 = scale_12 * tau_sojourn_1^shape_12
+        
+        # Instantaneous hazard at transition: h₀(τ) * exp(-β*x)
+        h_12_at_transition = shape_12 * scale_12 * tau_sojourn_1^(shape_12 - 1) * exp(-beta_12 * x_sojourn_1)
+        
+        # Log-likelihood contribution from sojourn 1: log(h) - H
+        ll_sojourn_1 = log(h_12_at_transition) - H_12_sojourn_1
+        
+        # Sojourn 2: State 2, interval [2, 6), NO transition (right-censored)
+        # IMPORTANT: τ RESETS to 0 when we enter state 2!
+        # Two intervals within this sojourn: [2,4) with x=1.0, [4,6) with x=0.0
+        
+        # Effective time for h21 (2→1 hazard):
+        delta_tau_21_int1 = 2.0 * exp(-beta_21 * 1.0)  # interval [2,4), duration=2, x=1.0
+        delta_tau_21_int2 = 2.0 * exp(-beta_21 * 0.0)  # interval [4,6), duration=2, x=0.0
+        tau_sojourn_2 = delta_tau_21_int1 + delta_tau_21_int2
+        
+        # Cumulative hazard (survival term only - no transition)
+        H_21_sojourn_2 = scale_21 * tau_sojourn_2^shape_21
+        
+        # Log-likelihood contribution from sojourn 2: just -H (survival)
+        ll_sojourn_2 = -H_21_sojourn_2
+        
+        ll_manual = ll_sojourn_1 + ll_sojourn_2
+        
+        # === Package calculation ===
+        paths = MultistateModels.extract_paths(model)
+        exact_data = MultistateModels.ExactData(model, paths)
+        ll_package = MultistateModels.loglik_exact(model.parameters.flat, exact_data; neg=false)
+        
+        # Verify intermediate values for debugging
+        @test tau_sojourn_1 ≈ 2.0 * exp(-0.25) rtol=1e-10
+        @test tau_sojourn_2 ≈ 2.0 * exp(0.2) + 2.0 * 1.0 rtol=1e-10
+        
+        @test ll_package ≈ ll_manual rtol=1e-6
+    end
+    
     @testset "Weibull AFT with TVC - likelihood" begin
         # Test parameters (natural scale)
         shape = 1.5
@@ -209,8 +295,8 @@ end
         )
         
         model = multistatemodel(h12; data=dat)
-        # Parameters stored as: [log(shape), log(scale), beta]
-        set_parameters!(model, (h12 = [log(shape), log(scale), beta],))
+        # Parameters stored as: [shape, scale, beta] (natural scale)
+        set_parameters!(model, (h12 = [shape, scale, beta],))
         
         # Manual calculation of effective time τ
         # τ = 1.0 * exp(-0.5 * 0.0) + 1.0 * exp(-0.5 * 1.0) + 1.0 * exp(-0.5 * 0.5)
@@ -255,8 +341,8 @@ end
         )
         
         model = multistatemodel(h12; data=dat)
-        # Gompertz: [shape, log(rate), beta] - shape on identity scale
-        set_parameters!(model, (h12 = [shape, log(rate), beta],))
+        # Gompertz: [shape, rate, beta] - shape on identity scale, rate on natural scale
+        set_parameters!(model, (h12 = [shape, rate, beta],))
         
         # Manual effective time
         tau_manual = 1.0 * exp(-beta * 0.0) + 1.0 * exp(-beta * 1.0) + 1.0 * exp(-beta * 0.5)
@@ -276,6 +362,77 @@ end
         
         @test ll_package ≈ ll_manual rtol=1e-6
         @test H_manual ≈ 0.6969416014725967 rtol=1e-10  # regression test
+    end
+    
+    @testset "Gompertz AFT with TVC and sojourn reset" begin
+        # Test Gompertz AFT with multiple sojourns to verify effective time resets
+        # Path: 1 (t=0-3, x=0.3) → 2 (t=3-5, x=0.8) → 1 (t=5-8, x=0.1)
+        
+        shape_12 = 0.2  # Gompertz shape (a)
+        rate_12 = 0.15  # Gompertz rate (b)
+        beta_12 = 0.4
+        
+        shape_21 = 0.3
+        rate_21 = 0.2
+        beta_21 = -0.3
+        
+        h12 = Hazard(@formula(0 ~ x), "gom", 1, 2; linpred_effect=:aft)
+        h21 = Hazard(@formula(0 ~ x), "gom", 2, 1; linpred_effect=:aft)
+        
+        dat = DataFrame(
+            id = [1, 1, 1],
+            tstart = [0.0, 3.0, 5.0],
+            tstop = [3.0, 5.0, 8.0],
+            statefrom = [1, 2, 1],
+            stateto = [2, 1, 1],  # 1→2 at t=3, 2→1 at t=5, then censored
+            obstype = [1, 1, 1],
+            x = [0.3, 0.8, 0.1]
+        )
+        
+        model = multistatemodel(h12, h21; data=dat)
+        set_parameters!(model, (
+            h12 = [shape_12, rate_12, beta_12],
+            h21 = [shape_21, rate_21, beta_21]
+        ))
+        
+        # === Manual calculation ===
+        
+        # Sojourn 1: State 1, interval [0, 3), x=0.3, transition 1→2
+        tau_1 = 3.0 * exp(-beta_12 * 0.3)
+        
+        # Gompertz: H₀(τ) = (rate/shape) * (exp(shape*τ) - 1)
+        H_12 = (rate_12 / shape_12) * (exp(shape_12 * tau_1) - 1.0)
+        
+        # h₀(τ) * exp(-β*x) = rate * exp(shape*τ) * exp(-β*x)
+        h_12 = rate_12 * exp(shape_12 * tau_1) * exp(-beta_12 * 0.3)
+        
+        ll_1 = log(h_12) - H_12
+        
+        # Sojourn 2: State 2, interval [3, 5), x=0.8, transition 2→1
+        # τ RESETS to 0
+        tau_2 = 2.0 * exp(-beta_21 * 0.8)
+        
+        H_21 = (rate_21 / shape_21) * (exp(shape_21 * tau_2) - 1.0)
+        h_21 = rate_21 * exp(shape_21 * tau_2) * exp(-beta_21 * 0.8)
+        
+        ll_2 = log(h_21) - H_21
+        
+        # Sojourn 3: State 1, interval [5, 8), x=0.1, NO transition (censored)
+        # τ RESETS to 0 again
+        tau_3 = 3.0 * exp(-beta_12 * 0.1)
+        
+        H_12_final = (rate_12 / shape_12) * (exp(shape_12 * tau_3) - 1.0)
+        
+        ll_3 = -H_12_final  # survival only
+        
+        ll_manual = ll_1 + ll_2 + ll_3
+        
+        # === Package calculation ===
+        paths = MultistateModels.extract_paths(model)
+        exact_data = MultistateModels.ExactData(model, paths)
+        ll_package = MultistateModels.loglik_exact(model.parameters.flat, exact_data; neg=false)
+        
+        @test ll_package ≈ ll_manual rtol=1e-6
     end
     
     @testset "Exponential AFT with TVC - equivalence to PH" begin
@@ -299,8 +456,8 @@ end
         model_aft = multistatemodel(h12_aft; data=dat)
         model_ph = multistatemodel(h12_ph; data=dat)
         
-        set_parameters!(model_aft, (h12 = [log(rate), beta],))
-        set_parameters!(model_ph, (h12 = [log(rate), -beta],))  # negated beta for PH
+        set_parameters!(model_aft, (h12 = [rate, beta],))
+        set_parameters!(model_ph, (h12 = [rate, -beta],))  # negated beta for PH
         
         paths_aft = MultistateModels.extract_paths(model_aft)
         paths_ph = MultistateModels.extract_paths(model_ph)

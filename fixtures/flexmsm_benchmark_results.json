@@ -1,0 +1,48 @@
+{
+  "description": "Smoothing parameter selection benchmark for MultistateModels.jl",
+  "date_generated": "2026-01-05 08:05:22.56378",
+  "r_version": "R version 4.5.1 (2025-06-13)",
+  "flexmsm_version": "0.1.2",
+  "mgcv_version": "1.9.3",
+  "data_config": {
+    "true_shape": 1.5,
+    "n_basis": 5,
+    "max_time": 5,
+    "true_rate": 0.3,
+    "n": 300
+  },
+  "julia_optimal": {
+    "edf": 1.4575,
+    "gcv": 1.5709,
+    "lambda": 403.4288,
+    "log_lambda": 6
+  },
+  "flexmsm_perf": {
+    "method": "perf",
+    "note": "flexmsm not tested - requires panel-observed multistate data",
+    "converged": false
+  },
+  "flexmsm_efs": {
+    "method": "efs",
+    "note": "flexmsm not tested - requires panel-observed multistate data",
+    "converged": false
+  },
+  "mgcv_gcv": {
+    "method": "gcv",
+    "sp": 0.4586,
+    "edf": 4.0453,
+    "converged": true
+  },
+  "mgcv_reml": {
+    "method": "reml",
+    "sp": 0.7931,
+    "edf": 3.809,
+    "converged": true
+  },
+  "notes": [
+    "flexmsm requires panel-observed multistate data (multiple observation times per subject)",
+    "For proper flexmsm comparison, use illness-death model with intermittent observations",
+    "mgcv GCV and REML use Poisson PAM (piecewise-exponential additive model) approach",
+    "Julia MultistateModels.jl uses exact likelihood, so optimal lambda may differ"
+  ]
+}

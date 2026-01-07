@@ -485,8 +485,8 @@ import StatsModels: apply_schema, coefnames, modelcols, termvars
         # For monotone splines, coefficients may be adjusted
         @test length(ests_after) == length(ests_before)
         
-        # Update model with rectified parameters using unflatten_natural
-        pars_nested = MultistateModels.unflatten_natural(ests_after, model)
+        # Update model with rectified parameters using unflatten_parameters
+        pars_nested = MultistateModels.unflatten_parameters(ests_after, model)
         for (hazname, hazidx) in model.hazkeys
             hazard_pars = pars_nested[hazname]
             # Extract full parameter vector (baseline + covariates)
@@ -1315,5 +1315,139 @@ import StatsModels: apply_schema, coefnames, modelcols, termvars
             # Total lambda count
             @test config.n_lambda >= 2
         end
+    end
+end
+
+# =============================================================================
+# GPS Penalty Matrix Tests
+# =============================================================================
+# Tests for Li & Cao (2022) General P-Spline penalty matrix construction
+# =============================================================================
+
+@testset "GPS Penalty Matrix" begin
+    using BSplineKit
+    import MultistateModels: build_penalty_matrix, build_penalty_matrix_gps, 
+                             build_penalty_matrix_integral, build_general_difference_matrix
+    
+    @testset "GPS vs R gps package - uniform knots" begin
+        # Reference values from R gps package with uniform knots
+        xt_uniform = collect(range(0.0, 1.0, length=10))
+        d = 4
+        m = 2
+        
+        # Build D matrix and S = D'D
+        D_julia = build_general_difference_matrix(xt_uniform, d, m)
+        S_julia = transpose(D_julia) * D_julia
+        
+        # R gps reference S matrix
+        S_R = [
+            6561.0  -13122.0   6561.0      0.0      0.0      0.0;
+           -13122.0  32805.0 -26244.0   6561.0      0.0      0.0;
+            6561.0 -26244.0  39366.0 -26244.0   6561.0      0.0;
+               0.0   6561.0 -26244.0  39366.0 -26244.0   6561.0;
+               0.0      0.0   6561.0 -26244.0  32805.0 -13122.0;
+               0.0      0.0      0.0   6561.0 -13122.0   6561.0
+        ]
+        
+        @test isapprox(S_julia, S_R, rtol=1e-6)
+    end
+    
+    @testset "GPS vs R gps package - non-uniform knots" begin
+        # Reference values from R gps package with non-uniform knots
+        xt = [0.0, 0.1, 0.15, 0.4, 0.5, 0.7, 0.85, 0.9, 0.95, 1.0]
+        d = 4
+        m = 2
+        
+        D_julia = build_general_difference_matrix(xt, d, m)
+        S_julia = transpose(D_julia) * D_julia
+        
+        # R gps reference S matrix
+        S_R = [
+            1836.735 -3172.542  1335.807      0.000      0.000      0.0;
+           -3172.542  6802.159 -5245.779   1616.162      0.000      0.0;
+            1335.807 -5245.779  8952.689  -6675.370   1632.653      0.0;
+               0.000  1616.162 -6675.370  14153.597 -18094.388   9000.0;
+               0.000     0.000  1632.653 -18094.388  39861.735 -23400.0;
+               0.000     0.000     0.000   9000.000 -23400.000  14400.0
+        ]
+        
+        @test isapprox(S_julia, S_R, rtol=1e-3)
+    end
+    
+    @testset "GPS with BSplineBasis" begin
+        bp = collect(range(0.0, 1.0, length=10))
+        basis = BSplineBasis(BSplineOrder(4), bp)
+        
+        S = build_penalty_matrix_gps(basis, 2)
+        
+        @test issymmetric(S)
+        @test size(S) == (length(basis), length(basis))
+        
+        # Check PSD
+        eigs = eigvals(Symmetric(S))
+        max_eig = maximum(abs.(eigs))
+        @test all(eigs .>= -max_eig * 1e-12)
+        
+        # Check null space dimension = penalty order
+        @test sum(abs.(eigs) .< max_eig * 1e-12) == 2
+    end
+    
+    @testset "GPS with RecombinedBSplineBasis (natural splines)" begin
+        bp = collect(range(0.0, 1.0, length=8))
+        parent_basis = BSplineBasis(BSplineOrder(4), bp)
+        recomb_basis = RecombinedBSplineBasis(parent_basis, BSplineKit.Derivative(1))
+        
+        S = build_penalty_matrix_gps(recomb_basis, 2)
+        
+        @test issymmetric(S)
+        @test size(S) == (length(recomb_basis), length(recomb_basis))
+        
+        eigs = eigvals(Symmetric(S))
+        max_eig = maximum(abs.(eigs))
+        @test all(eigs .>= -max_eig * 1e-12)  # PSD
+    end
+    
+    @testset "GPS null space dimension" begin
+        bp = collect(range(0.0, 1.0, length=10))
+        basis = BSplineBasis(BSplineOrder(4), bp)
+        
+        for m in 1:3
+            S = build_penalty_matrix_gps(basis, m)
+            eigs = eigvals(Symmetric(S))
+            max_eig = maximum(abs.(eigs))
+            null_dim = sum(abs.(eigs) .< max_eig * 1e-12)
+            @test null_dim == m
+        end
+    end
+    
+    @testset "GPS non-uniform knots" begin
+        bp_nonuniform = [0.0, 0.1, 0.15, 0.4, 0.5, 0.7, 0.85, 0.9, 0.95, 1.0]
+        basis = BSplineBasis(BSplineOrder(4), bp_nonuniform)
+        
+        S = build_penalty_matrix_gps(basis, 2)
+        
+        @test issymmetric(S)
+        
+        eigs = eigvals(Symmetric(S))
+        max_eig = maximum(abs.(eigs))
+        @test all(eigs .>= -max_eig * 1e-12)  # PSD
+        @test sum(abs.(eigs) .< max_eig * 1e-12) == 2  # Null space = 2
+    end
+    
+    @testset "Wrapper function dispatches correctly" begin
+        bp = collect(range(0.0, 1.0, length=8))
+        basis = BSplineBasis(BSplineOrder(4), bp)
+        
+        S_gps = build_penalty_matrix(basis, 2; method=:gps)
+        S_gps_direct = build_penalty_matrix_gps(basis, 2)
+        @test isapprox(S_gps, S_gps_direct)
+        
+        S_int = build_penalty_matrix(basis, 2; method=:integral)
+        S_int_direct = build_penalty_matrix_integral(basis, 2)
+        @test isapprox(S_int, S_int_direct)
+        
+        # Default should be GPS
+        S_default = build_penalty_matrix(basis, 2)
+        @test isapprox(S_default, S_gps_direct)
     end
 end

@@ -202,11 +202,15 @@ function check_distributional_fidelity_mcem(hazards, true_params, fitted_params_
     trajectories_fitted = simulate(model_fitted; paths=true, data=false, nsim=1)
     paths_fitted = trajectories_fitted[1]
     
-    # Compare prevalence
-    prev_true = compute_state_prevalence(paths_true, eval_times, n_states)
-    prev_fitted = compute_state_prevalence(paths_fitted, eval_times, n_states)
+    # Compare prevalence across all states
+    max_diff = 0.0
+    for s in 1:n_states
+        prev_true = compute_state_prevalence(paths_true, s, eval_times)
+        prev_fitted = compute_state_prevalence(paths_fitted, s, eval_times)
+        state_diff = maximum(abs.(prev_true.mean .- prev_fitted.mean))
+        max_diff = max(max_diff, state_diff)
+    end
     
-    max_diff = maximum(abs.(prev_true .- prev_fitted))
     return max_diff < max_prev_diff
 end
 
@@ -379,8 +383,8 @@ flush(stdout)
     true_rate_23 = 0.15
     
     true_params = (
-        h12 = [log(true_rate_12)],
-        h23 = [log(true_rate_23)]
+        h12 = [true_rate_12],
+        h23 = [true_rate_23]
     )
     
     h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
@@ -445,8 +449,8 @@ end
     cov_data = DataFrame(x = randn(N_SUBJECTS))
     
     true_params = (
-        h12 = [log(true_rate_12), true_beta_12],
-        h23 = [log(true_rate_23), true_beta_23]
+        h12 = [true_rate_12, true_beta_12],
+        h23 = [true_rate_23, true_beta_23]
     )
     
     h12 = Hazard(@formula(0 ~ x), "exp", 1, 2)
@@ -469,17 +473,17 @@ end
     p = get_parameters(fitted; scale=:estimation)
     print_parameter_comparison("Exponential - With Covariate",
         [true_rate_12, true_beta_12, true_rate_23, true_beta_23],
-        [exp(p[1]), p[2], exp(p[3]), p[4]],
+        [p[1], p[2], p[3], p[4]],
         param_names=["rate_12", "beta_12", "rate_23", "beta_23"])
     
     @testset "Parameter recovery" begin
         # Parameter order is transition matrix order: h12, h23
-        # Each hazard has 2 params: log(rate), beta
+        # Each hazard has 2 params: rate, beta (natural scale since v0.3.0)
         # h12 at positions 1, 2
-        @test isapprox(exp(p[1]), true_rate_12; rtol=PARAM_TOL_REL)
+        @test isapprox(p[1], true_rate_12; rtol=PARAM_TOL_REL)
         @test isapprox(p[2], true_beta_12; atol=0.3)
         # h23 at positions 3, 4
-        @test isapprox(exp(p[3]), true_rate_23; rtol=PARAM_TOL_REL)
+        @test isapprox(p[3], true_rate_23; rtol=PARAM_TOL_REL)
         @test isapprox(p[4], true_beta_23; atol=0.3)
     end
 end
@@ -501,8 +505,8 @@ flush(stdout)
     true_shape_23, true_scale_23 = 1.1, 0.12
     
     true_params = (
-        h12 = [log(true_shape_12), log(true_scale_12)],
-        h23 = [log(true_shape_23), log(true_scale_23)]
+        h12 = [true_shape_12, true_scale_12],
+        h23 = [true_shape_23, true_scale_23]
     )
     
     h12 = Hazard(@formula(0 ~ 1), "wei", 1, 2)
@@ -558,8 +562,8 @@ end
     cov_data = DataFrame(x = randn(N_SUBJECTS))
     
     true_params = (
-        h12 = [log(true_shape_12), log(true_scale_12), true_beta_12],
-        h23 = [log(true_shape_23), log(true_scale_23), true_beta_23]
+        h12 = [true_shape_12, true_scale_12, true_beta_12],
+        h23 = [true_shape_23, true_scale_23, true_beta_23]
     )
     
     h12 = Hazard(@formula(0 ~ x), "wei", 1, 2)
@@ -583,13 +587,13 @@ end
     p = get_parameters(fitted; scale=:estimation)
     print_parameter_comparison("Weibull - With Covariate",
         [true_shape_12, true_scale_12, true_beta_12, true_shape_23, true_scale_23, true_beta_23],
-        [exp(p[1]), exp(p[2]), p[3], exp(p[4]), exp(p[5]), p[6]],
+        [p[1], p[2], p[3], p[4], p[5], p[6]],
         param_names=["shape_12", "scale_12", "beta_12", "shape_23", "scale_23", "beta_23"])
     
     @testset "Parameter recovery" begin
         p = get_parameters(fitted; scale=:estimation)
-        @test isapprox(exp(p[1]), true_shape_12; rtol=PARAM_TOL_REL)
-        @test isapprox(exp(p[2]), true_scale_12; rtol=PARAM_TOL_REL)
+        @test isapprox(p[1], true_shape_12; rtol=PARAM_TOL_REL)
+        @test isapprox(p[2], true_scale_12; rtol=PARAM_TOL_REL)
         @test isapprox(p[3], true_beta_12; atol=0.35)
     end
 end
@@ -611,8 +615,8 @@ flush(stdout)
     true_shape_23, true_rate_23 = 0.06, 0.03
     
     true_params = (
-        h12 = [true_shape_12, log(true_rate_12)],  # shape identity, rate log
-        h23 = [true_shape_23, log(true_rate_23)]
+        h12 = [true_shape_12, true_rate_12],  # natural scale since v0.3.0
+        h23 = [true_shape_23, true_rate_23]
     )
     
     h12 = Hazard(@formula(0 ~ 1), "gom", 1, 2)
@@ -639,15 +643,15 @@ flush(stdout)
     p = get_parameters(fitted; scale=:estimation)
     print_parameter_comparison("Gompertz - No Covariates",
         [true_shape_12, true_rate_12, true_shape_23, true_rate_23],
-        [p[1], exp(p[2]), p[3], exp(p[4])],
+        [p[1], p[2], p[3], p[4]],
         param_names=["shape_12", "rate_12", "shape_23", "rate_23"])
     
     @testset "Parameter recovery" begin
-        # shape: identity scale (p[1] directly), rate: exp(p[2])
+        # shape: identity scale, rate: natural scale (since v0.3.0)
         @test isapprox(p[1], true_shape_12; rtol=PARAM_TOL_REL) || abs(p[1] - true_shape_12) < 0.05
-        @test isapprox(exp(p[2]), true_rate_12; rtol=PARAM_TOL_REL)
+        @test isapprox(p[2], true_rate_12; rtol=PARAM_TOL_REL)
         @test isapprox(p[3], true_shape_23; rtol=PARAM_TOL_REL) || abs(p[3] - true_shape_23) < 0.05
-        @test isapprox(exp(p[4]), true_rate_23; rtol=PARAM_TOL_REL)
+        @test isapprox(p[4], true_rate_23; rtol=PARAM_TOL_REL)
     end
     
     @testset "Distributional fidelity" begin
@@ -673,8 +677,8 @@ end
     cov_data = DataFrame(x = randn(N_SUBJECTS))
     
     true_params = (
-        h12 = [true_shape_12, log(true_rate_12), true_beta_12],  # shape identity, rate log
-        h23 = [true_shape_23, log(true_rate_23), true_beta_23]
+        h12 = [true_shape_12, true_rate_12, true_beta_12],  # natural scale since v0.3.0
+        h23 = [true_shape_23, true_rate_23, true_beta_23]
     )
     
     h12 = Hazard(@formula(0 ~ x), "gom", 1, 2)
@@ -700,16 +704,16 @@ end
     p = get_parameters(fitted; scale=:estimation)
     print_parameter_comparison("Gompertz - With Covariate",
         [true_shape_12, true_rate_12, true_beta_12, true_shape_23, true_rate_23, true_beta_23],
-        [p[1], exp(p[2]), p[3], p[4], exp(p[5]), p[6]],
+        [p[1], p[2], p[3], p[4], p[5], p[6]],
         param_names=["shape_12", "rate_12", "beta_12", "shape_23", "rate_23", "beta_23"])
     
     @testset "Parameter recovery" begin
         # Gompertz with covariates is challenging; use relaxed tolerance
         # Main check: parameters are finite and in reasonable range
-        # shape (p[1]): identity scale, rate (p[2]): log scale
+        # shape and rate both on natural scale (since v0.3.0)
         @test all(isfinite.(p))
-        @test exp(p[2]) > 0.0  # rate > 0
-        @test exp(p[5]) > 0.0  # rate > 0
+        @test p[2] > 0.0  # rate > 0
+        @test p[5] > 0.0  # rate > 0
     end
 end
 
@@ -740,8 +744,8 @@ flush(stdout)
     true_shape_23, true_scale_23 = 1.4, 0.20
     
     true_params = (
-        h12 = [log(true_shape_12), log(true_scale_12)],
-        h23 = [log(true_shape_23), log(true_scale_23)]
+        h12 = [true_shape_12, true_scale_12],
+        h23 = [true_shape_23, true_scale_23]
     )
     
     h12 = Hazard(@formula(0 ~ 1), "wei", 1, 2)
@@ -799,7 +803,7 @@ end
     # (simpler than illness-death to avoid complexity)
     
     true_shape, true_rate = 0.3, 0.12
-    true_params = (h12 = [true_shape, log(true_rate)],)
+    true_params = (h12 = [true_shape, true_rate],)
     
     h12 = Hazard(@formula(0 ~ 1), "gom", 1, 2)
     
@@ -926,10 +930,10 @@ end
     h12 = Hazard(@formula(0 ~ 1), "wei", 1, 2)
     h23 = Hazard(@formula(0 ~ 1), "wei", 2, 3)
     
-    # True parameters for data generation (log-scale for shape, scale)
+    # True parameters for data generation (natural scale since v0.3.0)
     true_params = (
-        h12 = [log(1.2), log(0.15)],  # log(shape_12), log(scale_12)
-        h23 = [log(1.1), log(0.12)]   # log(shape_23), log(scale_23)
+        h12 = [1.2, 0.15],  # shape_12, scale_12
+        h23 = [1.1, 0.12]   # shape_23, scale_23
     )
     
     # Generate panel data using helper function

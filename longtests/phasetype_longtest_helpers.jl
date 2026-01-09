@@ -211,7 +211,7 @@ end
 
 Build a multistate Markov model on the expanded phase-type state space.
 
-This creates a standard MultistateMarkovModel that can be fitted using the
+This creates a standard MultistateModel that can be fitted using the
 existing `fit()` infrastructure.
 """
 function build_phasetype_model(tmat::Matrix{Int64}, config::PhaseTypeConfig;

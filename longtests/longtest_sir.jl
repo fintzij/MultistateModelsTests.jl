@@ -57,10 +57,10 @@ const TRUE_H23_SHAPE = 1.2   # slightly increasing hazard
 const TRUE_H23_SCALE = 0.20  # moderate transition from state 2 to death
 
 # True parameters in NamedTuple format for set_parameters!
-# Parameters are [log(shape), log(scale)]
+# Parameters are on natural scale since v0.3.0: [shape, scale]
 const SIR_TRUE_PARAMS = (
-    h12 = [log(TRUE_H12_SHAPE), log(TRUE_H12_SCALE)],
-    h23 = [log(TRUE_H23_SHAPE), log(TRUE_H23_SCALE)]
+    h12 = [TRUE_H12_SHAPE, TRUE_H12_SCALE],
+    h23 = [TRUE_H23_SHAPE, TRUE_H23_SCALE]
 )
 
 # Parameter names and true values for reporting
@@ -130,10 +130,12 @@ function generate_sir_test_data(; n_subjects::Int = SIR_N_SUBJECTS, seed::Int = 
     return panel_data, (h12, h23)
 end
 
-"""Convert fitted parameters to natural scale."""
+"""Convert fitted parameters to natural scale.
+Since v0.3.0, get_parameters_flat() returns natural scale directly.
+This function is now identity but kept for clarity."""
 function params_to_natural(params_flat::Vector{Float64})
-    # params_flat has 4 elements: [log(shape12), log(scale12), log(shape23), log(scale23)]
-    return exp.(params_flat)
+    # params_flat already has 4 elements on natural scale: [shape12, scale12, shape23, scale23]
+    return params_flat
 end
 
 """Compute relative errors (%) vs true parameters."""

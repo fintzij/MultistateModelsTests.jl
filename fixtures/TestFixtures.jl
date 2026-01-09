@@ -165,6 +165,8 @@ function toy_fitted_exact_model()
         nothing,  # ProposedPaths
         base_model.modelcall,
         base_model.phasetype_expansion,  # phasetype_expansion
+        nothing,  # smoothing_parameters
+        nothing,  # edf
     )
 
     return (; model = fitted, loglik = stored_loglik)

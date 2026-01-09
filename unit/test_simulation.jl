@@ -6,10 +6,11 @@
 # 1. Simulation produces statistically correct output (exponential mean = 1/rate)
 # 2. Round-trip consistency (simulate -> observe -> extract)
 # 3. Edge cases (absorbing states, censoring)
+# 4. Transform strategy equivalence (CachedTransformStrategy vs DirectTransformStrategy)
 using Optim
 using Random
 using DataFrames
-using MultistateModels: simulate, simulate_data, simulate_paths, simulate_path, observe_path, extract_paths, Hazard, multistatemodel, set_parameters!, _find_jump_time, SamplePath, OptimJumpSolver, draw_paths
+using MultistateModels: simulate, simulate_data, simulate_paths, simulate_path, observe_path, extract_paths, Hazard, multistatemodel, set_parameters!, _find_jump_time, SamplePath, OptimJumpSolver, draw_paths, CachedTransformStrategy, DirectTransformStrategy
 using StatsModels: @formula
 
 # Load fixtures - handle both standalone and runner contexts
@@ -249,5 +250,63 @@ end
         # Even though tmax=5.0, newdata should take precedence
         sim = simulate(model; nsim=1, newdata=newdata, tmax=5.0)
         @test length(unique(sim[1].id)) == 2  # 2 subjects from newdata, not 3 from template
+    end
+end
+
+# --- Transform Strategy Equivalence -------------------------------------------
+@testset "Transform Strategy Equivalence" begin
+    @testset "CachedTransformStrategy vs DirectTransformStrategy produce same results" begin
+        # Use a Weibull hazard (supports time transforms) to test equivalence
+        fixture = toy_expwei_model()
+        model = fixture.model
+        
+        nsim = 100
+        
+        # Simulate with CachedTransformStrategy (default)
+        Random.seed!(42)
+        cached_durations = Float64[]
+        for _ in 1:nsim
+            path = simulate_path(model, 1; strategy=CachedTransformStrategy())
+            push!(cached_durations, path.times[end] - path.times[1])
+        end
+        
+        # Simulate with DirectTransformStrategy
+        Random.seed!(42)
+        direct_durations = Float64[]
+        for _ in 1:nsim
+            path = simulate_path(model, 1; strategy=DirectTransformStrategy())
+            push!(direct_durations, path.times[end] - path.times[1])
+        end
+        
+        # With same seed, should produce identical results
+        @test all(isapprox.(cached_durations, direct_durations; atol=1e-10))
+    end
+    
+    @testset "DirectTransformStrategy runs without error" begin
+        # Basic sanity check that DirectTransformStrategy works
+        fixture = toy_two_state_exp_model(rate = 0.3, horizon = 20.0)
+        model = fixture.model
+        
+        Random.seed!(123)
+        path = simulate_path(model, 1; strategy=DirectTransformStrategy())
+        
+        @test length(path.times) >= 1
+        @test length(path.states) >= 1
+        @test path.times[1] >= 0
+    end
+    
+    @testset "simulate_paths respects strategy" begin
+        fixture = toy_expwei_model()
+        model = fixture.model
+        
+        # Should not throw with DirectTransformStrategy
+        Random.seed!(99)
+        paths_direct = simulate_paths(model; nsim=2, strategy=DirectTransformStrategy())
+        @test length(paths_direct) == 2
+        
+        # Should not throw with CachedTransformStrategy
+        Random.seed!(99)
+        paths_cached = simulate_paths(model; nsim=2, strategy=CachedTransformStrategy())
+        @test length(paths_cached) == 2
     end
 end

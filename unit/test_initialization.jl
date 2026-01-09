@@ -13,7 +13,7 @@ using StatsBase: Weights
 
 # Access internal functions for testing
 using MultistateModels: _interpolate_covariates!, _is_semimarkov, 
-                        _select_one_path_per_subject, _transfer_parameters!,
+                        _transfer_parameters!,
                         SamplePath, paths_to_dataset, set_crude_init!,
                         set_parameters!, get_parameters_flat
 
@@ -96,22 +96,9 @@ using MultistateModels: _interpolate_covariates!, _is_semimarkov,
         @test ncol(result) == 6  # Standard columns only
     end
 
-    @testset "Helper: Path selection" begin
-        # Create mock paths and weights
-        paths = [
-            [SamplePath(1, [0.0, 1.0], [1, 2]), SamplePath(1, [0.0, 0.5, 1.0], [1, 1, 2])],
-            [SamplePath(2, [0.0, 2.0], [1, 2]), SamplePath(2, [0.0, 1.5, 2.0], [1, 1, 2])]
-        ]
-        weights = [[0.9, 0.1], [0.3, 0.7]]
-        
-        # Select paths (deterministic with seed)
-        Random.seed!(42)
-        selected = _select_one_path_per_subject(paths, weights)
-        
-        @test length(selected) == 2
-        @test selected[1].subj == 1
-        @test selected[2].subj == 2
-    end
+    # Note: _select_one_path_per_subject was removed during refactoring.
+    # _init_from_surrogate_paths! now uses all paths with uniform weights
+    # instead of selecting a single path per subject.
 
     @testset "Method: :crude initialization" begin
         # Create simple Markov model
@@ -171,13 +158,11 @@ using MultistateModels: _interpolate_covariates!, _is_semimarkov,
         @test all(!isnan, params_init)
         @test all(isfinite, params_init)
         
-        # All representations should be consistent
+        # flat and nested should be consistent
         flat = model_init.parameters.flat
         nested = model_init.parameters.nested
-        natural = model_init.parameters.natural
         
-        @test flat[1] ≈ nested.h12.baseline.h12_Intercept
-        @test natural.h12[1] ≈ flat[1]  # Both on natural scale now
+        @test flat[1] ≈ nested.h12.baseline.h12_rate
     end
 
     @testset "initialize=false skips initialization" begin
@@ -192,12 +177,14 @@ using MultistateModels: _interpolate_covariates!, _is_semimarkov,
             obstype = [2, 1]
         )
         
-        # With initialize=false, parameters stay at construction defaults (zeros)
+        # With initialize=false, parameters stay at construction defaults
+        # v0.3.0+: Natural scale defaults are [1.0, 1.0] for Weibull (shape=1, scale=1)
+        # This gives exponential-like behavior rather than zero rates
         model_noinit = multistatemodel(h12; data = data, surrogate = :markov, initialize = false)
         
         params_noinit = model_noinit.parameters.flat
-        # Default initialization sets all params to 0 on log scale
-        @test all(params_noinit .== 0.0)
+        # Default initialization sets params to natural-scale defaults (1.0 for rates/shapes)
+        @test params_noinit == [1.0, 1.0]  # Weibull: [shape=1, scale=1]
         
         # With initialize=true (default), parameters should be different
         model_init = multistatemodel(h12; data = data, surrogate = :markov, initialize = true)
@@ -237,15 +224,12 @@ using MultistateModels: _interpolate_covariates!, _is_semimarkov,
         @test all(isfinite, params)
         @test length(params) == 2  # shape and scale
         
-        # All three representations should be consistent
+        # flat and nested should be consistent
         flat = model.parameters.flat
         nested = model.parameters.nested
-        natural = model.parameters.natural
         
         @test nested.h12.baseline.h12_shape ≈ flat[1]
         @test nested.h12.baseline.h12_scale ≈ flat[2]
-        @test natural.h12[1] ≈ flat[1]  # Both on natural scale now
-        @test natural.h12[2] ≈ flat[2]  # Both on natural scale now
     end
 
     @testset "Semi-Markov panel - no recursive initialization" begin
@@ -342,17 +326,11 @@ using MultistateModels: _interpolate_covariates!, _is_semimarkov,
         @test nested1.h12.baseline.h12_shape ≈ known_params[1]
         @test nested1.h12.baseline.h12_scale ≈ known_params[2]
         @test nested1.h12.covariates.h12_x ≈ known_params[3]
-        
-        # Verify natural scale is consistent (no transform needed now)
-        natural1 = model1.parameters.natural
-        @test natural1.h12[1] ≈ known_params[1]  # shape
-        @test natural1.h12[2] ≈ known_params[2]  # scale
-        @test natural1.h12[3] ≈ known_params[3]  # coef (no transform)
     end
 
     @testset "Parameter transfer - all scales consistent" begin
-        # Regression test: _transfer_parameters! must update nested and natural,
-        # not just flat. This catches the bug where only flat was copied.
+        # Regression test: _transfer_parameters! must update nested (not just flat).
+        # This catches the bug where only flat was copied.
         h12 = Hazard(@formula(0 ~ 1), :exp, 1, 2)
         
         data1 = DataFrame(id=[1], tstart=[0.0], tstop=[1.0], 
@@ -363,20 +341,18 @@ using MultistateModels: _interpolate_covariates!, _is_semimarkov,
         model1 = multistatemodel(h12; data = data1, initialize = false)
         model2 = multistatemodel(h12; data = data2, initialize = false)
         
-        # Set specific parameter on model2 (natural scale rate)
+        # Set specific parameter on model2
         set_parameters!(model2, (h12 = [exp(-1.5)],))
         
         # Transfer
         _transfer_parameters!(model1, model2)
         
-        # All three views must be consistent (now all natural scale)
+        # flat and nested must be consistent
         flat1 = model1.parameters.flat
         nested1 = model1.parameters.nested
-        natural1 = model1.parameters.natural
         
         @test flat1[1] ≈ exp(-1.5)
-        @test nested1.h12.baseline.h12_Intercept ≈ exp(-1.5)
-        @test natural1.h12[1] ≈ exp(-1.5)
+        @test nested1.h12.baseline.h12_rate ≈ exp(-1.5)
     end
 
 end
@@ -702,10 +678,10 @@ end
         init_params = get_parameters(model; scale = :flat)
         @test isapprox(init_params[1], init_params[2], atol = 1e-10)
         
-        # Constraint using actual parameter names: h12_Intercept, h23_Intercept
-        # (exponential hazards have a single parameter named <hazname>_Intercept)
+        # Constraint using actual parameter names: h12_rate, h23_rate
+        # (exponential hazards have a single parameter named <hazname>_rate)
         constraints = (
-            cons = [:(h12_Intercept - h23_Intercept)],  # log rate equality
+            cons = [:(h12_rate - h23_rate)],  # rate equality
             lcons = [0.0],
             ucons = [0.0]
         )

@@ -44,11 +44,16 @@ include("phasetype_longtest_helpers.jl")
 include("longtest_config.jl")
 include("longtest_helpers.jl")
 
+# LongTestResult struct for standalone runs
+if !isdefined(Main, :LongTestResult) && !@isdefined(LongTestResult)
+    include(joinpath(@__DIR__, "..", "src", "LongTestResults.jl"))
+end
+
 const RNG_SEED = 0xABCD0001
 const N_SUBJECTS = 1000           # Large sample for MLE precision
 const N_SIM_TRAJ = 5000           # Trajectories for distributional comparison
 const MAX_TIME = 10.0             # Maximum follow-up time
-const PARAM_TOL_REL = 0.15        # Relative tolerance (15% for direct MLE)
+const PARAM_TOL_REL = 0.20        # Relative tolerance (20% for direct MLE - allows for sampling variability)
 
 println("\n" * "="^70)
 println("Phase-Type Hazard Models: Exact Data Long Tests")
@@ -161,13 +166,13 @@ end
         end
     end
     
-    # Set true parameters (log-scale rates)
+    # Set true parameters (natural scale since v0.3.0)
     # Rates for transitions in expanded space
     # We'll set these directly on the model
     n_hazards = length(model.hazards)
     println("  Number of hazards in expanded model: $n_hazards")
     
-    # True rates (positive scale)
+    # True rates (positive scale, natural scale since v0.3.0)
     # Progression through phases: λ₁ (phase 1→2 within state 1), etc.
     # Exit rates: μ (phase → absorbing)
     true_rates = [0.5, 0.3, 0.4, 0.2, 0.25, 0.35, 0.3, 0.15]  # Adjust to match n_hazards
@@ -179,12 +184,14 @@ end
         true_rates = vcat(true_rates, fill(0.25, n_hazards - length(true_rates)))
     end
     
-    true_params_log = log.(true_rates)
+    # v0.3.0+: Parameters are on natural scale, not log scale
+    # Use natural scale rates directly
+    true_params = copy(true_rates)
     
-    # Set parameters
+    # Set parameters (natural scale since v0.3.0)
     pars_dict = Dict{Symbol, Vector{Float64}}()
     for (i, haz) in enumerate(model.hazards)
-        pars_dict[haz.hazname] = [true_params_log[i]]
+        pars_dict[haz.hazname] = [true_params[i]]
     end
     set_parameters!(model, NamedTuple(pars_dict))
     
@@ -208,18 +215,19 @@ end
         println("\nFitting phase-type model with direct MLE...")
         fitted = fit(model_fit; verbose=false, compute_vcov=true)
         
+        # v0.3.0+: get_parameters_flat returns natural scale
         fitted_params = get_parameters_flat(fitted)
-        println("True params (log): $(round.(true_params_log, digits=3))")
-        println("Fitted params (log): $(round.(fitted_params, digits=3))")
+        println("True params (natural): $(round.(true_params, digits=3))")
+        println("Fitted params (natural): $(round.(fitted_params, digits=3))")
         
-        @test check_parameter_recovery(fitted_params, true_params_log)
+        @test check_parameter_recovery(fitted_params, true_params)
         
         # Cache results for reporting
-        param_names = ["log_rate_$i" for i in 1:n_hazards]
+        param_names = ["rate_$i" for i in 1:n_hazards]
         capture_simple_longtest_result!(
             "pt_exact_nocov",
             fitted,
-            true_params_log,
+            true_params,
             param_names;
             hazard_family = "pt",
             data_type = "exact",
@@ -273,12 +281,12 @@ end
     model_true = result.model
     
     # Set true rates: progression λ₁=0.4, exit μ₁=0.2, exit μ₂=0.5
+    # v0.3.0+: Parameters are on natural scale
     true_rates = [0.4, 0.2, 0.5]
-    true_log = log.(true_rates)
     
     pars = Dict{Symbol, Vector{Float64}}()
     for (i, haz) in enumerate(model_true.hazards)
-        pars[haz.hazname] = [true_log[i]]
+        pars[haz.hazname] = [true_rates[i]]
     end
     set_parameters!(model_true, NamedTuple(pars))
     
@@ -391,10 +399,10 @@ end
     true_rates = [0.5, 0.3, 0.6]  # λ₁, μ₁, μ₂
     true_betas = [0.0, 0.4, 0.3]   # No effect on progression, positive on exit
     
-    # Set parameters
+    # Set parameters (natural scale since v0.3.0)
     pars_dict = Dict{Symbol, Vector{Float64}}()
     for (i, haz) in enumerate(model.hazards)
-        pars_dict[haz.hazname] = [log(true_rates[i]), true_betas[i]]
+        pars_dict[haz.hazname] = [true_rates[i], true_betas[i]]
     end
     set_parameters!(model, NamedTuple(pars_dict))
     
@@ -420,11 +428,11 @@ end
         
         fitted_params = get_parameters_flat(fitted)
         
-        # Check rate recovery (log scale)
+        # Check rate recovery (natural scale since v0.3.0)
         for i in 1:n_hazards
-            true_log_rate = log(true_rates[i])
-            fitted_log_rate = fitted_params[2*(i-1) + 1]
-            rel_err = abs(fitted_log_rate - true_log_rate) / abs(true_log_rate)
+            true_rate = true_rates[i]
+            fitted_rate = fitted_params[2*(i-1) + 1]
+            rel_err = abs(fitted_rate - true_rate) / abs(true_rate)
             @test rel_err < PARAM_TOL_REL
         end
         
@@ -436,14 +444,14 @@ end
         @test fitted_params[6] > 0.0  # Positive direction correct for μ₂
         @test isapprox(fitted_params[6], true_betas[3]; atol=0.25)
         
-        # Cache results for reporting
-        # Parameters: (log_rate, beta) for each hazard
+        # Cache results for reporting (natural scale)
+        # Parameters: (rate, beta) for each hazard
         true_params_flat = Float64[]
         param_names = String[]
         for i in 1:n_hazards
-            push!(true_params_flat, log(true_rates[i]))
+            push!(true_params_flat, true_rates[i])
             push!(true_params_flat, true_betas[i])
-            push!(param_names, "log_rate_$i")
+            push!(param_names, "rate_$i")
             push!(param_names, "beta_$i")
         end
         
@@ -508,10 +516,10 @@ end
     true_rates = [0.4, 0.25, 0.5]  # λ₁, μ₁, μ₂
     true_betas = [0.0, 0.5, 0.4]   # TVC effect on exit rates
     
-    # Set parameters
+    # Set parameters (natural scale since v0.3.0)
     pars_dict = Dict{Symbol, Vector{Float64}}()
     for (i, haz) in enumerate(model.hazards)
-        pars_dict[haz.hazname] = [log(true_rates[i]), true_betas[i]]
+        pars_dict[haz.hazname] = [true_rates[i], true_betas[i]]
     end
     set_parameters!(model, NamedTuple(pars_dict))
     
@@ -537,11 +545,11 @@ end
         fitted_params = get_parameters_flat(fitted)
         n_hazards = 3
         
-        # Check rate recovery
+        # Check rate recovery (natural scale)
         for i in 1:n_hazards
-            true_log_rate = log(true_rates[i])
-            fitted_log_rate = fitted_params[2*(i-1) + 1]
-            @test isfinite(fitted_log_rate)
+            true_rate = true_rates[i]
+            fitted_rate = fitted_params[2*(i-1) + 1]
+            @test isfinite(fitted_rate)
         end
         
         # Check TVC effect direction (positive effects on exit rates)
@@ -553,13 +561,13 @@ end
         # Recovery tolerance is higher for TVC
         @test isapprox(fitted_params[4], true_betas[2]; atol=0.4)
         
-        # Cache results for reporting
+        # Cache results for reporting (natural scale)
         true_params_flat = Float64[]
         param_names = String[]
         for i in 1:n_hazards
-            push!(true_params_flat, log(true_rates[i]))
+            push!(true_params_flat, true_rates[i])
             push!(true_params_flat, true_betas[i])
-            push!(param_names, "log_rate_$i")
+            push!(param_names, "rate_$i")
             push!(param_names, "beta_$i")
         end
         

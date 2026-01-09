@@ -33,6 +33,7 @@ using Random
 using Statistics
 using LinearAlgebra
 using Distributions
+using Dates
 
 # Load result saving infrastructure
 include(joinpath(@__DIR__, "..", "src", "LongTestResults.jl"))
@@ -170,11 +171,15 @@ function check_distributional_fidelity(hazards, true_params, fitted_params;
     trajectories_fitted = simulate(model_fitted; paths=true, data=false, nsim=1)
     paths_fitted = trajectories_fitted[1]
     
-    # Compare prevalence
-    prev_true = compute_state_prevalence(paths_true, eval_times, n_states)
-    prev_fitted = compute_state_prevalence(paths_fitted, eval_times, n_states)
+    # Compare prevalence across all states
+    max_diff = 0.0
+    for s in 1:n_states
+        prev_true = compute_state_prevalence(paths_true, s, eval_times)
+        prev_fitted = compute_state_prevalence(paths_fitted, s, eval_times)
+        state_diff = maximum(abs.(prev_true.mean .- prev_fitted.mean))
+        max_diff = max(max_diff, state_diff)
+    end
     
-    max_diff = maximum(abs.(prev_true .- prev_fitted))
     return max_diff < max_prev_diff
 end
 
@@ -307,13 +312,13 @@ flush(stdout)
     println("    ▸ Exponential - No Covariates"); flush(stdout)
     Random.seed!(RNG_SEED)
     
-    # True parameters (log scale) - Progressive model: 1→2→3
+    # True parameters (natural scale since v0.3.0) - Progressive model: 1→2→3
     true_rate_12 = 0.25  # Healthy → Ill
     true_rate_23 = 0.15  # Ill → Dead
     
     true_params = (
-        h12 = [log(true_rate_12)],
-        h23 = [log(true_rate_23)]
+        h12 = [true_rate_12],
+        h23 = [true_rate_23]
     )
     
     # Create progressive model (no direct 1→3)
@@ -337,14 +342,14 @@ flush(stdout)
     
     # Capture results for reporting
     capture_fit_result!("exp_nocov", fitted, true_params,
-        ["h12_log_rate", "h23_log_rate"], (h12, h23);
+        ["h12_rate", "h23_rate"], (h12, h23);
         hazard_family="exponential")
 end
 
 @testset "Exponential - With Covariate" begin
     Random.seed!(RNG_SEED + 1)
     
-    # True parameters: rate * exp(beta * x)
+    # True parameters: rate * exp(beta * x) - natural scale since v0.3.0
     true_rate_12 = 0.25
     true_beta_12 = 0.5
     true_rate_23 = 0.15
@@ -354,8 +359,8 @@ end
     cov_data = DataFrame(x = randn(N_SUBJECTS))
     
     true_params = (
-        h12 = [log(true_rate_12), true_beta_12],
-        h23 = [log(true_rate_23), true_beta_23]
+        h12 = [true_rate_12, true_beta_12],
+        h23 = [true_rate_23, true_beta_23]
     )
     
     h12 = Hazard(@formula(0 ~ x), "exp", 1, 2)
@@ -386,13 +391,13 @@ flush(stdout)
     Random.seed!(RNG_SEED + 10)
     
     # True parameters: h(t) = shape * scale * t^(shape-1)
-    # Parameter order: (shape, scale)
+    # Parameter order: (shape, scale) - natural scale since v0.3.0
     true_shape_12, true_scale_12 = 1.3, 0.20
     true_shape_23, true_scale_23 = 0.9, 0.15
     
     true_params = (
-        h12 = [log(true_shape_12), log(true_scale_12)],
-        h23 = [log(true_shape_23), log(true_scale_23)]
+        h12 = [true_shape_12, true_scale_12],
+        h23 = [true_shape_23, true_scale_23]
     )
     
     h12 = Hazard(@formula(0 ~ 1), "wei", 1, 2)
@@ -416,21 +421,22 @@ flush(stdout)
     
     # Capture results for reporting
     capture_fit_result!("wei_nocov", fitted, true_params,
-        ["h12_log_shape", "h12_log_scale", "h23_log_shape", "h23_log_scale"], (h12, h23);
+        ["h12_shape", "h12_scale", "h23_shape", "h23_scale"], (h12, h23);
         hazard_family="weibull")
 end
 
 @testset "Weibull - With Covariate" begin
     Random.seed!(RNG_SEED + 11)
     
+    # Natural scale since v0.3.0
     true_shape_12, true_scale_12, true_beta_12 = 1.3, 0.20, 0.4
     true_shape_23, true_scale_23, true_beta_23 = 1.0, 0.15, -0.3
     
     cov_data = DataFrame(x = randn(N_SUBJECTS))
     
     true_params = (
-        h12 = [log(true_shape_12), log(true_scale_12), true_beta_12],
-        h23 = [log(true_shape_23), log(true_scale_23), true_beta_23]
+        h12 = [true_shape_12, true_scale_12, true_beta_12],
+        h23 = [true_shape_23, true_scale_23, true_beta_23]
     )
     
     h12 = Hazard(@formula(0 ~ x), "wei", 1, 2)
@@ -441,10 +447,10 @@ end
     fitted = fit(model_fit; verbose=false)
     
     @testset "Parameter recovery" begin
-        p = get_parameters(fitted; scale=:estimation)
-        @test isapprox(exp(p[1]), true_shape_12; rtol=PARAM_TOL_REL)
-        @test isapprox(exp(p[2]), true_scale_12; rtol=PARAM_TOL_REL)
-        @test isapprox(p[3], true_beta_12; atol=0.15)
+        p = get_parameters(fitted; scale=:natural)
+        @test isapprox(p.h12[1], true_shape_12; rtol=PARAM_TOL_REL)
+        @test isapprox(p.h12[2], true_scale_12; rtol=PARAM_TOL_REL)
+        @test isapprox(p.h12[3], true_beta_12; atol=0.15)
     end
 end
 
@@ -456,16 +462,15 @@ end
     Random.seed!(RNG_SEED + 20)
     
     # Gompertz: h(t) = rate * exp(shape * t)
-    # Parameter order: (shape, rate)
-    # NOTE: shape is unconstrained (identity transform), rate is log-transformed
+    # Parameter order: (shape, rate) - natural scale since v0.3.0
+    # NOTE: shape is unconstrained (can be negative), rate is positive
     # Use higher rates for more events in the observation window
     true_shape_12, true_rate_12 = 0.08, 0.10
     true_shape_23, true_rate_23 = 0.06, 0.08
     
-    # Shape is on natural scale (identity transform), rate is log-transformed
     true_params = (
-        h12 = [true_shape_12, log(true_rate_12)],
-        h23 = [true_shape_23, log(true_rate_23)]
+        h12 = [true_shape_12, true_rate_12],
+        h23 = [true_shape_23, true_rate_23]
     )
     
     h12 = Hazard(@formula(0 ~ 1), "gom", 1, 2)
@@ -478,14 +483,14 @@ end
     fitted = fit(model_fit; verbose=false)
     
     @testset "Parameter recovery" begin
-        p = get_parameters(fitted; scale=:estimation)
-        # shape is on natural scale (identity transform) - compare directly
-        @test isapprox(p[1], true_shape_12; atol=0.03)
-        # rate is log-transformed - use exp()
-        @test isapprox(exp(p[2]), true_rate_12; rtol=PARAM_TOL_REL)
+        p = get_parameters(fitted; scale=:natural)
+        # shape is unconstrained
+        @test isapprox(p.h12[1], true_shape_12; atol=0.03)
+        # rate is positive
+        @test isapprox(p.h12[2], true_rate_12; rtol=PARAM_TOL_REL)
         # h23 parameters have higher variance (fewer 2→3 events), use higher tolerance
-        @test isapprox(p[3], true_shape_23; atol=0.03)
-        @test isapprox(exp(p[4]), true_rate_23; rtol=0.25)
+        @test isapprox(p.h23[1], true_shape_23; atol=0.03)
+        @test isapprox(p.h23[2], true_rate_23; rtol=0.25)
     end
     
     @testset "Distributional fidelity" begin
@@ -494,25 +499,23 @@ end
     
     # Capture results for reporting
     capture_fit_result!("gom_nocov", fitted, true_params,
-        ["h12_shape", "h12_log_rate", "h23_shape", "h23_log_rate"], (h12, h23);
+        ["h12_shape", "h12_rate", "h23_shape", "h23_rate"], (h12, h23);
         hazard_family="gompertz", max_time=30.0)
 end
 
 @testset "Gompertz - With Covariate" begin
     Random.seed!(RNG_SEED + 21)
     
-    # Parameter order: (shape, rate, beta)
-    # NOTE: shape is unconstrained (identity transform), rate is log-transformed
+    # Parameter order: (shape, rate, beta) - natural scale since v0.3.0
     # Use higher rates for more events
     true_shape_12, true_rate_12, true_beta_12 = 0.08, 0.10, 0.3
     true_shape_23, true_rate_23, true_beta_23 = 0.06, 0.08, -0.2
     
     cov_data = DataFrame(x = randn(2000))
     
-    # Shape is on natural scale (identity transform), rate is log-transformed
     true_params = (
-        h12 = [true_shape_12, log(true_rate_12), true_beta_12],
-        h23 = [true_shape_23, log(true_rate_23), true_beta_23]
+        h12 = [true_shape_12, true_rate_12, true_beta_12],
+        h23 = [true_shape_23, true_rate_23, true_beta_23]
     )
     
     h12 = Hazard(@formula(0 ~ x), "gom", 1, 2)
@@ -524,12 +527,12 @@ end
     fitted = fit(model_fit; verbose=false)
     
     @testset "Parameter recovery" begin
-        p = get_parameters(fitted; scale=:estimation)
-        # shape is on natural scale (identity transform) - compare directly
-        @test isapprox(p[1], true_shape_12; atol=0.03)
-        # rate is log-transformed - use exp()
-        @test isapprox(exp(p[2]), true_rate_12; rtol=PARAM_TOL_REL)
-        @test isapprox(p[3], true_beta_12; atol=0.15)
+        p = get_parameters(fitted; scale=:natural)
+        # shape is unconstrained
+        @test isapprox(p.h12[1], true_shape_12; atol=0.03)
+        # rate is positive
+        @test isapprox(p.h12[2], true_rate_12; rtol=PARAM_TOL_REL)
+        @test isapprox(p.h12[3], true_beta_12; atol=0.15)
     end
 end
 
@@ -549,8 +552,8 @@ end
     h23_wei = Hazard(@formula(0 ~ 1), "wei", 2, 3)
     
     wei_params = (
-        h12 = [log(true_shape_12), log(true_scale_12)],
-        h23 = [log(true_shape_23), log(true_scale_23)]
+        h12 = [true_shape_12, true_scale_12],
+        h23 = [true_shape_23, true_scale_23]
     )
     
     exact_data = generate_exact_data_progressive((h12_wei, h23_wei), wei_params)
@@ -597,8 +600,8 @@ end
     h23_wei = Hazard(@formula(0 ~ x), "wei", 2, 3)
     
     wei_params = (
-        h12 = [log(true_shape_12), log(true_scale_12), true_beta_12],
-        h23 = [log(true_shape_23), log(true_scale_23), true_beta_23]
+        h12 = [true_shape_12, true_scale_12, true_beta_12],
+        h23 = [true_shape_23, true_scale_23, true_beta_23]
     )
     
     exact_data = generate_exact_data_progressive((h12_wei, h23_wei), wei_params; covariate_data=cov_data)
@@ -658,8 +661,8 @@ end
     true_beta_23 = -0.3
     
     true_params = (
-        h12 = [log(true_rate_12), true_beta_12],
-        h23 = [log(true_rate_23), true_beta_23]
+        h12 = [true_rate_12, true_beta_12],
+        h23 = [true_rate_23, true_beta_23]
     )
     
     h12 = Hazard(@formula(0 ~ x), "exp", 1, 2)
@@ -705,8 +708,8 @@ end
     true_shape_23, true_scale_23, true_beta_23 = 1.0, 0.15, -0.3
     
     true_params = (
-        h12 = [log(true_shape_12), log(true_scale_12), true_beta_12],
-        h23 = [log(true_shape_23), log(true_scale_23), true_beta_23]
+        h12 = [true_shape_12, true_scale_12, true_beta_12],
+        h23 = [true_shape_23, true_scale_23, true_beta_23]
     )
     
     h12 = Hazard(@formula(0 ~ x), "wei", 1, 2)
@@ -747,14 +750,13 @@ end
         ) for i in 1:n_subj
     ]...)
     
-    # Gompertz parameters: (shape, rate, beta)
-    # Shape is identity-transformed, rate is log-transformed
+    # Gompertz parameters: (shape, rate, beta) - natural scale since v0.3.0
     true_shape_12, true_rate_12, true_beta_12 = 0.08, 0.10, 0.3
     true_shape_23, true_rate_23, true_beta_23 = 0.06, 0.08, -0.2
     
     true_params = (
-        h12 = [true_shape_12, log(true_rate_12), true_beta_12],
-        h23 = [true_shape_23, log(true_rate_23), true_beta_23]
+        h12 = [true_shape_12, true_rate_12, true_beta_12],
+        h23 = [true_shape_23, true_rate_23, true_beta_23]
     )
     
     h12 = Hazard(@formula(0 ~ x), "gom", 1, 2)
@@ -771,13 +773,13 @@ end
     fitted = fit(model_fit; verbose=false)
     
     @testset "TVC Gompertz parameter recovery" begin
-        p = get_parameters(fitted; scale=:estimation)
-        # Shape is on natural scale (identity transform)
-        @test isapprox(p[1], true_shape_12; atol=0.05)
-        # Rate is log-transformed
-        @test isapprox(exp(p[2]), true_rate_12; rtol=PARAM_TOL_REL)
+        p = get_parameters(fitted; scale=:natural)
+        # Shape is unconstrained (can be negative)
+        @test isapprox(p.h12[1], true_shape_12; atol=0.05)
+        # Rate is positive
+        @test isapprox(p.h12[2], true_rate_12; rtol=PARAM_TOL_REL)
         # TVC beta may have higher variance
-        @test isapprox(p[3], true_beta_12; atol=0.25)
+        @test isapprox(p.h12[3], true_beta_12; atol=0.25)
     end
 end
 
@@ -807,8 +809,8 @@ end
     h23_wei = Hazard(@formula(0 ~ x), "wei", 2, 3)
     
     wei_params = (
-        h12 = [log(true_shape_12), log(true_scale_12), true_beta_12],
-        h23 = [log(true_shape_23), log(true_scale_23), true_beta_23]
+        h12 = [true_shape_12, true_scale_12, true_beta_12],
+        h23 = [true_shape_23, true_scale_23, true_beta_23]
     )
     
     model_sim = multistatemodel(h12_wei, h23_wei; data=tvc_data)
@@ -857,8 +859,8 @@ end
     true_rate_23 = 0.15
     
     true_params = (
-        h12 = [log(true_rate_12)],
-        h23 = [log(true_rate_23)]
+        h12 = [true_rate_12],
+        h23 = [true_rate_23]
     )
     
     h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)

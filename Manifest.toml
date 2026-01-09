@@ -1708,7 +1708,7 @@ uuid = "14a3606d-f60d-562e-9121-12d972cd8159"
 version = "2025.5.20"
 
 [[deps.MultistateModels]]
-deps = ["ADTypes", "BSplineKit", "BenchmarkTools", "CSV", "CairoMakie", "Chain", "ComponentArrays", "DataFrames", "DiffResults", "DifferentiationInterface", "Distributions", "ElasticArrays", "Enzyme", "ExponentialUtilities", "ForwardDiff", "HypothesisTests", "IJulia", "JSON", "LinearAlgebra", "MacroTools", "ModelContextProtocol", "Mooncake", "NaNMath", "NonlinearSolve", "Optim", "Optimization", "OptimizationIpopt", "OptimizationOptimJL", "OrderedCollections", "ParameterHandling", "ParetoSmooth", "Preferences", "QuadGK", "QuasiMonteCarlo", "Random", "RuntimeGeneratedFunctions", "SpecialFunctions", "Statistics", "StatsBase", "StatsFuns", "StatsModels", "Symbolics"]
+deps = ["ADTypes", "BSplineKit", "BenchmarkTools", "CSV", "CairoMakie", "Chain", "ComponentArrays", "DataFrames", "DiffResults", "DifferentiationInterface", "Distributions", "ElasticArrays", "Enzyme", "ExponentialUtilities", "ForwardDiff", "HypothesisTests", "IJulia", "JSON", "LinearAlgebra", "MacroTools", "ModelContextProtocol", "Mooncake", "NaNMath", "NonlinearSolve", "Optim", "Optimization", "OptimizationIpopt", "OptimizationNLopt", "OptimizationOptimJL", "OrderedCollections", "ParameterHandling", "ParetoSmooth", "Preferences", "QuadGK", "QuasiMonteCarlo", "Random", "RuntimeGeneratedFunctions", "SpecialFunctions", "Statistics", "StatsBase", "StatsFuns", "StatsModels", "Symbolics"]
 path = ".."
 uuid = "0f8f0c3e-0b3a-5b8a-9e9a-0a0a0a0a0a0a"
 version = "0.2.4"
@@ -1740,6 +1740,24 @@ deps = ["ADTypes", "DifferentiationInterface", "Distributed", "FiniteDiff", "For
 git-tree-sha1 = "25a6638571a902ecfb1ae2a18fc1575f86b1d4df"
 uuid = "d41bc354-129a-5804-8e4c-c37616107c6c"
 version = "7.10.0"
+
+[[deps.NLopt]]
+deps = ["CEnum", "NLopt_jll"]
+git-tree-sha1 = "624785b15005a0e0f4e462b27ee745dbe5941863"
+uuid = "76087f3c-5699-56af-9a33-bf431cd00edd"
+version = "1.2.1"
+
+    [deps.NLopt.extensions]
+    NLoptMathOptInterfaceExt = ["MathOptInterface"]
+
+    [deps.NLopt.weakdeps]
+    MathOptInterface = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
+
+[[deps.NLopt_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl"]
+git-tree-sha1 = "b0154a615d5b2b6cf7a2501123b793577d0b9950"
+uuid = "079eb43e-fd8e-5478-9966-2cf3e3edb778"
+version = "2.10.0+0"
 
 [[deps.NaNMath]]
 deps = ["OpenLibm_jll"]
@@ -1993,6 +2011,12 @@ deps = ["Ipopt", "LinearAlgebra", "OptimizationBase", "Reexport", "SciMLBase", "
 git-tree-sha1 = "0b645ecd9d89568dcdac3343fde9f9732874e59d"
 uuid = "43fad042-7963-4b32-ab19-e2a4f9a67124"
 version = "1.0.0"
+
+[[deps.OptimizationNLopt]]
+deps = ["NLopt", "OptimizationBase", "Random", "Reexport", "SciMLBase"]
+git-tree-sha1 = "8354392af1d62b7c3ac28a33094b1e8338364843"
+uuid = "4e6fcdb7-1186-4e1f-a706-475e75c168bb"
+version = "0.3.8"
 
 [[deps.OptimizationOptimJL]]
 deps = ["Optim", "OptimizationBase", "PrecompileTools", "Reexport", "SciMLBase", "SparseArrays"]

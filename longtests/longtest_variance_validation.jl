@@ -126,7 +126,7 @@ end
     
     h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
     true_rate = 0.25
-    true_params = (h12 = [log(true_rate)],)
+    true_params = (h12 = [true_rate],)
     
     exact_data = generate_exact_data_2state(h12, true_params; n_subj=N_SUBJECTS)
     
@@ -158,7 +158,7 @@ end
     # Weibull with 2 parameters (shape, scale)
     h12 = Hazard(@formula(0 ~ 1), "wei", 1, 2)
     true_shape, true_scale = 1.3, 0.20
-    true_params = (h12 = [log(true_shape), log(true_scale)],)
+    true_params = (h12 = [true_shape, true_scale],)
     
     exact_data = generate_exact_data_2state(h12, true_params; n_subj=N_SUBJECTS)
     
@@ -184,9 +184,9 @@ end
     h13 = Hazard(@formula(0 ~ 1), "exp", 1, 3)
     
     true_params = (
-        h12 = [log(0.25)],
-        h23 = [log(0.20)],
-        h13 = [log(0.10)]
+        h12 = [0.25],  # natural scale since v0.3.0
+        h23 = [0.20],
+        h13 = [0.10]
     )
     
     panel_data = generate_panel_data_illnessdeath((h12, h23, h13), true_params)
@@ -215,7 +215,7 @@ end
     # JK variance = ((n-1)/n) × IJ variance EXACTLY
     
     h12 = Hazard(@formula(0 ~ 1), "wei", 1, 2)
-    true_params = (h12 = [log(1.2), log(0.15)],)
+    true_params = (h12 = [1.2, 0.15],)  # natural scale since v0.3.0
     
     exact_data = generate_exact_data_2state(h12, true_params; n_subj=N_SUBJECTS)
     
@@ -246,9 +246,9 @@ end
     h13 = Hazard(@formula(0 ~ 1), "exp", 1, 3)
     
     true_params = (
-        h12 = [log(0.30)],
-        h23 = [log(0.25)],
-        h13 = [log(0.15)]
+        h12 = [0.30],  # natural scale since v0.3.0
+        h23 = [0.25],
+        h13 = [0.15]
     )
     
     panel_data = generate_panel_data_illnessdeath((h12, h23, h13), true_params)
@@ -279,7 +279,7 @@ end
     
     h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
     true_rate = 0.25
-    true_params = (h12 = [log(true_rate)],)
+    true_params = (h12 = [true_rate],)
     
     # Fit one model to get estimated variance
     exact_data = generate_exact_data_2state(h12, true_params; n_subj=N_SUBJECTS)
@@ -316,7 +316,7 @@ end
     Random.seed!(RNG_SEED + 30)
     
     h12 = Hazard(@formula(0 ~ 1), "wei", 1, 2)
-    true_params = (h12 = [log(1.25), log(0.18)],)
+    true_params = (h12 = [1.25, 0.18],)  # natural scale since v0.3.0
     
     # Fit one model to get estimated variance
     exact_data = generate_exact_data_2state(h12, true_params; n_subj=N_SUBJECTS)
@@ -354,7 +354,7 @@ end
     # IJ variance should also match empirical variance under correct specification
     
     h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
-    true_params = (h12 = [log(0.25)],)
+    true_params = (h12 = [0.25],)  # natural scale since v0.3.0
     
     # Fit one model to get IJ variance
     exact_data = generate_exact_data_2state(h12, true_params; n_subj=N_SUBJECTS)
@@ -408,7 +408,7 @@ end
     )
     
     h12_cov = Hazard(@formula(0 ~ x), "exp", 1, 2)
-    true_params = (h12 = [log(true_rate), true_beta],)
+    true_params = (h12 = [true_rate, true_beta],)
     
     model_sim = multistatemodel(h12_cov; data=template)
     set_parameters!(model_sim, true_params)
@@ -439,8 +439,8 @@ end
     # This validates that SEs are correctly calibrated
     
     h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
-    true_log_rate = log(0.25)
-    true_params = (h12 = [true_log_rate],)
+    true_rate = 0.25  # natural scale since v0.3.0
+    true_params = (h12 = [true_rate],)
     
     n_covered = 0
     n_trials = 100  # Fewer than N_REPS to keep runtime reasonable
@@ -460,7 +460,7 @@ end
         ci_lower = est - 1.96 * se
         ci_upper = est + 1.96 * se
         
-        if ci_lower <= true_log_rate <= ci_upper
+        if ci_lower <= true_rate <= ci_upper
             n_covered += 1
         end
     end
@@ -486,8 +486,8 @@ end
     h23 = Hazard(@formula(0 ~ 1), "exp", 2, 3)
     
     true_params = (
-        h12 = [log(1.2), log(0.20)],
-        h23 = [log(0.15)]
+        h12 = [1.2, 0.20],  # natural scale since v0.3.0
+        h23 = [0.15]
     )
     
     # Generate exact data for 3-state model
@@ -631,7 +631,7 @@ end
     # True parameters: shape=1.5 (increasing hazard), scale=0.15
     true_shape = 1.5
     true_scale = 0.15
-    true_params = (h12 = [log(true_shape), log(true_scale)],)
+    true_params = (h12 = [true_shape, true_scale],)
     
     # Generate panel data
     panel_data = generate_panel_data_semimarkov((h12,), true_params; n_subj=MCEM_N_SUBJECTS)
@@ -682,7 +682,7 @@ end
     # ==========================================================================
     
     h12 = Hazard(@formula(0 ~ 1), "wei", 1, 2)
-    true_params = (h12 = [log(1.3), log(0.12)],)
+    true_params = (h12 = [1.3, 0.12],)  # natural scale since v0.3.0
     
     panel_data = generate_panel_data_semimarkov((h12,), true_params; n_subj=MCEM_N_SUBJECTS)
     
@@ -732,7 +732,7 @@ end
     h12 = Hazard(@formula(0 ~ 1), "wei", 1, 2)
     true_shape = 1.4
     true_scale = 0.18
-    true_params = (h12 = [log(true_shape), log(true_scale)],)
+    true_params = (h12 = [true_shape, true_scale],)
     
     # Fit one model to get estimated variance - surrogate fitted during model creation
     panel_data = generate_panel_data_semimarkov((h12,), true_params; n_subj=MCEM_N_SUBJECTS)
@@ -823,9 +823,9 @@ end
     h13 = Hazard(@formula(0 ~ 1), "exp", 1, 3)  # Healthy → Dead (Markov)
     
     true_params = (
-        h12 = [log(1.3), log(0.15)],   # Weibull: log(shape), log(scale)
-        h23 = [log(0.25)],              # Exponential: log(rate)
-        h13 = [log(0.05)]               # Exponential: log(rate)
+        h12 = [1.3, 0.15],   # Weibull: shape, scale (natural scale since v0.3.0)
+        h23 = [0.25],         # Exponential: rate
+        h13 = [0.05]          # Exponential: rate
     )
     
     panel_data = generate_panel_data_semimarkov((h12, h23, h13), true_params; n_subj=MCEM_N_SUBJECTS)

@@ -6,14 +6,13 @@ using MultistateModels
 using ForwardDiff
 
 # Import internal types for testing
-import MultistateModels: FlattenContinuous, FlattenAll, UnflattenStrict, UnflattenFlexible
+import MultistateModels: FlattenContinuous, UnflattenStrict, UnflattenFlexible
 
 @testset "ReConstructor Implementation" begin
     
     @testset "Type Definitions" begin
         # Test type hierarchy
         @test FlattenContinuous <: MultistateModels.FlattenTypes
-        @test FlattenAll <: MultistateModels.FlattenTypes
         @test UnflattenStrict <: MultistateModels.UnflattenTypes
         @test UnflattenFlexible <: MultistateModels.UnflattenTypes
         
@@ -78,15 +77,6 @@ import MultistateModels: FlattenContinuous, FlattenAll, UnflattenStrict, Unflatt
         
         reconstructed_int = unflatten_fn_int(flat_int)
         @test reconstructed_int == x_int  # Should return original
-        
-        # Integer vector with FlattenAll - should flatten
-        flatten_fn_all, unflatten_fn_all = MultistateModels.construct_flatten(
-            Float64, FlattenAll(), UnflattenStrict(), x_int
-        )
-        
-        flat_all = flatten_fn_all(x_int)
-        @test !isempty(flat_all)
-        @test length(flat_all) == 3
     end
     
     @testset "Tuple Construction" begin

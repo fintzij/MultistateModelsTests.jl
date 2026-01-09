@@ -90,16 +90,16 @@ function setup_aft_model(scenario::AFTScenario)
         # h12: Deceleration (beta > 0)
         # h13: Acceleration (beta < 0)
         if scenario.family == "wei"
-            # shape, log(scale), beta
+            # shape, scale, beta (natural scale since v0.3.0)
             true_params = (
-                h12 = [log(1.2), log(0.5), 0.5],   # shape=1.2, scale=0.5, beta=0.5
-                h13 = [log(1.2), log(0.5), -0.5]   # shape=1.2, scale=0.5, beta=-0.5
+                h12 = [1.2, 0.5, 0.5],   # shape=1.2, scale=0.5, beta=0.5
+                h13 = [1.2, 0.5, -0.5]   # shape=1.2, scale=0.5, beta=-0.5
             )
         else # gom
-            # shape, log(rate), beta
+            # shape, rate, beta (natural scale since v0.3.0)
             true_params = (
-                h12 = [0.1, log(0.5), 0.5],
-                h13 = [0.1, log(0.5), -0.5]
+                h12 = [0.1, 0.5, 0.5],
+                h13 = [0.1, 0.5, -0.5]
             )
         end
     else
@@ -107,16 +107,16 @@ function setup_aft_model(scenario::AFTScenario)
         if scenario.covariate_type == :none
             h12 = Hazard(@formula(0 ~ 1), scenario.family, 1, 2; linpred_effect=:aft)
             if scenario.family == "wei"
-                true_params = (h12 = [log(1.2), log(0.5)],)
+                true_params = (h12 = [1.2, 0.5],)  # natural scale since v0.3.0
             else
-                true_params = (h12 = [0.1, log(0.5)],)
+                true_params = (h12 = [0.1, 0.5],)  # natural scale since v0.3.0
             end
         else
             h12 = Hazard(@formula(0 ~ x), scenario.family, 1, 2; linpred_effect=:aft)
             if scenario.family == "wei"
-                true_params = (h12 = [log(1.2), log(0.5), 0.5],)
+                true_params = (h12 = [1.2, 0.5, 0.5],)  # natural scale since v0.3.0
             else
-                true_params = (h12 = [0.1, log(0.5), 0.5],)
+                true_params = (h12 = [0.1, 0.5, 0.5],)  # natural scale since v0.3.0
             end
         end
         hazards = (h12,)

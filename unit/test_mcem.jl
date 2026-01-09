@@ -55,7 +55,7 @@ using ForwardDiff
     end
     
     @testset "MCEM helper functions" begin
-        # Test mcem_mll, mcem_ase, mcem_lml, mcem_lml_subj with known values
+        # Test mcem_mll, mcem_ase with known values
         logliks = [[-1.0, -2.0], [-1.5, -2.5]]
         ImportanceWeights = [[0.6, 0.4], [0.5, 0.5]]
         SubjectWeights = [1.0, 1.0]
@@ -70,17 +70,6 @@ using ForwardDiff
         mll2 = MultistateModels.mcem_mll(logliks, ImportanceWeights, SubjectWeights2)
         expected2 = 2.0*(0.6*(-1.0) + 0.4*(-2.0)) + 0.5*(0.5*(-1.5) + 0.5*(-2.5))
         @test mll2 ≈ expected2
-        
-        # mcem_lml: log marginal likelihood = log(sum(exp(ll) * w))
-        lml = MultistateModels.mcem_lml(logliks, ImportanceWeights, SubjectWeights)
-        expected_lml = log(0.6*exp(-1.0) + 0.4*exp(-2.0)) + log(0.5*exp(-1.5) + 0.5*exp(-2.5))
-        @test lml ≈ expected_lml
-        
-        # mcem_lml_subj: per-subject log marginal likelihoods
-        lml_subj = MultistateModels.mcem_lml_subj(logliks, ImportanceWeights)
-        @test length(lml_subj) == 2
-        @test lml_subj[1] ≈ log(0.6*exp(-1.0) + 0.4*exp(-2.0))
-        @test lml_subj[2] ≈ log(0.5*exp(-1.5) + 0.5*exp(-2.5))
         
         # mcem_ase with identical logliks (no variance) should be zero
         ase_zero = MultistateModels.mcem_ase(logliks, logliks, ImportanceWeights, SubjectWeights)

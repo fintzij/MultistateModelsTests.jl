@@ -198,16 +198,17 @@ end
 
 """Assemble the parameter vector expected by `set_parameters!`."""
 function scenario_parameters(s::SimulationScenario)
+    # v0.3.0+: Parameters are stored on NATURAL scale
     params = Float64[]
     if s.family == :exp
-        push!(params, log(s.baseline.rate))
+        push!(params, s.baseline.rate)  # Natural scale
     elseif s.family == :wei
-        push!(params, log(s.baseline.shape))
-        push!(params, log(s.baseline.scale))
+        push!(params, s.baseline.shape)  # Natural scale
+        push!(params, s.baseline.scale)  # Natural scale  
     elseif s.family == :gom
-        # Gompertz: shape is unconstrained (stored as-is), scale is positive (log)
+        # Gompertz: shape is unconstrained, scale is positive (both natural scale)
         push!(params, s.baseline.shape)
-        push!(params, log(s.baseline.scale))
+        push!(params, s.baseline.scale)
     else
         error("Unsupported family $(s.family)")
     end

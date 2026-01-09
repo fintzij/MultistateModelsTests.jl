@@ -89,9 +89,9 @@ import StatsModels: apply_schema, coefnames, modelcols, termvars
         # Test with several different parameter configurations
         Random.seed!(12345)
         for trial in 1:5
-            # Set random parameters (log scale)
+            # Set random parameters (natural scale: spline coefficients must be non-negative)
             npar = model.hazards[1].npar_total
-            test_pars = randn(npar) * 0.5
+            test_pars = exp.(randn(npar) * 0.5)  # Log-normal: always positive
             set_parameters!(model, 1, test_pars)
             
             pars = get_parameters(model, 1, scale=:log)
@@ -181,10 +181,11 @@ import StatsModels: apply_schema, coefnames, modelcols, termvars
         haz = model.hazards[1]
         
         # Set parameters: spline coefficients + covariate effect
+        # Spline coefficients must be non-negative on natural scale
         Random.seed!(67890)
         nbasis = haz.npar_baseline
-        spline_pars = randn(nbasis) * 0.3
-        beta = 0.7
+        spline_pars = exp.(randn(nbasis) * 0.3)  # Log-normal: always positive
+        beta = 0.7  # Covariate coefficient: unconstrained
         all_pars = vcat(spline_pars, [beta])
         set_parameters!(model, 1, all_pars)
         
@@ -218,10 +219,11 @@ import StatsModels: apply_schema, coefnames, modelcols, termvars
         haz = model.hazards[1]
         
         # Set known covariate effect
+        # Spline coefficients must be non-negative on natural scale
         Random.seed!(11111)
         nbasis = haz.npar_baseline
-        spline_pars = randn(nbasis) * 0.3
-        beta = 0.5  # Known coefficient
+        spline_pars = exp.(randn(nbasis) * 0.3)  # Log-normal: always positive
+        beta = 0.5  # Known coefficient (unconstrained)
         all_pars = vcat(spline_pars, [beta])
         set_parameters!(model, 1, all_pars)
         pars = get_parameters(model, 1, scale=:log)
@@ -266,9 +268,10 @@ import StatsModels: apply_schema, coefnames, modelcols, termvars
         model = multistatemodel(h_sp; data=two_state_dat)
         haz = model.hazards[1]
         
+        # Spline coefficients must be non-negative on natural scale
         Random.seed!(22222)
         npar = haz.npar_total
-        test_pars = randn(npar) * 0.4
+        test_pars = exp.(randn(npar) * 0.4)  # Log-normal: always positive
         set_parameters!(model, 1, test_pars)
         
         params = MultistateModels.get_hazard_params(model.parameters, model.hazards)
@@ -319,9 +322,10 @@ import StatsModels: apply_schema, coefnames, modelcols, termvars
         model = multistatemodel(h_sp; data=two_state_dat)
         haz = model.hazards[1]
         
+        # Spline coefficients must be non-negative on natural scale
         Random.seed!(33333)
         npar = haz.npar_total
-        test_pars = randn(npar) * 0.5
+        test_pars = exp.(randn(npar) * 0.5)  # Log-normal: always positive
         set_parameters!(model, 1, test_pars)
         pars = get_parameters(model, 1, scale=:log)
         covars = NamedTuple()
@@ -394,6 +398,44 @@ import StatsModels: apply_schema, coefnames, modelcols, termvars
         @test MultistateModels.default_nknots(10000) == 6  # 10000^(1/5) ≈ 6.31
     end
 
+    @testset "default_nknots_penalized function" begin
+        # Boundary cases
+        @test MultistateModels.default_nknots_penalized(0) == 0
+        
+        # Small samples - hits lower bound of 4
+        @test MultistateModels.default_nknots_penalized(1) == 4
+        @test MultistateModels.default_nknots_penalized(10) == 4  # 10^(1/3) ≈ 2.15 → clamped to 4
+        @test MultistateModels.default_nknots_penalized(64) == 4  # 64^(1/3) = 4.0
+        
+        # Typical survival data sizes - uses floor(n^(1/3))
+        # Note: Due to floating point, cube roots often slightly under exact values
+        # e.g., 1000^(1/3) ≈ 9.9999..., 8000^(1/3) ≈ 19.9999...
+        @test MultistateModels.default_nknots_penalized(100) == 4  # 100^(1/3) ≈ 4.64 → 4
+        @test MultistateModels.default_nknots_penalized(125) == 5  # 125^(1/3) = 5
+        @test MultistateModels.default_nknots_penalized(500) == 7  # 500^(1/3) ≈ 7.94 → 7
+        @test MultistateModels.default_nknots_penalized(1000) == 9  # 1000^(1/3) ≈ 9.999... → 9 (floating point)
+        @test MultistateModels.default_nknots_penalized(1001) == 10  # Just over 1000 → 10
+        @test MultistateModels.default_nknots_penalized(8000) == 19  # 8000^(1/3) ≈ 19.999... → 19 (floating point)
+        @test MultistateModels.default_nknots_penalized(8001) == 20  # Just over 8000 → 20
+        @test MultistateModels.default_nknots_penalized(10000) == 21  # 10000^(1/3) ≈ 21.5 → 21
+        
+        # Large samples - check upper bound clamping
+        # Note: 64000^(1/3) ≈ 39.999... due to floating point
+        @test MultistateModels.default_nknots_penalized(64000) == 39  # 64000^(1/3) ≈ 39.999... → 39 (floating point)
+        @test MultistateModels.default_nknots_penalized(64001) == 40  # Just over 64000 → 40
+        @test MultistateModels.default_nknots_penalized(100000) == 40  # 100000^(1/3) ≈ 46.4 → clamped to 40
+        @test MultistateModels.default_nknots_penalized(1000000) == 40  # Clamped to upper bound
+        
+        # Monotonicity: more data → more knots (up to bound)
+        @test MultistateModels.default_nknots_penalized(100) <= MultistateModels.default_nknots_penalized(1000)
+        @test MultistateModels.default_nknots_penalized(1000) <= MultistateModels.default_nknots_penalized(10000)
+        
+        # P-spline formula gives MORE knots than regression spline formula
+        # for typical sample sizes (once past minimum bounds)
+        @test MultistateModels.default_nknots_penalized(1000) > MultistateModels.default_nknots(1000)
+        @test MultistateModels.default_nknots_penalized(10000) > MultistateModels.default_nknots(10000)
+    end
+
     # =========================================================================
     # Time transformation support: verify parity with non-transformed
     # =========================================================================
@@ -415,9 +457,10 @@ import StatsModels: apply_schema, coefnames, modelcols, termvars
         model_tt = multistatemodel(h_tt; data=two_state_dat)
         
         # Set identical parameters
+        # Spline coefficients must be non-negative on natural scale
         Random.seed!(44444)
         npar = model_plain.hazards[1].npar_total
-        test_pars = randn(npar) * 0.4
+        test_pars = exp.(randn(npar) * 0.4)  # Log-normal: always positive
         set_parameters!(model_plain, 1, test_pars)
         set_parameters!(model_tt, 1, test_pars)
         
@@ -975,7 +1018,7 @@ import StatsModels: apply_schema, coefnames, modelcols, termvars
             
             # Check parameter names
             parnames = get_parnames(model)[1]
-            @test :h12_Intercept in parnames
+            @test :h12_rate in parnames
             @test Symbol("h12_s(age)_1") in parnames
             @test Symbol("h12_s(age)_5") in parnames
         end

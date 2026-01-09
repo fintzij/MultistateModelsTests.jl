@@ -86,9 +86,9 @@ end
     true_rate_13 = 0.10
     
     true_params = (
-        h12 = [log(true_rate_12)],
-        h23 = [log(true_rate_23)],
-        h13 = [log(true_rate_13)]
+        h12 = [true_rate_12],
+        h23 = [true_rate_23],
+        h13 = [true_rate_13]
     )
     
     h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
@@ -129,9 +129,9 @@ end
     cov_data = DataFrame(x = rand([0.0, 1.0], N_SUBJECTS_LARGE))
     
     true_params = (
-        h12 = [log(true_rate_12), true_beta_12],
-        h13 = [log(true_rate_13), true_beta_13],
-        h23 = [log(true_rate_23), true_beta_23]
+        h12 = [true_rate_12, true_beta_12],
+        h13 = [true_rate_13, true_beta_13],
+        h23 = [true_rate_23, true_beta_23]
     )
     
     h12 = Hazard(@formula(0 ~ x), "exp", 1, 2)
@@ -179,7 +179,7 @@ end
         age = randn(N_SUBJECTS_COVAR) * 0.5  # Standardized age
     )
     
-    true_params = (h12 = [log(true_rate), true_beta1, true_beta2],)
+    true_params = (h12 = [true_rate, true_beta1, true_beta2],)
     
     h12 = Hazard(@formula(0 ~ trt + age), "exp", 1, 2)
     
@@ -206,10 +206,8 @@ end
     
     p_est = get_parameters_flat(fitted)
     
-    # Rate recovery
-    @test isapprox(exp(p_est[1]), true_rate; rtol=PARAM_TOL_REL)
-    
-    # Beta recovery
+    # Rate recovery (parameters on natural scale since v0.3.0)
+    @test isapprox(p_est[1], true_rate; rtol=PARAM_TOL_REL)
     @test isapprox(p_est[2], true_beta1; atol=PARAM_TOL_BETA)
     @test isapprox(p_est[3], true_beta2; atol=PARAM_TOL_BETA)
     
@@ -231,9 +229,9 @@ end
     true_shape_13, true_scale_13 = 1.1, 0.08
     
     true_params = (
-        h12 = [log(true_shape_12), log(true_scale_12)],
-        h23 = [log(true_shape_23), log(true_scale_23)],
-        h13 = [log(true_shape_13), log(true_scale_13)]
+        h12 = [true_shape_12, true_scale_12],
+        h23 = [true_shape_23, true_scale_23],
+        h13 = [true_shape_13, true_scale_13]
     )
     
     h12 = Hazard(@formula(0 ~ 1), "wei", 1, 2)
@@ -272,7 +270,7 @@ end
     
     cov_data = DataFrame(x = rand([0.0, 1.0], N_SUBJECTS_COVAR))
     
-    true_params = (h12 = [log(true_shape), log(true_scale), true_beta],)
+    true_params = (h12 = [true_shape, true_scale, true_beta],)
     
     h12 = Hazard(@formula(0 ~ x), "wei", 1, 2)
     
@@ -297,11 +295,9 @@ end
     
     p_est = get_parameters_flat(fitted)
     
-    # Shape and scale recovery
-    @test isapprox(exp(p_est[1]), true_shape; rtol=PARAM_TOL_REL)
-    @test isapprox(exp(p_est[2]), true_scale; rtol=PARAM_TOL_REL)
-    
-    # Beta recovery
+    # Shape and scale recovery (parameters on natural scale since v0.3.0)
+    @test isapprox(p_est[1], true_shape; rtol=PARAM_TOL_REL)
+    @test isapprox(p_est[2], true_scale; rtol=PARAM_TOL_REL)
     @test isapprox(p_est[3], true_beta; atol=PARAM_TOL_BETA)
     @test sign(p_est[3]) == sign(true_beta)
     
@@ -324,16 +320,16 @@ const N_SUBJECTS_GOMPERTZ = 50000
 @testset "Robust Gompertz - No Covariates (n=$N_SUBJECTS_GOMPERTZ)" begin
     Random.seed!(RNG_SEED + 20)
     
-    # True Gompertz: h(t) = scale * shape * exp(shape * t)
-    # Params stored internally: [shape, log(scale)]
+    # True Gompertz: h(t) = scale * exp(shape * t)
+    # Params stored on natural scale since v0.3.0: [shape, scale]
     # Use competing risks model (avoids low-event downstream transition)
     true_shape_12, true_scale_12 = 0.15, 0.15
     true_shape_13, true_scale_13 = 0.12, 0.12
     
-    # set_parameters! expects log-scale for baseline params (except shape for Gompertz)
+    # set_parameters! expects natural scale since v0.3.0
     true_params = (
-        h12 = [true_shape_12, log(true_scale_12)],
-        h13 = [true_shape_13, log(true_scale_13)]
+        h12 = [true_shape_12, true_scale_12],
+        h13 = [true_shape_13, true_scale_13]
     )
     
     h12 = Hazard(@formula(0 ~ 1), "gom", 1, 2)
@@ -355,16 +351,16 @@ const N_SUBJECTS_GOMPERTZ = 50000
     exact_data = sim_result[1, 1]
     
     model_fit = multistatemodel(h12, h13; data=exact_data)
-    # Use Newton optimizer - Gompertz likelihood can have multiple local minima with L-BFGS
-    fitted = fit(model_fit; verbose=false, compute_vcov=true, solver=Optim.Newton())
+    # Default Ipopt solver handles box constraints and is also second-order (interior point)
+    fitted = fit(model_fit; verbose=false, compute_vcov=true)
     
     p = get_parameters(fitted; scale=:natural)
     
-    # Shape recovery (natural scale = exp(log_shape))
+    # Shape recovery (directly on natural scale)
     @test isapprox(p.h12[1], true_shape_12; atol=PARAM_TOL_ABS)
     @test isapprox(p.h13[1], true_shape_13; atol=PARAM_TOL_ABS)
-    
-    # Scale recovery (natural scale = exp(log_scale))
+
+    # Scale recovery (directly on natural scale)
     @test isapprox(p.h12[2], true_scale_12; rtol=PARAM_TOL_REL)
     @test isapprox(p.h13[2], true_scale_13; rtol=PARAM_TOL_REL)
     
@@ -382,8 +378,8 @@ end
     
     cov_data = DataFrame(x = rand([0.0, 1.0], N_SUBJECTS_GOMPERTZ))
     
-    # Params stored internally: [shape, log(scale), beta]
-    true_params = (h12 = [true_shape, log(true_scale), true_beta],)
+    # Params stored: [shape, scale, beta] - natural scale since v0.3.0
+    true_params = (h12 = [true_shape, true_scale, true_beta],)
     
     h12 = Hazard(@formula(0 ~ x), "gom", 1, 2)
     
@@ -404,18 +400,16 @@ end
     exact_data = sim_result[1, 1]
     
     model_fit = multistatemodel(h12; data=exact_data)
-    # Use Newton optimizer for Gompertz
-    fitted = fit(model_fit; verbose=false, compute_vcov=true, solver=Optim.Newton())
+    # Default Ipopt solver handles box constraints and is also second-order
+    fitted = fit(model_fit; verbose=false, compute_vcov=true)
     
     p_est = get_parameters_flat(fitted)
     
-    # Shape recovery (p_est[1] is shape, compare to natural)
+    # Shape recovery (parameters on natural scale since v0.3.0)
     @test isapprox(p_est[1], true_shape; rtol=PARAM_TOL_REL)
-    
-    # Scale recovery (p_est[2] is log_scale, compare to natural)
-    @test isapprox(exp(p_est[2]), true_scale; rtol=PARAM_TOL_REL)
-    
-    # Beta recovery (not transformed)
+
+    # Scale recovery (parameters on natural scale since v0.3.0)
+    @test isapprox(p_est[2], true_scale; rtol=PARAM_TOL_REL)
     @test isapprox(p_est[3], true_beta; atol=PARAM_TOL_BETA)
     
     @test isfinite(fitted.loglik.loglik)
@@ -444,7 +438,7 @@ end
     
     # Verify hazard function evaluation matches parameter
     # pars must be NamedTuple on natural scale for hazard_fn
-    pars = (baseline = (h12_Intercept = fitted_rate,),)
+    pars = (baseline = (h12_rate = fitted_rate,),)
     for t in [0.5, 1.0, 2.0, 5.0]
         h_eval = fitted.hazards[1](t, pars, NamedTuple())
         @test isapprox(h_eval, fitted_rate; rtol=1e-10)  # Should be exact for exponential

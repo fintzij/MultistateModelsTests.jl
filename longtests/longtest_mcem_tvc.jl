@@ -153,7 +153,7 @@ end
     Random.seed!(RNG_SEED - 1)
     
     # Simple exponential with TVC treatment effect
-    true_log_rate = log(0.25)
+    true_rate = 0.25
     true_beta = 0.5  # Treatment increases hazard
     
     # Build panel data with treatment switch at t=3
@@ -168,7 +168,7 @@ end
     # Simulate from exponential model
     h12_sim = Hazard(@formula(0 ~ x), "exp", 1, 2)
     model_sim = multistatemodel(h12_sim; data=panel_data, surrogate=:markov)
-    set_parameters!(model_sim, (h12 = [true_log_rate, true_beta],))
+    set_parameters!(model_sim, (h12 = [true_rate, true_beta],))
     
     # For 2-state model (1→2 absorbing), transition 1 is exact
     obstype_map = Dict(1 => 1)
@@ -192,9 +192,8 @@ end
     fitted_params = get_parameters_flat(fitted)
     @test all(isfinite.(fitted_params))
     
-    # Rate parameter recovery
-    fitted_rate = exp(fitted_params[1])
-    true_rate = exp(true_log_rate)
+    # Rate parameter recovery (parameters now on natural scale)
+    fitted_rate = fitted_params[1]
     @test isapprox(fitted_rate, true_rate; rtol=PARAM_TOL_REL)
     
     # Beta recovery (TVC effect - check sign is correct)
@@ -218,8 +217,8 @@ end
     # Exponential hazards are Markov and dispatch to matrix exponentiation.
     
     # True parameters: Weibull with shape=1.0 (equivalent to exponential), scale=0.25
-    true_log_shape = log(1.0)
-    true_log_scale = log(0.25)
+    true_shape = 1.0
+    true_scale = 0.25
     true_beta = 0.6  # Positive effect = increased hazard with treatment
     
     # Build panel data: observe at t=0,2,4,6,8, treatment starts at t=3
@@ -234,8 +233,8 @@ end
     # Create model for simulation with Weibull (semi-Markov)
     h12_sim = Hazard(@formula(0 ~ x), "wei", 1, 2)
     model_sim = multistatemodel(h12_sim; data=panel_data, surrogate=:markov)
-    set_parameters!(model_sim, (h12 = [true_log_shape, true_log_scale, true_beta],))
-    
+    set_parameters!(model_sim, (h12 = [true_shape, true_scale, true_beta],))
+
     # Simulate panel data
     # For 2-state model (1→2 absorbing), transition 1 is exact
     obstype_map = Dict(1 => 1)
@@ -270,14 +269,12 @@ end
     # Parameter recovery tests (relaxed tolerance for stochastic MCEM)
     fitted_params = get_parameters_flat(fitted)
     
-    # Shape parameter recovery (exp(fitted) vs exp(true))
-    fitted_shape = exp(fitted_params[1])
-    true_shape = exp(true_log_shape)
+# Shape parameter recovery (parameters now on natural scale)
+    fitted_shape = fitted_params[1]
     @test isapprox(fitted_shape, true_shape; rtol=PARAM_TOL_REL)
-    
+
     # Scale parameter recovery
-    fitted_scale = exp(fitted_params[2])
-    true_scale = exp(true_log_scale)
+    fitted_scale = fitted_params[2]
     @test isapprox(fitted_scale, true_scale; rtol=PARAM_TOL_REL)
     
     # Beta (treatment effect) recovery - check sign is correct
@@ -300,8 +297,8 @@ end
     
     # Scenario: Biomarker increases over time (e.g., disease progression marker)
     # NOTE: Using Weibull with shape≈1 to trigger MCEM (exponential dispatches to Markov MLE)
-    true_log_shape = log(1.0)  # Shape=1 is like exponential
-    true_log_scale = log(0.2)
+    true_shape = 1.0  # Shape=1 is like exponential
+    true_scale = 0.2
     true_beta = 0.3  # Each unit increase in biomarker increases log-hazard by 0.3
     
     # Build panel data with continuous covariate that changes at t=2,4
@@ -320,8 +317,8 @@ end
     # Create and simulate with Weibull
     h12_sim = Hazard(@formula(0 ~ x), "wei", 1, 2)
     model_sim = multistatemodel(h12_sim; data=panel_data, surrogate=:markov)
-    set_parameters!(model_sim, (h12 = [true_log_shape, true_log_scale, true_beta],))
-    
+    set_parameters!(model_sim, (h12 = [true_shape, true_scale, true_beta],))
+
     # For 2-state model (1→2 absorbing), transition 1 is exact
     obstype_map = Dict(1 => 1)
     sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false,
@@ -352,16 +349,14 @@ end
     # All parameters should be finite
     @test all(isfinite.(fitted_params))
     
-    # Shape parameter recovery
-    fitted_shape = exp(fitted_params[1])
-    true_shape = exp(true_log_shape)
+    # Shape parameter recovery (parameters now on natural scale)
+    fitted_shape = fitted_params[1]
     @test isapprox(fitted_shape, true_shape; rtol=PARAM_TOL_REL)
-    
+
     # Scale parameter recovery  
-    fitted_scale = exp(fitted_params[2])
-    true_scale = exp(true_log_scale)
+    fitted_scale = fitted_params[2]
     @test isapprox(fitted_scale, true_scale; rtol=PARAM_TOL_REL)
-    
+
     # Beta recovery (continuous covariate - check sign at minimum)
     @test fitted_params[3] > -0.5  # Positive or near-zero (true is positive)
     
@@ -380,8 +375,8 @@ end
     
     # Semi-Markov model: Weibull hazards depend on sojourn time and TVC
     # Use moderate parameters to avoid degenerate cases
-    true_log_shape = log(1.2)  # Shape > 1: increasing hazard (mild)
-    true_log_scale = log(0.15)  # Lower scale for fewer events
+    true_shape = 1.2  # Shape > 1: increasing hazard (mild)
+    true_scale = 0.15  # Lower scale for fewer events
     true_beta = 0.3
     
     # Panel data with TVC - longer observation period
@@ -396,18 +391,18 @@ end
     # Simulate from Weibull model with TVC
     h12_sim = Hazard(@formula(0 ~ x), "wei", 1, 2)
     model_sim = multistatemodel(h12_sim; data=panel_data, surrogate=:markov)
-    set_parameters!(model_sim, (h12 = [true_log_shape, true_log_scale, true_beta],))
-    
+set_parameters!(model_sim, (h12 = [true_shape, true_scale, true_beta],))
+
     # For 2-state model (1→2 absorbing), transition 1 is exact
     obstype_map = Dict(1 => 1)
     sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false,
                          obstype_by_transition=obstype_map)
     simulated_data = sim_result[1, 1]
-    
+
     # Fit model
     h12_fit = Hazard(@formula(0 ~ x), "wei", 1, 2)
     model_fit = multistatemodel(h12_fit; data=simulated_data, surrogate=:markov)
-    
+
     fitted = fit(model_fit;
         proposal=:markov,
         verbose=true,
@@ -417,22 +412,20 @@ end
         max_ess=500,
         compute_vcov=false,
         return_convergence_records=true)
-    
+
     # Verify MCEM was used
     @test !isnothing(fitted.ConvergenceRecords)
     @test hasproperty(fitted.ConvergenceRecords, :ess_trace)
-    
-    # Parameter recovery tests
+
+    # Parameter recovery tests (parameters now on natural scale)
     fitted_params = get_parameters_flat(fitted)
-    
+
     # Shape parameter recovery
-    fitted_shape = exp(fitted_params[1])
-    true_shape = exp(true_log_shape)
+    fitted_shape = fitted_params[1]
     @test isapprox(fitted_shape, true_shape; rtol=PARAM_TOL_REL)
-    
+
     # Scale parameter recovery
-    fitted_scale = exp(fitted_params[2])
-    true_scale = exp(true_log_scale)
+    fitted_scale = fitted_params[2]
     @test isapprox(fitted_scale, true_scale; rtol=PARAM_TOL_REL)
     
     # Beta recovery
@@ -454,8 +447,8 @@ end
     # Gompertz models increasing mortality with age
     # TVC captures treatment effect
     true_shape = 0.15  # Exponential increase in hazard
-    true_log_scale = log(0.1)
-    true_beta = -0.5  # Treatment reduces hazard
+    true_rate = 0.1    # Gompertz rate parameter (natural scale)
+    true_beta = -0.5   # Treatment reduces hazard
     
     # Panel data with treatment switch
     panel_data = build_tvc_panel_data(
@@ -469,7 +462,7 @@ end
     # Simulate
     h12_sim = Hazard(@formula(0 ~ x), "gom", 1, 2)
     model_sim = multistatemodel(h12_sim; data=panel_data, surrogate=:markov)
-    set_parameters!(model_sim, (h12 = [true_shape, true_log_scale, true_beta],))
+    set_parameters!(model_sim, (h12 = [true_shape, true_rate, true_beta],))
     
     # For 2-state model (1→2 absorbing), transition 1 is exact
     obstype_map = Dict(1 => 1)
@@ -535,10 +528,10 @@ end
     h12_sim = Hazard(@formula(0 ~ x), "wei", 1, 2)   # Healthy → Ill
     h23_sim = Hazard(@formula(0 ~ x), "wei", 2, 3)   # Ill → Dead
     
-    # True parameters for progressive model
+    # True parameters for progressive model (natural scale)
     true_params = (
-        h12 = [log(1.0), log(0.15), 0.3],  # wei: log(shape), log(scale), beta
-        h23 = [log(1.0), log(0.25), 0.4]   # wei: log(shape), log(scale), beta
+        h12 = [1.0, 0.15, 0.3],  # wei: shape, scale, beta
+        h23 = [1.0, 0.25, 0.4]   # wei: shape, scale, beta
     )
     
     model_sim = multistatemodel(h12_sim, h23_sim; data=panel_data, surrogate=:markov)
@@ -581,8 +574,8 @@ end
     # Print parameter comparison (natural scale)
     p = get_parameters(fitted; scale=:natural)
     print_parameter_comparison("Progressive with TVC",
-        [exp(true_params.h12[1]), exp(true_params.h12[2]), true_params.h12[3],
-         exp(true_params.h23[1]), exp(true_params.h23[2]), true_params.h23[3]],
+        [true_params.h12[1], true_params.h12[2], true_params.h12[3],
+         true_params.h23[1], true_params.h23[2], true_params.h23[3]],
         [p.h12[1], p.h12[2], p.h12[3], p.h23[1], p.h23[2], p.h23[3]],
         param_names=["shape_12", "scale_12", "beta_12", "shape_23", "scale_23", "beta_23"])
     
@@ -598,8 +591,8 @@ end
     
     # Scenario: Covariate changes at t=2, t=4, t=6
     # NOTE: Using Weibull to trigger MCEM
-    true_log_shape = log(1.0)
-    true_log_scale = log(0.2)
+    true_shape = 1.0
+    true_scale = 0.2
     true_beta = 0.25
     
     panel_data = build_tvc_panel_data(
@@ -617,14 +610,14 @@ end
     # Simulate with Weibull
     h12_sim = Hazard(@formula(0 ~ x), "wei", 1, 2)
     model_sim = multistatemodel(h12_sim; data=panel_data, surrogate=:markov)
-    set_parameters!(model_sim, (h12 = [true_log_shape, true_log_scale, true_beta],))
-    
+    set_parameters!(model_sim, (h12 = [true_shape, true_scale, true_beta],))
+
     # For 2-state model (1→2 absorbing), transition 1 is exact
     obstype_map = Dict(1 => 1)
     sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false,
                          obstype_by_transition=obstype_map)
     simulated_data = sim_result[1, 1]
-    
+
     # Fit
     h12_fit = Hazard(@formula(0 ~ x), "wei", 1, 2)
     model_fit = multistatemodel(h12_fit; data=simulated_data, surrogate=:markov)
@@ -658,8 +651,8 @@ end
     
     # AFT model: Covariates affect time scale, not hazard scale
     # NOTE: Using Weibull to trigger MCEM
-    true_log_shape = log(1.2)
-    true_log_scale = log(0.3)
+    true_shape = 1.2
+    true_scale = 0.3
     true_beta = 0.4  # AFT: time scale multiplier
     
     panel_data = build_tvc_panel_data(
@@ -673,14 +666,14 @@ end
     # Simulate with Weibull AFT effect
     h12_sim = Hazard(@formula(0 ~ x), "wei", 1, 2; linpred_effect=:aft)
     model_sim = multistatemodel(h12_sim; data=panel_data, surrogate=:markov)
-    set_parameters!(model_sim, (h12 = [true_log_shape, true_log_scale, true_beta],))
-    
+    set_parameters!(model_sim, (h12 = [true_shape, true_scale, true_beta],))
+
     # For 2-state model (1→2 absorbing), transition 1 is exact
     obstype_map = Dict(1 => 1)
     sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false,
                          obstype_by_transition=obstype_map)
     simulated_data = sim_result[1, 1]
-    
+
     # Fit with Weibull AFT
     h12_fit = Hazard(@formula(0 ~ x), "wei", 1, 2; linpred_effect=:aft)
     model_fit = multistatemodel(h12_fit; data=simulated_data, surrogate=:markov)
@@ -816,8 +809,8 @@ end
     h23 = Hazard(@formula(0 ~ 1), "wei", 2, 3)
     
     true_params = (
-        h12 = [log(true_shape_12), log(true_scale_12), true_beta_12],
-        h23 = [log(true_shape_23), log(true_scale_23)]
+        h12 = [true_shape_12, true_scale_12, true_beta_12],
+        h23 = [true_shape_23, true_scale_23]
     )
     
     model_sim = multistatemodel(h12, h23; data=template_data, surrogate=:markov)

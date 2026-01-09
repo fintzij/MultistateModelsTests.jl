@@ -116,8 +116,8 @@ using Statistics
         @test surrogate isa MarkovSurrogate
         @test is_fitted(surrogate)
         
-        # Verify the parameter was set correctly
-        rate = first(values(surrogate.parameters.natural))[1]
+        # Verify the parameter was set correctly (access via nested structure)
+        rate = surrogate.parameters.nested.h12.baseline.h12_rate
         @test isapprox(rate, 0.3, rtol = 1e-6)
     end
     
@@ -164,13 +164,13 @@ using Statistics
         
         surrogate = MultistateModels._fit_markov_surrogate(model; method = :mle, verbose = false)
         
-        # Rates must be positive
-        rates = values(surrogate.parameters.natural)
-        @test all(r[1] > 0 for r in rates)
+        # Rates must be positive (access via flat parameters)
+        rates = surrogate.parameters.flat
+        @test all(r > 0 for r in rates)
         
         # Verify rate is in plausible range for test data (30 subjects, ~30% transition rate)
         # With 3 observations per subject at times 0-1, 1-2, 2-3, rate should be ~0.1-0.5
-        rate_12 = first(values(surrogate.parameters.natural))[1]
+        rate_12 = surrogate.parameters.nested.h12.baseline.h12_rate
         @test rate_12 > 0.05  # Lower bound based on data generation
         @test rate_12 < 1.0   # Upper bound: not implausibly high
         
@@ -183,8 +183,8 @@ using Statistics
         h12 = Hazard(@formula(0 ~ 1), "wei", 1, 2)
         model = multistatemodel(h12; data = dat)
         
-        surrogate = MultistateModels._fit_phasetype_surrogate(model; 
-            method = :mle, n_phases = Dict(1=>2), verbose = false)
+        surrogate = MultistateModels.fit_surrogate(model; type = :phasetype, 
+            n_phases = Dict(1=>2), verbose = false)
         
         Q = surrogate.expanded_Q
         
@@ -240,9 +240,9 @@ using Statistics
         @test is_surrogate_fitted(model)
         @test model.markovsurrogate.fitted == true
         
-        # Rates should be positive and in plausible range
-        rates = values(model.markovsurrogate.parameters.natural)
-        rate_12 = first(rates)[1]
+        # Rates should be positive and in plausible range (access via flat params)
+        rates = model.markovsurrogate.parameters.flat
+        rate_12 = rates[1]  # First (and only) rate for exp hazard
         @test rate_12 > 0.05  # Lower bound
         @test rate_12 < 1.0   # Upper bound
     end

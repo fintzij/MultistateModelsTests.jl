@@ -16,7 +16,7 @@ using Random
 
 # Import internal types for testing
 import MultistateModels: ThreadingConfig, get_parameters_flat, should_parallelize, 
-                          get_threading_config, set_threading_config!
+                          get_threading_config, set_threading_config!, loglik_exact
 
 @testset "Parallel Likelihood Evaluation" begin
     

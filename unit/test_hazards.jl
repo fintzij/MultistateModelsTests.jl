@@ -972,7 +972,8 @@ end
     h_tt_exp = Hazard(@formula(0 ~ x + z), "exp", 1, 2; time_transform = true)
     model_plain_exp = multistatemodel(h_plain_exp; data = dat)
     model_tt_exp = multistatemodel(h_tt_exp; data = dat)
-    pars_exp = [log(0.35), 0.25, -0.15]
+    # v0.3.0+: parameters on natural scale - rate must be positive
+    pars_exp = [0.35, 0.25, -0.15]  # [rate, β_x, β_z]
     MultistateModels.set_parameters!(model_plain_exp, (h12 = pars_exp,))
     MultistateModels.set_parameters!(model_tt_exp, (h12 = pars_exp,))
 
@@ -1006,7 +1007,8 @@ end
     h_tt_wei = Hazard(@formula(0 ~ x), "wei", 1, 2; time_transform = true)
     model_plain_wei = multistatemodel(h_plain_wei; data = dat)
     model_tt_wei = multistatemodel(h_tt_wei; data = dat)
-    pars_wei = [log(1.4), log(0.8), 0.3]
+    # v0.3.0+: parameters on natural scale - shape and scale must be positive
+    pars_wei = [1.4, 0.8, 0.3]  # [shape, scale, β_x]
     MultistateModels.set_parameters!(model_plain_wei, (h12 = pars_wei,))
     MultistateModels.set_parameters!(model_tt_wei, (h12 = pars_wei,))
 
@@ -1036,7 +1038,8 @@ end
     h_tt_gom = Hazard(@formula(0 ~ x + z), "gom", 1, 2; time_transform = true)
     model_plain_gom = multistatemodel(h_plain_gom; data = dat)
     model_tt_gom = multistatemodel(h_tt_gom; data = dat)
-    pars_gom = [log(0.3), log(0.75), 0.4, -0.2]
+    # v0.3.0+: parameters on natural scale - shape can be any value, rate must be positive
+    pars_gom = [0.3, 0.75, 0.4, -0.2]  # [shape, rate, β_x, β_z]
     MultistateModels.set_parameters!(model_plain_gom, (h12 = pars_gom,))
     MultistateModels.set_parameters!(model_tt_gom, (h12 = pars_gom,))
 

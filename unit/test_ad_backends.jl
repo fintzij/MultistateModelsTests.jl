@@ -1,6 +1,7 @@
 # Unit tests for AD backend consistency
 #
-# Three AD backends are exported: ForwardDiffBackend, EnzymeBackend, MooncakeBackend.
+# ForwardDiffBackend is the primary exported backend. EnzymeBackend and MooncakeBackend
+# are internal-only (not production-ready) but still tested for development purposes.
 # Tests verify:
 # 1. All backends produce correct gradients
 # 2. Gradients are consistent across backends (where supported)
@@ -17,9 +18,8 @@ using DataFrames
 using Random
 using ForwardDiff
 
-import MultistateModels: 
-    ForwardDiffBackend, EnzymeBackend, MooncakeBackend,
-    default_ad_backend, get_parameters_flat
+# ForwardDiffBackend is exported; EnzymeBackend and MooncakeBackend are internal
+import MultistateModels: EnzymeBackend, MooncakeBackend, default_ad_backend, get_parameters_flat
 
 # =============================================================================
 # Test Fixtures

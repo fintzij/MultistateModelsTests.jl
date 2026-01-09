@@ -104,15 +104,15 @@ using Random
         @test !has_penalties(config_empty)
         @test compute_penalty(rand(5), config_empty) ≈ 0.0
         
-        # Single penalty term with exp_transform=true (default for baseline hazards)
+        # Single penalty term - parameters on NATURAL scale (post-v0.3.0)
+        # Box constraints ensure non-negativity, penalty is quadratic P(β) = (λ/2) βᵀSβ
         K = 6
         S = rand(K, K)
         S = S' * S  # Make symmetric PSD
-        θ = randn(K)  # Parameters on log (estimation) scale
-        β = exp.(θ)    # Natural scale coefficients
+        β = abs.(randn(K)) .+ 0.1  # Natural scale coefficients (non-negative for splines)
         lambda = 2.0
         
-        # Default constructor has exp_transform=true
+        # Penalty term with natural scale parameters
         term = MultistateModels.PenaltyTerm(1:K, S, lambda, 2, [:h12])
         config = PenaltyConfig(
             [term], 
@@ -123,9 +123,9 @@ using Random
         
         @test has_penalties(config)
         
-        # Compute penalty: (1/2) * λ * exp(θ)ᵀ S exp(θ) = (1/2) * λ * βᵀSβ
+        # Compute penalty: (1/2) * λ * βᵀ S β (parameters directly on natural scale)
         expected = 0.5 * lambda * dot(β, S * β)
-        computed = compute_penalty(θ, config)
+        computed = compute_penalty(β, config)
         @test computed ≈ expected
     end
 
@@ -195,6 +195,111 @@ using Random
         @test isapprox(info.S, info.S')  # Symmetric
     end
 
+    @testset "Monotone Spline Penalty Transformation" begin
+        # Test that monotone splines get transformed penalty matrices
+        # For monotone splines, optimization is on ests (I-spline increments)
+        # but penalty should penalize smoothness of the underlying function
+        # 
+        # The correct transformation is: S_monotone = L' * S_bspline * L
+        # where coefs = L * ests
+        
+        @testset "build_ispline_transform_matrix" begin
+            # Use uniform knots to avoid numerical issues with clamped boundaries
+            knots = collect(0.0:0.2:1.0)  # [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
+            basis = BSplineBasis(BSplineOrder(4), knots)
+            K = length(basis)
+            
+            L = MultistateModels.build_ispline_transform_matrix(basis; direction=1)
+            
+            # Basic properties
+            @test size(L) == (K, K)
+            @test all(L[:, 1] .== 1.0)  # Intercept column
+            @test istril(L)  # Lower triangular
+            
+            # Verify L * ests == _spline_ests2coefs(ests, basis, 1)
+            ests = rand(K)
+            coefs_expected = MultistateModels._spline_ests2coefs(ests, basis, 1)
+            coefs_L = L * ests
+            @test isapprox(coefs_expected, coefs_L; rtol=1e-10)
+            
+            # Test with different ests
+            for _ in 1:5
+                ests_rand = rand(K) .+ 0.1
+                coefs_expected = MultistateModels._spline_ests2coefs(ests_rand, basis, 1)
+                @test isapprox(L * ests_rand, coefs_expected; rtol=1e-10)
+            end
+            
+            # Test decreasing direction
+            L_dec = MultistateModels.build_ispline_transform_matrix(basis; direction=-1)
+            @test size(L_dec) == (K, K)
+            
+            # Verify L_dec matches _spline_ests2coefs with monotone=-1
+            ests_test = rand(K) .+ 0.1
+            coefs_dec_expected = MultistateModels._spline_ests2coefs(ests_test, basis, -1)
+            @test isapprox(L_dec * ests_test, coefs_dec_expected; rtol=1e-10)
+        end
+        
+        @testset "transform_penalty_for_monotone" begin
+            knots = collect(0.0:0.2:1.0)
+            basis = BSplineBasis(BSplineOrder(4), knots)
+            K = length(basis)
+            
+            # Build B-spline penalty
+            S_bspline = build_penalty_matrix(basis, 2)
+            
+            # Transform for monotone
+            S_monotone = MultistateModels.transform_penalty_for_monotone(S_bspline, basis)
+            
+            # Basic properties
+            @test size(S_monotone) == (K, K)
+            @test isapprox(S_monotone, S_monotone')  # Symmetric
+            
+            # Verify mathematical relation: S_monotone = L' * S * L
+            L = MultistateModels.build_ispline_transform_matrix(basis; direction=1)
+            S_expected = L' * S_bspline * L
+            @test isapprox(S_monotone, S_expected; rtol=1e-10)
+            
+            # Positive semi-definite (all eigenvalues ≥ -eps)
+            eigs = eigvals(Symmetric(S_monotone))
+            @test all(e -> e >= -1e-10, eigs)
+        end
+        
+        @testset "build_spline_hazard_info with monotone" begin
+            # Create a model with monotone spline hazard
+            data = DataFrame(
+                id = 1:10,
+                tstart = zeros(10),
+                tstop = [0.5, 1.0, 1.5, 2.0, 2.5, 0.6, 1.2, 1.8, 2.2, 2.8],
+                statefrom = ones(Int, 10),
+                stateto = fill(2, 10),
+                obstype = ones(Int, 10)
+            )
+            
+            # Non-monotone spline
+            h_nonmono = Hazard(@formula(0 ~ 1), :sp, 1, 2)
+            model_nonmono = multistatemodel(h_nonmono; data=data)
+            haz_nonmono = model_nonmono.hazards[1]
+            info_nonmono = build_spline_hazard_info(haz_nonmono; penalty_order=2)
+            
+            # Monotone increasing spline
+            h_mono = Hazard(@formula(0 ~ 1), :sp, 1, 2; monotone=1)
+            model_mono = multistatemodel(h_mono; data=data)
+            haz_mono = model_mono.hazards[1]
+            info_mono = build_spline_hazard_info(haz_mono; penalty_order=2)
+            
+            # Both should produce valid penalty matrices
+            @test isapprox(info_nonmono.S, info_nonmono.S')
+            @test isapprox(info_mono.S, info_mono.S')
+            
+            # Sizes should match
+            @test size(info_nonmono.S) == size(info_mono.S)
+            
+            # Penalty matrices should be different (transformed vs not)
+            # This test verifies that the transformation is actually applied
+            @test !isapprox(info_nonmono.S, info_mono.S)
+        end
+    end
+
     @testset "build_penalty_config" begin
         # Create model with two spline hazards
         data = DataFrame(
@@ -246,8 +351,8 @@ using Random
         h13 = Hazard(@formula(0 ~ 1), :sp, 1, 3)
         model = multistatemodel(h12, h13; data=data)
         
-        # Fit without penalty
-        fitted_no_penalty = fit(model; verbose=false, compute_vcov=false, compute_ij_vcov=false)
+        # Fit without penalty (explicit :none since splines default to penalized)
+        fitted_no_penalty = fit(model; penalty=:none, verbose=false, compute_vcov=false, compute_ij_vcov=false)
         ll_no_penalty = get_loglik(fitted_no_penalty)
         
         # Fit with penalty
@@ -266,6 +371,72 @@ using Random
         ll_high_penalty = get_loglik(fitted_high_penalty)
         
         @test ll_high_penalty <= ll_no_penalty  # Higher penalty = worse unpenalized likelihood
+    end
+
+    @testset "penalty=:auto default behavior" begin
+        # Create simple exact data
+        Random.seed!(123)
+        nsubj = 30
+        rows = []
+        for i in 1:nsubj
+            t = rand()^0.5 * 3.0
+            dest = rand() < 0.6 ? 2 : 3
+            push!(rows, (id=i, tstart=0.0, tstop=t, statefrom=1, stateto=dest, obstype=1))
+        end
+        data = DataFrame(rows)
+        
+        # Test :auto on spline model - should apply penalty
+        h12_sp = Hazard(@formula(0 ~ 1), :sp, 1, 2)
+        h13_sp = Hazard(@formula(0 ~ 1), :sp, 1, 3)
+        model_sp = multistatemodel(h12_sp, h13_sp; data=data)
+        
+        @test has_spline_hazards(model_sp) == true
+        
+        # With default (penalty=:auto), splines should be penalized
+        # Fit with explicit penalty and :auto, verify same behavior
+        fitted_auto = fit(model_sp; verbose=false, compute_vcov=false, compute_ij_vcov=false)
+        fitted_explicit = fit(model_sp; penalty=SplinePenalty(), verbose=false, compute_vcov=false, compute_ij_vcov=false)
+        
+        # Both should produce valid fits
+        @test !isnan(get_loglik(fitted_auto))
+        @test !isnan(get_loglik(fitted_explicit))
+        
+        # Test :auto on non-spline model - should not apply penalty
+        h12_exp = Hazard(@formula(0 ~ 1), :exp, 1, 2)
+        h13_exp = Hazard(@formula(0 ~ 1), :exp, 1, 3)
+        model_exp = multistatemodel(h12_exp, h13_exp; data=data)
+        
+        @test has_spline_hazards(model_exp) == false
+        
+        # Should fit without issues (no penalty applied)
+        fitted_exp = fit(model_exp; verbose=false, compute_vcov=false, compute_ij_vcov=false)
+        @test !isnan(get_loglik(fitted_exp))
+        
+        # Test :none explicit opt-out
+        fitted_none = fit(model_sp; penalty=:none, verbose=false, compute_vcov=false, compute_ij_vcov=false)
+        @test !isnan(get_loglik(fitted_none))
+        
+        # Unpenalized should have higher log-likelihood (less regularization)
+        @test get_loglik(fitted_none) >= get_loglik(fitted_auto) - 1e-6  # Small tolerance for numerical error
+    end
+    
+    @testset "penalty=nothing deprecation warning" begin
+        # Create simple data
+        nsubj = 15
+        data = DataFrame(
+            id = 1:nsubj,
+            tstart = zeros(nsubj),
+            tstop = rand(nsubj) .* 2.0 .+ 0.1,
+            statefrom = ones(Int, nsubj),
+            stateto = fill(2, nsubj),
+            obstype = ones(Int, nsubj)
+        )
+        
+        h12 = Hazard(@formula(0 ~ 1), :sp, 1, 2)
+        model = multistatemodel(h12; data=data)
+        
+        # Using penalty=nothing should emit deprecation warning
+        @test_logs (:warn, r"penalty=nothing is deprecated") fit(model; penalty=nothing, verbose=false, compute_vcov=false, compute_ij_vcov=false)
     end
 
 end
@@ -555,10 +726,12 @@ end
         exact_data = MultistateModels.ExactData(model, samplepaths)
         nparams = length(get_parnames(model; flatten=true))
         
-        # Penalized NLL should be: NLL_data + (1/2) * λ * exp(θ)ᵀ S exp(θ)
-        # Gradient of penalty term w.r.t. θ: λ * (S * exp(θ)) ⊙ exp(θ)
+        # Natural scale parameterization (v0.3.0+):
+        # Penalized NLL = NLL_data + (1/2) * λ * βᵀ S β
+        # Gradient of penalty w.r.t. β: λ * S * β
         
-        params = randn(nparams)
+        # Use non-negative parameters (spline coefficients must be ≥ 0)
+        params = abs.(randn(nparams)) .+ 0.1
         
         # Compute gradients separately
         f_nll = p -> MultistateModels.loglik_exact(p, exact_data; neg=true)
@@ -570,16 +743,14 @@ end
         # The difference should be the penalty gradient
         grad_penalty_from_diff = grad_penalized - grad_nll
         
-        # Compute penalty gradient directly: 
-        # ∂/∂θ[(1/2)λ exp(θ)ᵀ S exp(θ)] = λ (S exp(θ)) ⊙ exp(θ)
-        # where ⊙ is element-wise multiplication (chain rule through exp)
+        # Compute penalty gradient directly (natural scale, no exp transform):
+        # ∂/∂β[(1/2)λ βᵀ S β] = λ S β
         S = config.terms[1].S
         hazard_indices = config.terms[1].hazard_indices
         
         expected_penalty_grad = zeros(nparams)
-        θ_spline = params[hazard_indices]
-        β_spline = exp.(θ_spline)
-        expected_penalty_grad[hazard_indices] = lambda_val * (S * β_spline) .* β_spline
+        β_spline = params[hazard_indices]
+        expected_penalty_grad[hazard_indices] = lambda_val * (S * β_spline)
         
         @test isapprox(grad_penalty_from_diff, expected_penalty_grad, rtol=1e-6)
     end

@@ -7,6 +7,7 @@
 # 2. Batched vs sequential likelihood parity (optimization bugs)
 using .TestFixtures
 using ForwardDiff
+using LinearAlgebra
 
 # --- ForwardDiff compatibility -------------------------------------------------
 # Critical: If gradients/Hessians are wrong, optimization silently fails
@@ -297,77 +298,57 @@ end
         @test restored.h12.covariates.h12_trt == 0.5
     end
 end
-# --- Parameter Transformation Tests --------------------------------------------
-# v0.3.0+: All parameters stored on natural scale, transform functions are identity
+# --- Natural Scale Parameter Tests --------------------------------------------
+# v0.3.0+: All parameters stored on natural scale. No transformations needed.
+# The old transform_baseline_to_natural/estimation functions have been removed
+# because they're identity functions now (parameters already on natural scale).
 
-@testset "parameter_transformations" begin
-    using MultistateModels: transform_baseline_to_natural, transform_baseline_to_estimation
+@testset "natural_scale_parameters" begin
+    # v0.3.0+: Parameters are stored directly on natural scale with box constraints
+    # This tests that parameters round-trip correctly through the model
     
-    @testset "any family works (identity transform)" begin
-        # v0.3.0+: Parameters stored on natural scale, transformations are identity
-        # The functions don't throw for unknown families anymore
-        baseline = (h12_Intercept = 0.5,)
+    @testset "exponential natural scale" begin
+        data = DataFrame(id=[1,1], tstart=[0.0,1.0], tstop=[1.0,2.0], 
+                        statefrom=[1,1], stateto=[2,2], obstype=[1,1])
+        h = Hazard(@formula(0 ~ 1), "exp", 1, 2)
+        model = multistatemodel(h; data=data)
         
-        # All families now return identity (parameters already on natural scale)
-        # These should NOT throw - they're all identity transforms
-        nat_exp = transform_baseline_to_natural(baseline, :exp, Float64)
-        @test nat_exp.h12_Intercept ≈ 0.5
+        # Set rate on natural scale (must be positive)
+        rate = 0.5
+        MultistateModels.set_parameters!(model, (h12=[rate],))
         
-        nat_wei = transform_baseline_to_natural(baseline, :wei, Float64)
-        @test nat_wei.h12_Intercept ≈ 0.5
-        
-        nat_unknown = transform_baseline_to_natural(baseline, :unknown, Float64)
-        @test nat_unknown.h12_Intercept ≈ 0.5
+        # Parameters should be stored as-is
+        params = MultistateModels.get_parameters_natural(model)
+        @test params[:h12][1] ≈ rate
     end
     
-    @testset "known families work correctly (identity)" begin
-        # v0.3.0+: All transforms are identity - params already on natural scale
-        baseline = (h12_Intercept = 0.5,)
+    @testset "weibull natural scale" begin
+        data = DataFrame(id=[1,1], tstart=[0.0,1.0], tstop=[1.0,2.0],
+                        statefrom=[1,1], stateto=[2,2], obstype=[1,1])
+        h = Hazard(@formula(0 ~ 1), "wei", 1, 2)
+        model = multistatemodel(h; data=data)
         
-        # Exponential: identity
-        nat_exp = transform_baseline_to_natural(baseline, :exp, Float64)
-        @test nat_exp.h12_Intercept ≈ 0.5
+        # Set shape and scale on natural scale (both positive)
+        shape, scale = 1.5, 0.3
+        MultistateModels.set_parameters!(model, (h12=[shape, scale],))
         
-        # Weibull: identity (params already natural scale)
-        baseline_wei = (h12_shape = 1.2, h12_scale = 0.3)
-        nat_wei = transform_baseline_to_natural(baseline_wei, :wei, Float64)
-        @test nat_wei.h12_shape ≈ 1.2  # identity
-        @test nat_wei.h12_scale ≈ 0.3  # identity
-        
-        # Gompertz: identity (shape can be negative, rate positive)
-        baseline_gom = (h12_shape = -0.5, h12_rate = 0.2)
-        nat_gom = transform_baseline_to_natural(baseline_gom, :gom, Float64)
-        @test nat_gom.h12_shape ≈ -0.5  # identity
-        @test nat_gom.h12_rate ≈ 0.2  # identity
-        
-        # Spline: identity
-        baseline_sp = (h12_b1 = 0.1, h12_b2 = 0.2)
-        nat_sp = transform_baseline_to_natural(baseline_sp, :sp, Float64)
-        @test nat_sp.h12_b1 ≈ 0.1  # identity
-        @test nat_sp.h12_b2 ≈ 0.2  # identity
+        params = MultistateModels.get_parameters_natural(model)
+        @test params[:h12][1] ≈ shape
+        @test params[:h12][2] ≈ scale
     end
     
-    @testset "round-trip transformations" begin
-        # v0.3.0+: Both transforms are identity, so round-trip is always exact
+    @testset "gompertz natural scale" begin
+        data = DataFrame(id=[1,1], tstart=[0.0,1.0], tstop=[1.0,2.0],
+                        statefrom=[1,1], stateto=[2,2], obstype=[1,1])
+        h = Hazard(@formula(0 ~ 1), "gom", 1, 2)
+        model = multistatemodel(h; data=data)
         
-        # Exponential
-        baseline_exp = (h12_Intercept = 0.5,)
-        nat = transform_baseline_to_natural(baseline_exp, :exp, Float64)
-        back = transform_baseline_to_estimation(nat, :exp)
-        @test back.h12_Intercept ≈ baseline_exp.h12_Intercept rtol=1e-10
+        # Set shape (can be negative) and rate (positive) on natural scale
+        shape, rate = -0.3, 0.2
+        MultistateModels.set_parameters!(model, (h12=[shape, rate],))
         
-        # Weibull (shape and scale both positive)
-        baseline_wei = (h12_shape = 1.5, h12_scale = 0.3)
-        nat = transform_baseline_to_natural(baseline_wei, :wei, Float64)
-        back = transform_baseline_to_estimation(nat, :wei)
-        @test back.h12_shape ≈ baseline_wei.h12_shape rtol=1e-10
-        @test back.h12_scale ≈ baseline_wei.h12_scale rtol=1e-10
-        
-        # Gompertz (shape can be negative, rate positive)
-        baseline_gom = (h12_shape = -0.3, h12_rate = 0.2)
-        nat = transform_baseline_to_natural(baseline_gom, :gom, Float64)
-        back = transform_baseline_to_estimation(nat, :gom)
-        @test back.h12_shape ≈ baseline_gom.h12_shape rtol=1e-10
-        @test back.h12_rate ≈ baseline_gom.h12_rate rtol=1e-10
+        params = MultistateModels.get_parameters_natural(model)
+        @test params[:h12][1] ≈ shape
+        @test params[:h12][2] ≈ rate
     end
 end

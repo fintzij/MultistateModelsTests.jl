@@ -412,8 +412,8 @@ Parameters are estimated on transformed scales for numerical stability:
 
 ```julia
 # Access parameters in different scales
-p_natural = model.parameters.natural   # Interpretable values
-p_flat = model.parameters.flat         # For optimization (log scale)
+p_natural = get_parameters(model; scale=:natural)  # Interpretable values
+p_flat = model.parameters.flat                      # For optimization (log scale)
 ```
 
 ## Inference Methods

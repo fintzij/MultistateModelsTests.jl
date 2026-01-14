@@ -7,6 +7,7 @@
 # 2. Gradients are consistent across backends (where supported)
 # 3. Backend selection logic works correctly
 # 4. Error handling for unsupported model types
+# 5. ForwardDiff gradients match analytical formulas (see "Analytical Gradient Verification" section)
 #
 # Note: Enzyme and Mooncake have known limitations:
 # - Mooncake cannot differentiate through matrix exponential (LAPACK calls)
@@ -17,9 +18,11 @@ using MultistateModels
 using DataFrames
 using Random
 using ForwardDiff
+using Distributions  # For Exponential distribution in analytical gradient tests
 
 # ForwardDiffBackend is exported; EnzymeBackend and MooncakeBackend are internal
-import MultistateModels: EnzymeBackend, MooncakeBackend, default_ad_backend, get_parameters_flat
+import MultistateModels: EnzymeBackend, MooncakeBackend, default_ad_backend, get_parameters_flat,
+                         loglik_exact, ExactData, extract_paths
 
 # =============================================================================
 # Test Fixtures
@@ -285,4 +288,228 @@ end
         @test length(params.h12) == 2  # rate + beta
         @test params.h12[1] > 0  # rate should be positive
     end
+end
+
+# =============================================================================
+# Analytical Gradient Verification Tests
+# =============================================================================
+# These tests verify that ForwardDiff-computed gradients match analytical formulas.
+# For simple hazard models with exact data (obstype=1), we can derive closed-form
+# expressions for the log-likelihood and its gradient.
+#
+# Key insight: For exact data, the log-likelihood for a single transition is:
+#   ℓ = log(h(t)) - H(t)
+# where h(t) is the hazard at time t and H(t) = ∫₀ᵗ h(s)ds is the cumulative hazard.
+#
+# IMPORTANT: As of v0.3.0, MultistateModels stores parameters on NATURAL scale
+# (not log scale). The optimizer uses box constraints to ensure positivity.
+# Therefore, gradients are w.r.t. natural-scale parameters (λ, κ, etc.), not log-scale.
+
+@testset "Analytical Gradient Verification" begin
+    
+    @testset "Test 1: Exponential hazard gradient ∂ℓ/∂λ" begin
+        # For exponential hazard with rate λ:
+        #   h(t) = λ,  H(t) = λt
+        #   Log-likelihood for n events with times t₁,...,tₙ:
+        #     ℓ(λ) = n·log(λ) - λ·Σtᵢ
+        #   
+        # Gradient on NATURAL scale:
+        #   ∂ℓ/∂λ = n/λ - Σtᵢ
+        
+        Random.seed!(98765)
+        n_subj = 100
+        
+        # Create exact data with known transition times
+        # Simulate from exponential(0.3) and record exact events
+        true_rate = 0.3
+        event_times = rand(Exponential(1/true_rate), n_subj)
+        
+        # Build DataFrame with exact observations (obstype=1)
+        dat = DataFrame(
+            id = 1:n_subj,
+            tstart = zeros(n_subj),
+            tstop = event_times,
+            statefrom = ones(Int, n_subj),
+            stateto = fill(2, n_subj),  # All transition to state 2
+            obstype = fill(1, n_subj)    # Exact observations
+        )
+        
+        # Create model
+        h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
+        model = multistatemodel(h12; data=dat)
+        
+        # Set parameters to test value (not true value, to test gradient at arbitrary point)
+        test_rate = 0.25
+        set_parameters!(model, (h12 = [test_rate],))
+        
+        # Get parameter on natural scale (v0.3.0+: parameters stored on natural scale)
+        params_flat = get_parameters_flat(model)  # This is [λ] directly
+        
+        # Compute gradient using ForwardDiff via internal functions
+        samplepaths = extract_paths(model)
+        data = ExactData(model, samplepaths)
+        
+        # Log-likelihood function (returns negative for minimization, so negate for gradient)
+        ll_fn = p -> -loglik_exact(p, data; neg=true)  # Double negation = positive ℓ
+        
+        # Compute ForwardDiff gradient
+        ad_gradient = ForwardDiff.gradient(ll_fn, params_flat)
+        
+        # Analytical gradient on NATURAL scale: ∂ℓ/∂λ = n/λ - Σtᵢ
+        n_events = n_subj  # All subjects have an event
+        sum_times = sum(event_times)
+        λ = test_rate
+        analytical_gradient = n_events / λ - sum_times
+        
+        @test length(ad_gradient) == 1
+        @test isapprox(ad_gradient[1], analytical_gradient, rtol=1e-6)
+    end
+    
+    @testset "Test 2: Weibull hazard gradient" begin
+        # For Weibull hazard with shape κ and rate λ:
+        #   h(t) = κ·λ·t^(κ-1),  H(t) = λ·t^κ
+        #   Log-likelihood for n events with times t₁,...,tₙ:
+        #     ℓ(κ,λ) = Σᵢ[log(κ) + log(λ) + (κ-1)·log(tᵢ)] - λ·Σᵢtᵢ^κ
+        #            = n·log(κ) + n·log(λ) + (κ-1)·Σlog(tᵢ) - λ·Σtᵢ^κ
+        #
+        # Gradients on NATURAL scale:
+        #   ∂ℓ/∂κ = n/κ + Σlog(tᵢ) - λ·Σtᵢ^κ·log(tᵢ)
+        #   ∂ℓ/∂λ = n/λ - Σtᵢ^κ
+        
+        Random.seed!(11111)
+        n_subj = 100
+        
+        # True parameters for simulation
+        true_shape = 1.5
+        true_rate = 0.2
+        
+        # Simulate Weibull event times using inverse CDF method
+        # For Weibull with H(t) = λ·t^κ, survival S(t) = exp(-λ·t^κ)
+        # Inverse: t = (-log(U)/λ)^(1/κ) where U ~ Uniform(0,1)
+        U = rand(n_subj)
+        event_times = ((-log.(U)) ./ true_rate) .^ (1/true_shape)
+        
+        # Build DataFrame with exact observations
+        dat = DataFrame(
+            id = 1:n_subj,
+            tstart = zeros(n_subj),
+            tstop = event_times,
+            statefrom = ones(Int, n_subj),
+            stateto = fill(2, n_subj),
+            obstype = fill(1, n_subj)
+        )
+        
+        # Create model
+        h12 = Hazard(@formula(0 ~ 1), "wei", 1, 2)
+        model = multistatemodel(h12; data=dat)
+        
+        # Set parameters to test values (different from true, to test gradient)
+        test_shape = 1.3
+        test_rate = 0.25
+        set_parameters!(model, (h12 = [test_shape, test_rate],))
+        
+        # Get parameter on natural scale [κ, λ]
+        params_flat = get_parameters_flat(model)
+        
+        # Compute gradient using ForwardDiff
+        samplepaths = extract_paths(model)
+        data = ExactData(model, samplepaths)
+        ll_fn = p -> -loglik_exact(p, data; neg=true)
+        ad_gradient = ForwardDiff.gradient(ll_fn, params_flat)
+        
+        # Analytical gradients on NATURAL scale
+        κ = test_shape
+        λ = test_rate
+        n = n_subj
+        sum_log_t = sum(log.(event_times))
+        sum_t_kappa = sum(event_times .^ κ)
+        sum_t_kappa_log_t = sum((event_times .^ κ) .* log.(event_times))
+        
+        # ∂ℓ/∂κ = n/κ + Σlog(tᵢ) - λ·Σtᵢ^κ·log(tᵢ)
+        analytical_grad_shape = n / κ + sum_log_t - λ * sum_t_kappa_log_t
+        
+        # ∂ℓ/∂λ = n/λ - Σtᵢ^κ
+        analytical_grad_rate = n / λ - sum_t_kappa
+        
+        @test length(ad_gradient) == 2
+        @test isapprox(ad_gradient[1], analytical_grad_shape, rtol=1e-6)
+        @test isapprox(ad_gradient[2], analytical_grad_rate, rtol=1e-6)
+    end
+    
+    @testset "Test 3: Exponential hazard with covariate (gradient w.r.t. β)" begin
+        # For exponential hazard with covariate x under proportional hazards:
+        #   h(t|x) = λ·exp(β·x)
+        #   H(t|x) = λ·exp(β·x)·t
+        #
+        # Log-likelihood for n subjects with times tᵢ and covariates xᵢ:
+        #   ℓ(λ,β) = Σᵢ[log(λ) + β·xᵢ] - λ·Σᵢexp(β·xᵢ)·tᵢ
+        #          = n·log(λ) + β·Σxᵢ - λ·Σexp(β·xᵢ)·tᵢ
+        #
+        # Gradients on NATURAL scale:
+        #   ∂ℓ/∂λ = n/λ - Σexp(β·xᵢ)·tᵢ
+        #   ∂ℓ/∂β = Σxᵢ - λ·Σxᵢ·exp(β·xᵢ)·tᵢ
+        
+        Random.seed!(22222)
+        n_subj = 100
+        
+        # Generate covariates
+        x = randn(n_subj)
+        
+        # True parameters
+        true_rate = 0.2
+        true_beta = 0.5
+        
+        # Simulate event times: exponential with rate λ·exp(β·x)
+        individual_rates = true_rate .* exp.(true_beta .* x)
+        event_times = rand.(Exponential.(1 ./ individual_rates))
+        
+        # Build DataFrame
+        dat = DataFrame(
+            id = 1:n_subj,
+            tstart = zeros(n_subj),
+            tstop = event_times,
+            statefrom = ones(Int, n_subj),
+            stateto = fill(2, n_subj),
+            obstype = fill(1, n_subj),
+            x = x
+        )
+        
+        # Create model with covariate
+        h12 = Hazard(@formula(0 ~ x), "exp", 1, 2)
+        model = multistatemodel(h12; data=dat)
+        
+        # Set parameters to test values
+        test_rate = 0.25
+        test_beta = 0.3
+        set_parameters!(model, (h12 = [test_rate, test_beta],))
+        
+        # Get parameters on natural scale [λ, β]
+        params_flat = get_parameters_flat(model)
+        
+        # Compute gradient using ForwardDiff
+        samplepaths = extract_paths(model)
+        data = ExactData(model, samplepaths)
+        ll_fn = p -> -loglik_exact(p, data; neg=true)
+        ad_gradient = ForwardDiff.gradient(ll_fn, params_flat)
+        
+        # Analytical gradients on NATURAL scale
+        λ = test_rate
+        β = test_beta
+        n = n_subj
+        sum_x = sum(x)
+        exp_beta_x = exp.(β .* x)
+        sum_exp_beta_x_t = sum(exp_beta_x .* event_times)
+        sum_x_exp_beta_x_t = sum(x .* exp_beta_x .* event_times)
+        
+        # ∂ℓ/∂λ = n/λ - Σexp(β·xᵢ)·tᵢ
+        analytical_grad_rate = n / λ - sum_exp_beta_x_t
+        
+        # ∂ℓ/∂β = Σxᵢ - λ·Σxᵢ·exp(β·xᵢ)·tᵢ
+        analytical_grad_beta = sum_x - λ * sum_x_exp_beta_x_t
+        
+        @test length(ad_gradient) == 2
+        @test isapprox(ad_gradient[1], analytical_grad_rate, rtol=1e-6)
+        @test isapprox(ad_gradient[2], analytical_grad_beta, rtol=1e-6)
+    end
+    
 end

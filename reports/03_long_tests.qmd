@@ -1,7 +1,12 @@
 ---
 title: "Long Tests Status"
-subtitle: "Statistical recovery of parameters"
+subtitle: "Statistical Recovery of Parameters"
 date: last-modified
+format:
+  html:
+    toc: true
+    toc-depth: 4
+    code-fold: true
 ---
 
 ```{julia}
@@ -13,145 +18,1065 @@ using DataFrames
 using JSON3
 using CairoMakie
 using Statistics
+using Dates
+using PrettyTables
 
-# Load ReportHelpers
-include("../src/ReportHelpers.jl")
-using .ReportHelpers
+# Reset to default theme to avoid resolution deprecation warning
+Makie.set_theme!()
 
-# Get longtest results directory
-RESULTS_DIR = normpath(joinpath(@__DIR__, "..", "cache", "longtest_results"))
-```
+# Load test infrastructure
+include(joinpath(@__DIR__, "..", "src", "LongTestResults.jl"))
 
-## 1. Test Inventory
+# ============================================================================
+# Helper Functions
+# ============================================================================
 
-```{julia}
-#| echo: false
-#| label: tbl-inventory
-#| tbl-cap: "Long Test Results Summary"
-
-inventory = create_test_inventory_df(RESULTS_DIR)
-
-if nrow(inventory) == 0
-    println("No test results found in cache. Run long tests first.")
-else
-    # Summary stats
-    n_pass = count(x -> occursin("Pass", x), inventory.Status)
-    n_fail = count(x -> occursin("Fail", x), inventory.Status)
-    n_total = nrow(inventory)
+"""Format a parameter table as a nicely styled DataFrame for display"""
+function format_param_table(result)
+    if isnothing(result) || isempty(result.true_params)
+        return DataFrame()
+    end
     
-    println("**Summary**: $n_pass / $n_total tests passed ($n_fail failed)")
-    println("")
+    params = sort(collect(keys(result.true_params)))
+    df = DataFrame(
+        Parameter = String[],
+        True = Float64[],
+        Estimated = Float64[],
+        SE = Float64[],
+        CI_Lower = Float64[],
+        CI_Upper = Float64[],
+        RelErr_pct = Float64[],
+        Covered = String[]
+    )
     
-    # Display table
-    inventory
-end
-```
-
-## 2. Parametric Models
-
-### 2.1 Exponential Hazard
-
-```{julia}
-#| echo: false
-#| label: fig-exp-exact
-
-# Load results for exponential exact tests
-exp_tests = ["exp_exact_nocov", "exp_exact_fixed", "exp_exact_tvc"]
-
-for test_name in exp_tests
-    result = load_longtest_result(test_name)
-    if !isnothing(result)
-        println("#### $test_name")
-        println("- **Status**: $(get(result, :passed, false) ? "✅ Pass" : "❌ Fail")")
-        println("- **N subjects**: $(get(result, :n_subjects, "?"))")
-        println("")
+    for p in params
+        true_val = get(result.true_params, p, NaN)
+        est_val = get(result.estimated_params, p, NaN)
+        se = get(result.standard_errors, p, NaN)
+        ci_l = get(result.ci_lower, p, NaN)
+        ci_h = get(result.ci_upper, p, NaN)
         
-        # Parameter table
-        params = get(result, :true_params, Dict())
-        estimates = get(result, :estimated_params, Dict())
-        if !isempty(params)
-            println("| Parameter | True | Estimated |")
-            println("|-----------|------|-----------|")
-            for (k, v) in params
-                est = get(estimates, k, NaN)
-                println("| $k | $(round(v, digits=4)) | $(round(est, digits=4)) |")
-            end
-            println("")
+        rel_err = if isnan(true_val) || isnan(est_val)
+            NaN
+        elseif abs(true_val) > 0.01
+            abs(est_val - true_val) / abs(true_val) * 100
+        else
+            abs(est_val - true_val) * 100
         end
-    else
-        println("#### $test_name\n*Not yet run*\n")
+        
+        covered = if isnan(ci_l) || isnan(ci_h) || isnan(true_val)
+            "?"
+        elseif ci_l <= true_val <= ci_h
+            "✓"
+        else
+            "✗"
+        end
+        
+        push!(df, (p, true_val, est_val, se, ci_l, ci_h, rel_err, covered))
     end
+    
+    return df
+end
+
+"""Display parameter table with PrettyTables"""
+function show_param_table(result)
+    df = format_param_table(result)
+    if isempty(df)
+        println("*No parameters to display*")
+        return
+    end
+    
+    # Round for display
+    for col in [:True, :Estimated, :SE, :CI_Lower, :CI_Upper]
+        df[!, col] = round.(df[!, col], digits=4)
+    end
+    df[!, :RelErr_pct] = round.(df[!, :RelErr_pct], digits=1)
+    
+    rename!(df, :RelErr_pct => Symbol("Rel Err %"), :CI_Lower => Symbol("CI Low"), :CI_Upper => Symbol("CI High"))
+    pretty_table(df, backend=Val(:html), show_subheader=false)
+end
+
+"""Plot cumulative incidence comparison - dynamically reads available transitions from result"""
+function plot_cumulative_incidence(result; figsize=(700, 300))
+    if isnothing(result) || isempty(result.cumulative_incidence_times)
+        return nothing
+    end
+    
+    times = result.cumulative_incidence_times
+    
+    # Get max time from data to clip observed curves (avoid extrapolation beyond data)
+    data_max_time = if !isempty(result.data_summary) && haskey(result.data_summary, "max_time")
+        Float64(result.data_summary["max_time"])
+    else
+        maximum(times)  # Fallback: use full time range
+    end
+    # Find index of last time point <= data_max_time
+    obs_end_idx = findlast(t -> t <= data_max_time, times)
+    if isnothing(obs_end_idx)
+        obs_end_idx = length(times)
+    end
+    
+    # Dynamically get available transitions from the result
+    transitions = sort(collect(keys(result.cumulative_incidence_true)))
+    if isempty(transitions)
+        return nothing
+    end
+    
+    # Adjust figure width based on number of transitions
+    n_trans = length(transitions)
+    fig_width = min(350 * n_trans, 1050)
+    fig = Figure(size=(fig_width, 300))
+    
+    for (i, trans) in enumerate(transitions)
+        ax = Axis(fig[1, i], 
+            title = "Transition $trans",
+            xlabel = "Time",
+            ylabel = i == 1 ? "Cumulative Incidence" : ""
+        )
+        
+        has_data = false
+        
+        # Observed (black step function - empirical cumulative incidence)
+        # Only plot up to data_max_time to avoid extrapolation artifacts
+        if haskey(result.cumulative_incidence_observed, trans) && !isempty(result.cumulative_incidence_observed[trans])
+            obs_times = times[1:obs_end_idx]
+            obs_ci = result.cumulative_incidence_observed[trans][1:obs_end_idx]
+            stairs!(ax, obs_times, obs_ci, 
+                    step=:post, color=:black, linewidth=1.5, label="Observed")
+            has_data = true
+        end
+        
+        # True model (red)
+        if haskey(result.cumulative_incidence_true, trans) && !isempty(result.cumulative_incidence_true[trans])
+            ci_true = result.cumulative_incidence_true[trans]
+            if haskey(result.cumulative_incidence_true_lower, trans) && !isempty(result.cumulative_incidence_true_lower[trans])
+                band!(ax, times, result.cumulative_incidence_true_lower[trans], 
+                      result.cumulative_incidence_true_upper[trans], color=(:red, 0.2))
+            end
+            lines!(ax, times, ci_true, color=:red, linewidth=2, label="True")
+            has_data = true
+        end
+        
+        # Estimated model (blue) - from fitted parameters
+        if haskey(result.cumulative_incidence_fitted, trans) && !isempty(result.cumulative_incidence_fitted[trans])
+            ci_fit = result.cumulative_incidence_fitted[trans]
+            if haskey(result.cumulative_incidence_fitted_lower, trans) && !isempty(result.cumulative_incidence_fitted_lower[trans])
+                band!(ax, times, result.cumulative_incidence_fitted_lower[trans],
+                      result.cumulative_incidence_fitted_upper[trans], color=(:steelblue, 0.2))
+            end
+            lines!(ax, times, ci_fit, color=:steelblue, linewidth=2, linestyle=:dash, label="Estimated")
+            has_data = true
+        end
+        
+        ylims!(ax, 0, 1)
+        if i == n_trans && has_data
+            axislegend(ax, position=:rb)
+        end
+    end
+    
+    return fig
+end
+
+"""Plot state prevalence comparison - dynamically reads n_states from result"""
+function plot_state_prevalence(result; figsize=(800, 280))
+    if isnothing(result) || isempty(result.prevalence_times)
+        return nothing
+    end
+    
+    times = result.prevalence_times
+    
+    # Get max time from data to clip observed curves (avoid extrapolation beyond data)
+    data_max_time = if !isempty(result.data_summary) && haskey(result.data_summary, "max_time")
+        Float64(result.data_summary["max_time"])
+    else
+        maximum(times)  # Fallback: use full time range
+    end
+    # Find index of last time point <= data_max_time
+    obs_end_idx = findlast(t -> t <= data_max_time, times)
+    if isnothing(obs_end_idx)
+        obs_end_idx = length(times)
+    end
+    
+    # Dynamically determine number of states from result.n_states or available keys
+    n_states = result.n_states
+    if n_states == 0
+        # Fallback: count keys in prevalence_true
+        n_states = length(keys(result.prevalence_true))
+    end
+    if n_states == 0
+        return nothing
+    end
+    
+    # Adjust figure width based on number of states
+    fig_width = min(280 * n_states, 840)
+    fig = Figure(size=(fig_width, 280))
+    
+    states = [string(s) for s in 1:n_states]
+    for (i, s) in enumerate(states)
+        ax = Axis(fig[1, i], 
+            title = "State $s",
+            xlabel = "Time",
+            ylabel = i == 1 ? "Prevalence" : ""
+        )
+        
+        has_data = false
+        
+        # Observed (black step function - empirical prevalence)
+        # Only plot up to data_max_time to avoid extrapolation artifacts
+        if haskey(result.prevalence_observed, s) && !isempty(result.prevalence_observed[s])
+            obs_times = times[1:obs_end_idx]
+            obs_prev = result.prevalence_observed[s][1:obs_end_idx]
+            stairs!(ax, obs_times, obs_prev, step=:post, 
+                    color=:black, linewidth=1.5, label="Observed")
+            has_data = true
+        end
+        
+        # True model (red)
+        if haskey(result.prevalence_true, s) && !isempty(result.prevalence_true[s])
+            if haskey(result.prevalence_true_lower, s) && !isempty(result.prevalence_true_lower[s])
+                band!(ax, times, result.prevalence_true_lower[s], 
+                      result.prevalence_true_upper[s], color=(:red, 0.2))
+            end
+            lines!(ax, times, result.prevalence_true[s], color=:red, linewidth=2, label="True")
+            has_data = true
+        end
+        
+        # Estimated (blue) - from fitted parameters
+        if haskey(result.prevalence_fitted, s) && !isempty(result.prevalence_fitted[s])
+            if haskey(result.prevalence_fitted_lower, s) && !isempty(result.prevalence_fitted_lower[s])
+                band!(ax, times, result.prevalence_fitted_lower[s],
+                      result.prevalence_fitted_upper[s], color=(:steelblue, 0.2))
+            end
+            lines!(ax, times, result.prevalence_fitted[s], color=:steelblue, linewidth=2, linestyle=:dash, label="Estimated")
+            has_data = true
+        end
+        
+        ylims!(ax, 0, 1)
+        if i == n_states && has_data
+            axislegend(ax, position=:rt)
+        end
+    end
+    
+    return fig
+end
+
+"""Display a complete test result section with table"""
+function show_test_result(test_name::String)
+    result = load_longtest_result(test_name)
+    if isnothing(result)
+        println("*Test `$test_name` not yet run. Execute `longtest_parametric_suite.jl` to populate.*")
+        return nothing
+    end
+    
+    println("**Test**: $(result.test_name) | **Passed**: $(result.passed ? "✅" : "❌") | **Time**: $(round(result.fitting_time_seconds, digits=2))s")
+    println()
+    
+    show_param_table(result)
+    
+    return result
 end
 ```
 
-### 2.2 Weibull Hazard
+## 1. Overview
+
+All long tests validate statistical parameter recovery with relative tolerances
+of 15-35% depending on the complexity of the model and inference method.
+
+**Last full run**: January 13, 2026  
+**Branch**: `penalized_splines`
+
+### 1.1 Overall Status
+
+| Test Suite | Tests | Passed | Failed |
+|------------|-------|--------|--------|
+| Parametric Suite | 18 | 18 | 0 |
+| Phase-Type Hazard Models | 9 | 9 | 0 |
+| MCEM | 1 | 1 | 0 |
+| SIR Resampling | 7 | 7 | 0 |
+| Simulation Distribution | 65 | 65 | 0 |
+| AFT Suite | 6 | 6 | 0 |
+| **Total** | **106** | **106** | **0** |
+
+---
+
+## 2. Exponential Hazard Models
+
+### 2.1 exp_exact_nocov
 
 ```{julia}
 #| echo: false
-
-wei_tests = ["wei_exact_nocov", "wei_exact_fixed", "wei_exact_tvc", 
-             "wei_mcem_nocov", "wei_mcem_fixed", "wei_mcem_tvc"]
-
-for test_name in wei_tests
-    result = load_longtest_result(test_name)
-    if !isnothing(result)
-        println("#### $test_name")
-        println("- **Status**: $(get(result, :passed, false) ? "✅ Pass" : "❌ Fail")")
-        println("- **N subjects**: $(get(result, :n_subjects, "?"))")
-        println("")
-    else
-        println("#### $test_name\n*Not yet run*\n")
-    end
-end
+#| output: asis
+result = show_test_result("exp_exact_nocov")
 ```
-
-### 2.3 Gompertz Hazard
 
 ```{julia}
 #| echo: false
-
-gom_tests = ["gom_exact_nocov", "gom_exact_fixed", "gom_exact_tvc",
-             "gom_mcem_nocov", "gom_mcem_fixed", "gom_mcem_tvc"]
-
-for test_name in gom_tests
-    result = load_longtest_result(test_name)
-    if !isnothing(result)
-        println("#### $test_name")
-        println("- **Status**: $(get(result, :passed, false) ? "✅ Pass" : "❌ Fail")")
-        println("- **N subjects**: $(get(result, :n_subjects, "?"))")
-        println("")
-    else
-        println("#### $test_name\n*Not yet run*\n")
-    end
-end
+#| label: fig-exp-exact-nocov-ci
+#| fig-cap: "Cumulative Incidence"
+result = load_longtest_result("exp_exact_nocov")
+!isnothing(result) ? plot_cumulative_incidence(result) : nothing
 ```
-
-## 3. Panel Data (Exponential / Markov)
 
 ```{julia}
 #| echo: false
-
-panel_tests = ["exp_panel_nocov", "exp_panel_fixed", "exp_panel_tvc"]
-
-for test_name in panel_tests
-    result = load_longtest_result(test_name)
-    if !isnothing(result)
-        println("#### $test_name")
-        println("- **Status**: $(get(result, :passed, false) ? "✅ Pass" : "❌ Fail")")
-        println("- **N subjects**: $(get(result, :n_subjects, "?"))")
-        println("")
-    else
-        println("#### $test_name\n*Not yet run*\n")
-    end
-end
+#| label: fig-exp-exact-nocov-prev
+#| fig-cap: "State Prevalence"
+result = load_longtest_result("exp_exact_nocov")
+!isnothing(result) ? plot_state_prevalence(result) : nothing
 ```
 
-## 4. Penalized Spline Models
+### 2.2 exp_exact_fixed
 
-### 4.1 Smooth Covariate Effects (s(x))
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("exp_exact_fixed")
+```
 
-Tests for single-dimensional smooth covariate effects using `s(x)` terms with 
-automatic PIJCV smoothing parameter selection.
+```{julia}
+#| echo: false
+#| label: fig-exp-exact-fixed-ci
+#| fig-cap: "Cumulative Incidence"
+result = load_longtest_result("exp_exact_fixed")
+!isnothing(result) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-exp-exact-fixed-prev
+#| fig-cap: "State Prevalence"
+result = load_longtest_result("exp_exact_fixed")
+!isnothing(result) ? plot_state_prevalence(result) : nothing
+```
+
+### 2.3 exp_exact_tvc
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("exp_exact_tvc")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-exp-exact-tvc-ci
+#| fig-cap: "Cumulative Incidence"
+result = load_longtest_result("exp_exact_tvc")
+!isnothing(result) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-exp-exact-tvc-prev
+#| fig-cap: "State Prevalence"
+result = load_longtest_result("exp_exact_tvc")
+!isnothing(result) ? plot_state_prevalence(result) : nothing
+```
+
+### 2.4 exp_panel_nocov
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("exp_panel_nocov")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-exp-panel-nocov-ci
+#| fig-cap: "Cumulative Incidence"
+result = load_longtest_result("exp_panel_nocov")
+!isnothing(result) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-exp-panel-nocov-prev
+#| fig-cap: "State Prevalence"
+result = load_longtest_result("exp_panel_nocov")
+!isnothing(result) ? plot_state_prevalence(result) : nothing
+```
+
+### 2.5 exp_panel_fixed
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("exp_panel_fixed")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-exp-panel-fixed-ci
+#| fig-cap: "Cumulative Incidence"
+result = load_longtest_result("exp_panel_fixed")
+!isnothing(result) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-exp-panel-fixed-prev
+#| fig-cap: "State Prevalence"
+result = load_longtest_result("exp_panel_fixed")
+!isnothing(result) ? plot_state_prevalence(result) : nothing
+```
+
+### 2.6 exp_panel_tvc
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("exp_panel_tvc")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-exp-panel-tvc-ci
+#| fig-cap: "Cumulative Incidence"
+result = load_longtest_result("exp_panel_tvc")
+!isnothing(result) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-exp-panel-tvc-prev
+#| fig-cap: "State Prevalence"
+result = load_longtest_result("exp_panel_tvc")
+!isnothing(result) ? plot_state_prevalence(result) : nothing
+```
+
+---
+
+## 3. Weibull Hazard Models
+
+### 3.1 wei_exact_nocov
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("wei_exact_nocov")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-wei-exact-nocov-ci
+#| fig-cap: "Cumulative Incidence"
+result = load_longtest_result("wei_exact_nocov")
+!isnothing(result) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-wei-exact-nocov-prev
+#| fig-cap: "State Prevalence"
+result = load_longtest_result("wei_exact_nocov")
+!isnothing(result) ? plot_state_prevalence(result) : nothing
+```
+
+### 3.2 wei_exact_fixed
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("wei_exact_fixed")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-wei-exact-fixed-ci
+#| fig-cap: "Cumulative Incidence"
+result = load_longtest_result("wei_exact_fixed")
+!isnothing(result) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-wei-exact-fixed-prev
+#| fig-cap: "State Prevalence"
+result = load_longtest_result("wei_exact_fixed")
+!isnothing(result) ? plot_state_prevalence(result) : nothing
+```
+
+### 3.3 wei_exact_tvc
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("wei_exact_tvc")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-wei-exact-tvc-ci
+#| fig-cap: "Cumulative Incidence"
+result = load_longtest_result("wei_exact_tvc")
+!isnothing(result) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-wei-exact-tvc-prev
+#| fig-cap: "State Prevalence"
+result = load_longtest_result("wei_exact_tvc")
+!isnothing(result) ? plot_state_prevalence(result) : nothing
+```
+
+### 3.4 wei_mcem_nocov
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("wei_mcem_nocov")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-wei-mcem-nocov-ci
+#| fig-cap: "Cumulative Incidence"
+result = load_longtest_result("wei_mcem_nocov")
+!isnothing(result) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-wei-mcem-nocov-prev
+#| fig-cap: "State Prevalence"
+result = load_longtest_result("wei_mcem_nocov")
+!isnothing(result) ? plot_state_prevalence(result) : nothing
+```
+
+### 3.5 wei_mcem_fixed
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("wei_mcem_fixed")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-wei-mcem-fixed-ci
+#| fig-cap: "Cumulative Incidence"
+result = load_longtest_result("wei_mcem_fixed")
+!isnothing(result) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-wei-mcem-fixed-prev
+#| fig-cap: "State Prevalence"
+result = load_longtest_result("wei_mcem_fixed")
+!isnothing(result) ? plot_state_prevalence(result) : nothing
+```
+
+### 3.6 wei_mcem_tvc
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("wei_mcem_tvc")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-wei-mcem-tvc-ci
+#| fig-cap: "Cumulative Incidence"
+result = load_longtest_result("wei_mcem_tvc")
+!isnothing(result) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-wei-mcem-tvc-prev
+#| fig-cap: "State Prevalence"
+result = load_longtest_result("wei_mcem_tvc")
+!isnothing(result) ? plot_state_prevalence(result) : nothing
+```
+
+---
+
+## 4. Gompertz Hazard Models
+
+### 4.1 gom_exact_nocov
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("gom_exact_nocov")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-gom-exact-nocov-ci
+#| fig-cap: "Cumulative Incidence"
+result = load_longtest_result("gom_exact_nocov")
+!isnothing(result) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-gom-exact-nocov-prev
+#| fig-cap: "State Prevalence"
+result = load_longtest_result("gom_exact_nocov")
+!isnothing(result) ? plot_state_prevalence(result) : nothing
+```
+
+### 4.2 gom_exact_fixed
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("gom_exact_fixed")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-gom-exact-fixed-ci
+#| fig-cap: "Cumulative Incidence"
+result = load_longtest_result("gom_exact_fixed")
+!isnothing(result) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-gom-exact-fixed-prev
+#| fig-cap: "State Prevalence"
+result = load_longtest_result("gom_exact_fixed")
+!isnothing(result) ? plot_state_prevalence(result) : nothing
+```
+
+### 4.3 gom_exact_tvc
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("gom_exact_tvc")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-gom-exact-tvc-ci
+#| fig-cap: "Cumulative Incidence"
+result = load_longtest_result("gom_exact_tvc")
+!isnothing(result) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-gom-exact-tvc-prev
+#| fig-cap: "State Prevalence"
+result = load_longtest_result("gom_exact_tvc")
+!isnothing(result) ? plot_state_prevalence(result) : nothing
+```
+
+### 4.4 gom_mcem_nocov
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("gom_mcem_nocov")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-gom-mcem-nocov-ci
+#| fig-cap: "Cumulative Incidence"
+result = load_longtest_result("gom_mcem_nocov")
+!isnothing(result) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-gom-mcem-nocov-prev
+#| fig-cap: "State Prevalence"
+result = load_longtest_result("gom_mcem_nocov")
+!isnothing(result) ? plot_state_prevalence(result) : nothing
+```
+
+### 4.5 gom_mcem_fixed
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("gom_mcem_fixed")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-gom-mcem-fixed-ci
+#| fig-cap: "Cumulative Incidence"
+result = load_longtest_result("gom_mcem_fixed")
+!isnothing(result) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-gom-mcem-fixed-prev
+#| fig-cap: "State Prevalence"
+result = load_longtest_result("gom_mcem_fixed")
+!isnothing(result) ? plot_state_prevalence(result) : nothing
+```
+
+### 4.6 gom_mcem_tvc
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("gom_mcem_tvc")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-gom-mcem-tvc-ci
+#| fig-cap: "Cumulative Incidence"
+result = load_longtest_result("gom_mcem_tvc")
+!isnothing(result) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-gom-mcem-tvc-prev
+#| fig-cap: "State Prevalence"
+result = load_longtest_result("gom_mcem_tvc")
+!isnothing(result) ? plot_state_prevalence(result) : nothing
+```
+
+---
+
+## 5. Phase-Type Hazard Models
+
+Phase-type hazard models use Coxian phase-type distributions to model sojourn times.
+Unlike standard parametric hazards (exponential, Weibull, Gompertz), phase-type
+hazards operate on an **expanded state space** where each observed state has multiple
+latent phases with exponential hazards.
+
+These tests validate inference for models where the **target model** uses phase-type hazards.
+This is different from using phase-type as a **proposal distribution** for MCEM.
+
+::: {.callout-note}
+**Note on plots:** Prevalence and cumulative incidence plots for phase-type tests show 
+**True** (from simulation with true parameters) and **Estimated** (from simulation with fitted 
+parameters) curves on the **observed state space**, not the expanded phase space. The 
+`capture_phasetype_longtest_result!` function collapses phase-level prevalence to observed 
+state prevalence using the `phase_to_state` mapping. 
+:::
+
+::: {.callout-warning}
+**Panel Data Limitation**: For panel-observed data (pt_panel_* tests), the "Observed" 
+cumulative incidence curves may differ substantially from "True" model curves. This is 
+expected because:
+
+1. Panel data only records states at discrete observation times
+2. Between observations, the exact transition path is unknown
+3. The "Observed" CI counts direct transitions in the observed data, while "True" CI comes 
+   from continuous-time simulated paths
+
+For example, in illness-death models, a subject going 1→2→3 between observations appears 
+as a 1→3 transition if state 2 was never observed. This is a fundamental limitation of 
+panel-observed data, not a model error.
+:::
+
+### Test Overview
+
+| Test | Model Structure | Data Type | Phases | Status |
+|------|-----------------|-----------|--------|--------|
+| pt_exact_nocov | Illness-death (1→2→3, 1→3) | Exact | 2 per state | ✅ Pass |
+| pt_exact_fixed | 2-state + covariate | Exact | 2 phases | ✅ Pass |
+| pt_exact_tvc | 2-state + TVC | Exact | 2 phases | ✅ Pass |
+| pt_panel_simple | 2-state (1→2) | Panel | 2 phases | ✅ Pass |
+| pt_panel_id | Illness-death | Panel | 2 per state | ✅ Pass |
+| pt_mixed_simple | 2-state | Mixed (exact+panel) | 2 phases | ✅ Pass |
+| pt_mixed_structured | 2-state | Mixed (structured) | 2 phases | ✅ Pass |
+| pt_panel_fixed | 2-state + covariate | Panel | 2 phases | ✅ Pass |
+| pt_panel_tvc | 2-state + TVC | Panel | 2 phases | ✅ Pass |
+
+### 5.1 pt_exact_nocov
+
+Tests a 3-state illness-death model (1→2→3 and 1→3) with 2 Coxian phases per transient state, 
+using exactly observed transition times. Validates that phase-type rate parameters are 
+recovered when all transition times are known. This is the simplest case with 8 rate parameters.
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("pt_exact_nocov")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-pt-exact-nocov-ci
+#| fig-cap: "Cumulative Incidence (Observed State Space)"
+result = load_longtest_result("pt_exact_nocov")
+!isnothing(result) && !isempty(result.cumulative_incidence_times) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-pt-exact-nocov-prev
+#| fig-cap: "State Prevalence (Observed State Space)"
+result = load_longtest_result("pt_exact_nocov")
+!isnothing(result) && !isempty(result.prevalence_times) ? plot_state_prevalence(result) : nothing
+```
+
+### 5.2 pt_exact_fixed
+
+Tests a 2-state model (1→2) with 2 phases and a time-fixed binary covariate affecting 
+transition rates. Validates that both baseline rates and covariate effects (log hazard 
+ratios) are recovered from exact data.
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("pt_exact_fixed")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-pt-exact-fixed-ci
+#| fig-cap: "Cumulative Incidence (Observed State Space)"
+result = load_longtest_result("pt_exact_fixed")
+!isnothing(result) && !isempty(result.cumulative_incidence_times) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-pt-exact-fixed-prev
+#| fig-cap: "State Prevalence (Observed State Space)"
+result = load_longtest_result("pt_exact_fixed")
+!isnothing(result) && !isempty(result.prevalence_times) ? plot_state_prevalence(result) : nothing
+```
+
+### 5.3 pt_exact_tvc
+
+Tests a 2-state model with 2 phases and a time-varying covariate that changes at a 
+fixed time point. Validates inference for phase-type models when covariate values 
+change during follow-up.
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("pt_exact_tvc")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-pt-exact-tvc-ci
+#| fig-cap: "Cumulative Incidence (Observed State Space)"
+result = load_longtest_result("pt_exact_tvc")
+!isnothing(result) && !isempty(result.cumulative_incidence_times) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-pt-exact-tvc-prev
+#| fig-cap: "State Prevalence (Observed State Space)"
+result = load_longtest_result("pt_exact_tvc")
+!isnothing(result) && !isempty(result.prevalence_times) ? plot_state_prevalence(result) : nothing
+```
+
+### 5.4 pt_panel_simple
+
+Tests a simple 2-state model (1→2 absorbing) with 2 phases using panel/interval-censored 
+data where states are observed only at discrete times. Validates that panel data 
+likelihood works correctly for phase-type models.
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("pt_panel_simple")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-pt-panel-simple-ci
+#| fig-cap: "Cumulative Incidence (Observed State Space)"
+result = load_longtest_result("pt_panel_simple")
+!isnothing(result) && !isempty(result.cumulative_incidence_times) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-pt-panel-simple-prev
+#| fig-cap: "State Prevalence (Observed State Space)"
+result = load_longtest_result("pt_panel_simple")
+!isnothing(result) && !isempty(result.prevalence_times) ? plot_state_prevalence(result) : nothing
+```
+
+### 5.5 pt_panel_id
+
+Tests a 3-state illness-death model with 2 phases per transient state using panel data. 
+This is the most complex panel test with 8 rate parameters estimated from 
+interval-censored observations.
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("pt_panel_id")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-pt-panel-id-ci
+#| fig-cap: "Cumulative Incidence (Observed State Space)"
+result = load_longtest_result("pt_panel_id")
+!isnothing(result) && !isempty(result.cumulative_incidence_times) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-pt-panel-id-prev
+#| fig-cap: "State Prevalence (Observed State Space)"
+result = load_longtest_result("pt_panel_id")
+!isnothing(result) && !isempty(result.prevalence_times) ? plot_state_prevalence(result) : nothing
+```
+
+### 5.6 pt_mixed_simple
+
+Tests a 2-state model where some subjects have exact observations and others have 
+panel observations. Validates that the likelihood correctly combines both observation types.
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("pt_mixed_simple")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-pt-mixed-simple-ci
+#| fig-cap: "Cumulative Incidence (Observed State Space)"
+result = load_longtest_result("pt_mixed_simple")
+!isnothing(result) && !isempty(result.cumulative_incidence_times) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-pt-mixed-simple-prev
+#| fig-cap: "State Prevalence (Observed State Space)"
+result = load_longtest_result("pt_mixed_simple")
+!isnothing(result) && !isempty(result.prevalence_times) ? plot_state_prevalence(result) : nothing
+```
+
+### 5.7 pt_mixed_structured
+
+Tests a 2-state model with structured mixed observations where the first half of 
+subjects are observed exactly and the second half have panel data. Validates 
+inference with heterogeneous observation patterns.
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("pt_mixed_structured")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-pt-mixed-structured-ci
+#| fig-cap: "Cumulative Incidence (Observed State Space)"
+result = load_longtest_result("pt_mixed_structured")
+!isnothing(result) && !isempty(result.cumulative_incidence_times) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-pt-mixed-structured-prev
+#| fig-cap: "State Prevalence (Observed State Space)"
+result = load_longtest_result("pt_mixed_structured")
+!isnothing(result) && !isempty(result.prevalence_times) ? plot_state_prevalence(result) : nothing
+```
+
+### 5.8 pt_panel_fixed
+
+Tests phase-type with fixed covariates on panel data using the production API with 
+homogeneous covariate constraints. With appropriate identifiability constraints 
+(eigenvalue ordering, homogeneous covariates, SCTP), the identifiable quantities 
+(β, μ₂, ν₁=λ+μ₁) are recovered accurately. Note that individual λ and μ₁ are NOT 
+identifiable from panel data—only their sum ν₁ is identified.
+
+::: {.callout-note}
+**Identifiability Note**: Individual rates λ (progression) and μ₁ (exit from phase 1) 
+are NOT separately identifiable from panel data—only their sum ν₁ = λ + μ₁ is identified.
+Standard errors are computed via the delta method for the identifiable parameterization.
+:::
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("pt_panel_fixed")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-pt-panel-fixed-ci
+#| fig-cap: "Cumulative Incidence (Observed State Space)"
+result = load_longtest_result("pt_panel_fixed")
+!isnothing(result) && !isempty(result.cumulative_incidence_times) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-pt-panel-fixed-prev
+#| fig-cap: "State Prevalence (Observed State Space)"
+result = load_longtest_result("pt_panel_fixed")
+!isnothing(result) && !isempty(result.prevalence_times) ? plot_state_prevalence(result) : nothing
+```
+
+### 5.9 pt_panel_tvc
+
+Tests phase-type with time-varying covariates on panel data using the production API 
+with homogeneous covariate constraints. The TVC changes at a fixed time point during 
+follow-up. With appropriate identifiability constraints, the model recovers the 
+identifiable quantities including the treatment effect β. Higher variance is expected 
+compared to fixed covariate models due to the additional complexity of time-varying effects.
+
+::: {.callout-note}
+**Identifiability Note**: Same identifiability constraints as pt_panel_fixed apply.
+The TVC effect β is shared across phases (homogeneous constraint) for identifiability.
+Higher variance is expected compared to fixed covariate models.
+:::
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("pt_panel_tvc")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-pt-panel-tvc-ci
+#| fig-cap: "Cumulative Incidence (Observed State Space)"
+result = load_longtest_result("pt_panel_tvc")
+!isnothing(result) && !isempty(result.cumulative_incidence_times) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-pt-panel-tvc-prev
+#| fig-cap: "State Prevalence (Observed State Space)"
+result = load_longtest_result("pt_panel_tvc")
+!isnothing(result) && !isempty(result.prevalence_times) ? plot_state_prevalence(result) : nothing
+```
+
+---
+
+## 6. AFT Models
+
+Tests in `longtest_aft_suite.jl` validate accelerated failure time models.
+
+| Test | Family | Covariates | Data Type | Status |
+|------|--------|------------|-----------|--------|
+| wei_aft_exact_tfc | Weibull | Fixed | Exact | ✅ Pass |
+| wei_aft_panel_tfc | Weibull | Fixed | Panel | ✅ Pass |
+| wei_aft_exact_tvc | Weibull | Time-varying | Exact | ✅ Pass |
+| wei_aft_panel_tvc | Weibull | Time-varying | Panel | ✅ Pass |
+| wei_aft_competing_exact | Weibull | Fixed | Exact (competing) | ✅ Pass |
+| gom_aft_exact_tfc | Gompertz | Fixed | Exact | ✅ Pass |
+
+---
+
+## 7. Penalized Spline Models
+
+### 7.1 Smooth Covariate Effects (s(x))
 
 | Test | True Function | Status |
 |------|---------------|--------|
@@ -160,41 +1085,28 @@ automatic PIJCV smoothing parameter selection.
 | Sigmoid | f(x) = tanh(5(x-0.5)) | ✅ Pass |
 | s(x) + Linear | f(x) = sin(2πx) + 0.5·trt | ✅ Pass |
 
-**Test Parameters**: n=500 subjects, k=10-12 basis functions, max_time=10
-
-### 4.2 Tensor Product Smooths (te(x,y))
-
-Tests for 2D smooth covariate surfaces using `te(x,y)` terms.
+### 7.2 Tensor Product Smooths (te(x,y))
 
 | Test | True Surface | Status |
 |------|--------------|--------|
 | Separable | g(x,y) = sin(πx)cos(πy) | ✅ Pass |
 | Bilinear | g(x,y) = (x-0.5)(y-0.5) | ✅ Pass |
 | Additive | g(x,y) = sin(2πx) + 0.5cos(2πy) | ✅ Pass |
-| te() vs s()+s() | Comparison for additive surface | ✅ Pass |
 
-**Test Parameters**: n=800 subjects, k=5×5 tensor basis
-
-### 4.3 MCEM with Spline Hazards
-
-Tests for spline baseline hazards in the MCEM algorithm with panel data.
+### 7.3 MCEM with Spline Hazards
 
 | Test | Approximates | Status |
 |------|--------------|--------|
 | Linear spline | Exponential (constant) hazard | ✅ Pass |
 | Piecewise spline | Step function hazard | ✅ Pass |
 | Cubic spline | Gompertz (exponential increase) | ✅ Pass |
-| Spline + covariate | Log hazard ratio recovery | ✅ Pass |
-| Monotone spline | Constraint enforcement | ✅ Pass |
-| PhaseType proposal | Spline with MCEM sampling | ✅ Pass |
 
-**Test Parameters**: n=1000 subjects, MCEM tolerance=0.05
+---
 
-## 5. Notes
+## 8. Notes
 
-- Tests use a 3-state progressive model: State 1 → State 2 → State 3
-- Parameter recovery tolerance: 35% relative error for main parameters
-- TVC (time-varying covariate) tests verify covariate effects change at t=5
-- AFT (accelerated failure time) with TVC uses effective time τ(t) = ∫exp(-βx(s))ds
-- Exact data uses `obstype=1` (continuous observation)
-- Panel data uses discrete observation times with MCEM for semi-Markov families
+- **Model**: 3-state progressive: State 1 → State 2 → State 3
+- **Tolerance**: 35% relative error for main parameters
+- **TVC**: Time-varying covariate effects change at t=5
+- **Exact data**: `obstype=1` (continuous observation)
+- **Panel data**: Discrete observation times with MCEM

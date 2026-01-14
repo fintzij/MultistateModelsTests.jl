@@ -1338,6 +1338,10 @@ for i in 1:n
 end
 surv_data = vcat(survival_data...)
 
+# Extract event times for each transition (for rug plots later)
+event_times_12 = surv_data[(surv_data.statefrom .== 1) .& (surv_data.stateto .== 2), :tstop]
+event_times_13 = surv_data[(surv_data.statefrom .== 1) .& (surv_data.stateto .== 3), :tstop]
+
 # Define and calibrate model
 h12 = Hazard(@formula(0 ~ 1), "sp", 1, 2; degree = 3, knots = Float64[], boundaryknots = [0.0, max_time], natural_spline = true)
 h13 = Hazard(@formula(0 ~ 1), "sp", 1, 3; degree = 3, knots = Float64[], boundaryknots = [0.0, max_time], natural_spline = true)
@@ -1727,7 +1731,7 @@ create_hazard_plot <- function(trans, trans_label) {
   
   # Combine data
   hazard_df <- data.frame(
-    time = rep(id_eval_times, 6),
+    time = rep(id_eval_times, 5),
     hazard = c(h_true, unlist(julia_hazards), mgcv_haz),
     method = factor(rep(c("True (Weibull)", julia_methods, "mgcv GCV"), each = length(id_eval_times)),
                     levels = c("True (Weibull)", julia_methods, "mgcv GCV"))
@@ -1880,9 +1884,9 @@ kable(id_metrics_df, digits = 5,
       caption = "RMSE vs True Weibull Functions - Illness-Death Model",
       col.names = c("Transition", "Package", "Method", "Hazard RMSE", "Cum. Hazard RMSE")) %>%
   kable_styling(bootstrap_options = c("striped", "hover")) %>%
-  pack_rows("h12: Healthy → Ill", 1, 5) %>%
-  pack_rows("h13: Healthy → Dead", 6, 10) %>%
-  pack_rows("h23: Ill → Dead", 11, 15)
+  pack_rows("h12: Healthy → Ill", 1, 4) %>%
+  pack_rows("h13: Healthy → Dead", 5, 8) %>%
+  pack_rows("h23: Ill → Dead", 9, 12)
 ```
 
 ## Discussion (Illness-Death Model)

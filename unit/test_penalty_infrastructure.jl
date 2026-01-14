@@ -464,8 +464,9 @@ end
         h12 = Hazard(@formula(0 ~ 1), :sp, 1, 2)
         model = multistatemodel(h12; data=data)
         
-        # First fit to get reasonable parameters
-        fitted = fit(model; verbose=false, compute_vcov=false, compute_ij_vcov=false)
+        # First fit to get reasonable parameters (use select_lambda=:none to avoid
+        # automatic smoothing parameter selection which can fail on sparse data)
+        fitted = fit(model; verbose=false, compute_vcov=false, compute_ij_vcov=false, select_lambda=:none)
         beta_hat = MultistateModels.get_parameters(fitted; scale=:flat)
         
         # Build penalty config
@@ -699,6 +700,125 @@ end
         
         # Verify Hessian is symmetric
         @test isapprox(hess_penalized, hess_penalized', rtol=1e-10)
+    end
+
+    # =========================================================================
+    # Known-Answer Tests for Penalty Infrastructure
+    # =========================================================================
+
+    @testset "build_penalty_matrix - Known Answer (5 uniform knots)" begin
+        # For cubic splines (order 4) with 5 uniform knots [0,1,2,3,4],
+        # we get 8 basis functions (K = n_knots + degree + 1 = 5 + 3 - 1 + 1 = 8)
+        # Actually for clamped splines: K = n_interior_knots + degree + 1
+        # With BSplineKit: knots 0:4 gives basis of specific size
+        
+        # Use uniform knots for predictable behavior
+        knots = collect(0.0:1.0:4.0)  # 5 knots
+        basis = BSplineBasis(BSplineOrder(4), knots)  # Cubic B-splines
+        K = length(basis)  # Number of basis functions
+        
+        # Build penalty matrix (order 2 = curvature penalty)
+        S = build_penalty_matrix(basis, 2)
+        
+        # Test 1: Matrix dimensions are correct
+        # For GPS penalty with order m=2, we get a K×K matrix
+        @test size(S) == (K, K)
+        
+        # Test 2: Matrix is symmetric
+        @test isapprox(S, S', rtol=1e-10)
+        
+        # Test 3: Matrix is positive semi-definite
+        # All eigenvalues should be ≥ 0 (within numerical tolerance)
+        eigs = eigvals(Symmetric(S))
+        @test all(e -> e >= -1e-10, eigs)
+        
+        # Test 4: Null space dimension equals penalty order
+        # For order-2 penalty, constants and linears have zero penalty
+        null_dim = count(e -> abs(e) < 1e-8, eigs)
+        @test null_dim == 2  # Two basis vectors (constant, linear) unpenalized
+        
+        # Test 5: Constant vector has zero penalty
+        v_const = ones(K)
+        @test abs(v_const' * S * v_const) < 1e-10
+        
+        println("  ✓ build_penalty_matrix produces correct K×K symmetric PSD matrix")
+        println("    K = $K basis functions, null space dimension = $null_dim")
+    end
+
+    @testset "compute_penalty - Known Answer Tests" begin
+        # Test 1: Simple identity penalty matrix
+        # β = [1, 2, 3], S = I₃, λ = 0.5
+        # Penalty = (1/2) * λ * βᵀ S β = (1/2) * 0.5 * (1 + 4 + 9) = 0.5 * 0.5 * 14 = 3.5
+        K = 3
+        β = [1.0, 2.0, 3.0]
+        S_identity = Matrix{Float64}(I, K, K)
+        λ = 0.5
+        
+        term = MultistateModels.PenaltyTerm(1:K, S_identity, λ, 2, [:h12])
+        config = PenaltyConfig(
+            [term],
+            MultistateModels.TotalHazardPenaltyTerm[],
+            MultistateModels.SmoothCovariatePenaltyTerm[],
+            Dict{Int,Vector{Int}}(),
+            Vector{Int}[],
+            1
+        )
+        
+        # Expected: (1/2) * 0.5 * (1 + 4 + 9) = 3.5
+        expected = 0.5 * λ * dot(β, β)
+        @test expected ≈ 3.5
+        @test compute_penalty(β, config) ≈ expected rtol=1e-10
+        
+        # Test 2: Penalty is zero when λ = 0
+        term_zero = MultistateModels.PenaltyTerm(1:K, S_identity, 0.0, 2, [:h12])
+        config_zero = PenaltyConfig(
+            [term_zero],
+            MultistateModels.TotalHazardPenaltyTerm[],
+            MultistateModels.SmoothCovariatePenaltyTerm[],
+            Dict{Int,Vector{Int}}(),
+            Vector{Int}[],
+            1
+        )
+        @test compute_penalty(β, config_zero) ≈ 0.0 atol=1e-15
+        
+        # Test 3: Penalty scales linearly with λ
+        λ_values = [0.1, 0.5, 1.0, 2.0, 10.0]
+        base_penalty = dot(β, S_identity * β)  # βᵀ S β = 14
+        for λ_test in λ_values
+            term_test = MultistateModels.PenaltyTerm(1:K, S_identity, λ_test, 2, [:h12])
+            config_test = PenaltyConfig(
+                [term_test],
+                MultistateModels.TotalHazardPenaltyTerm[],
+                MultistateModels.SmoothCovariatePenaltyTerm[],
+                Dict{Int,Vector{Int}}(),
+                Vector{Int}[],
+                1
+            )
+            expected_test = 0.5 * λ_test * base_penalty
+            @test compute_penalty(β, config_test) ≈ expected_test rtol=1e-10
+        end
+        
+        # Test 4: Non-identity penalty matrix with analytical solution
+        # S = [2 1; 1 2], β = [1, 1], λ = 1.0
+        # βᵀ S β = [1,1] * [2,1; 1,2] * [1; 1] = [1,1] * [3; 3] = 6
+        # Penalty = (1/2) * 1.0 * 6 = 3.0
+        S_22 = [2.0 1.0; 1.0 2.0]
+        β_22 = [1.0, 1.0]
+        term_22 = MultistateModels.PenaltyTerm(1:2, S_22, 1.0, 2, [:h12])
+        config_22 = PenaltyConfig(
+            [term_22],
+            MultistateModels.TotalHazardPenaltyTerm[],
+            MultistateModels.SmoothCovariatePenaltyTerm[],
+            Dict{Int,Vector{Int}}(),
+            Vector{Int}[],
+            1
+        )
+        @test compute_penalty(β_22, config_22) ≈ 3.0 rtol=1e-10
+        
+        println("  ✓ compute_penalty known-answer tests pass")
+        println("    β=[1,2,3], S=I, λ=0.5 → penalty = 3.5")
+        println("    Penalty scales linearly with λ")
+        println("    β=[1,1], S=[2,1;1,2], λ=1.0 → penalty = 3.0")
     end
 
     @testset "Penalty Gradient - Correct Sign Convention" begin

@@ -71,31 +71,22 @@ for n in N_SUBJECTS_BENCHMARK
 end
 
 # ============================================================================
-# BENCHMARK 2: SQUAREM vs EM
+# BENCHMARK 2: MCEM Convergence
 # ============================================================================
-println("Running SQUAREM Benchmark...")
-n_sq = 200
-dat_sq = generate_benchmark_data(n_sq)
+println("Running MCEM Benchmark...")
+n_mcem = 200
+dat_mcem = generate_benchmark_data(n_mcem)
 h12 = Hazard(@formula(0 ~ 1), "wei", 1, 2)
 h13 = Hazard(@formula(0 ~ 1), "wei", 1, 3)
 h23 = Hazard(@formula(0 ~ 1), "wei", 2, 3)
-model_sq = multistatemodel(h12, h13, h23; data=dat_sq)
+model_mcem = multistatemodel(h12, h13, h23; data=dat_mcem)
 
-# Standard EM (simulated by setting squarem=false if option existed, or just comparing iterations)
-# Since we can't easily disable SQUAREM in the current API without hacking, we will compare
-# convergence speed (loglik per iteration) if possible, or just report the SQUAREM performance.
-# For now, we'll run fit and capture the trace.
-# Note: The current fit() uses SQUAREM by default.
-
-# We will just report the runtime for SQUAREM on N=200 for now as "Accelerated EM"
-# and maybe try to find a way to run standard EM if possible.
-# Looking at source, fit() calls mcem_mll which uses squarem.
-# We will just record the SQUAREM time.
+# Run MCEM and record runtime
 t_start = time()
-fit(model_sq; verbose=false, compute_vcov=false, maxiter=MCEM_ITER)
-t_sq = time() - t_start
+fit(model_mcem; verbose=false, compute_vcov=false, maxiter=MCEM_ITER)
+t_mcem = time() - t_start
 
-squarem_results = DataFrame(Method=["SQUAREM"], Runtime=[t_sq])
+mcem_results = DataFrame(Method=["MCEM"], Runtime=[t_mcem])
 
 # ============================================================================
 # BENCHMARK 3: THREADING
@@ -138,7 +129,7 @@ using JSON3
 
 results = Dict(
     "scalability" => scalability_results,
-    "squarem" => squarem_results,
+    "mcem" => mcem_results,
     "threading" => threading_results
 )
 

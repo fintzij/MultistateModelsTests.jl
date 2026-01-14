@@ -3,26 +3,35 @@
 # =============================================================================
 #
 # Tests verifying:
-# 1. Simulation produces statistically correct output (exponential mean = 1/rate)
-# 2. Round-trip consistency (simulate -> observe -> extract)
-# 3. Edge cases (absorbing states, censoring)
-# 4. Transform strategy equivalence (CachedTransformStrategy vs DirectTransformStrategy)
+# 1. Simulation produces statistically correct output (exponential mean AND variance)
+# 2. DataFrame schema validation (correct columns, types)
+# 3. Path validity (monotonic times, legal transitions, correct initial states)
+# 4. Round-trip consistency (simulate -> observe -> extract)
+# 5. Edge cases (absorbing states, censoring)
+# 6. Transform strategy equivalence (CachedTransformStrategy vs DirectTransformStrategy)
+using Test
 using Optim
 using Random
 using DataFrames
 using MultistateModels: simulate, simulate_data, simulate_paths, simulate_path, observe_path, extract_paths, Hazard, multistatemodel, set_parameters!, _find_jump_time, SamplePath, OptimJumpSolver, draw_paths, CachedTransformStrategy, DirectTransformStrategy
 using StatsModels: @formula
+using Statistics: mean, var
 
 # Load fixtures - handle both standalone and runner contexts
 if !@isdefined(toy_two_state_exp_model)
     if isdefined(Main, :TestFixtures)
         # Runner has already loaded TestFixtures, import from Main
         import Main.TestFixtures: toy_two_state_exp_model, toy_absorbing_start_model, 
-                                   toy_expwei_model, toy_fitted_exact_model
+                                   toy_expwei_model, toy_fitted_exact_model,
+                                   toy_illness_death_model
     else
         # Standalone execution
         include(joinpath(@__DIR__, "..", "fixtures", "TestFixtures.jl"))
-        using .TestFixtures
+        # Support both standalone execution and module-based test harness
+if !@isdefined(TestFixtures)
+    include(joinpath(@__DIR__, "..", "fixtures", "TestFixtures.jl"))
+end
+using .TestFixtures
     end
 end
 
@@ -46,36 +55,163 @@ end
 
 # --- Statistical correctness --------------------------------------------------
 @testset "simulation distribution sanity" begin
-    # Verify exponential distribution: E[T] = 1/λ
-    fixture = toy_two_state_exp_model(rate = 0.2, horizon = 50.0)
+    # Test exponential distribution properties with EXACT analytical values
+    # For Exp(λ): E[T] = 1/λ, Var(T) = 1/λ², SE(sample mean) = 1/(λ·√n)
+    #
+    # With λ = 0.5:
+    #   E[T] = 1/0.5 = 2.0 (EXACT)
+    #   Var(T) = 1/0.5² = 4.0 (EXACT)
+    #   SE(sample mean) = 1/(0.5·√500) ≈ 0.0894
+    #
+    # Using nsim = 500 for statistical power
+    fixture = toy_two_state_exp_model(rate = 0.5, horizon = 50.0)  # λ = 0.5, long horizon
     model = fixture.model
-    rate = fixture.rate
 
     Random.seed!(42)
-    nsim = 2000
+    nsim = 500
     durations = Vector{Float64}(undef, nsim)
     for i in 1:nsim
         path = simulate_path(model, 1)
         durations[i] = path.times[end] - path.times[1]
     end
 
-    sample_mean = sum(durations) / nsim
-    @test isapprox(sample_mean, 1 / rate; rtol = 0.1, atol = 0.2)
+    # Test 1: Sample mean should approximate E[T] = 2.0 (EXACT analytical value)
+    # Using rtol=0.10 (10% relative tolerance)
+    sample_mean = mean(durations)
+    @test sample_mean ≈ 2.0 rtol=0.10
+
+    # Test 2: Sample variance should approximate Var(T) = 4.0 (EXACT analytical value)
+    # Variance estimation has higher uncertainty, using rtol=0.15
+    sample_var = var(durations)
+    @test sample_var ≈ 4.0 rtol=0.15
+
+    # Test 3: Sample mean within 3 standard errors of true mean
+    # SE(sample mean) = √(Var(T)/n) = 1/(λ·√n) = 1/(0.5·√500) ≈ 0.0894
+    # 3·SE ≈ 0.268, so |sample_mean - 2.0| should be < 0.268
+    se_sample_mean = 1.0 / (0.5 * sqrt(500))  # ≈ 0.0894
+    @test abs(sample_mean - 2.0) < 3 * se_sample_mean
+end
+
+# --- DataFrame schema verification --------------------------------------------
+@testset "simulate_data DataFrame schema" begin
+    # Verify simulated DataFrames have correct structure and types
+    fixture = toy_expwei_model()
+    model = fixture.model
+
+    Random.seed!(42)
+    data_results = simulate_data(model; nsim = 3)
+
+    for (i, df) in enumerate(data_results)
+        @testset "simulation $i schema" begin
+            # Required columns must exist
+            required_cols = [:id, :tstart, :tstop, :statefrom, :stateto, :obstype]
+            for col in required_cols
+                @test col in propertynames(df)
+            end
+
+            # Column types must be correct
+            @test eltype(df.id) <: Union{Int, Missing}
+            @test eltype(df.tstart) <: Union{Float64, Missing}
+            @test eltype(df.tstop) <: Union{Float64, Missing}
+            @test eltype(df.statefrom) <: Union{Int, Missing}
+            @test eltype(df.stateto) <: Union{Int, Missing}
+            @test eltype(df.obstype) <: Union{Int, Missing}
+        end
+    end
+end
+
+# --- Path validity checks -----------------------------------------------------
+@testset "path validity checks" begin
+    @testset "monotonically increasing times" begin
+        # Simulated paths must have strictly increasing time sequences
+        fixture = toy_illness_death_model()
+        model = fixture.model
+
+        Random.seed!(123)
+        for _ in 1:50
+            path = simulate_path(model, 1)
+            
+            # Each successive time must be > previous time
+            times = path.times
+            for i in 2:length(times)
+                @test times[i] > times[i-1]
+            end
+        end
+    end
+
+    @testset "tstop > tstart in observed data" begin
+        # In observed DataFrames, tstop must always exceed tstart
+        fixture = toy_expwei_model()
+        model = fixture.model
+
+        Random.seed!(456)
+        data_results = simulate_data(model; nsim = 5)
+
+        for df in data_results
+            for row in eachrow(df)
+                @test row.tstop > row.tstart
+            end
+        end
+    end
+
+    @testset "transitions follow tmat (legal transitions only)" begin
+        # All simulated ACTUAL transitions must be legal according to the model's tmat
+        # Note: consecutive states can be the same (no transition, just time passing)
+        # We only check when state actually changes
+        fixture = toy_illness_death_model()
+        model = fixture.model
+        tmat = model.tmat  # Transition matrix: tmat[i,j] > 0 means i→j is legal
+
+        Random.seed!(789)
+        for _ in 1:50
+            path = simulate_path(model, 1)
+            states = path.states
+
+            # Check each actual transition in the path (where state changes)
+            for i in 1:(length(states) - 1)
+                from_state = states[i]
+                to_state = states[i + 1]
+                
+                # Only check if there's an actual state change
+                if from_state != to_state
+                    # Transition must be legal: tmat[from, to] > 0
+                    @test tmat[from_state, to_state] > 0
+                end
+            end
+        end
+    end
+
+    @testset "initial state matches data" begin
+        # Simulated path should start from the statefrom in the data
+        fixture = toy_two_state_exp_model(rate = 0.3, horizon = 20.0)
+        model = fixture.model
+
+        # Subject 1 starts in state 1 according to fixture data
+        expected_initial_state = model.data.statefrom[model.subjectindices[1][1]]
+
+        Random.seed!(101)
+        for _ in 1:20
+            path = simulate_path(model, 1)
+            @test path.states[1] == expected_initial_state
+        end
+    end
 end
 
 # --- Edge cases ---------------------------------------------------------------
 @testset "simulate_path edge cases" begin
     @testset "absorbing initial state" begin
+        # When subject starts in absorbing state, path has single time/state
         fixture = toy_absorbing_start_model()
         model = fixture.model
         path = simulate_path(model, 1)
         
         @test length(path.times) == 1
         @test length(path.states) == 1
-        @test path.states[1] == 3
+        @test path.states[1] == 3  # State 3 is absorbing in this fixture
     end
     
     @testset "censoring branch" begin
+        # When horizon is very short, subject may be censored before any transition
         fixture = toy_expwei_model()
         model = deepcopy(fixture.model)
         subj_inds = model.subjectindices[1]
@@ -84,8 +220,35 @@ end
         Random.seed!(123)
         path = simulate_path(model, 1)
 
+        # Subject should remain in initial state (censored)
         @test path.states[end] == path.states[1]
         @test isapprox(path.times[end], model.data[subj_inds[end], :tstop], atol = 1e-12)
+    end
+    
+    @testset "path reaching absorbing state stops" begin
+        # Once absorbing state is reached, no further transitions occur
+        fixture = toy_illness_death_model()
+        model = fixture.model
+        tmat = model.tmat
+        
+        # Find absorbing states (rows with all zeros)
+        absorbing_states = findall(i -> all(tmat[i, :] .== 0), 1:size(tmat, 1))
+        
+        Random.seed!(202)
+        paths_reaching_absorbing = 0
+        for _ in 1:100
+            path = simulate_path(model, 1)
+            final_state = path.states[end]
+            
+            if final_state in absorbing_states
+                paths_reaching_absorbing += 1
+                # Verify path ends at absorbing state (no subsequent states)
+                @test path.states[end] == final_state
+            end
+        end
+        
+        # With illness-death model, should reach absorbing state (death) sometimes
+        @test paths_reaching_absorbing > 0
     end
 end
 

@@ -1,0 +1,15 @@
+
+******************************************************************************
+This program contains Ipopt, a library for large-scale nonlinear optimization.
+ Ipopt is released as open source code under the Eclipse Public License (EPL).
+         For more information visit https://github.com/coin-or/Ipopt
+******************************************************************************
+
+Test Summary:                       | Pass  Total  Time
+simulate_path long-run distribution |    3      3  0.1s
+Test Summary:                            | Pass  Total  Time
+simulate_path strategy parity (baseline) |    2      2  9.9s
+Test Summary:                 | Pass  Total      Time
+simulate_path family coverage |   60     60  25m21.4s
+simulate_path long test passed: mean=5.56, KS p-value=0.516
+simulate_path family coverage validated for 12 scenarios

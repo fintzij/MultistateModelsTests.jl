@@ -31,27 +31,27 @@ Comprehensive validation and documentation for [MultistateModels.jl](https://git
 ::: {.grid}
 
 ::: {.g-col-6 .g-col-md-4}
-### [📐 Architecture](architecture.qmd)
+### [📐 Architecture](01_architecture.qmd)
 Type hierarchy, hazard families, inference engine, and simulation strategies.
 :::
 
 ::: {.g-col-6 .g-col-md-4}
-### [✅ Unit Tests](unit_tests.qmd)
+### [✅ Unit Tests](02_unit_tests.qmd)
 Function-level tests for hazards, simulation, MCEM, and model construction.
 :::
 
 ::: {.g-col-6 .g-col-md-4}
-### [📊 Long Tests](long_tests.qmd)
+### [📊 Long Tests](03_long_tests.qmd)
 Statistical recovery of parameters across hazard families and data types.
 :::
 
 ::: {.g-col-6 .g-col-md-4}
-### [🎯 Simulation](simulation_diagnostics.qmd)
+### [🎯 Simulation](04_simulation_diagnostics.qmd)
 Visual verification of event time distributions (CDF diagnostic plots).
 :::
 
 ::: {.g-col-6 .g-col-md-4}
-### [⚡ Benchmarks](benchmarks.qmd)
+### [⚡ Benchmarks](05_benchmarks.qmd)
 Performance comparison of sampling methods and optimization strategies.
 :::
 

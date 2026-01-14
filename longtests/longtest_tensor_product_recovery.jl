@@ -54,6 +54,9 @@ tensor product surface effect:
 
 where x, y ~ Uniform(0, 1) independently.
 
+Uses the package's simulate() function with pre-computed g(x,y) values as an offset
+covariate with coefficient fixed at 1.0.
+
 Returns DataFrame with columns: id, tstart, tstop, statefrom, stateto, obstype, x, y
 """
 function generate_tensor_effect_data(g_true::Function, n::Int; 
@@ -67,42 +70,48 @@ function generate_tensor_effect_data(g_true::Function, n::Int;
     x_vals = rand(n)
     y_vals = rand(n)
     
-    # Simulate survival times using inverse transform
-    # For h(t|x,y) = λ₀ * exp(g(x,y)), cumulative hazard H(t) = λ₀ * exp(g(x,y)) * t
-    # T = -log(U) / (λ₀ * exp(g(x,y)))
+    # Compute the true 2D surface effect for each subject
+    # This creates a subject-specific covariate with pre-computed g(x,y) values
+    gval = [g_true(x_vals[i], y_vals[i]) for i in 1:n]
     
-    Random.seed!(seed + 0x5678)
-    u_vals = rand(n)
-    
-    survival_times = Float64[]
-    final_states = Int[]
-    
-    for i in 1:n
-        rate_i = baseline_rate * exp(g_true(x_vals[i], y_vals[i]))
-        t_i = -log(u_vals[i]) / rate_i
-        
-        if t_i <= max_time
-            push!(survival_times, t_i)
-            push!(final_states, 2)
-        else
-            push!(survival_times, max_time)
-            push!(final_states, 1)
-        end
-    end
-    
-    # Create DataFrame
-    data = DataFrame(
+    # Create template with gval as a covariate
+    # h(t|x,y) = λ₀ * exp(g(x,y)) = λ₀ * exp(1 * gval) where coefficient is fixed at 1
+    template = DataFrame(
         id = 1:n,
         tstart = zeros(n),
-        tstop = survival_times,
+        tstop = fill(max_time, n),
         statefrom = ones(Int, n),
-        stateto = final_states,
+        stateto = ones(Int, n),
         obstype = ones(Int, n),
         x = x_vals,
-        y = y_vals
+        y = y_vals,
+        gval = gval
     )
     
-    return data
+    # Build exponential hazard model with gval as covariate (coefficient = 1)
+    h12 = Hazard(@formula(0 ~ gval), :exp, 1, 2)
+    model = multistatemodel(h12; data=template)
+    
+    # Parameters: [baseline_rate, beta_gval] on natural scale
+    # With beta=1.0: h(t) = baseline_rate * exp(1.0 * gval) = baseline_rate * exp(g(x,y))
+    set_parameters!(model, (h12 = [baseline_rate, 1.0],))
+    
+    # Simulate using package's simulate function
+    Random.seed!(seed + 0x5678)  # Separate seed for survival times (maintains reproducibility)
+    sim_result = simulate(model; paths=false, data=true, nsim=1)
+    sim_data = sim_result[1, 1]
+    
+    # The simulated data has gval but we need x, y for the te(x,y) model fitting
+    # Map x, y values back by id
+    id_to_x = Dict(zip(template.id, template.x))
+    id_to_y = Dict(zip(template.id, template.y))
+    sim_data.x = [id_to_x[id] for id in sim_data.id]
+    sim_data.y = [id_to_y[id] for id in sim_data.id]
+    
+    # Remove the gval column (not needed for fitting)
+    select!(sim_data, Not(:gval))
+    
+    return sim_data
 end
 
 """

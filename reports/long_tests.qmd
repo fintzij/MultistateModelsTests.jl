@@ -146,9 +146,98 @@ for test_name in panel_tests
 end
 ```
 
-## 4. Penalized Spline Models
+## 4. Phase-Type Hazard Models
 
-### 4.1 Smooth Covariate Effects (s(x))
+### 4.1 Phase-Type Panel Data
+
+Tests for Coxian phase-type hazards with panel-observed data. These models are 
+Markov on the expanded state space, allowing direct likelihood computation via
+matrix exponentials (no MCEM required).
+
+```{julia}
+#| echo: false
+#| output: asis
+#| label: tbl-pt-panel
+
+pt_panel_tests = ["pt_panel_fixed", "pt_panel_tvc"]
+
+for test_name in pt_panel_tests
+    result = load_longtest_result(test_name)
+    if !isnothing(result)
+        println("#### $test_name")
+        println("- **Status**: $(get(result, :passed, false) ? "✅ Pass" : "❌ Fail")")
+        println("- **N subjects**: $(get(result, :n_subjects, "?"))")
+        println("- **Covariate type**: $(get(result, :covariate_type, "?"))")
+        println("")
+        
+        # Parameter table with CIs
+        param_df = longtest_result_to_parameter_table(result)
+        if nrow(param_df) > 0
+            println("| Parameter | True | Estimated | SE | 95% CI | Covered |")
+            println("|-----------|------|-----------|-----|--------|---------|")
+            for row in eachrow(param_df)
+                ci_str = isnan(row.CI_Lower) ? "—" : "[$(round(row.CI_Lower, digits=3)), $(round(row.CI_Upper, digits=3))]"
+                se_str = isnan(row.SE) ? "—" : string(round(row.SE, digits=3))
+                println("| $(row.Parameter) | $(round(row.True, digits=3)) | $(round(row.Estimated, digits=3)) | $se_str | $ci_str | $(row.Covered) |")
+            end
+            println("")
+        end
+    else
+        println("#### $test_name\n*Not yet run*\n")
+    end
+end
+```
+
+#### Prevalence Comparison (True vs Fitted)
+
+```{julia}
+#| echo: false
+#| fig-cap: "State prevalence over time for phase-type panel tests"
+#| label: fig-pt-prevalence
+
+using CairoMakie
+
+for test_name in ["pt_panel_fixed", "pt_panel_tvc"]
+    result = load_longtest_result(test_name)
+    if !isnothing(result)
+        fig = plot_state_prevalence(result; figsize=(600, 300))
+        if !isnothing(fig)
+            println("**$test_name - State Prevalence**")
+            display(fig)
+        end
+    end
+end
+```
+
+#### Cumulative Incidence (True vs Fitted)
+
+```{julia}
+#| echo: false
+#| fig-cap: "Cumulative incidence for phase-type panel tests"
+#| label: fig-pt-cumincid
+
+for test_name in ["pt_panel_fixed", "pt_panel_tvc"]
+    result = load_longtest_result(test_name)
+    if !isnothing(result)
+        fig = plot_cumulative_incidence(result; figsize=(500, 300))
+        if !isnothing(fig)
+            println("**$test_name - Cumulative Incidence (1→2)**")
+            display(fig)
+        end
+    end
+end
+```
+
+**Notes on phase-type identifiability:**
+
+- For 2-phase Coxian models, individual rates λ (progression) and μ₁ (exit from phase 1) are not separately identifiable
+- Only the sum ν₁ = λ + μ₁ is identifiable (total rate out of phase 1)
+- The exit rate μ₂ from phase 2 is fully identifiable
+- Covariate effects β are constrained to be homogeneous across phases for identifiability
+
+## 5. Penalized Spline Models
+
+### 5.1 Smooth Covariate Effects (s(x))
 
 Tests for single-dimensional smooth covariate effects using `s(x)` terms with 
 automatic PIJCV smoothing parameter selection.
@@ -162,7 +251,7 @@ automatic PIJCV smoothing parameter selection.
 
 **Test Parameters**: n=500 subjects, k=10-12 basis functions, max_time=10
 
-### 4.2 Tensor Product Smooths (te(x,y))
+### 5.2 Tensor Product Smooths (te(x,y))
 
 Tests for 2D smooth covariate surfaces using `te(x,y)` terms.
 
@@ -175,7 +264,7 @@ Tests for 2D smooth covariate surfaces using `te(x,y)` terms.
 
 **Test Parameters**: n=800 subjects, k=5×5 tensor basis
 
-### 4.3 MCEM with Spline Hazards
+### 5.3 MCEM with Spline Hazards
 
 Tests for spline baseline hazards in the MCEM algorithm with panel data.
 
@@ -190,7 +279,7 @@ Tests for spline baseline hazards in the MCEM algorithm with panel data.
 
 **Test Parameters**: n=1000 subjects, MCEM tolerance=0.05
 
-## 5. Notes
+## 6. Notes
 
 - Tests use a 3-state progressive model: State 1 → State 2 → State 3
 - Parameter recovery tolerance: 35% relative error for main parameters

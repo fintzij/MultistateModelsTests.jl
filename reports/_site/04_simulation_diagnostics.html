@@ -6,7 +6,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="dcterms.date" content="2025-12-31">
+<meta name="dcterms.date" content="2026-01-03">
 
 <title>Simulation Diagnostics – MultistateModels Test Reports</title>
 <style>
@@ -164,25 +164,36 @@ window.Quarto = {
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./architecture.html"> 
+    <a class="nav-link" href="./01_architecture.html"> 
 <span class="menu-text">Architecture</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./unit_tests.html"> 
+    <a class="nav-link" href="./02_unit_tests.html"> 
 <span class="menu-text">Unit Tests</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./long_tests.html"> 
+    <a class="nav-link" href="./03_long_tests.html"> 
 <span class="menu-text">Long Tests</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./simulation_diagnostics.html"> 
+    <a class="nav-link active" href="./04_simulation_diagnostics.html" aria-current="page"> 
 <span class="menu-text">Simulation</span></a>
   </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="./benchmarks.html"> 
-<span class="menu-text">Benchmarks</span></a>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-benchmarks" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Benchmarks</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-benchmarks">    
+        <li>
+    <a class="dropdown-item" href="./05_benchmarks.html">
+ <span class="dropdown-text">Performance</span></a>
   </li>  
+        <li>
+    <a class="dropdown-item" href="./spline_comparison_benchmark.html">
+ <span class="dropdown-text">Spline Methods Comparison</span></a>
+  </li>  
+    </ul>
+  </li>
 </ul>
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item compact">
@@ -250,7 +261,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">December 31, 2025</p>
+      <p class="date">January 3, 2026</p>
     </div>
   </div>
   
@@ -282,7 +293,7 @@ window.Quarto = {
 <li><strong>KS statistic</strong>: Kolmogorov-Smirnov statistic <span class="math inline">\(D_n = \sup_t |F_n(t) - F(t)|\)</span>, which should decrease as <span class="math inline">\(\sim 1/\sqrt{n}\)</span></li>
 <li><strong>Time-transform parity</strong>: <span class="math inline">\(\Delta F(t) = F_{tt}(t) - F_{fb}(t)\)</span> should be zero</li>
 </ul>
-<div id="cell-config" class="cell" data-execution_count="2">
+<div id="cell-config" class="cell" data-execution_count="3">
 <details class="code-fold">
 <summary>Configuration constants</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">const</span> COVARIATE_VALUE <span class="op">=</span> <span class="fl">1.5</span></span>
@@ -313,7 +324,7 @@ window.Quarto = {
   "gom" =&gt; (rate = 0.4, shape = 0.6, beta = 0.5, horizon = 5.0, hazard_start = …</code></pre>
 </div>
 </div>
-<div id="cell-helper-functions" class="cell" data-execution_count="3">
+<div id="cell-helper-functions" class="cell" data-execution_count="4">
 <details class="code-fold">
 <summary>Helper functions for scenario setup</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="kw">struct</span> Scenario</span>
@@ -409,7 +420,7 @@ window.Quarto = {
 <pre><code>covariate_value (generic function with 1 method)</code></pre>
 </div>
 </div>
-<div id="cell-distribution-functions" class="cell" data-execution_count="4">
+<div id="cell-distribution-functions" class="cell" data-execution_count="5">
 <details class="code-fold">
 <summary>Theoretical distribution functions</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Piecewise cumulative hazard helpers for TVC</span></span>
@@ -521,7 +532,7 @@ window.Quarto = {
 <pre><code>distribution_functions (generic function with 1 method)</code></pre>
 </div>
 </div>
-<div id="cell-simulation-functions" class="cell" data-execution_count="5">
+<div id="cell-simulation-functions" class="cell" data-execution_count="6">
 <details class="code-fold">
 <summary>Simulation and plotting functions</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">function</span> <span class="fu">collect_event_durations</span>(model, nsamples; use_cached_strategy<span class="op">::</span><span class="dt">Bool</span>, rng<span class="op">::</span><span class="dt">AbstractRNG</span>)</span>
@@ -646,7 +657,7 @@ window.Quarto = {
 </table>
 <section id="ph-baseline-only" class="level4">
 <h4 class="anchored" data-anchor-id="ph-baseline-only">PH Baseline-Only</h4>
-<div id="cell-exp-ph-baseline" class="cell" data-execution_count="6">
+<div id="cell-exp-ph-baseline" class="cell" data-execution_count="7">
 <details class="code-fold">
 <summary>Show code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>scenario <span class="op">=</span> <span class="fu">Scenario</span>(<span class="st">"exp"</span>, <span class="op">:</span>ph, <span class="op">:</span>baseline)</span>
@@ -668,7 +679,7 @@ window.Quarto = {
 </section>
 <section id="ph-with-covariate" class="level4">
 <h4 class="anchored" data-anchor-id="ph-with-covariate">PH with Covariate</h4>
-<div id="cell-exp-ph-covariate" class="cell" data-execution_count="7">
+<div id="cell-exp-ph-covariate" class="cell" data-execution_count="8">
 <details class="code-fold">
 <summary>Show code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>scenario <span class="op">=</span> <span class="fu">Scenario</span>(<span class="st">"exp"</span>, <span class="op">:</span>ph, <span class="op">:</span>covariate)</span>
@@ -690,7 +701,7 @@ window.Quarto = {
 </section>
 <section id="aft-baseline-only" class="level4">
 <h4 class="anchored" data-anchor-id="aft-baseline-only">AFT Baseline-Only</h4>
-<div id="cell-exp-aft-baseline" class="cell" data-execution_count="8">
+<div id="cell-exp-aft-baseline" class="cell" data-execution_count="9">
 <details class="code-fold">
 <summary>Show code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>scenario <span class="op">=</span> <span class="fu">Scenario</span>(<span class="st">"exp"</span>, <span class="op">:</span>aft, <span class="op">:</span>baseline)</span>
@@ -712,7 +723,7 @@ window.Quarto = {
 </section>
 <section id="aft-with-covariate" class="level4">
 <h4 class="anchored" data-anchor-id="aft-with-covariate">AFT with Covariate</h4>
-<div id="cell-exp-aft-covariate" class="cell" data-execution_count="9">
+<div id="cell-exp-aft-covariate" class="cell" data-execution_count="10">
 <details class="code-fold">
 <summary>Show code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>scenario <span class="op">=</span> <span class="fu">Scenario</span>(<span class="st">"exp"</span>, <span class="op">:</span>aft, <span class="op">:</span>covariate)</span>
@@ -766,7 +777,7 @@ window.Quarto = {
 </table>
 <section id="ph-baseline-only-1" class="level4">
 <h4 class="anchored" data-anchor-id="ph-baseline-only-1">PH Baseline-Only</h4>
-<div id="cell-wei-ph-baseline" class="cell" data-execution_count="10">
+<div id="cell-wei-ph-baseline" class="cell" data-execution_count="11">
 <details class="code-fold">
 <summary>Show code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>scenario <span class="op">=</span> <span class="fu">Scenario</span>(<span class="st">"wei"</span>, <span class="op">:</span>ph, <span class="op">:</span>baseline)</span>
@@ -797,7 +808,7 @@ This program contains Ipopt, a library for large-scale nonlinear optimization.
 </section>
 <section id="ph-with-covariate-1" class="level4">
 <h4 class="anchored" data-anchor-id="ph-with-covariate-1">PH with Covariate</h4>
-<div id="cell-wei-ph-covariate" class="cell" data-execution_count="11">
+<div id="cell-wei-ph-covariate" class="cell" data-execution_count="12">
 <details class="code-fold">
 <summary>Show code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>scenario <span class="op">=</span> <span class="fu">Scenario</span>(<span class="st">"wei"</span>, <span class="op">:</span>ph, <span class="op">:</span>covariate)</span>
@@ -819,7 +830,7 @@ This program contains Ipopt, a library for large-scale nonlinear optimization.
 </section>
 <section id="aft-baseline-only-1" class="level4">
 <h4 class="anchored" data-anchor-id="aft-baseline-only-1">AFT Baseline-Only</h4>
-<div id="cell-wei-aft-baseline" class="cell" data-execution_count="12">
+<div id="cell-wei-aft-baseline" class="cell" data-execution_count="13">
 <details class="code-fold">
 <summary>Show code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>scenario <span class="op">=</span> <span class="fu">Scenario</span>(<span class="st">"wei"</span>, <span class="op">:</span>aft, <span class="op">:</span>baseline)</span>
@@ -841,7 +852,7 @@ This program contains Ipopt, a library for large-scale nonlinear optimization.
 </section>
 <section id="aft-with-covariate-1" class="level4">
 <h4 class="anchored" data-anchor-id="aft-with-covariate-1">AFT with Covariate</h4>
-<div id="cell-wei-aft-covariate" class="cell" data-execution_count="13">
+<div id="cell-wei-aft-covariate" class="cell" data-execution_count="14">
 <details class="code-fold">
 <summary>Show code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>scenario <span class="op">=</span> <span class="fu">Scenario</span>(<span class="st">"wei"</span>, <span class="op">:</span>aft, <span class="op">:</span>covariate)</span>
@@ -895,7 +906,7 @@ This program contains Ipopt, a library for large-scale nonlinear optimization.
 </table>
 <section id="ph-baseline-only-2" class="level4">
 <h4 class="anchored" data-anchor-id="ph-baseline-only-2">PH Baseline-Only</h4>
-<div id="cell-gom-ph-baseline" class="cell" data-execution_count="14">
+<div id="cell-gom-ph-baseline" class="cell" data-execution_count="15">
 <details class="code-fold">
 <summary>Show code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>scenario <span class="op">=</span> <span class="fu">Scenario</span>(<span class="st">"gom"</span>, <span class="op">:</span>ph, <span class="op">:</span>baseline)</span>
@@ -917,7 +928,7 @@ This program contains Ipopt, a library for large-scale nonlinear optimization.
 </section>
 <section id="ph-with-covariate-2" class="level4">
 <h4 class="anchored" data-anchor-id="ph-with-covariate-2">PH with Covariate</h4>
-<div id="cell-gom-ph-covariate" class="cell" data-execution_count="15">
+<div id="cell-gom-ph-covariate" class="cell" data-execution_count="16">
 <details class="code-fold">
 <summary>Show code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>scenario <span class="op">=</span> <span class="fu">Scenario</span>(<span class="st">"gom"</span>, <span class="op">:</span>ph, <span class="op">:</span>covariate)</span>
@@ -939,7 +950,7 @@ This program contains Ipopt, a library for large-scale nonlinear optimization.
 </section>
 <section id="aft-baseline-only-2" class="level4">
 <h4 class="anchored" data-anchor-id="aft-baseline-only-2">AFT Baseline-Only</h4>
-<div id="cell-gom-aft-baseline" class="cell" data-execution_count="16">
+<div id="cell-gom-aft-baseline" class="cell" data-execution_count="17">
 <details class="code-fold">
 <summary>Show code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>scenario <span class="op">=</span> <span class="fu">Scenario</span>(<span class="st">"gom"</span>, <span class="op">:</span>aft, <span class="op">:</span>baseline)</span>
@@ -961,7 +972,7 @@ This program contains Ipopt, a library for large-scale nonlinear optimization.
 </section>
 <section id="aft-with-covariate-2" class="level4">
 <h4 class="anchored" data-anchor-id="aft-with-covariate-2">AFT with Covariate</h4>
-<div id="cell-gom-aft-covariate" class="cell" data-execution_count="17">
+<div id="cell-gom-aft-covariate" class="cell" data-execution_count="18">
 <details class="code-fold">
 <summary>Show code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>scenario <span class="op">=</span> <span class="fu">Scenario</span>(<span class="st">"gom"</span>, <span class="op">:</span>aft, <span class="op">:</span>covariate)</span>
@@ -986,34 +997,43 @@ This program contains Ipopt, a library for large-scale nonlinear optimization.
 </section>
 <section id="b-splines" class="level2">
 <h2 class="anchored" data-anchor-id="b-splines">3. B-Splines</h2>
-<div class="callout callout-style-default callout-warning callout-titled">
+<div class="callout callout-style-default callout-note callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Warning</span>Status: Not Yet Implemented
+<span class="screen-reader-only">Note</span>Status: Unit &amp; Long Tests Cover Spline Functionality
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>B-spline scenarios will be added once the spline infrastructure is integrated into this report.</p>
+<p>B-spline hazard validation is covered by:</p>
+<ol type="1">
+<li><strong>Unit tests</strong> (<code>test_splines.jl</code>, 255 tests): B-spline basis evaluation, cumulative hazard vs QuadGK numerical integration, penalty matrices</li>
+<li><strong>Long tests</strong> (<code>longtest_mcem_splines.jl</code>, 6 scenarios): Parameter recovery for spline hazards with various functional forms</li>
+</ol>
+<p>Full simulation diagnostics (ECDF vs CDF plots) for splines require additional infrastructure to compute theoretical CDFs from arbitrary spline coefficient vectors. This is a lower priority since:</p>
+<ul>
+<li>Spline cumulative hazard accuracy is already verified against QuadGK (rtol=1e-10)</li>
+<li>Parameter recovery in long tests validates end-to-end correctness</li>
+</ul>
 </div>
 </div>
 <section id="cubic-splines-4-interior-knots" class="level3">
 <h3 class="anchored" data-anchor-id="cubic-splines-4-interior-knots">3.1 Cubic Splines (4 Interior Knots)</h3>
-<p><em>To be implemented</em></p>
+<p><em>Covered by <code>longtest_mcem_splines.jl</code> Scenario 3 (Cubic pattern with Gompertz baseline)</em></p>
 </section>
 <section id="quadratic-splines-3-interior-knots" class="level3">
 <h3 class="anchored" data-anchor-id="quadratic-splines-3-interior-knots">3.2 Quadratic Splines (3 Interior Knots)</h3>
-<p><em>To be implemented</em></p>
+<p><em>Covered by <code>longtest_mcem_splines.jl</code> Scenario 2 (Piecewise-linear increasing hazard)</em></p>
 </section>
 <section id="natural-splines" class="level3">
 <h3 class="anchored" data-anchor-id="natural-splines">3.3 Natural Splines</h3>
-<p><em>To be implemented</em></p>
+<p><em>Spline boundary conditions handled by BSplineKit; unit tested in <code>test_splines.jl</code></em></p>
 </section>
 <section id="splines-with-covariates-ph" class="level3">
 <h3 class="anchored" data-anchor-id="splines-with-covariates-ph">3.4 Splines with Covariates (PH)</h3>
-<p><em>To be implemented</em></p>
+<p><em>Covered by <code>longtest_mcem_splines.jl</code> Scenario 4 (spline baseline + PH covariate)</em></p>
 <hr>
 </section>
 </section>
@@ -1021,7 +1041,7 @@ This program contains Ipopt, a library for large-scale nonlinear optimization.
 <h2 class="anchored" data-anchor-id="time-varying-covariates">4. Time-Varying Covariates</h2>
 <section id="exponential-ph-with-step-function-tvc" class="level3">
 <h3 class="anchored" data-anchor-id="exponential-ph-with-step-function-tvc">4.1 Exponential PH with Step-Function TVC</h3>
-<div id="cell-exp-ph-tvc" class="cell" data-execution_count="18">
+<div id="cell-exp-ph-tvc" class="cell" data-execution_count="19">
 <details class="code-fold">
 <summary>Show code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>scenario <span class="op">=</span> <span class="fu">Scenario</span>(<span class="st">"exp"</span>, <span class="op">:</span>ph, <span class="op">:</span>tvc)</span>
@@ -1043,7 +1063,7 @@ This program contains Ipopt, a library for large-scale nonlinear optimization.
 </section>
 <section id="weibull-ph-with-step-function-tvc" class="level3">
 <h3 class="anchored" data-anchor-id="weibull-ph-with-step-function-tvc">4.2 Weibull PH with Step-Function TVC</h3>
-<div id="cell-wei-ph-tvc" class="cell" data-execution_count="19">
+<div id="cell-wei-ph-tvc" class="cell" data-execution_count="20">
 <details class="code-fold">
 <summary>Show code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>scenario <span class="op">=</span> <span class="fu">Scenario</span>(<span class="st">"wei"</span>, <span class="op">:</span>ph, <span class="op">:</span>tvc)</span>

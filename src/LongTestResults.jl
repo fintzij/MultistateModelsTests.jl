@@ -17,7 +17,10 @@
 # - Utility functions for cumulative incidence and prevalence computation
 # =============================================================================
 
-# Note: JSON3, Dates, and DataFrames are imported by the parent module (MultistateModelsTests)
+# Required imports - standalone usage
+using JSON3
+using Dates
+using DataFrames
 
 export LongTestResult, save_longtest_result, load_longtest_result,
        compute_cumulative_incidence, compute_state_prevalence,
@@ -28,9 +31,10 @@ export LongTestResult, save_longtest_result, load_longtest_result,
 const LONGTEST_RESULTS_DIR = normpath(joinpath(@__DIR__, "..", "cache", "longtest_results"))
 
 # Valid values for categorical fields
-const VALID_FAMILIES = ["exp", "wei", "gom", "pt", "sp"]
-const VALID_DATA_TYPES = ["exact", "panel", "mcem"]
-const VALID_COV_TYPES = ["nocov", "fixed", "tvc"]
+# Note: "phasetype" is an alias for "pt" for backwards compatibility
+const VALID_FAMILIES = ["exp", "wei", "gom", "pt", "sp", "phasetype"]
+const VALID_DATA_TYPES = ["exact", "panel", "mcem", "mixed"]
+const VALID_COV_TYPES = ["nocov", "fixed", "tvc", "none"]
 
 # =============================================================================
 # Result Structure
@@ -103,6 +107,7 @@ Base.@kwdef mutable struct LongTestResult
     # Simulation comparison - cumulative incidence
     # Keys are "1→2" and "2→3" only (NOT "1→3")
     cumulative_incidence_times::Vector{Float64} = Float64[]
+    cumulative_incidence_observed::Dict{String, Vector{Float64}} = Dict{String, Vector{Float64}}()
     cumulative_incidence_true::Dict{String, Vector{Float64}} = Dict{String, Vector{Float64}}()
     cumulative_incidence_fitted::Dict{String, Vector{Float64}} = Dict{String, Vector{Float64}}()
     cumulative_incidence_true_lower::Dict{String, Vector{Float64}} = Dict{String, Vector{Float64}}()
@@ -149,20 +154,36 @@ end
 # Save/Load Functions
 # =============================================================================
 
-# CACHING DISABLED - See TEST_OVERHAUL_PROMPT.md
-# Tests must run fresh every time to avoid stale results masking failures.
-# Results are now returned directly without persistence.
-
 """
-    save_longtest_result(result::LongTestResult)
+    save_longtest_result(result::LongTestResult; force::Bool=false)
 
-DEPRECATED: Caching has been disabled. This function is now a no-op.
-Results should be computed fresh every time tests run.
-See TEST_OVERHAUL_PROMPT.md for rationale.
+Save a long test result to the cache for use in reports.
+Creates the cache directory if it doesn't exist.
+
+Note: Tests always run fresh to ensure correctness, but results are saved
+for report generation. Set force=true to overwrite existing results.
 """
-function save_longtest_result(result::LongTestResult)
-    @warn "save_longtest_result() is deprecated. Caching disabled - results computed fresh each run." maxlog=1
-    # Return result without saving to enforce fresh computation
+function save_longtest_result(result::LongTestResult; force::Bool=false)
+    # Create directory if needed
+    if !isdir(LONGTEST_RESULTS_DIR)
+        mkpath(LONGTEST_RESULTS_DIR)
+    end
+    
+    filepath = joinpath(LONGTEST_RESULTS_DIR, "$(result.test_name).json")
+    
+    # Check if file exists and force not set
+    if isfile(filepath) && !force
+        @info "Result already cached for $(result.test_name). Use force=true to overwrite."
+        return result
+    end
+    
+    # Convert to dict and save
+    d = _result_to_dict(result)
+    open(filepath, "w") do io
+        JSON3.pretty(io, d)
+    end
+    
+    @info "Saved result: $(result.test_name) -> $filepath"
     return result
 end
 
@@ -230,7 +251,7 @@ function _result_to_dict(result::LongTestResult)
     d["data_summary"] = _sanitize_value(result.data_summary)
     
     # Dict{String, Vector{Float64}} fields - sanitize NaN
-    for field in [:cumulative_incidence_true, :cumulative_incidence_fitted,
+    for field in [:cumulative_incidence_observed, :cumulative_incidence_true, :cumulative_incidence_fitted,
                   :cumulative_incidence_true_lower, :cumulative_incidence_true_upper,
                   :cumulative_incidence_fitted_lower, :cumulative_incidence_fitted_upper,
                   :prevalence_observed, :prevalence_true, :prevalence_fitted,
@@ -245,23 +266,34 @@ end
 """
     load_longtest_result(test_name::String) -> Union{LongTestResult, Nothing}
 
-DEPRECATED: Caching has been disabled. This function now returns nothing.
-Tests should run fresh and results should be computed inline.
-See TEST_OVERHAUL_PROMPT.md for rationale.
+Load a long test result from the cache.
+Returns nothing if the result doesn't exist or can't be loaded.
 """
 function load_longtest_result(test_name::String)
-    @warn "load_longtest_result() is deprecated. Caching disabled - run tests directly instead." maxlog=1
-    return nothing
+    filepath = joinpath(LONGTEST_RESULTS_DIR, "$(test_name).json")
+    if !isfile(filepath)
+        return nothing
+    end
+    try
+        json = JSON3.read(read(filepath, String))
+        return _json_to_result(json)
+    catch e
+        @warn "Failed to load result for $test_name: $e"
+        return nothing
+    end
 end
 
 """
     list_available_results() -> Vector{String}
 
-DEPRECATED: Caching has been disabled. Returns empty vector.
+List all available cached long test results.
 """
 function list_available_results()
-    @warn "list_available_results() is deprecated. Caching disabled." maxlog=1
-    return String[]
+    if !isdir(LONGTEST_RESULTS_DIR)
+        return String[]
+    end
+    files = filter(f -> endswith(f, ".json"), readdir(LONGTEST_RESULTS_DIR))
+    return [replace(f, ".json" => "") for f in files]
 end
 
 # Helper to convert JSON back to result struct
@@ -297,10 +329,20 @@ function _json_to_result(json)
         end
     end
     
-    # Copy vector fields
-    for field in [:hazard_families, :cumulative_incidence_times, :prevalence_times, :failure_messages]
+    # Copy vector fields - need to handle type conversions carefully
+    # hazard_families and failure_messages are Vector{String}
+    for field in [:hazard_families, :failure_messages]
         if haskey(json, field) && !isnothing(json[field])
-            setfield!(result, field, collect(json[field]))
+            val = json[field]
+            setfield!(result, field, isempty(val) ? String[] : collect(String, val))
+        end
+    end
+    
+    # cumulative_incidence_times and prevalence_times are Vector{Float64}
+    for field in [:cumulative_incidence_times, :prevalence_times]
+        if haskey(json, field) && !isnothing(json[field])
+            val = json[field]
+            setfield!(result, field, isempty(val) ? Float64[] : collect(Float64, val))
         end
     end
     
@@ -331,7 +373,7 @@ function _json_to_result(json)
     end
     
     # Copy dict fields (String -> Vector{Float64})
-    for field in [:cumulative_incidence_true, :cumulative_incidence_fitted,
+    for field in [:cumulative_incidence_observed, :cumulative_incidence_true, :cumulative_incidence_fitted,
                   :cumulative_incidence_true_lower, :cumulative_incidence_true_upper,
                   :cumulative_incidence_fitted_lower, :cumulative_incidence_fitted_upper,
                   :prevalence_observed, :prevalence_true, :prevalence_fitted,
@@ -440,26 +482,114 @@ end
 """
     compute_observed_prevalence(data::DataFrame, times::Vector{Float64}, n_states::Int)
 
-Compute observed state prevalence from panel data.
+Compute observed state prevalence from exact or panel data.
+
+For each time point, determines the state of each subject by finding the 
+observation interval containing that time. Correctly handles:
+- Multiple rows per subject (exact data: one row per transition)
+- Subjects who have already reached absorbing states
+- Panel observations with discrete observation times
+
+Returns proportion of all subjects in each state at each time point.
 """
 function compute_observed_prevalence(data::DataFrame, times::Vector{Float64}, n_states::Int)
     result = Dict{Int, Vector{Float64}}()
     
+    # Get all unique subject IDs to ensure correct denominator
+    all_ids = unique(data.id)
+    n_subjects = length(all_ids)
+    
     for s in 1:n_states
         prev = zeros(length(times))
         for (i, t) in enumerate(times)
-            # Find observations that contain time t
-            relevant = filter(row -> row.tstart <= t < row.tstop, eachrow(data))
-            if !isempty(relevant)
-                # Use statefrom for observations containing t
-                n_in_state = count(row -> row.statefrom == s, relevant)
-                prev[i] = n_in_state / length(relevant)
+            n_in_state = 0
+            
+            # For each subject, determine their state at time t
+            for id in all_ids
+                subject_data = filter(row -> row.id == id, data)
+                
+                # Find the row containing time t for this subject
+                # For exact data: tstart <= t < tstop means subject is in statefrom
+                # At exactly t == tstop, subject has transitioned to stateto
+                current_state = nothing
+                
+                for row in eachrow(subject_data)
+                    if row.tstart <= t < row.tstop
+                        # Subject is in statefrom during this interval
+                        current_state = row.statefrom
+                        break
+                    elseif t >= row.tstop
+                        # Subject has completed this transition
+                        # Continue to check if there's a later row containing t
+                        current_state = row.stateto
+                    end
+                end
+                
+                # Count subject if they're in state s at time t
+                if !isnothing(current_state) && current_state == s
+                    n_in_state += 1
+                end
             end
+            
+            prev[i] = n_in_state / n_subjects
         end
         result[s] = prev
     end
     
     return result
+end
+
+"""
+    compute_observed_cumulative_incidence(data::DataFrame, from_state::Int, to_state::Int, times::Vector{Float64})
+
+Compute crude observed cumulative incidence from exact or panel data.
+
+For exact data (obstype=1): Uses the actual transition time (tstop when statefrom→stateto).
+For panel data (obstype=2): Uses the interval endpoint (tstop) as the observed transition time.
+
+This is crude CI - simply proportion of subjects who have made the transition by time t.
+For competing risks, subjects who transition to other states are NOT censored.
+
+# Arguments
+- `data`: DataFrame with columns id, tstart, tstop, statefrom, stateto, obstype
+- `from_state`: Starting state of the transition
+- `to_state`: Target state of the transition  
+- `times`: Time points at which to evaluate cumulative incidence
+
+# Returns
+Vector of cumulative incidence values at each time point.
+"""
+function compute_observed_cumulative_incidence(data::DataFrame, from_state::Int, to_state::Int, 
+                                                times::Vector{Float64})
+    all_ids = unique(data.id)
+    n_subjects = length(all_ids)
+    
+    ci = zeros(length(times))
+    
+    for (i, t) in enumerate(times)
+        n_transitioned = 0
+        
+        for id in all_ids
+            subject_data = filter(row -> row.id == id, data)
+            
+            # Check if subject made the from→to transition by time t
+            for row in eachrow(subject_data)
+                if row.statefrom == from_state && row.stateto == to_state
+                    # Transition occurred - check if by time t
+                    # For exact data: transition happens at tstop
+                    # For panel data: we know transition happened by tstop
+                    if row.tstop <= t
+                        n_transitioned += 1
+                        break  # Count each subject only once
+                    end
+                end
+            end
+        end
+        
+        ci[i] = n_transitioned / n_subjects
+    end
+    
+    return ci
 end
 
 # =============================================================================

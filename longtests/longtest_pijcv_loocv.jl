@@ -35,7 +35,7 @@ include("longtest_config.jl")
 include("longtest_helpers.jl")
 
 # Import internal functions
-import MultistateModels: Hazard, multistatemodel, set_parameters!, 
+import MultistateModels: Hazard, multistatemodel, set_parameters!, simulate,
     ExactData, extract_paths, get_parameters_flat, build_penalty_config,
     PenaltyConfig, SplinePenalty, loglik_subject, compute_pijcv_criterion,
     SmoothingSelectionState, fit_penalized_beta,
@@ -91,32 +91,39 @@ function compute_exact_loocv(model, data::ExactData, penalty_config::PenaltyConf
 end
 
 """
-Generate test data for PIJCV vs LOOCV comparison.
+Generate test data for PIJCV vs LOOCV comparison using the package's simulate() function.
 """
 function generate_pijcv_test_data(n_subjects::Int; seed=PIJCV_LOOCV_SEED)
     Random.seed!(seed)
     
-    # Generate survival times from Weibull(shape=1.5, scale=1.5)
-    # This gives a non-constant hazard that splines should capture
-    shape = 1.5
-    scale = 1.5
+    # Target: Weibull(shape=1.5, scale=1.5) from Distributions.jl
+    # Distributions.jl Weibull hazard: h(t) = (α/θ^α) * t^(α-1)
+    # MultistateModels Weibull hazard: h(t) = shape * scale * t^(shape-1)
+    # Matching: MSM shape = α, MSM scale = 1/θ^α
+    wei_shape = 1.5
+    wei_theta = 1.5  # Distributions.jl scale parameter
+    wei_scale = 1.0 / (wei_theta^wei_shape)  # Convert to MSM parameterization
     
-    # Generate exact transition times
-    times = rand(Weibull(shape, scale), n_subjects)
-    
-    # Censor some observations (20% censoring at max_time=3.0)
     max_time = 3.0
-    censored = times .> max_time
-    times[censored] .= max_time
     
-    data = DataFrame(
+    # Create template for simulation
+    template = DataFrame(
         id = 1:n_subjects,
         tstart = zeros(n_subjects),
-        tstop = times,
+        tstop = fill(max_time, n_subjects),
         statefrom = ones(Int, n_subjects),
-        stateto = ifelse.(censored, 1, 2),  # State 1 if censored, 2 if transitioned
-        obstype = ifelse.(censored, 2, 1)   # obstype=2 for censored, 1 for exact
+        stateto = ones(Int, n_subjects),
+        obstype = ones(Int, n_subjects)
     )
+    
+    # Build Weibull hazard model
+    h12 = Hazard(@formula(0 ~ 1), "wei", 1, 2)
+    model = multistatemodel(h12; data=template)
+    set_parameters!(model, (h12 = [wei_shape, wei_scale],))
+    
+    # Simulate exact data
+    sim_result = simulate(model; paths=false, data=true, nsim=1)
+    data = sim_result[1]
     
     return data
 end

@@ -1151,9 +1151,9 @@ using LinearAlgebra
             config2 = MultistateModels.PhaseTypeConfig(n_phases=3, structure=:sctp)
             @test config2.structure == :sctp
             
-            # Default should be :unstructured
+            # Default should be :sctp (SCTP constraints for identifiability)
             config_default = MultistateModels.PhaseTypeConfig(n_phases=3)
-            @test config_default.structure == :unstructured
+            @test config_default.structure == :sctp
             
             # Invalid structure should throw
             @test_throws ArgumentError MultistateModels.PhaseTypeConfig(n_phases=3, structure=:invalid)
@@ -1164,9 +1164,9 @@ using LinearAlgebra
             config1 = MultistateModels.ProposalConfig(type=:phasetype, structure=:sctp)
             @test config1.structure == :sctp
             
-            # Default should be :unstructured
+            # Default should be :sctp (SCTP constraints for identifiability)
             config_default = MultistateModels.ProposalConfig(type=:phasetype)
-            @test config_default.structure == :unstructured
+            @test config_default.structure == :sctp
             
             # PhaseTypeProposal should forward structure
             config2 = MultistateModels.PhaseTypeProposal(n_phases=3, structure=:sctp)
@@ -1325,11 +1325,12 @@ using LinearAlgebra
     end
     
     @testset "Basic Fitting" begin
-        # Simple 2-phase model
-        h12 = Hazard(@formula(0 ~ 1), "pt", 1, 2; n_phases=2, coxian_structure=:unstructured)
+        # Simple 2-phase model with unstructured constraints for unconstrained fitting
+        h12 = Hazard(@formula(0 ~ 1), "pt", 1, 2; n_phases=2)
         h23 = Hazard(@formula(0 ~ 1), "exp", 2, 3)
         
-        model = multistatemodel(h12, h23; data=data)
+        # coxian_structure must be passed to multistatemodel()
+        model = multistatemodel(h12, h23; data=data, coxian_structure=:unstructured)
         
         # Fit the model
         fitted = fit(model; verbose=false, compute_vcov=false)
@@ -1381,10 +1382,12 @@ using LinearAlgebra
         end
         data_large = DataFrame(data_rows_large)
         
+        # Use :sctp structure since crude initialization may violate eigenvalue ordering
         h12 = Hazard(@formula(0 ~ 1), "pt", 1, 2; n_phases=2)
         h23 = Hazard(@formula(0 ~ 1), "exp", 2, 3)
         
-        model = multistatemodel(h12, h23; data=data_large)
+        # coxian_structure must be passed to multistatemodel(), not just Hazard()
+        model = multistatemodel(h12, h23; data=data_large, coxian_structure=:sctp)
         fitted = fit(model; verbose=false, compute_vcov=true, compute_ij_vcov=false)
         
         # Check vcov is returned
@@ -1400,10 +1403,12 @@ using LinearAlgebra
     end
     
     @testset "Access Fitted Expanded Model" begin
+        # Use :sctp structure since crude initialization may violate eigenvalue ordering
         h12 = Hazard(@formula(0 ~ 1), "pt", 1, 2; n_phases=2)
         h23 = Hazard(@formula(0 ~ 1), "exp", 2, 3)
         
-        model = multistatemodel(h12, h23; data=data)
+        # coxian_structure must be passed to multistatemodel(), not just Hazard()
+        model = multistatemodel(h12, h23; data=data, coxian_structure=:sctp)
         fitted = fit(model; verbose=false, compute_vcov=false)
         
         # The fitted model IS the expanded model now (no wrapper)
@@ -1429,10 +1434,12 @@ using LinearAlgebra
     end
     
     @testset "Parameter Round-Trip After Fitting" begin
+        # Use :sctp structure since crude initialization may violate eigenvalue ordering
         h12 = Hazard(@formula(0 ~ 1), "pt", 1, 2; n_phases=2)
         h23 = Hazard(@formula(0 ~ 1), "exp", 2, 3)
         
-        model = multistatemodel(h12, h23; data=data)
+        # coxian_structure must be passed to multistatemodel(), not just Hazard()
+        model = multistatemodel(h12, h23; data=data, coxian_structure=:sctp)
         fitted = fit(model; verbose=false, compute_vcov=false)
         
         # Get user-facing parameters
@@ -1596,16 +1603,21 @@ using Random
         @test length(datasets) == 3
         
         # Collapsed data should have states in original space (or missing for censored)
+        # Note: Empty DataFrames are valid when no transitions occur
         for df in datasets
-            @test all(ismissing(s) || s in 1:3 for s in df.statefrom)
-            @test all(ismissing(s) || s in 1:3 for s in df.stateto)
+            if nrow(df) > 0
+                @test all(ismissing(s) || s in 1:3 for s in df.statefrom)
+                @test all(ismissing(s) || s in 1:3 for s in df.stateto)
+            end
         end
         
         # Expanded data should have states in expanded space (or missing for censored)
         datasets_exp = simulate_data(model; nsim=3, expanded=true)
         for df in datasets_exp
-            @test all(ismissing(s) || s in 1:4 for s in df.statefrom)
-            @test all(ismissing(s) || s in 1:4 for s in df.stateto)
+            if nrow(df) > 0
+                @test all(ismissing(s) || s in 1:4 for s in df.statefrom)
+                @test all(ismissing(s) || s in 1:4 for s in df.stateto)
+            end
         end
     end
     
@@ -1774,10 +1786,10 @@ end
         h12 = Hazard(@formula(0 ~ 1), "pt", 1, 2)
         h13 = Hazard(@formula(0 ~ 1), "pt", 1, 3)
         
-        # Build model without SCTP (default)
-        model = multistatemodel(h12, h13; data=df, n_phases=Dict(1 => 3))
+        # Build model with unstructured (old default, now must be explicit)
+        model = multistatemodel(h12, h13; data=df, n_phases=Dict(1 => 3), coxian_structure=:unstructured)
         
-        # Should have no constraints
+        # Should have no constraints for unstructured
         if haskey(model.modelcall, :constraints)
             @test isnothing(model.modelcall.constraints)
         end
@@ -1816,7 +1828,8 @@ end
         h13 = Hazard(@formula(0 ~ 1), "pt", 1, 3)   # pt
         
         # Should warn about mixed types
-        @test_logs (:warn, r"has :pt hazards but also has non-:pt hazards") multistatemodel(h12, h13; data=df, n_phases=Dict(1 => 2))
+        # Use :unstructured to avoid eigenvalue ordering constraint generation on mixed hazard types
+        @test_logs (:warn, r"has :pt hazards but also has non-:pt hazards") multistatemodel(h12, h13; data=df, n_phases=Dict(1 => 2), coxian_structure=:unstructured)
     end
 end
 
@@ -1889,6 +1902,192 @@ end
         # State 2 maps to phase 4 (absorbing with 1 phase)
         @test model.data.statefrom[1] == 1  # First phase of state 1
         @test model.data.stateto[1] == 4    # First (only) phase of state 2
+    end
+end
+
+# =============================================================================
+# Eigenvalue Ordering Constraint Tests (:eigorder_sctp)
+# =============================================================================
+# These tests verify the :sctp_decreasing constraint option that combines
+# SCTP constraints with eigenvalue ordering (ν₁ ≥ ν₂ ≥ ... ≥ νₙ) for identifiability.
+# Note: :eigorder_sctp was planned but not implemented - using :sctp_decreasing instead.
+
+@testset "Eigenvalue Ordering Constraints (:sctp_decreasing)" begin
+    
+    @testset "Default coxian_structure is :sctp" begin
+        # Create simple test data
+        df = DataFrame(
+            id = 1:6,
+            tstart = fill(0.0, 6),
+            tstop = [1.0, 1.5, 2.0, 1.2, 1.8, 2.2],
+            statefrom = fill(1, 6),
+            stateto = [2, 2, 2, 3, 3, 3],
+            obstype = fill(1, 6)
+        )
+        
+        h12 = Hazard(@formula(0 ~ 1), "pt", 1, 2)
+        h13 = Hazard(@formula(0 ~ 1), "pt", 1, 3)
+        
+        # Default (no coxian_structure specified) should use :sctp
+        model = multistatemodel(h12, h13; data=df, n_phases=Dict(1 => 3))
+        
+        # Should have constraints (SCTP constraints)
+        @test haskey(model.modelcall, :constraints)
+        @test !isnothing(model.modelcall.constraints)
+    end
+    
+    @testset ":sctp_decreasing generates SCTP + eigenvalue ordering constraints" begin
+        # Create test data with 2 destinations (required for SCTP)
+        df = DataFrame(
+            id = 1:6,
+            tstart = fill(0.0, 6),
+            tstop = [1.0, 1.5, 2.0, 1.2, 1.8, 2.2],
+            statefrom = fill(1, 6),
+            stateto = [2, 2, 2, 3, 3, 3],
+            obstype = fill(1, 6)
+        )
+        
+        h12 = Hazard(@formula(0 ~ 1), "pt", 1, 2)
+        h13 = Hazard(@formula(0 ~ 1), "pt", 1, 3)
+        
+        # Build model with explicit :sctp_decreasing
+        model = multistatemodel(h12, h13; data=df, n_phases=Dict(1 => 3), coxian_structure=:sctp_decreasing)
+        
+        cons = model.modelcall.constraints
+        
+        # For 3 phases, 2 destinations (intercept-only models - no C1 constraints):
+        # - SCTP constraints: (n_phases - 1) * (n_dest - 1) = 2 * 1 = 2 (equality: lcons = ucons = 0)
+        # - Eigenvalue ordering: (n_phases - 1) = 2 (νⱼ - ν_{j-1} ≤ 0: lcons = -Inf, ucons = 0)
+        # Total: 2 + 2 = 4
+        @test length(cons.cons) == 4
+        
+        # SCTP constraints are equality (lcons = ucons = 0)
+        # Eigenvalue ordering are one-sided inequality (lcons = -Inf, ucons = 0)
+        n_equality = count(cons.lcons .== cons.ucons)  # SCTP
+        n_onesided = count(cons.lcons .== -Inf)  # Ordering constraints
+        
+        @test n_equality == 2  # 2 SCTP constraints
+        @test n_onesided == 2  # 2 eigenvalue ordering constraints
+    end
+    
+    @testset ":sctp_increasing is implemented (alias test removed)" begin
+        # Note: :ordered_sctp was planned but not implemented
+        # :sctp_increasing and :sctp_decreasing are the implemented options
+        df = DataFrame(
+            id = 1:6,
+            tstart = fill(0.0, 6),
+            tstop = [1.0, 1.5, 2.0, 1.2, 1.8, 2.2],
+            statefrom = fill(1, 6),
+            stateto = [2, 2, 2, 3, 3, 3],
+            obstype = fill(1, 6)
+        )
+        
+        h12 = Hazard(@formula(0 ~ 1), "pt", 1, 2)
+        h13 = Hazard(@formula(0 ~ 1), "pt", 1, 3)
+        
+        # Both should produce similar constraint structure
+        model_decreasing = multistatemodel(h12, h13; data=df, n_phases=Dict(1 => 3), coxian_structure=:sctp_decreasing)
+        model_increasing = multistatemodel(h12, h13; data=df, n_phases=Dict(1 => 3), coxian_structure=:sctp_increasing)
+        
+        cons_dec = model_decreasing.modelcall.constraints
+        cons_inc = model_increasing.modelcall.constraints
+        
+        # Same number of constraints (differ in direction)
+        @test length(cons_dec.cons) == length(cons_inc.cons)
+    end
+    
+    @testset ":sctp generates only SCTP constraints (no eigenvalue ordering)" begin
+        df = DataFrame(
+            id = 1:6,
+            tstart = fill(0.0, 6),
+            tstop = [1.0, 1.5, 2.0, 1.2, 1.8, 2.2],
+            statefrom = fill(1, 6),
+            stateto = [2, 2, 2, 3, 3, 3],
+            obstype = fill(1, 6)
+        )
+        
+        h12 = Hazard(@formula(0 ~ 1), "pt", 1, 2)
+        h13 = Hazard(@formula(0 ~ 1), "pt", 1, 3)
+        
+        # Build model with explicit :sctp (no eigenvalue ordering)
+        model = multistatemodel(h12, h13; data=df, n_phases=Dict(1 => 3), coxian_structure=:sctp)
+        
+        cons = model.modelcall.constraints
+        
+        # For 3 phases, 2 destinations:
+        # - SCTP constraints only: (n_phases - 1) * (n_dest - 1) = 2
+        @test length(cons.cons) == 2
+        
+        # All SCTP constraints should be equality
+        @test all(cons.lcons .== 0.0)
+        @test all(cons.ucons .== 0.0)
+    end
+    
+    @testset ":unstructured generates no constraints" begin
+        df = DataFrame(
+            id = 1:6,
+            tstart = fill(0.0, 6),
+            tstop = [1.0, 1.5, 2.0, 1.2, 1.8, 2.2],
+            statefrom = fill(1, 6),
+            stateto = [2, 2, 2, 3, 3, 3],
+            obstype = fill(1, 6)
+        )
+        
+        h12 = Hazard(@formula(0 ~ 1), "pt", 1, 2)
+        h13 = Hazard(@formula(0 ~ 1), "pt", 1, 3)
+        
+        # Build model with :unstructured
+        model = multistatemodel(h12, h13; data=df, n_phases=Dict(1 => 3), coxian_structure=:unstructured)
+        
+        # Should have no constraints
+        if haskey(model.modelcall, :constraints)
+            @test isnothing(model.modelcall.constraints)
+        end
+    end
+    
+    @testset "Single destination with :sctp_decreasing generates only ordering constraints" begin
+        # With only 1 destination, SCTP constraints don't apply
+        # But eigenvalue ordering should still be generated
+        df = DataFrame(
+            id = 1:3,
+            tstart = fill(0.0, 3),
+            tstop = [1.0, 1.5, 2.0],
+            statefrom = fill(1, 3),
+            stateto = fill(2, 3),
+            obstype = fill(1, 3)
+        )
+        
+        h12 = Hazard(@formula(0 ~ 1), "pt", 1, 2)
+        
+        # Build model with sctp_decreasing but only 1 destination
+        model = multistatemodel(h12; data=df, n_phases=Dict(1 => 3), coxian_structure=:sctp_decreasing)
+        
+        cons = model.modelcall.constraints
+        
+        # No SCTP constraints (need ≥2 destinations)
+        # Eigenvalue ordering: (n_phases - 1) = 2 constraints (νⱼ - ν_{j-1} ≤ 0)
+        # No C1 constraints (intercept-only model)
+        @test length(cons.cons) == 2
+        
+        # All should be one-sided inequality constraints (lcons = -Inf, ucons = 0)
+        @test all(cons.lcons .== -Inf)
+        @test all(cons.ucons .== 0.0)
+    end
+    
+    @testset "Invalid coxian_structure throws error" begin
+        df = DataFrame(
+            id = 1:3,
+            tstart = fill(0.0, 3),
+            tstop = [1.0, 1.5, 2.0],
+            statefrom = fill(1, 3),
+            stateto = fill(2, 3),
+            obstype = fill(1, 3)
+        )
+        
+        h12 = Hazard(@formula(0 ~ 1), "pt", 1, 2)
+        
+        # Should throw error for invalid option
+        @test_throws ArgumentError multistatemodel(h12; data=df, n_phases=Dict(1 => 3), coxian_structure=:invalid)
     end
 end
 

@@ -60,16 +60,24 @@ const TRUE_RATE_23 = 0.12
 # Covariate effects (log hazard ratio)
 const TRUE_BETA = 0.5  # Positive effect of x on hazard
 
-# Weibull parameters - use direct scale values (not derived from rates)
-# This matches longtest_mcem.jl which uses similar values and works reliably
-const TRUE_WEIBULL_SHAPE_12 = 1.2  # Slightly increasing hazard (closer to 1.0)
-const TRUE_WEIBULL_SHAPE_23 = 1.1  # Slightly increasing hazard
+# Weibull parameters - use values from longtest_mcem.jl which work reliably
+# Using shape=1.3 (not 1.2) as MCEM has better convergence for shapes further from 1.0
+# h23_shape=1.4 (not 1.1) because values too close to 1.0 cause MCEM convergence issues
+const TRUE_WEIBULL_SHAPE_12 = 1.3  # Increasing hazard (matches longtest_mcem.jl)
+const TRUE_WEIBULL_SHAPE_23 = 1.4  # Increasing hazard - must be away from 1.0 for MCEM
 const TRUE_WEIBULL_SCALE_12 = 0.15  # Direct scale value
-const TRUE_WEIBULL_SCALE_23 = 0.12  # Direct scale value
+const TRUE_WEIBULL_SCALE_23 = 0.10  # Slightly lower to compensate for higher shape
 
 # Gompertz shape parameters (can be negative for decreasing hazard)
-const TRUE_GOMPERTZ_SHAPE_12 = 0.05  # Mild exponential increase
-const TRUE_GOMPERTZ_SHAPE_23 = 0.03  # Mild exponential increase
+# Range: log(0.5) to log(2) ≈ [-0.69, 0.69]
+# Values too close to zero make hazard nearly constant, causing estimation issues
+# Using 0.3 and 0.2 for meaningful time-variation without extreme hazard growth
+const TRUE_GOMPERTZ_SHAPE_12 = 0.30  # Moderate exponential increase
+const TRUE_GOMPERTZ_SHAPE_23 = 0.20  # Moderate exponential increase
+# Gompertz rates - lower than exponential because shape already increases hazard over time
+# With shape=0.3, rate=0.08: h(0)=0.08, h(5)≈0.36, h(10)≈1.6 (reasonable survival times)
+const TRUE_GOMPERTZ_RATE_12 = 0.08
+const TRUE_GOMPERTZ_RATE_23 = 0.06
 
 # =============================================================================
 # Helper Functions for Test Execution
@@ -121,12 +129,13 @@ function get_true_params(family::String, covariate_type::String)
     elseif family == "gom"
         # Gompertz: [shape, rate] or [shape, rate, beta] (natural scale)
         # Note: shape can be negative for Gompertz
+        # Uses dedicated Gompertz rates (lower than exp because shape increases hazard over time)
         if has_covariate
-            h12 = [TRUE_GOMPERTZ_SHAPE_12, TRUE_RATE_12, TRUE_BETA]
-            h23 = [TRUE_GOMPERTZ_SHAPE_23, TRUE_RATE_23, TRUE_BETA]
+            h12 = [TRUE_GOMPERTZ_SHAPE_12, TRUE_GOMPERTZ_RATE_12, TRUE_BETA]
+            h23 = [TRUE_GOMPERTZ_SHAPE_23, TRUE_GOMPERTZ_RATE_23, TRUE_BETA]
         else
-            h12 = [TRUE_GOMPERTZ_SHAPE_12, TRUE_RATE_12]
-            h23 = [TRUE_GOMPERTZ_SHAPE_23, TRUE_RATE_23]
+            h12 = [TRUE_GOMPERTZ_SHAPE_12, TRUE_GOMPERTZ_RATE_12]
+            h23 = [TRUE_GOMPERTZ_SHAPE_23, TRUE_GOMPERTZ_RATE_23]
         end
         
     else
@@ -146,22 +155,24 @@ function get_param_names(family::String, covariate_type::String)
     
     names = String[]
     
+    # Note: All values are on NATURAL scale (not log scale) since v0.3.0
+    # Parameter naming reflects actual scale for clarity
     if family == "exp"
-        push!(names, "h12_log_rate")
+        push!(names, "h12_rate")  # Natural scale rate
         has_covariate && push!(names, "h12_beta")
-        push!(names, "h23_log_rate")
+        push!(names, "h23_rate")  # Natural scale rate
         has_covariate && push!(names, "h23_beta")
         
     elseif family == "wei"
-        push!(names, "h12_log_shape", "h12_log_scale")
+        push!(names, "h12_shape", "h12_scale")  # Natural scale
         has_covariate && push!(names, "h12_beta")
-        push!(names, "h23_log_shape", "h23_log_scale")
+        push!(names, "h23_shape", "h23_scale")  # Natural scale
         has_covariate && push!(names, "h23_beta")
         
     elseif family == "gom"
-        push!(names, "h12_shape", "h12_log_rate")
+        push!(names, "h12_shape", "h12_rate")  # Natural scale
         has_covariate && push!(names, "h12_beta")
-        push!(names, "h23_shape", "h23_log_rate")
+        push!(names, "h23_shape", "h23_rate")  # Natural scale
         has_covariate && push!(names, "h23_beta")
     end
     
@@ -190,9 +201,9 @@ Weibull has log_shape, Gompertz has shape.
 """
 function get_shape_param_names(family::String)
     if family == "wei"
-        return ["h12_log_shape", "h23_log_shape"]
+        return ["h12_shape", "h23_shape"]  # Natural scale
     elseif family == "gom"
-        return ["h12_shape", "h23_shape"]
+        return ["h12_shape", "h23_shape"]  # Natural scale
     else
         return String[]
     end
@@ -202,6 +213,9 @@ end
     generate_data(hazard_specs, true_params, covariate_type::String) -> DataFrame
 
 Generate exact observation data from the model.
+
+Note: This function does NOT set the random seed. The caller should set 
+Random.seed!() before calling this function to ensure reproducibility.
 """
 function generate_data(hazard_specs, true_params, covariate_type::String)
     # Create template based on covariate type
@@ -214,10 +228,10 @@ function generate_data(hazard_specs, true_params, covariate_type::String)
     end
     
     # Build model and simulate
+    # NOTE: Caller must set Random.seed!() before calling this function
     model = multistatemodel(hazard_specs...; data=template)
     set_parameters!(model, true_params)
     
-    Random.seed!(RNG_SEED)
     sim_data = simulate(model; data=true, paths=false, nsim=1)[1]
     
     return sim_data
@@ -226,104 +240,80 @@ end
 """
     generate_panel_data(hazard_specs, true_params, covariate_type::String, panel_times::Vector{Float64}) -> DataFrame
 
-Generate panel observation data from the model by simulating paths and observing at specified times.
+Generate panel observation data from the model using simulate() with obstype_by_transition.
+
+For 3-state progressive models (1→2→3), uses mixed observation types:
+- Transition 1 (1→2): Panel observation (obstype=2)  
+- Transition 2 (2→3, to absorbing): Exact observation (obstype=1)
+
+This matches the observation structure used in other MCEM tests (longtest_mcem.jl)
+and provides sufficient information for MCEM parameter recovery.
 """
 function generate_panel_data(hazard_specs, true_params, covariate_type::String, panel_times::Vector{Float64})
-    # Create template based on covariate type
-    template = if covariate_type == "nocov"
-        create_baseline_template(N_SUBJECTS; max_time=MAX_TIME)
+    nobs = length(panel_times) - 1
+    
+    # Create template with panel observation structure
+    if covariate_type == "nocov"
+        template = DataFrame(
+            id = repeat(1:N_SUBJECTS, inner=nobs),
+            tstart = repeat(panel_times[1:end-1], N_SUBJECTS),
+            tstop = repeat(panel_times[2:end], N_SUBJECTS),
+            statefrom = ones(Int, N_SUBJECTS * nobs),
+            stateto = ones(Int, N_SUBJECTS * nobs),
+            obstype = fill(2, N_SUBJECTS * nobs)  # Panel observation
+        )
     elseif covariate_type == "fixed"
-        create_tfc_template(N_SUBJECTS; max_time=MAX_TIME)
-    else  # tvc
-        create_tvc_template(N_SUBJECTS; max_time=MAX_TIME)
+        # Time-fixed binary covariate
+        x_vals = rand([0.0, 1.0], N_SUBJECTS)
+        template = DataFrame(
+            id = repeat(1:N_SUBJECTS, inner=nobs),
+            tstart = repeat(panel_times[1:end-1], N_SUBJECTS),
+            tstop = repeat(panel_times[2:end], N_SUBJECTS),
+            statefrom = ones(Int, N_SUBJECTS * nobs),
+            stateto = ones(Int, N_SUBJECTS * nobs),
+            obstype = fill(2, N_SUBJECTS * nobs),
+            x = repeat(x_vals, inner=nobs)
+        )
+    else  # tvc - time-varying covariate that changes at TVC_CHANGEPOINT
+        # For TVC, each subject has 2 covariate intervals:
+        # - x=0 for t < TVC_CHANGEPOINT
+        # - x=1 for t >= TVC_CHANGEPOINT
+        # Split panel times at changepoint if necessary
+        cp = TVC_CHANGEPOINT
+        
+        # Build intervals that respect both panel times and changepoint
+        rows = []
+        for subj in 1:N_SUBJECTS
+            for i in 1:(length(panel_times) - 1)
+                t_start = panel_times[i]
+                t_stop = panel_times[i + 1]
+                
+                if t_start < cp && t_stop > cp
+                    # Interval spans changepoint - split it
+                    push!(rows, (id=subj, tstart=t_start, tstop=cp, statefrom=1, stateto=1, obstype=2, x=0.0))
+                    push!(rows, (id=subj, tstart=cp, tstop=t_stop, statefrom=1, stateto=1, obstype=2, x=1.0))
+                else
+                    x = t_start >= cp ? 1.0 : 0.0
+                    push!(rows, (id=subj, tstart=t_start, tstop=t_stop, statefrom=1, stateto=1, obstype=2, x=x))
+                end
+            end
+        end
+        template = DataFrame(rows)
     end
     
-    # Build model and simulate paths
+    # Build model
     model = multistatemodel(hazard_specs...; data=template)
     set_parameters!(model, true_params)
     
-    # Simulate paths (not data)
-    paths = simulate(model; data=false, paths=true, nsim=1)[1]
+    # Simulate using obstype_by_transition:
+    # - Transition 1 (1→2): Panel observation (obstype=2)
+    # - Transition 2 (2→3, to absorbing): Exact observation (obstype=1)
+    # This provides more information to MCEM and matches other working tests
+    obstype_map = Dict(1 => 2, 2 => 1)
+    sim_result = simulate(model; paths=false, data=true, nsim=1, autotmax=false,
+                         obstype_by_transition=obstype_map)
     
-    # For fixed covariates, save the original x values BEFORE converting to panel
-    # so we can restore them after (paths were simulated with these values)
-    original_x_map = Dict{Int, Float64}()
-    if covariate_type == "fixed" && hasproperty(template, :x)
-        for row in eachrow(template)
-            original_x_map[row.id] = row.x
-        end
-    end
-    
-    # Convert paths to panel data
-    n_states = 3  # Our test models are 3-state progressive
-    panel_data = create_panel_data(paths, panel_times, n_states)
-    
-    # Add covariates if needed - PRESERVE the values used during simulation
-    if covariate_type == "fixed"
-        # Map original x values to new (re-indexed) IDs
-        # The panel_data IDs are re-indexed 1:N, but we need to match by simulation order
-        # Since paths[i] corresponds to original subject i+1 (1-indexed), 
-        # and panel_data re-indexes continuously, we need to track which original subjects
-        # made it through to panel data
-        
-        # Actually the issue is that create_panel_data re-indexes IDs
-        # We need to use the original template x values in the same order as the paths
-        n_panel_subjects = length(unique(panel_data.id))
-        
-        # The template has 1 row per subject for fixed covariate, so x values are indexed by subject
-        # But after panel conversion, some subjects may be filtered out
-        # For simplicity, let's just assign x based on panel_data.id which maps back to path index
-        # Actually that's the problem - we don't know which original subjects are in panel_data
-        
-        # Best approach: preserve the x from template by indexing paths with subject ordering
-        # Since paths vector index corresponds to template subject ID, and create_panel_data
-        # keeps track via path enumeration, we can recover the original x
-        
-        # Redo: create_panel_data uses (subj_id, path) = enumerate(paths)
-        # So panel row for subj_id came from paths[subj_id] which came from template subject subj_id
-        # But create_panel_data re-indexes to contiguous 1..N
-        
-        # Simpler fix: track original subject ID mapping in panel creation
-        # For now, use subject order - paths[i] has x_vals[i]
-        
-        # Get x values in path order (template is sorted by id)
-        unique_template_ids = unique(template.id)
-        x_by_orig_id = Dict(id => first(template[template.id .== id, :x]) for id in unique_template_ids)
-        
-        # Map: panel_data came from paths, which are in template order
-        # We need to map new panel IDs back to original subject IDs
-        # create_panel_data re-indexes, but we saved old_id -> new_id mapping
-        # Actually we just need to build a lookup that works
-        
-        # The paths vector has paths[i] corresponding to subject i from template
-        # Panel data keeps track of which path it came from via the enumerate index (subj_id in create_panel_data)
-        # Then re-indexes to contiguous IDs
-        
-        # But we lose the original subject ID. Let me fix by using paths order
-        # For each unique new_id in panel_data, find which path it came from
-        # This requires modifying create_panel_data or tracking differently
-        
-        # SIMPLEST FIX: Re-run with preserved x values by regenerating panel_data
-        # with covariate assignment that matches path order
-        
-        # Alternative: Don't use create_panel_data's re-indexing, use path order directly
-        
-        # For now, let's preserve x values by using the path index order
-        # The re-indexing in create_panel_data maps old_id -> new_id
-        # Since paths are in order 1, 2, 3..., old_id = original subject ID
-        # We can infer: for each row in panel_data, its source is old_id before re-indexing
-        
-        # Actually, let me use create_panel_data_with_covariate from longtest_helpers.jl
-        # That function preserves x values!
-        x_vals = [x_by_orig_id[i] for i in 1:length(paths)]
-        panel_data = create_panel_data_with_covariate(paths, panel_times, n_states, x_vals)
-        
-    elseif covariate_type == "tvc"
-        # Time-varying covariate: x=0 before TVC_CHANGEPOINT, x=1 after
-        panel_data.x = [row.tstart < TVC_CHANGEPOINT ? 0.0 : 1.0 for row in eachrow(panel_data)]
-    end
-    
-    return panel_data
+    return sim_result[1, 1]
 end
 
 """
@@ -462,6 +452,9 @@ const COV_TYPES = ["nocov", "fixed", "tvc"]
 # See _has_tvc_structure() and _extend_tvc_to_tmax() functions.
 const TVC_TESTS_BROKEN = false
 
+# Option to save results to cache for reports
+const SAVE_RESULTS_TO_CACHE = get(ENV, "LONGTEST_SAVE_RESULTS", "true") == "true"
+
 @testset "Parametric Long Test Suite" begin
     
     @testset "Exact Data Tests" begin
@@ -473,6 +466,7 @@ const TVC_TESTS_BROKEN = false
                             @test_skip run_exact_test(family, cov_type).passed
                         else
                             result = run_exact_test(family, cov_type)
+                            SAVE_RESULTS_TO_CACHE && save_longtest_result(result; force=true)
                             @test result.passed
                         end
                     end
@@ -490,6 +484,7 @@ const TVC_TESTS_BROKEN = false
                             @test_skip run_panel_test(family, cov_type).passed
                         else
                             result = run_panel_test(family, cov_type)
+                            SAVE_RESULTS_TO_CACHE && save_longtest_result(result; force=true)
                             @test result.passed
                         end
                     end

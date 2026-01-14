@@ -1,177 +1,859 @@
 ---
 title: "Unit Test Coverage"
-subtitle: "Validation of key functions"
+subtitle: "Comprehensive validation of MultistateModels.jl functions"
 date: last-modified
 ---
 
 ## 1. Coverage Summary
 
-### Overall Statistics (as of January 3, 2026)
+### Overall Statistics (as of January 12, 2026)
 
 | Metric | Value |
 |--------|-------|
-| Total Test Files | 20 |
-| Total Test Cases | 1541 |
-| Passing | 1541 |
+| Total Test Files | 35 |
+| Total Test Cases | ~2100 |
+| Passing | ~2100 |
 | Failing | 0 |
-| Branch | `penalized_splines` @ 44ce5f9 |
+| Branch | `penalized_splines` |
 
-### Coverage by Module
+### Coverage by Functional Area
 
-| Module | Tests | Status |
-|--------|-------|--------|
-| Hazards | 163 | ✅ Pass |
-| **Splines** | **255** | ✅ Pass |
-| Simulation | 227 | ✅ Pass |
-| MCEM | 24 | ✅ Pass |
-| Phase-Type | 505 | ✅ Pass |
-| SIR | 21 | ✅ Pass |
-| Variance | 55 | ✅ Pass |
-| Initialization | 13 | ✅ Pass |
-| Model Generation | 55 | ✅ Pass |
-| Surrogates | 28 | ✅ Pass |
-| Helpers | 35 | ✅ Pass |
-| Reconstructor | 79 | ✅ Pass |
-| **PIJCV** | **53** | ✅ Pass |
-| **Model Output** | **27** | ✅ Pass (NEW) |
-| **Hazard Macro** | **39** | ✅ Pass (NEW) |
-| **AD Backends** | **32** | ✅ Pass (NEW) |
+| Area | Test Files | Description |
+|------|------------|-------------|
+| Hazard Evaluation | `test_hazards.jl`, `test_compute_hazard.jl` | Hazard functions, cumulative hazards, survival |
+| Spline Infrastructure | `test_splines.jl` | B-spline basis, penalization, tensor products |
+| Simulation | `test_simulation.jl` | Path simulation, distribution fidelity |
+| MCEM Algorithm | `test_mcem.jl` | Monte Carlo EM helper functions |
+| Phase-Type | `test_phasetype.jl`, `test_phasetype_*.jl` | State expansion, FFBS, emission matrices |
+| SIR Resampling | `test_sir.jl` | Multinomial and LHS resampling |
+| Variance Estimation | `test_variance.jl` | Model, IJ, jackknife variance |
+| PIJCV | `test_pijcv.jl`, `test_pijcv_*.jl` | Smoothing parameter selection |
+| Likelihood | `test_mll_consistency.jl`, `test_loglik_analytical.jl` | Exact, panel, penalized likelihoods |
+| Model Construction | `test_modelgeneration.jl`, `test_initialization.jl` | Model building, parameter init |
+| Infrastructure | `test_reconstructor.jl`, `test_bounds.jl`, `test_infrastructure.jl` | Parameter flattening, AD compat |
 
-## 2. Hazard Functions
+---
 
-### Test Summary
+## 2. Hazard Functions (`test_hazards.jl`)
 
-| Function | Test File | Condition | Status |
-|----------|-----------|-----------|--------|
-| `eval_hazard` (Exp) | `test_hazards.jl` | Baseline | ✅ Pass |
-| `eval_hazard` (Wei) | `test_hazards.jl` | Baseline | ✅ Pass |
-| `eval_hazard` (Gom) | `test_hazards.jl` | Baseline | ✅ Pass |
-| `eval_cumhaz` (Exp) | `test_hazards.jl` | With covariate | ✅ Pass |
-| `eval_cumhaz` (Wei) | `test_hazards.jl` | AFT effect | ✅ Pass |
-| `eval_cumhaz` (Gom) | `test_hazards.jl` | PH effect | ✅ Pass |
+Tests verify that all parametric hazard families return mathematically correct values against analytical formulas.
 
-### Tolerance Justification
+### 2.1 Mathematical Reference
 
-- `rtol=1e-6`: ParameterHandling positive() uses ε ≈ 1.49e-8 safety margin, introducing small numerical differences in exp/log round-trip
+::: {.callout-note collapse="true"}
+## Analytical Hazard Formulas (Click to expand)
 
-## 3. Likelihood Functions
+**Exponential:**
 
-### Test Summary
+- $h(t) = \lambda$ (constant hazard)
+- $H(t) = \lambda t$ (cumulative hazard)
+- $S(t) = \exp(-\lambda t)$ (survival function)
 
-| Function | Test File | Condition | Status |
-|----------|-----------|-----------|--------|
-| `loglik_path` | `test_mll_consistency.jl` | Exact observation | ✅ Pass |
-| `loglik` | `test_mll_consistency.jl` | Panel data | ✅ Pass |
-| `tvc_loglik` | `test_reversible_tvc_loglik.jl` | Time-varying covariates | ✅ Pass |
+**Weibull (shape $\kappa$, scale $\lambda$):**
 
-## 4. Simulation
+- $h(t) = \lambda \kappa t^{\kappa-1}$ (increasing/decreasing with $t$)
+- $H(t) = \lambda t^\kappa$
+- $S(t) = \exp(-\lambda t^\kappa)$
 
-### Test Summary
+**Gompertz (shape $a$, rate $b$) - flexsurv parameterization:**
 
-| Function | Test File | Condition | Status |
-|----------|-----------|-----------|--------|
-| `simulate_path` | `test_simulation.jl` | Single subject | ✅ Pass |
-| `simulate` | `test_simulation.jl` | Multiple subjects | ✅ Pass |
+- $h(t) = b \exp(at)$ ($a>0$: increasing, $a<0$: decreasing)
+- $H(t) = \frac{b}{a}(\exp(at) - 1)$ for $a \neq 0$
+- $S(t) = \exp\left(-\frac{b}{a}(\exp(at) - 1)\right)$
 
-## 5. Model Construction
+**Covariate Effects:**
 
-### Test Summary
+- **Proportional Hazards (PH):** $h(t|x) = h_0(t) \exp(\beta'x)$
+- **Accelerated Failure Time (AFT):** $h(t|x) = h_0(t \cdot e^{-\beta'x}) e^{-\beta'x}$
+:::
 
-| Function | Test File | Condition | Status |
-|----------|-----------|-----------|--------|
-| `multistatemodel` | `test_modelgeneration.jl` | Basic model | ✅ Pass |
-| `Hazard` | `test_hazards.jl` | All families | ✅ Pass |
-| `set_parameters!` | `test_initialization.jl` | Parameter setting | ✅ Pass |
+### 2.2 Test Criteria
 
-## 6. Splines & Penalization
+::: {.callout-note collapse="true"}
+## Detailed Test Criteria (Click to expand)
 
-### Test Summary
+| Test | Criterion | Formula Verified | Tolerance |
+|------|-----------|------------------|-----------|
+| Survival probability | $1 - S(0,t) = F(t)$ matches `Distributions.Exponential` | Total hazard rate = 0.2, $F(2) = 1 - e^{-0.4}$ | `rtol=1e-6` |
+| Exponential baseline | $h(t) = \lambda$ constant in $t$ | `eval_hazard` = rate parameter | `rtol=1e-6` |
+| Exponential with covariates | $\log h = \log\lambda + \beta_1 x_1 + \beta_2 x_2 + \beta_{12} x_1 x_2$ | Full linear predictor formula | Exact match |
+| Weibull baseline | $\log h = \log\lambda + \log\kappa + (\kappa-1)\log t$ | Log-hazard at $t=1.7$ | `rtol=1e-6` |
+| Weibull with covariates | PH and AFT covariate effects | Shape and scale adjustments | `rtol=1e-6` |
+| Gompertz baseline | $h(t) = b\exp(at)$ | Rate exponentially increasing in $t$ | `rtol=1e-6` |
+| Gompertz cumhaz | $H(t) = (b/a)(\exp(at)-1)$ | Analytical integration | `rtol=1e-6` |
+| Time transform parity | `eval_hazard(apply_transform=true)` = `eval_hazard(apply_transform=false)` | Tang optimization produces identical values | Exact match |
+| Cumulative hazard additivity | $H(a,c) = H(a,b) + H(b,c)$ | Interval splitting | `rtol=1e-8` |
 
-| Function | Test File | Tests | Status |
-|----------|-----------|-------|--------|
-| B-spline basis evaluation | `test_splines.jl` | Cumulative hazard vs QuadGK | ✅ Pass |
-| B-spline antiderivative | `test_splines.jl` | Machine precision (rtol=1e-10) | ✅ Pass |
-| Penalty matrix (m=2) | `test_splines.jl` | Symmetric, PSD, null space | ✅ Pass |
-| `s(x)` formula parsing | `test_splines.jl` | StatsModels integration | ✅ Pass |
-| `s(x)` edge cases | `test_splines.jl` | Penalty orders, knot validation | ✅ Pass |
-| `te(x,y)` tensor product | `test_splines.jl` | Kronecker basis | ✅ Pass |
-| Lambda sharing | `test_splines.jl` | `:hazard`, `:global` modes | ✅ Pass |
-| Automatic knot placement | `test_splines.jl` | Quantile-based calibration | ✅ Pass |
-| Rectify coefficients | `test_splines.jl` | Monotonicity enforcement | ✅ Pass |
+**Tolerance Justification:** `rtol=1e-6` accounts for `ParameterHandling.positive()` using $\varepsilon \approx 1.49 \times 10^{-8}$ safety margin in exp/log round-trips.
+:::
 
-### Tolerance Justification
+### 2.3 Summary Table
 
-- `rtol=1e-3` (cumhaz vs QuadGK): B-spline antiderivative vs adaptive numerical integration use different methods; both are correct within this tolerance
-- `rtol=1e-10` (B-spline antiderivative): BSplineKit's `integral()` should match QuadGK to near machine precision
+| Family | Baseline | Covariates | AFT | Time Transform | Status |
+|--------|----------|------------|-----|----------------|--------|
+| Exponential | ✅ | ✅ | ✅ | ✅ | Pass |
+| Weibull | ✅ | ✅ | ✅ | ✅ | Pass |
+| Gompertz | ✅ | ✅ | ✅ | ✅ | Pass |
+| Spline | ✅ | ✅ | ✅ | ✅ | Pass |
 
-## 7. PIJCV Smoothing Parameter Selection
+---
 
-### Test Summary
+## 3. Spline Hazards (`test_splines.jl`)
 
-| Function | Test File | Tests | Status |
-|----------|-----------|-------|--------|
-| `solve_linear_system` | `test_pijcv.jl` | Cholesky solver | ✅ Pass |
-| `woodbury_update` | `test_pijcv.jl` | Rank-1 updates | ✅ Pass |
-| `compute_perturbations` | `test_pijcv.jl` | LOO perturbations | ✅ Pass |
-| `compute_pijcv_objective` | `test_pijcv.jl` | PIJCV criterion | ✅ Pass |
-| `select_smoothing_parameters` | `test_pijcv.jl` | End-to-end API | ✅ Pass |
+Tests verify B-spline basis construction, numerical integration accuracy, and penalization infrastructure.
 
-### Tolerance Justification
+### 3.1 Mathematical Reference
 
-- `rtol=1e-6`: Numerical linear algebra (Cholesky decomposition, matrix inversion) introduces small errors
+::: {.callout-note collapse="true"}
+## Spline Mathematical Background (Click to expand)
 
-## 8. Model Output Functions (NEW)
+**B-Spline Hazard:**
 
-### Test Summary
+- $h(t) = \sum_i \beta_i B_i(t)$ where $B_i$ are B-spline basis functions
+- Coefficients $\beta_i > 0$ ensure non-negative hazard
 
-| Function | Test File | Tests | Status |
-|----------|-----------|-------|--------|
-| `aic()` | `test_model_output.jl` | Formula verification, parameter counting | ✅ Pass |
-| `bic()` | `test_model_output.jl` | Sample size dependence | ✅ Pass |
-| `summary()` | `test_model_output.jl` | Returns TypedTable | ✅ Pass |
-| `estimate_loglik()` | `test_model_output.jl` | NamedTuple structure, ESS, MCSE | ✅ Pass |
-| Error handling | `test_model_output.jl` | Unfitted model behavior | ✅ Pass |
+**Cumulative Hazard:**
 
-## 9. @hazard Macro (NEW)
+- $H(a,b) = \int_a^b h(t) dt = \sum_i \beta_i \int_a^b B_i(t) dt$
+- Uses analytical B-spline antiderivative (not numerical quadrature)
 
-### Test Summary
+**Second-Order Penalty Matrix:**
 
-| Feature | Test File | Tests | Status |
-|---------|-----------|-------|--------|
-| Family aliases | `test_hazard_macro.jl` | exp, wei, gom, sp, pt | ✅ Pass |
-| Transition syntax | `test_hazard_macro.jl` | statefrom/stateto, from/to, pair | ✅ Pass |
-| Formula specification | `test_hazard_macro.jl` | Default, explicit intercept, covariates | ✅ Pass |
-| Keyword forwarding | `test_hazard_macro.jl` | knots, n_phases, linpred_effect | ✅ Pass |
-| Error handling | `test_hazard_macro.jl` | Missing family, invalid family | ✅ Pass |
-| Macro hygiene | `test_hazard_macro.jl` | No variable capture | ✅ Pass |
+- $\mathbf{P} = \int \mathbf{B}''(t) \mathbf{B}''(t)' dt$
+- Penalizes deviation from linearity (Wood, 2017)
+- Must be symmetric, positive semi-definite with $\text{rank} = k - m$ where $m$ = penalty order
 
-## 10. AD Backend Infrastructure (NEW)
+**Tensor Product (te()):**
 
-### Test Summary
+- $f(x,y) = \sum_i \sum_j \beta_{ij} B_i^{(x)}(x) B_j^{(y)}(y)$
+- Basis: Kronecker product $\mathbf{B}^{(x)} \otimes \mathbf{B}^{(y)}$
+- Penalty: Row + column penalties on coefficient matrix
+:::
 
-| Feature | Test File | Tests | Status |
-|---------|-----------|-------|--------|
-| Backend types | `test_ad_backends.jl` | Type existence, instantiation | ✅ Pass |
-| Default selection | `test_ad_backends.jl` | Parameter count thresholds | ✅ Pass |
-| Gradient correctness | `test_ad_backends.jl` | Exp, Wei, Gom with ForwardDiff | ✅ Pass |
-| fit() integration | `test_ad_backends.jl` | adbackend parameter | ✅ Pass |
+### 3.2 Test Criteria
 
-## 11. Phase-Type Models
+::: {.callout-note collapse="true"}
+## Detailed Spline Test Criteria (Click to expand)
 
-### Test Summary
+**Numerical Integration Verification:**
 
-| Function | Test File | Condition | Status |
-|----------|-----------|-----------|--------|
-| Expansion | `test_phasetype.jl` | State expansion | ✅ Pass |
-| Collapse | `test_phasetype.jl` | State collapse | ✅ Pass |
-| FFBS | `test_phasetype.jl` | Forward-backward | ✅ Pass |
-| SCTP constraints | `test_phasetype.jl` | Sum constraints | ✅ Pass |
+| Test | Criterion | Method |
+|------|-----------|--------|
+| Cumhaz vs QuadGK | $H(a,b)_\text{impl} \approx \int_a^b h(t)dt$ | QuadGK adaptive quadrature, 5 random parameter configs, 5 intervals each |
+| B-spline antiderivative | BSplineKit `integral()` matches QuadGK | `rtol=1e-10` (machine precision for polynomials) |
+| Covariate effect | $H(a,b|x) = H_0(a,b) \exp(\beta'x)$ for PH | Multiple covariate values |
 
-## 12. Helpers & Utilities
+**Penalty Matrix Properties:**
 
-### Test Summary
+| Property | Criterion |
+|----------|-----------|
+| Symmetry | $\mathbf{P} = \mathbf{P}'$ exactly |
+| Positive semi-definiteness | All eigenvalues $\geq 0$ |
+| Null space dimension | $\text{dim}(\text{null}(\mathbf{P})) = m$ (penalty order) |
+| Null space basis | Contains polynomials of degree $< m$ |
 
-| Function | Test File | Condition | Status |
-|----------|-----------|-----------|--------|
-| `extract_covariates` | `test_helpers.jl` | Covariate extraction | ✅ Pass |
-| `get_hazard_params` | `test_helpers.jl` | Parameter retrieval | ✅ Pass |
+**Smooth Term Parsing:**
+
+| Test | Input | Expected Output |
+|------|-------|-----------------|
+| Basic `s(x)` | `@formula(0 ~ s(x))` | SmoothTerm with default k=10 |
+| Custom k | `@formula(0 ~ s(x, k=15))` | SmoothTerm with k=15 |
+| Custom m | `@formula(0 ~ s(x, m=1))` | First-order penalty (ridge) |
+| Tensor product | `@formula(0 ~ te(x,y))` | TensorProductTerm |
+
+**Automatic Knot Placement:**
+
+| Test | Criterion |
+|------|-----------|
+| Interior knots | Placed at quantiles of transition times |
+| Boundary knots | Span observed time range |
+| Edge case handling | k > n_unique_times handled gracefully |
+:::
+
+### 3.3 Summary Table
+
+| Component | Tests | Tolerance | Status |
+|-----------|-------|-----------|--------|
+| Cumhaz vs numerical integration | 25 random configs | `rtol=1e-6` | ✅ Pass |
+| B-spline antiderivative | 6 test cases | `rtol=1e-10` | ✅ Pass |
+| Penalty matrix symmetry | Exact equality | Exact | ✅ Pass |
+| Penalty matrix eigenvalues | All ≥ 0 | `atol=1e-10` | ✅ Pass |
+| Penalty null space | Dimension = m | Exact count | ✅ Pass |
+| `s()` term parsing | 10+ variants | N/A | ✅ Pass |
+| `te()` tensor product | Kronecker construction | Exact | ✅ Pass |
+| Automatic knot placement | Quantile-based | N/A | ✅ Pass |
+| Monotone rectification | Coefficients non-decreasing | N/A | ✅ Pass |
+
+---
+
+## 4. Simulation (`test_simulation.jl`)
+
+Tests verify simulation produces statistically correct output with correct schema.
+
+### 4.1 Mathematical Reference
+
+::: {.callout-note collapse="true"}
+## Simulation Statistical Properties (Click to expand)
+
+**Exponential Distribution ($\text{Exp}(\lambda)$):**
+
+- Mean: $E[T] = 1/\lambda$
+- Variance: $\text{Var}(T) = 1/\lambda^2$
+- Standard error of sample mean: $\text{SE}(\bar{T}) = 1/(\lambda\sqrt{n})$
+
+**Statistical Tests Applied:**
+
+1. Sample mean within 10% of true mean (relative tolerance)
+2. Sample variance within 15% of true variance
+3. Sample mean within 3 standard errors of true mean (statistical validity)
+:::
+
+### 4.2 Test Criteria
+
+::: {.callout-note collapse="true"}
+## Detailed Simulation Test Criteria (Click to expand)
+
+**Distribution Correctness (n=500 simulations):**
+
+| Test | Criterion | Parameters |
+|------|-----------|------------|
+| Mean | $\|\bar{T} - 1/\lambda\| / (1/\lambda) < 0.10$ | $\lambda=0.5$, true mean = 2.0 |
+| Variance | $\|s^2 - 1/\lambda^2\| / (1/\lambda^2) < 0.15$ | true var = 4.0 |
+| Standard error | $\|\bar{T} - 2.0\| < 3 \times \text{SE}$ | $\text{SE} \approx 0.0894$ |
+
+**DataFrame Schema:**
+
+| Column | Required Type | Constraint |
+|--------|---------------|------------|
+| `id` | `Int` | Subject identifier |
+| `tstart` | `Float64` | Interval start |
+| `tstop` | `Float64` | Interval end, `tstop > tstart` |
+| `statefrom` | `Int` | Origin state |
+| `stateto` | `Int` | Destination state |
+| `obstype` | `Int` | Observation type |
+
+**Path Validity:**
+
+| Test | Criterion |
+|------|-----------|
+| Monotonic times | `times[i+1] > times[i]` for all $i$ |
+| Legal transitions | `tmat[from, to] > 0` when state changes |
+| Initial state | Matches `statefrom` in data |
+| Absorbing states | No transitions out of absorbing states |
+
+**Transform Strategy Equivalence:**
+
+| Test | Criterion |
+|------|-----------|
+| CachedTransformStrategy vs DirectTransformStrategy | Identical distribution (same RNG seed) |
+:::
+
+### 4.3 Summary Table
+
+| Test Category | Tests | Status |
+|---------------|-------|--------|
+| Mean correctness | 1 | ✅ Pass |
+| Variance correctness | 1 | ✅ Pass |
+| Schema validation | 3 simulations × 6 columns | ✅ Pass |
+| Monotonic times | 50 paths | ✅ Pass |
+| Legal transitions | 50 paths | ✅ Pass |
+| Initial state | 20 paths | ✅ Pass |
+| Transform strategy parity | Same RNG | ✅ Pass |
+
+---
+
+## 5. MCEM Algorithm (`test_mcem.jl`)
+
+Tests verify Monte Carlo EM helper functions.
+
+### 5.1 Mathematical Reference
+
+::: {.callout-note collapse="true"}
+## MCEM Mathematical Background (Click to expand)
+
+**MCEM Marginal Log-Likelihood:**
+
+$$Q(\theta) = \sum_{i=1}^n w_i \sum_{j=1}^{m_i} p_{ij} \ell(\theta; y_i, z_{ij})$$
+
+where $w_i$ = subject weight, $p_{ij}$ = importance weight for path $j$ of subject $i$.
+
+**MCEM Asymptotic Standard Error:**
+
+$$\text{ASE} = \sqrt{\sum_{i=1}^n w_i^2 \cdot \text{Var}_{p_i}[\ell(\theta; y_i, z_i) - \ell(\theta_0; y_i, z_i)]}$$
+:::
+
+### 5.2 Test Criteria
+
+::: {.callout-note collapse="true"}
+## Detailed MCEM Test Criteria (Click to expand)
+
+**ForwardDiff Gradient Compatibility:**
+
+| Test | Criterion |
+|------|-----------|
+| ExactData gradient | `ForwardDiff.gradient()` produces finite values |
+| SMPanelData gradient | `ForwardDiff.gradient()` produces finite values |
+| Gradient length | Matches parameter count |
+
+**MCEM Helper Functions:**
+
+| Function | Test | Expected Value |
+|----------|------|----------------|
+| `mcem_mll` | Unit weights | Sum of weighted log-liks |
+| `mcem_mll` | Non-unit weights | Subject-weighted sum |
+| `mcem_ase` | Identical logliks | 0.0 (no variance) |
+| `var_ris` | All zeros | 0.0 |
+
+**MCEM Monotonicity (Limited Iterations):**
+
+| Test | Criterion |
+|------|-----------|
+| Q-function increase | Final MLL not substantially worse than initial |
+| MC noise allowance | Allow 10% relative decrease |
+:::
+
+### 5.3 Summary Table
+
+| Component | Tests | Status |
+|-----------|-------|--------|
+| AD gradient compatibility | 2 data types | ✅ Pass |
+| `mcem_mll` correctness | 2 weight configs | ✅ Pass |
+| `mcem_ase` correctness | 1 edge case | ✅ Pass |
+| MCEM monotonicity | 3 iterations | ✅ Pass |
+
+---
+
+## 6. SIR Resampling (`test_sir.jl`)
+
+Tests verify Sampling Importance Resampling functions for MCEM.
+
+### 6.1 Mathematical Reference
+
+::: {.callout-note collapse="true"}
+## SIR Mathematical Background (Click to expand)
+
+**Pool Size Formula:**
+
+$$m_\text{pool} = \min(c \cdot m \cdot \log(m), m_\text{max})$$
+
+where $c$ = constant (default 2), $m$ = target ESS.
+
+**Multinomial Resampling:**
+
+- Sample indices with replacement proportional to weights
+- Expected count for index $i$: $E[n_i] = m \cdot w_i$
+
+**Latin Hypercube Sampling (LHS):**
+
+- Stratified sampling with one sample per stratum
+- Reduces variance compared to multinomial for smooth functions
+:::
+
+### 6.2 Test Criteria
+
+::: {.callout-note collapse="true"}
+## Detailed SIR Test Criteria (Click to expand)
+
+**Pool Size Computation:**
+
+| Test | Input | Expected |
+|------|-------|----------|
+| Basic | ESS=50, c=2.0 | $\lceil 2 \cdot 50 \cdot \log(50) \rceil$ |
+| Cap | ESS=1000, max=500 | 500 |
+| Large ESS | ESS=1000, max=8192 | 8192 (capped) |
+| Edge case | ESS=1 | 1 (log(1)=0 handled) |
+
+**Multinomial Resampling:**
+
+| Test | Criterion |
+|------|-----------|
+| Output length | Equals requested count |
+| Index range | All indices in [1, n_weights] |
+| Proportionality | Higher weights selected more often |
+| Determinism | Same RNG seed → same result |
+| Uniform weights | Approximately equal counts |
+
+**LHS Resampling:**
+
+| Test | Criterion |
+|------|-----------|
+| Output length | Equals requested count |
+| Index range | All indices in [1, n_weights] |
+| Variance reduction | $\text{Var}(\bar{X}_\text{LHS}) \leq 1.5 \cdot \text{Var}(\bar{X}_\text{SIR})$ |
+
+**MLL Computation:**
+
+| Function | Test | Expected |
+|----------|------|----------|
+| `mcem_mll_sir` | Uniform indices | Mean of selected log-liks |
+| `mcem_mll_sir` | Subject weights | Weighted sum |
+| `mcem_ase_sir` | Known differences | $\sqrt{\sum_i \text{Var}_i / m_i}$ |
+:::
+
+### 6.3 Summary Table
+
+| Component | Tests | Status |
+|-----------|-------|--------|
+| Pool size formula | 5 cases | ✅ Pass |
+| Multinomial resampling | 5 properties | ✅ Pass |
+| LHS resampling | 3 properties | ✅ Pass |
+| LHS variance reduction | 200 reps comparison | ✅ Pass |
+| MLL with SIR | 2 weight configs | ✅ Pass |
+| ASE with SIR | Known variances | ✅ Pass |
+
+---
+
+## 7. Variance Estimation (`test_variance.jl`)
+
+Tests verify variance-covariance matrix computation matches analytical formulas.
+
+### 7.1 Mathematical Reference
+
+::: {.callout-note collapse="true"}
+## Variance Estimation Mathematical Background (Click to expand)
+
+**Exponential MLE Fisher Information:**
+
+- Observed information: $I(\hat\lambda) = n/\hat\lambda^2$
+- MLE variance: $\text{Var}(\hat\lambda) = \hat\lambda^2/n$
+- MLE formula: $\hat\lambda = n / \sum_i t_i$
+
+**Infinitesimal Jackknife (IJ):**
+
+$$\text{Var}_\text{IJ} = \left(\frac{\partial^2 \ell}{\partial \theta^2}\right)^{-1} \left(\sum_i \frac{\partial \ell_i}{\partial \theta} \frac{\partial \ell_i}{\partial \theta}'\right) \left(\frac{\partial^2 \ell}{\partial \theta^2}\right)^{-1}$$
+
+**JK-IJ Relationship:**
+
+$$\text{Var}_\text{JK} = \frac{n-1}{n} \text{Var}_\text{IJ}$$
+:::
+
+### 7.2 Test Criteria
+
+::: {.callout-note collapse="true"}
+## Detailed Variance Test Criteria (Click to expand)
+
+**Analytical Verification (Exponential, n=100):**
+
+| Test | Criterion | Expected |
+|------|-----------|----------|
+| MLE formula | $\hat\lambda = n/\sum t_i$ | `rtol=0.001` |
+| Variance formula | $\hat\sigma^2 = \hat\lambda^2/n$ | `rtol=0.01` |
+| Asymptotic variance | $\approx \lambda^2/n = 0.0025$ | `rtol=0.5` |
+
+**Variance Matrix Properties:**
+
+| Property | Criterion |
+|----------|-----------|
+| Symmetry | $\mathbf{V} = \mathbf{V}'$ exactly |
+| Positive definiteness | All eigenvalues > 0 |
+| Eigenvalue sum | $\sum \lambda_i = \text{tr}(\mathbf{V})$ |
+| Dimensions | $p \times p$ where $p$ = parameter count |
+
+**API Functionality:**
+
+| Test | Criterion |
+|------|-----------|
+| `get_vcov(type=:model)` | Returns model-based variance |
+| `get_vcov(type=:ij)` | Returns IJ variance |
+| `get_vcov(type=:jk)` | Returns jackknife variance |
+| Unfitted model | Warns, returns nothing |
+:::
+
+### 7.3 Summary Table
+
+| Component | Tests | Status |
+|-----------|-------|--------|
+| MLE analytical match | 1 test | ✅ Pass |
+| Variance analytical match | 1 test | ✅ Pass |
+| Symmetry | 2 families | ✅ Pass |
+| Positive definiteness | 2 families | ✅ Pass |
+| Eigenvalue checksum | 2 families | ✅ Pass |
+| API type selection | 3 types | ✅ Pass |
+| Warning for missing vcov | 1 test | ✅ Pass |
+
+---
+
+## 8. PIJCV Smoothing Selection (`test_pijcv.jl`)
+
+Tests verify Predictive Infinitesimal Jackknife Cross-Validation implementation based on Wood (2024).
+
+### 8.1 Mathematical Reference
+
+::: {.callout-note collapse="true"}
+## PIJCV Mathematical Background (Click to expand)
+
+**Cholesky Downdate:**
+
+Given $\mathbf{H} = \mathbf{L}\mathbf{L}'$ and vector $v$, compute $\mathbf{L}_{-}$ such that:
+$$\mathbf{L}_{-}\mathbf{L}_{-}' = \mathbf{H} - vv'$$
+
+**LOO Newton Step:**
+
+$$\hat\theta_{-i} \approx \hat\theta - (\mathbf{H} - \mathbf{H}_i)^{-1} g_i$$
+
+where $\mathbf{H}_i$ = subject $i$'s Hessian contribution, $g_i$ = gradient contribution.
+
+**PIJCV Criterion (Wood 2024):**
+
+$$\text{PIJCV}(\lambda) = \sum_{i=1}^n \ell_i(\hat\theta_{-i}(\lambda))$$
+
+Minimizing PIJCV selects optimal $\lambda$.
+:::
+
+### 8.2 Test Criteria
+
+::: {.callout-note collapse="true"}
+## Detailed PIJCV Test Criteria (Click to expand)
+
+**Cholesky Downdate:**
+
+| Test | Criterion |
+|------|-----------|
+| Correctness | $\mathbf{L}_{-}\mathbf{L}_{-}' = \mathbf{H} - vv'$ | `atol=1e-10` |
+| PD preservation | All eigenvalues > 0 after downdate |
+| Indefiniteness detection | Returns false when $\mathbf{H} - vv'$ not PD |
+| Non-mutating copy | Original $\mathbf{L}$ unchanged |
+| Sequential downdates | Accumulate correctly |
+
+**LOO Newton Step:**
+
+| Test | Criterion |
+|------|-----------|
+| Direct vs Cholesky | Results match to `rtol=1e-8` |
+| Subject removal | $(\mathbf{H} - \mathbf{H}_i)^{-1}$ computed correctly |
+
+**PIJCV Criterion:**
+
+| Test | Criterion |
+|------|-----------|
+| Perturbations | Match direct LOO computation |
+| Objective value | Correct sum of LOO likelihoods |
+| End-to-end API | `select_smoothing_parameters` returns valid $\lambda$ |
+:::
+
+### 8.3 Summary Table
+
+| Component | Tests | Status |
+|-----------|-------|--------|
+| Cholesky downdate correctness | 1 test | ✅ Pass |
+| PD preservation | 1 test | ✅ Pass |
+| Indefiniteness detection | 1 test | ✅ Pass |
+| Non-mutating copy | 1 test | ✅ Pass |
+| Sequential downdates | 1 test | ✅ Pass |
+| LOO Newton step | 2 methods compared | ✅ Pass |
+| PIJCV criterion | 1 test | ✅ Pass |
+| End-to-end API | 1 test | ✅ Pass |
+
+---
+
+## 9. Phase-Type Models (`test_phasetype.jl`)
+
+Tests verify phase-type distribution implementation against analytical formulas.
+
+### 9.1 Mathematical Reference
+
+::: {.callout-note collapse="true"}
+## Phase-Type Mathematical Background (Click to expand)
+
+**$p$-Phase Coxian Distribution:**
+
+Sub-intensity matrix $\mathbf{S}$, absorption rates $\mathbf{a}$, initial distribution $\boldsymbol{\pi}$:
+
+- Density: $f(t) = \boldsymbol{\pi}' \exp(\mathbf{S}t) \mathbf{a}$
+- Survival: $S(t) = \boldsymbol{\pi}' \exp(\mathbf{S}t) \mathbf{1}$
+- Hazard: $h(t) = f(t) / S(t)$
+- Cumulative hazard: $H(t) = -\log S(t)$
+
+**2-Phase Coxian Analytical Formulas:**
+
+For $\mathbf{S} = \begin{pmatrix} -(r+a_1) & r \\ 0 & -a_2 \end{pmatrix}$, $\boldsymbol{\pi} = (1, 0)'$:
+
+$$\exp(\mathbf{S}t)_{11} = e^{-\lambda_1 t}, \quad \exp(\mathbf{S}t)_{22} = e^{-\lambda_2 t}$$
+$$\exp(\mathbf{S}t)_{12} = \frac{r(e^{-\lambda_1 t} - e^{-\lambda_2 t})}{\lambda_2 - \lambda_1}$$
+
+where $\lambda_1 = r + a_1$, $\lambda_2 = a_2$.
+:::
+
+### 9.2 Test Criteria
+
+::: {.callout-note collapse="true"}
+## Detailed Phase-Type Test Criteria (Click to expand)
+
+**Emission Matrix:**
+
+| Test | Criterion |
+|------|-----------|
+| Panel observation (obstype=2) | All phases of destination state = 1.0 |
+| Exact transition (obstype=1) | Only first phase = 1.0 |
+| Fully censored (obstype=0) | All phases = 1.0 |
+| Custom censoring patterns | Correct pattern application |
+
+**Data Expansion:**
+
+| Test | Criterion |
+|------|-----------|
+| Exact transition split | Creates intermediate "remain" row |
+| Panel observation | No expansion needed |
+| Subject index recomputation | Indices remain valid |
+
+**Hazard/Survival Correctness:**
+
+| Test | Criterion | Tolerance |
+|------|-----------|-----------|
+| 2-phase survival | Matches analytical formula | `rtol=1e-10` |
+| 2-phase density | Matches analytical formula | `rtol=1e-10` |
+| 2-phase hazard | $h(t) = f(t)/S(t)$ | `rtol=1e-10` |
+| Cumulative hazard | $H(t) = -\log S(t)$ | `rtol=1e-10` |
+| Log-likelihood | Analytical path likelihood | `rtol=1e-8` |
+
+**Path Operations:**
+
+| Test | Criterion |
+|------|-----------|
+| Expand path | Observable states → phase states |
+| Collapse path | Phase states → observable states |
+| Round-trip | Expand then collapse = original |
+:::
+
+### 9.3 Summary Table
+
+| Component | Tests | Status |
+|-----------|-------|--------|
+| Emission matrix obstype=1 | 1 test | ✅ Pass |
+| Emission matrix obstype=2 | 1 test | ✅ Pass |
+| Emission matrix obstype=0 | 1 test | ✅ Pass |
+| Data expansion | 2 tests | ✅ Pass |
+| 2-phase survival | 5 time points | ✅ Pass |
+| 2-phase density | 5 time points | ✅ Pass |
+| 2-phase hazard | 5 time points | ✅ Pass |
+| Path expansion | 1 test | ✅ Pass |
+| Path collapse | 1 test | ✅ Pass |
+| Log-likelihood | 3 paths | ✅ Pass |
+
+---
+
+## 10. Likelihood Functions (`test_mll_consistency.jl`, `test_loglik_analytical.jl`)
+
+Tests verify likelihood computation consistency across methods.
+
+### 10.1 Mathematical Reference
+
+::: {.callout-note collapse="true"}
+## Likelihood Mathematical Background (Click to expand)
+
+**Exact Data Likelihood:**
+
+$$\ell(\theta) = \sum_i \left[ \log h(t_i | x_i) - H(0, t_i | x_i) \right]$$
+
+**Panel Data Likelihood (Markov):**
+
+$$\ell(\theta) = \sum_i \log \mathbf{P}(s_i | s_{i-1}, t_i - t_{i-1})$$
+
+where $\mathbf{P} = \exp(\mathbf{Q} \Delta t)$ is the transition probability matrix.
+
+**IS-Weighted MLL:**
+
+$$\hat\ell = \sum_i w_i \sum_j p_{ij} \ell_{ij}$$
+:::
+
+### 10.2 Test Criteria
+
+::: {.callout-note collapse="true"}
+## Detailed Likelihood Test Criteria (Click to expand)
+
+**MLL Consistency Across Methods:**
+
+| Method Pair | Criterion | Tolerance |
+|-------------|-----------|-----------|
+| IS-weighted vs SIR | Sample-level agreement | 15% relative |
+| IS-weighted vs LHS | Sample-level agreement | 15% relative |
+| SIR vs LHS | Sample-level agreement | 15% relative |
+| Subject-level correlation | $r > 0.85$ | N/A |
+| Subject-level MAE | < 25% relative | N/A |
+
+**Analytical Likelihood (Exponential):**
+
+| Test | Criterion |
+|------|-----------|
+| Formula | $\ell = n\log\lambda - \lambda \sum t_i$ |
+| Gradient | Matches ForwardDiff | `rtol=1e-8` |
+:::
+
+### 10.3 Summary Table
+
+| Component | Tests | Status |
+|-----------|-------|--------|
+| IS vs SIR agreement | 1 test | ✅ Pass |
+| IS vs LHS agreement | 1 test | ✅ Pass |
+| Subject-level correlation | 3 pairs | ✅ Pass |
+| Subject-level MAE | 2 methods | ✅ Pass |
+| Analytical likelihood | 1 family | ✅ Pass |
+
+---
+
+## 11. Model Construction (`test_modelgeneration.jl`, `test_initialization.jl`)
+
+Tests verify model building and parameter initialization.
+
+### 11.1 Test Criteria
+
+::: {.callout-note collapse="true"}
+## Detailed Model Construction Test Criteria (Click to expand)
+
+**Error Detection:**
+
+| Test | Input | Expected |
+|------|-------|----------|
+| Duplicate transitions | Two hazards 1→2 | `ArgumentError` |
+| State 0 origin | `Hazard(..., 0, 1)` | `ArgumentError` |
+| State 0 destination | `Hazard(..., 1, 0)` | `ArgumentError` |
+| Self-transition | `Hazard(..., 1, 1)` | `ArgumentError` |
+| Invalid family | `Hazard(..., "invalid", ...)` | `ArgumentError` |
+
+**Censoring Pattern Handling:**
+
+| Test | Criterion |
+|------|-----------|
+| Pattern parsing | Row sums ≤ 1 |
+| obstype > 2 | Uses pattern matrix |
+| obstype = 0 | All states possible |
+
+**Initialization Methods:**
+
+| Method | When Used | Criterion |
+|--------|-----------|-----------|
+| `:crude` | Markov models | Parameters non-NaN |
+| `:surrogate` | Semi-Markov models | Parameters non-NaN |
+| `:auto` | Default | Selects appropriate method |
+:::
+
+### 11.2 Summary Table
+
+| Component | Tests | Status |
+|-----------|-------|--------|
+| Duplicate transition detection | 1 test | ✅ Pass |
+| State 0 detection | 2 tests | ✅ Pass |
+| Self-transition detection | 1 test | ✅ Pass |
+| Censoring patterns | 1 test | ✅ Pass |
+| Crude initialization | 1 test | ✅ Pass |
+| Auto method selection | 1 test | ✅ Pass |
+
+---
+
+## 12. ReConstructor (`test_reconstructor.jl`)
+
+Tests verify AD-compatible parameter flattening/unflattening.
+
+### 12.1 Test Criteria
+
+::: {.callout-note collapse="true"}
+## Detailed ReConstructor Test Criteria (Click to expand)
+
+**Type Construction:**
+
+| Input Type | Flatten Output | Unflatten Output |
+|------------|----------------|------------------|
+| `Float64` | `[x]` | `x::Float64` |
+| `Vector{Float64}` | `x` (identity) | `x::Vector` |
+| `Vector{Int}` | `[]` (empty) | Original (no flatten) |
+| `Tuple` | Concatenated | Tuple with correct lengths |
+| `NamedTuple` | Concatenated | NamedTuple with keys preserved |
+
+**AD Compatibility:**
+
+| Test | Criterion |
+|------|-----------|
+| ForwardDiff gradient | Through unflatten → compute → flatten |
+| Type stability | Return type matches input type |
+| Strict mode | Exact key preservation |
+| Flexible mode | Structural preservation only |
+
+**Round-trip:**
+
+| Test | Criterion |
+|------|-----------|
+| `unflatten(flatten(x)) == x` | For all supported types |
+| Nested structures | Recursive reconstruction |
+:::
+
+### 12.2 Summary Table
+
+| Component | Tests | Status |
+|-----------|-------|--------|
+| Real number | 2 modes | ✅ Pass |
+| Float vector | 1 test | ✅ Pass |
+| Int vector (skip) | 1 test | ✅ Pass |
+| Tuple | 2 depths | ✅ Pass |
+| NamedTuple | 2 depths | ✅ Pass |
+| AD compatibility | ForwardDiff | ✅ Pass |
+| Round-trip | All types | ✅ Pass |
+
+---
+
+## 13. Additional Tests
+
+### 13.1 AD Backends (`test_ad_backends.jl`)
+
+| Test | Criterion | Status |
+|------|-----------|--------|
+| Type existence | `ADBackend` types defined | ✅ Pass |
+| Default selection | Parameter count thresholds | ✅ Pass |
+| ForwardDiff gradient | Finite, correct length | ✅ Pass |
+| fit() integration | `adbackend` kwarg works | ✅ Pass |
+
+### 13.2 @hazard Macro (`test_hazard_macro.jl`)
+
+| Test | Criterion | Status |
+|------|-----------|--------|
+| Family aliases | `:exp`, `:wei`, `:gom`, `:sp`, `:pt` | ✅ Pass |
+| Transition syntax | Multiple formats | ✅ Pass |
+| Formula defaults | Intercept-only | ✅ Pass |
+| Keyword forwarding | `knots`, `n_phases`, etc. | ✅ Pass |
+| Error messages | Missing/invalid family | ✅ Pass |
+
+### 13.3 Model Output (`test_model_output.jl`)
+
+| Test | Criterion | Status |
+|------|-----------|--------|
+| AIC formula | $-2\ell + 2k$ | ✅ Pass |
+| BIC formula | $-2\ell + k\log n$ | ✅ Pass |
+| Summary table | TypedTable structure | ✅ Pass |
+| estimate_loglik | ESS, MCSE fields | ✅ Pass |
+
+---
+
+## 14. Coverage Gaps and Future Work
+
+### 14.1 Current Gaps
+
+| Area | Gap | Priority |
+|------|-----|----------|
+| AFT + TVC | Limited testing for AFT with time-varying covariates | Medium |
+| Panel + Splines | Integration tests for spline hazards with panel data | Medium |
+| Edge cases | Degenerate transition matrices | Low |
+| Performance | Benchmark regression tests | Low |
+
+### 14.2 Recently Added Coverage
+
+| Date | Area | Files Added |
+|------|------|-------------|
+| 2026-01 | EFS smoothing | `test_efs.jl` |
+| 2026-01 | PIJCV reference | `test_pijcv_reference.jl`, `test_pijcv_vs_loocv.jl` |
+| 2026-01 | Analytical likelihood | `test_loglik_analytical.jl` |
+| 2026-01 | Subject weights | `test_subject_weights.jl` |
+| 2026-01 | Penalty infrastructure | `test_penalty_infrastructure.jl` |
+
+---
+
+## 15. Running Tests
+
+```bash
+# Run all unit tests
+julia --project=MultistateModelsTests -e 'using MultistateModelsTests; MultistateModelsTests.runtests()'
+
+# Run specific test file
+julia --project=MultistateModelsTests MultistateModelsTests/unit/test_hazards.jl
+
+# Run with verbose output
+julia --project=MultistateModelsTests -e 'using Pkg; Pkg.test(test_args=["--verbose"])'
+```

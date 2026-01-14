@@ -131,25 +131,36 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./architecture.html"> 
+    <a class="nav-link" href="./01_architecture.html"> 
 <span class="menu-text">Architecture</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./unit_tests.html"> 
+    <a class="nav-link" href="./02_unit_tests.html"> 
 <span class="menu-text">Unit Tests</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./long_tests.html"> 
+    <a class="nav-link" href="./03_long_tests.html"> 
 <span class="menu-text">Long Tests</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./simulation_diagnostics.html"> 
+    <a class="nav-link" href="./04_simulation_diagnostics.html"> 
 <span class="menu-text">Simulation</span></a>
   </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="./benchmarks.html"> 
-<span class="menu-text">Benchmarks</span></a>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-benchmarks" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Benchmarks</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-benchmarks">    
+        <li>
+    <a class="dropdown-item" href="./05_benchmarks.html">
+ <span class="dropdown-text">Performance</span></a>
   </li>  
+        <li>
+    <a class="dropdown-item" href="./spline_comparison_benchmark.html">
+ <span class="dropdown-text">Spline Methods Comparison</span></a>
+  </li>  
+    </ul>
+  </li>
 </ul>
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item compact">
@@ -213,7 +224,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <i class="callout-icon no-icon"></i>
 </div>
 <div class="callout-body-container">
-<p><img src="https://img.shields.io/badge/tests-passing-brightgreen.png" class="img-fluid" alt="Tests"> &nbsp; <strong>Branch:</strong> <code>penalized_splines</code> &nbsp; <strong>Commit:</strong> <code>b1144da</code></p>
+<p><img src="https://img.shields.io/badge/tests-stale-yellow.png" class="img-fluid" alt="Tests"> &nbsp; <strong>Branch:</strong> <code>penalized_splines</code> &nbsp; <strong>Commit:</strong> <code>69b7191</code></p>
 </div>
 </div>
 </div>
@@ -222,23 +233,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>Comprehensive validation and documentation for <a href="https://github.com/fintzij/MultistateModels.jl">MultistateModels.jl</a> — a Julia package for continuous-time multistate modeling.</p>
 <div class="grid">
 <section id="architecture" class="level3 g-col-6 g-col-md-4">
-<h3 class="anchored" data-anchor-id="architecture"><a href="./architecture.html">📐 Architecture</a></h3>
+<h3 class="anchored" data-anchor-id="architecture"><a href="./01_architecture.html">📐 Architecture</a></h3>
 <p>Type hierarchy, hazard families, inference engine, and simulation strategies.</p>
 </section>
 <section id="unit-tests" class="level3 g-col-6 g-col-md-4">
-<h3 class="anchored" data-anchor-id="unit-tests"><a href="./unit_tests.html">✅ Unit Tests</a></h3>
+<h3 class="anchored" data-anchor-id="unit-tests"><a href="./02_unit_tests.html">✅ Unit Tests</a></h3>
 <p>Function-level tests for hazards, simulation, MCEM, and model construction.</p>
 </section>
 <section id="long-tests" class="level3 g-col-6 g-col-md-4">
-<h3 class="anchored" data-anchor-id="long-tests"><a href="./long_tests.html">📊 Long Tests</a></h3>
+<h3 class="anchored" data-anchor-id="long-tests"><a href="./03_long_tests.html">📊 Long Tests</a></h3>
 <p>Statistical recovery of parameters across hazard families and data types.</p>
 </section>
 <section id="simulation" class="level3 g-col-6 g-col-md-4">
-<h3 class="anchored" data-anchor-id="simulation"><a href="./simulation_diagnostics.html">🎯 Simulation</a></h3>
+<h3 class="anchored" data-anchor-id="simulation"><a href="./04_simulation_diagnostics.html">🎯 Simulation</a></h3>
 <p>Visual verification of event time distributions (CDF diagnostic plots).</p>
 </section>
 <section id="benchmarks" class="level3 g-col-6 g-col-md-4">
-<h3 class="anchored" data-anchor-id="benchmarks"><a href="./benchmarks.html">⚡ Benchmarks</a></h3>
+<h3 class="anchored" data-anchor-id="benchmarks"><a href="./05_benchmarks.html">⚡ Benchmarks</a></h3>
 <p>Performance comparison of sampling methods and optimization strategies.</p>
 </section>
 <section id="main-package" class="level3 g-col-6 g-col-md-4">
@@ -259,7 +270,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <tbody>
 <tr class="odd">
 <td><strong>Passed</strong></td>
-<td>1192</td>
+<td>1810</td>
 </tr>
 <tr class="even">
 <td><strong>Failed</strong></td>
@@ -275,11 +286,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tr>
 <tr class="odd">
 <td><strong>Categories</strong></td>
-<td>12</td>
+<td>20</td>
 </tr>
 <tr class="even">
 <td><strong>Last Updated</strong></td>
-<td>2025-12-31T17:24:57.676</td>
+<td>2026-01-03T18:30:00.000</td>
 </tr>
 </tbody>
 </table>

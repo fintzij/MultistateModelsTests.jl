@@ -102,6 +102,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><strong>Exponential</strong>: h(t) = rate</li>
 <li><strong>Weibull</strong>: h(t) = shape × scale × t^(shape-1), using (shape, scale) parameterization</li>
 <li><strong>Gompertz</strong>: h(t) = rate × exp(shape × t), where shape is unconstrained (can be negative, zero, or positive) and rate &gt; 0</li>
+<li><strong>Spline</strong>: h(t) = Σ βᵢ Bᵢ(t), where Bᵢ(t) are B-spline basis functions on the natural scale and βᵢ &gt; 0 are coefficients.</li>
 </ul>
 <p>Each scenario emits:</p>
 <ol type="1">
@@ -231,6 +232,79 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </tbody>
 </table>
 </section>
+<section id="spline-family" class="level3">
+<h3 class="anchored" data-anchor-id="spline-family">Spline family</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Scenario</th>
+<th>Function panel</th>
+<th>Simulation panel</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>PH, baseline-only</td>
+<td><img src="assets/function_panel_sp_ph_baseline.png" class="img-fluid" alt="Sp PH baseline function"></td>
+<td><img src="assets/simulation_panel_sp_ph_baseline.png" class="img-fluid" alt="Sp PH baseline simulation"></td>
+</tr>
+<tr class="even">
+<td>PH, covariate</td>
+<td><img src="assets/function_panel_sp_ph_covariate.png" class="img-fluid" alt="Sp PH covariate function"></td>
+<td><img src="assets/simulation_panel_sp_ph_covariate.png" class="img-fluid" alt="Sp PH covariate simulation"></td>
+</tr>
+<tr class="odd">
+<td>AFT, baseline-only</td>
+<td><img src="assets/function_panel_sp_aft_baseline.png" class="img-fluid" alt="Sp AFT baseline function"></td>
+<td><img src="assets/simulation_panel_sp_aft_baseline.png" class="img-fluid" alt="Sp AFT baseline simulation"></td>
+</tr>
+<tr class="even">
+<td>AFT, covariate</td>
+<td><img src="assets/function_panel_sp_aft_covariate.png" class="img-fluid" alt="Sp AFT covariate function"></td>
+<td><img src="assets/simulation_panel_sp_aft_covariate.png" class="img-fluid" alt="Sp AFT covariate simulation"></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="time-varying-covariates-ph-only" class="level3">
+<h3 class="anchored" data-anchor-id="time-varying-covariates-ph-only">Time-Varying Covariates (PH only)</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Scenario</th>
+<th>Function panel</th>
+<th>Simulation panel</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Exp PH, TVC</td>
+<td><img src="assets/function_panel_exp_ph_tvc.png" class="img-fluid" alt="Exp PH TVC function"></td>
+<td><img src="assets/simulation_panel_exp_ph_tvc.png" class="img-fluid" alt="Exp PH TVC simulation"></td>
+</tr>
+<tr class="even">
+<td>Wei PH, TVC</td>
+<td><img src="assets/function_panel_wei_ph_tvc.png" class="img-fluid" alt="Wei PH TVC function"></td>
+<td><img src="assets/simulation_panel_wei_ph_tvc.png" class="img-fluid" alt="Wei PH TVC simulation"></td>
+</tr>
+<tr class="odd">
+<td>Sp PH, TVC</td>
+<td><img src="assets/function_panel_sp_ph_tvc.png" class="img-fluid" alt="Sp PH TVC function"></td>
+<td><img src="assets/simulation_panel_sp_ph_tvc.png" class="img-fluid" alt="Sp PH TVC simulation"></td>
+</tr>
+</tbody>
+</table>
+</section>
 </section>
 <section id="guarantees-checked-by-the-gallery" class="level2">
 <h2 class="anchored" data-anchor-id="guarantees-checked-by-the-gallery">Guarantees checked by the gallery</h2>
@@ -238,7 +312,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><strong>Call-stack accuracy:</strong> Blue/orange solver traces are on top of the black analytic curves in every function panel, proving the PH/AFT plumbing (and Tang caches) agree with closed-form hazards.</li>
 <li><strong>Distributional fidelity:</strong> ECDF residuals stay within ~3×10⁻³, matching <code>test/longtest_simulation_distribution.jl</code> tolerances.</li>
 <li><strong>Time-transform parity:</strong> Tang-enabled simulations (green curve) match the fallback sampler, and the logged <code>max |ΔF|</code> values highlight any drift immediately.</li>
-<li><strong>Family coverage:</strong> <code>{exp, wei, gom} × {ph, aft} × {baseline, covariate}</code> mirrors the long-test grid, so any future change that affects a subset will light up the corresponding panels.</li>
+<li><strong>Family coverage:</strong> <code>{exp, wei, gom, sp} × {ph, aft} × {baseline, covariate}</code> mirrors the long-test grid, so any future change that affects a subset will light up the corresponding panels.</li>
 </ul>
 <p>Keep this document in sync with the assets whenever simulator or hazard changes land so reviewers can diff both code and visuals in one place.</p>
 </section>

@@ -508,10 +508,12 @@ import StatsModels: apply_schema, coefnames, modelcols, termvars
         
         model = multistatemodel(h12_mono, h21_mono; data=large_dat)
         
-        # Set reasonable parameters
+        # Set reasonable positive parameters (v0.3.0+: bounds require non-negative)
+        # Use small positive values that might need rectification for monotonicity
         for (h, haz) in enumerate(model.hazards)
             npar = haz.npar_total
-            new_pars = fill(-1.0, npar)
+            # Small positive values for spline coefficients, zeros for covariate effects
+            new_pars = vcat(fill(0.1, haz.npar_baseline), zeros(npar - haz.npar_baseline))
             set_parameters!(model, h, new_pars)
         end
         
@@ -560,8 +562,10 @@ import StatsModels: apply_schema, coefnames, modelcols, termvars
         
         model = multistatemodel(h12; data=large_dat)
         
+        # Use positive parameters (v0.3.0+: bounds require non-negative for spline coefficients)
         Random.seed!(99999)
-        set_parameters!(model, 1, rand(Normal(0, 1), model.hazards[1].npar_total))
+        positive_params = abs.(rand(Normal(0, 1), model.hazards[1].npar_total)) .+ 0.01
+        set_parameters!(model, 1, positive_params)
         
         ests = get_parameters_flat(model)
         
@@ -863,13 +867,15 @@ import StatsModels: apply_schema, coefnames, modelcols, termvars
             npar_h12 = model.hazards[1].npar_total
             npar_h13 = model.hazards[2].npar_total
             
+            # For splines, baseline parameters must be non-negative (v0.3.0+ bounds)
+            # Use abs() to ensure valid parameters
             # Vector{Vector{Float64}} format
-            new_params = [randn(npar_h12), randn(npar_h13)]
+            new_params = [abs.(randn(npar_h12)) .+ 0.1, abs.(randn(npar_h13)) .+ 0.1]
             set_parameters!(model, new_params)
             @test model.parameters.flat[1:npar_h12] ≈ new_params[1]
             
             # NamedTuple format
-            nt_params = (h12 = randn(npar_h12), h13 = randn(npar_h13))
+            nt_params = (h12 = abs.(randn(npar_h12)) .+ 0.1, h13 = abs.(randn(npar_h13)) .+ 0.1)
             set_parameters!(model, nt_params)
             @test model.parameters.flat[1:npar_h12] ≈ collect(nt_params.h12)
         end

@@ -202,15 +202,15 @@ using Random
         λ = 0.5
         T = 1.0
         
-        # Set parameter (log scale for exponential hazard)
+        # Set parameter (NATURAL scale, post-v0.3.0)
         pars = get_parameters(model)
-        pars[:h12][1] = log(λ)
+        pars[:h12][1] = λ
         
         # Compute likelihood
         books = MultistateModels.build_tpm_mapping(model.data)
         mpd = MultistateModels.MPanelData(model, books)
         pars_flat = MultistateModels.get_parameters_flat(model)
-        pars_flat[1] = log(λ)
+        pars_flat[1] = λ
         ll_computed = MultistateModels.loglik_markov(pars_flat, mpd; neg=false)
         
         # Analytical likelihood
@@ -291,7 +291,7 @@ using Random
         
         for λ in λ_grid
             pars_flat = MultistateModels.get_parameters_flat(model)
-            pars_flat[1] = log(λ)
+            pars_flat[1] = λ  # NATURAL scale, post-v0.3.0
             ll = MultistateModels.loglik_markov(pars_flat, mpd; neg=false)
             push!(lls, ll)
         end
@@ -344,13 +344,13 @@ using Random
         books_hard = MultistateModels.build_tpm_mapping(model_hard.data)
         mpd_hard = MultistateModels.MPanelData(model_hard, books_hard)
         pars_hard = MultistateModels.get_parameters_flat(model_hard)
-        pars_hard[1] = log(λ)
+        pars_hard[1] = λ  # NATURAL scale, post-v0.3.0
         ll_hard = MultistateModels.loglik_markov(pars_hard, mpd_hard; neg=false)
         
         books_soft = MultistateModels.build_tpm_mapping(model_soft.data)
         mpd_soft = MultistateModels.MPanelData(model_soft, books_soft)
         pars_soft = MultistateModels.get_parameters_flat(model_soft)
-        pars_soft[1] = log(λ)
+        pars_soft[1] = λ  # NATURAL scale, post-v0.3.0
         ll_soft = MultistateModels.loglik_markov(pars_soft, mpd_soft; neg=false)
         
         # With soft evidence e=[0.8, 0.2] vs hard evidence e=[1, 0], the likelihood is:

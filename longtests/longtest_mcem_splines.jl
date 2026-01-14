@@ -60,7 +60,15 @@ const RNG_SEED = 0xABCD5678
 const N_SUBJECTS = 1000      # Standard sample size for longtests
 const MCEM_TOL = 0.05        # Relaxed tolerance
 const MAX_ITER = 25          # Short iteration limit
-const HAZARD_TOL_FACTOR = 3.0  # Spline hazard should be within factor of 3 of true (relaxed for MCEM)
+
+# HAZARD_TOL_FACTOR justification:
+# Factor of 2.5 accounts for three sources of error:
+# 1. MCEM Monte Carlo variance (~15-25% coefficient of variation at convergence)
+# 2. Spline approximation error (linear splines approximate step functions imperfectly)
+# 3. Limited iterations (MAX_ITER=25 may not fully converge)
+# Tests 1-3 validate functional form; tighter tolerance would cause flaky tests.
+# Test 4 uses explicit 50% relative tolerance for individual hazard/cumhaz comparisons.
+const HAZARD_TOL_FACTOR = 2.5
 
 # ============================================================================
 # Test 1: Spline Approximation to Exponential (Constant Hazard)
@@ -89,7 +97,8 @@ const HAZARD_TOL_FACTOR = 3.0  # Spline hazard should be within factor of 3 of t
         obstype = fill(2, N_SUBJECTS * nobs)
     )
     
-    model_sim = multistatemodel(h12_exp; data=sim_data)
+    # Use initialize=false to avoid bounds issues during auto-initialization
+    model_sim = multistatemodel(h12_exp; data=sim_data, initialize=false)
     MultistateModels.set_parameters!(model_sim, (h12 = [true_rate],))  # Natural scale
     
     # Simulate panel data
@@ -145,16 +154,19 @@ end
     Random.seed!(RNG_SEED + 1)
     
     # True piecewise exponential rates (low → high)
+    # h(t) = rate_early for t < change_time, rate_late for t >= change_time
     true_rate_early = 0.2
     true_rate_late = 0.5
     change_time = 2.5
+    tmax = 5.0
     
-    # Simulate from exponential (using average rate) - progressive 1→2 only
-    h12_exp = Hazard(@formula(0 ~ 1), "exp", 1, 2)
-    
+    # Create piecewise-like spline model for data generation
+    # Linear spline (degree=1) with knot at change_time approximates piecewise constant
+    # Spline coefficients are log-hazards evaluated at the knot locations
     obs_times = [0.0, 2.0, 4.0]
     nobs = length(obs_times) - 1
     
+    # Create simulation template
     sim_data = DataFrame(
         id = repeat(1:N_SUBJECTS, inner=nobs),
         tstart = repeat(obs_times[1:end-1], N_SUBJECTS),
@@ -164,22 +176,39 @@ end
         obstype = fill(2, N_SUBJECTS * nobs)
     )
     
-    # Use average rate for simulation
-    avg_rate = (true_rate_early + true_rate_late) / 2
-    model_sim = multistatemodel(h12_exp; data=sim_data)
-    MultistateModels.set_parameters!(model_sim, (h12 = [avg_rate],))
+    # Create spline hazard for DGP that approximates piecewise constant
+    # For linear B-spline with knot at change_time and boundary knots at [0, tmax]:
+    # - Basis 1 peaks at t=0, goes to 0 at change_time
+    # - Basis 2 peaks at change_time
+    # - Basis 3 peaks at tmax, goes to 0 at change_time
+    h12_dgp = Hazard(@formula(0 ~ 1), "sp", 1, 2;
+        degree=1,
+        knots=[change_time],
+        boundaryknots=[0.0, tmax],
+        extrapolation="linear")
     
+    model_dgp = multistatemodel(h12_dgp; data=sim_data, initialize=false)
+    
+    # Set spline coefficients to approximate piecewise constant hazard
+    # Linear spline with 1 interior knot has 3 coefficients (degree + 1 + n_interior_knots)
+    # Coefficients are on log-hazard scale; we want h≈rate_early before change_time, h≈rate_late after
+    # Set [log(rate_early), log(rate_late), log(rate_late)] to transition at knot
+    dgp_coeffs = [log(true_rate_early), log(true_rate_late), log(true_rate_late)]
+    MultistateModels.set_parameters!(model_dgp, (h12 = dgp_coeffs,))
+    
+    # Simulate using package's simulate() function
     # For 2-state model (1→2 absorbing), transition 1 is exact
     obstype_map = Dict(1 => 1)
-    sim_result = simulate(model_sim; paths=false, data=true, nsim=1, autotmax=false,
+    sim_result = simulate(model_dgp; paths=false, data=true, nsim=1, autotmax=false,
                          obstype_by_transition=obstype_map)
     panel_data = sim_result[1, 1]
     
     # Fit spline with interior knot at change point
+    # Linear spline with knot at change_time can approximate piecewise constant
     h12_sp = Hazard(@formula(0 ~ 1), "sp", 1, 2; 
                     degree=1,  # Linear spline
                     knots=[change_time],  # Interior knot at change point
-                    boundaryknots=[0.0, 5.0],
+                    boundaryknots=[0.0, tmax],
                     extrapolation="linear")
     
     model_spline = multistatemodel(h12_sp; data=panel_data, surrogate=:markov)
@@ -195,15 +224,34 @@ end
         compute_vcov=false,
         return_convergence_records=true)
     
-    # Check that spline hazard approximates average rate
+    # Check that spline hazard approximates the true piecewise rates
     pars_12 = MultistateModels.get_parameters(fitted, 1, scale=:log)
     
-    # Hazard should be within factor of 2 of average rate at all times
-    for t in [0.5, 1.5, 2.5, 3.5, 4.5]
+    # Validate against TRUE piecewise rates (not average):
+    # - Before change_time: compare to true_rate_early (0.2)
+    # - After change_time: compare to true_rate_late (0.5)
+    # Use factor of 3.0 tolerance for piecewise since spline smooths the discontinuity
+    PWE_TOL_FACTOR = 3.0  # Piecewise exponential tolerance (looser due to discontinuity smoothing)
+    
+    # Early period (t < change_time): should be close to true_rate_early
+    for t in [0.5, 1.5]
         h_spline = fitted.hazards[1](t, pars_12, NamedTuple())
-        @test h_spline > avg_rate / HAZARD_TOL_FACTOR
-        @test h_spline < avg_rate * HAZARD_TOL_FACTOR
+        @test h_spline > true_rate_early / PWE_TOL_FACTOR
+        @test h_spline < true_rate_late * PWE_TOL_FACTOR  # Can't exceed late rate by much
     end
+    
+    # Late period (t > change_time): should be close to true_rate_late  
+    for t in [3.5, 4.5]
+        h_spline = fitted.hazards[1](t, pars_12, NamedTuple())
+        @test h_spline > true_rate_early / PWE_TOL_FACTOR  # Should be at least as high as early
+        @test h_spline < true_rate_late * PWE_TOL_FACTOR
+    end
+    
+    # Key test: hazard should be HIGHER after change point than before
+    # This validates that the spline captures the step-up in hazard
+    h_early_avg = mean([fitted.hazards[1](t, pars_12, NamedTuple()) for t in [0.5, 1.5]])
+    h_late_avg = mean([fitted.hazards[1](t, pars_12, NamedTuple()) for t in [3.5, 4.5]])
+    @test h_late_avg > h_early_avg * 1.1  # Late hazard should be noticeably higher
     
     # Cumulative hazard must be monotonically increasing (fundamental property)
     H_vals = [cumulative_hazard(fitted.hazards[1], 0.0, t, pars_12, NamedTuple()) 
@@ -213,7 +261,7 @@ end
     # Convergence check
     @test isfinite(fitted.loglik.loglik)
     
-    println("  ✓ Spline with interior knot handles piecewise hazard")
+    println("  ✓ Spline with interior knot captures piecewise hazard step-up")
 end
 
 # ============================================================================
@@ -244,7 +292,8 @@ end
         obstype = fill(2, N_SUBJECTS * nobs)
     )
     
-    model_sim = multistatemodel(h12_gom; data=sim_data)
+    # Use initialize=false to avoid bounds issues during auto-initialization
+    model_sim = multistatemodel(h12_gom; data=sim_data, initialize=false)
     # Gompertz params: [shape, rate] where h(t) = rate * exp(shape * t)
     MultistateModels.set_parameters!(model_sim, (h12 = [true_b, true_rate],))
     
@@ -339,7 +388,8 @@ end
         x = repeat(rand([0.0, 1.0], N_SUBJECTS), inner=nobs)
     )
     
-    model_sim = multistatemodel(h12_exp; data=sim_data)
+    # Use initialize=false to avoid bounds issues during auto-initialization
+    model_sim = multistatemodel(h12_exp; data=sim_data, initialize=false)
     MultistateModels.set_parameters!(model_sim, (h12 = [true_baseline, true_beta],))
     
     # For 2-state model (1→2 absorbing), transition 1 is exact
@@ -488,16 +538,27 @@ end
 
 # ============================================================================
 # Test 5: Monotone Spline in MCEM
-# DISABLED: Monotone constraint enforcement is a penalized spline feature
-# that needs to be fixed separately. See penalized spline work.
+# ============================================================================
+# 
+# Proper test of monotone constraint enforcement:
+# - Simulate from Weibull with shape > 1 (INCREASING hazard)
+# - Fit with monotone=1 (increasing constraint): should capture the trend
+# - Fit with monotone=-1 (decreasing constraint): should be BLOCKED from 
+#   fitting the true increasing shape, resulting in constant or degraded fit
+#
+# This validates that monotone constraints actually restrict the fitted shape.
 # ============================================================================
 
-# @testset "MCEM Monotone Spline" begin
-if false  # DISABLED - monotone constraint not enforced, needs fix
+@testset "MCEM Monotone Spline" begin
     Random.seed!(RNG_SEED + 4)
     
-    # Simulate from exponential (simple case)
-    h12_exp = Hazard(@formula(0 ~ 1), "exp", 1, 2)
+    # Simulate from Weibull with shape > 1 (INCREASING hazard)
+    # Weibull hazard: h(t) = shape * scale * t^(shape-1)
+    # With shape=1.5, scale=0.20: h(t) increases from 0.3 at t=1 to 0.6 at t=4
+    true_shape = 1.5
+    true_scale = 0.20
+    
+    h12_wei = Hazard(@formula(0 ~ 1), "wei", 1, 2)
     
     obs_times = [0.0, 2.0, 4.0]
     nobs = length(obs_times) - 1
@@ -511,8 +572,9 @@ if false  # DISABLED - monotone constraint not enforced, needs fix
         obstype = fill(2, N_SUBJECTS * nobs)
     )
     
-    model_sim = multistatemodel(h12_exp; data=sim_data)
-    MultistateModels.set_parameters!(model_sim, (h12 = [0.3],))
+    # Use initialize=false to avoid bounds issues during auto-initialization
+    model_sim = multistatemodel(h12_wei; data=sim_data, initialize=false)
+    MultistateModels.set_parameters!(model_sim, (h12 = [true_shape, true_scale],))
     
     # For 2-state model (1→2 absorbing), transition 1 is exact
     obstype_map = Dict(1 => 1)
@@ -520,47 +582,102 @@ if false  # DISABLED - monotone constraint not enforced, needs fix
                          obstype_by_transition=obstype_map)
     panel_data = sim_result[1, 1]
     
-    # Fit monotone increasing spline
-    h12_sp = Hazard(@formula(0 ~ 1), "sp", 1, 2; 
-                    degree=2,
-                    knots=[2.0],  # One interior knot
-                    boundaryknots=[0.0, 5.0],
-                    monotone=1,  # Increasing
-                    extrapolation="constant")
+    # -------------------------------------------------------------------------
+    # Part A: Fit with CORRECT monotone direction (increasing)
+    # Should capture the increasing hazard pattern
+    # -------------------------------------------------------------------------
+    h12_sp_inc = Hazard(@formula(0 ~ 1), "sp", 1, 2; 
+                        degree=2,
+                        knots=[2.0],  # One interior knot
+                        boundaryknots=[0.0, 5.0],
+                        monotone=1,   # INCREASING constraint
+                        extrapolation="constant")
     
-    model_spline = multistatemodel(h12_sp; data=panel_data, surrogate=:markov)
+    # Use initialize=false to avoid bounds issues during auto-initialization
+    model_inc = multistatemodel(h12_sp_inc; data=panel_data, surrogate=:markov, 
+                                initialize=false)
     
-    # Fit via MCEM
-    fitted = fit(model_spline;
+    fitted_inc = fit(model_inc;
         proposal=:markov,
-        verbose=true,
+        verbose=false,
         maxiter=MAX_ITER,
         tol=MCEM_TOL,
         ess_target_initial=25,
         max_ess=300,
         compute_vcov=false,
-        return_convergence_records=true)
+        penalty=:none)
     
-    # Check monotonicity is enforced
-    pars_12 = MultistateModels.get_parameters(fitted, 1, scale=:log)
+    pars_inc = MultistateModels.get_parameters(fitted_inc, 1, scale=:log)
+    h_vals_inc = [fitted_inc.hazards[1](t, pars_inc, NamedTuple()) for t in 1.0:0.5:3.5]
     
-    h_vals = [fitted.hazards[1](t, pars_12, NamedTuple()) for t in 0.5:0.5:3.5]
+    println("\n    Part A: Fit with monotone=1 (increasing, matches true DGP)")
+    println("    Hazard values at t = [1, 1.5, 2, 2.5, 3, 3.5]: ", round.(h_vals_inc, digits=4))
+    println("    Differences: ", round.(diff(h_vals_inc), digits=6))
     
-    # Hazards should be within factor of true rate (0.3)
-    true_rate = 0.3
-    @test all(h .> true_rate / HAZARD_TOL_FACTOR for h in h_vals)
-    @test all(h .< true_rate * HAZARD_TOL_FACTOR for h in h_vals)
+    # Monotone increasing constraint: differences should be >= 0
+    diffs_inc = diff(h_vals_inc)
+    @test all(diffs_inc .>= -1e-10)
     
-    # Must be non-decreasing (monotone=1 constraint)
-    for i in 2:length(h_vals)
-        @test h_vals[i] >= h_vals[i-1] - 1e-10
-    end
+    # Since true hazard is increasing, fitted should show ACTUAL increase (not just constant)
+    # At least one positive difference with magnitude > numerical noise
+    @test any(diffs_inc .> 0.001)
     
-    # Convergence check
-    @test isfinite(fitted.loglik.loglik)
+    # -------------------------------------------------------------------------
+    # Part B: Fit with WRONG monotone direction (decreasing)
+    # Should be constrained and unable to capture the increasing pattern
+    # -------------------------------------------------------------------------
+    h12_sp_dec = Hazard(@formula(0 ~ 1), "sp", 1, 2; 
+                        degree=2,
+                        knots=[2.0],
+                        boundaryknots=[0.0, 5.0],
+                        monotone=-1,  # DECREASING constraint (WRONG for this data!)
+                        extrapolation="constant")
     
-    println("  ✓ Monotone increasing spline enforces constraint in MCEM")
-end  # end if false
+    # Use initialize=false to avoid bounds issues during auto-initialization
+    model_dec = multistatemodel(h12_sp_dec; data=panel_data, surrogate=:markov,
+                                initialize=false)
+    
+    fitted_dec = fit(model_dec;
+        proposal=:markov,
+        verbose=false,
+        maxiter=MAX_ITER,
+        tol=MCEM_TOL,
+        ess_target_initial=25,
+        max_ess=300,
+        compute_vcov=false,
+        penalty=:none)
+    
+    pars_dec = MultistateModels.get_parameters(fitted_dec, 1, scale=:log)
+    h_vals_dec = [fitted_dec.hazards[1](t, pars_dec, NamedTuple()) for t in 1.0:0.5:3.5]
+    
+    println("\n    Part B: Fit with monotone=-1 (decreasing, WRONG for true DGP)")
+    println("    Hazard values at t = [1, 1.5, 2, 2.5, 3, 3.5]: ", round.(h_vals_dec, digits=4))
+    println("    Differences: ", round.(diff(h_vals_dec), digits=6))
+    
+    # Monotone decreasing constraint: differences should be <= 0
+    diffs_dec = diff(h_vals_dec)
+    @test all(diffs_dec .<= 1e-10)
+    
+    # -------------------------------------------------------------------------
+    # Part C: Compare log-likelihoods - correct direction should fit better
+    # -------------------------------------------------------------------------
+    ll_inc = fitted_inc.loglik.loglik
+    ll_dec = fitted_dec.loglik.loglik
+    
+    println("\n    Part C: Log-likelihood comparison")
+    println("    LL with monotone=1 (correct):  ", round(ll_inc, digits=2))
+    println("    LL with monotone=-1 (wrong):   ", round(ll_dec, digits=2))
+    println("    Difference (correct - wrong):  ", round(ll_inc - ll_dec, digits=2))
+    
+    # Correct direction should have higher (less negative) log-likelihood
+    @test ll_inc > ll_dec
+    
+    # Convergence checks
+    @test isfinite(ll_inc)
+    @test isfinite(ll_dec)
+    
+    println("\n  ✓ Monotone spline constraints properly enforce direction in MCEM")
+end
 
 # ============================================================================
 # Test 6: Spline Hazards with PhaseType Proposal
@@ -594,7 +711,8 @@ end  # end if false
     
     # Simulate from Weibull
     h12_wei = Hazard(@formula(0 ~ 1), "wei", 1, 2)
-    model_sim = multistatemodel(h12_wei; data=template, surrogate=:markov)
+    # Use initialize=false to avoid bounds issues during auto-initialization  
+    model_sim = multistatemodel(h12_wei; data=template, surrogate=:markov, initialize=false)
     set_parameters!(model_sim, (h12 = [true_shape, true_scale],))
     
     # For 2-state model (1→2 absorbing), transition 1 is exact

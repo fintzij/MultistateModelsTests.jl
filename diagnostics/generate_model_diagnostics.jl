@@ -6,19 +6,36 @@ using Distributions
 using Random
 using StatsBase
 using StatsModels
-using Pkg
 using BSplineKit
 
-# Ensure we use the local version of MultistateModels
-Pkg.develop(path=normpath(joinpath(@__DIR__, "..", "..")))
+# Conditionally load MultistateModels - either from environment or develop path
+if !@isdefined(MultistateModels)
+    try
+        using MultistateModels
+    catch
+        using Pkg
+        Pkg.develop(path=normpath(joinpath(@__DIR__, "..", "..")))
+        using MultistateModels
+    end
+end
 
-pushfirst!(LOAD_PATH, normpath(joinpath(@__DIR__, "..", "..")))
-using MultistateModels: Hazard, multistatemodel, set_parameters!, simulate_path, eval_hazard, eval_cumhaz, survprob, truncate_distribution, CachedTransformStrategy, DirectTransformStrategy, get_hazard_params
-using MultistateModels
+# Import specific functions we need
+using MultistateModels: Hazard, multistatemodel, set_parameters!, simulate_path, 
+    eval_hazard, eval_cumhaz, survprob, truncate_distribution, 
+    CachedTransformStrategy, DirectTransformStrategy
+
+# Helper function to get hazard params (replaces internal get_hazard_params)
+function get_hazard_params_local(model)
+    # Get the nested parameter structure directly from model
+    return model.parameters.nested
+end
 
 const OUTPUT_DIR = normpath(joinpath(@__DIR__, "assets"))
 mkpath(OUTPUT_DIR)
 CairoMakie.activate!(type = "png", px_per_unit = 2.0)
+
+# Set theme to avoid deprecated 'resolution' warning
+set_theme!(; figure_padding = 10)
 
 const COVARIATE_VALUE = 1.5
 const DELTA_U = sqrt(eps())
@@ -63,11 +80,13 @@ function Scenario(family::String, effect::Symbol, cov_mode::Symbol)
     return Scenario(family, effect, cov_mode, label, slug, config)
 end
 
-# Include TVC scenarios for exponential and Weibull (PH effect, as AFT requires additional work)
-# Gompertz TVC requires more complex piecewise integration and is omitted for now
+# All 24 scenarios: 4 families × 2 effects × 3 covariate modes
+# TVC scenarios require careful piecewise integration for AFT
 const SCENARIOS = vcat(
+    # Non-TVC: 16 scenarios (4 families × 2 effects × 2 covariate modes)
     [Scenario(fam, eff, cov) for fam in keys(FAMILY_CONFIG) for eff in (:ph, :aft) for cov in (:baseline, :covariate)],
-    [Scenario(fam, :ph, :tvc) for fam in ["exp", "wei", "sp"]]  # TVC scenarios - PH only
+    # TVC: 8 scenarios (4 families × 2 effects)
+    [Scenario(fam, eff, :tvc) for fam in ["exp", "wei", "gom", "sp"] for eff in (:ph, :aft)]
 )
 
 function scenario_subject_df(scenario::Scenario)
@@ -112,14 +131,18 @@ function hazard_formula(scenario::Scenario)
 end
 
 function scenario_parameter_vector(scenario::Scenario)
+    # Post-v0.3.0: Parameters are on NATURAL scale (not log-transformed)
+    # Box constraints (lb ≥ 0) handle positivity
     cfg = scenario.config
     if scenario.family == "exp"
-        base = [log(cfg.rate)]
+        # Exponential: rate on natural scale
+        base = [cfg.rate]
     elseif scenario.family == "wei"
-        base = [log(cfg.shape), log(cfg.scale)]
+        # Weibull: shape and scale on natural scale
+        base = [cfg.shape, cfg.scale]
     elseif scenario.family == "gom"
-        # flexsurv parameterization: shape is unconstrained, rate is log-transformed
-        base = [cfg.shape, log(cfg.rate)]
+        # Gompertz: shape is unconstrained (can be negative), rate on natural scale
+        base = [cfg.shape, cfg.rate]
     elseif scenario.family == "sp"
         # Spline coefficients are on natural scale (non-negative)
         base = cfg.coefs
@@ -213,6 +236,75 @@ function piecewise_wei_ph_cumhaz(t, shape, scale, beta, t_changes, x_values)
     return cumhaz
 end
 
+# Gompertz PH TVC: h(t|x) = b * exp(a*t + β*x)
+# H(t) = Σᵢ (b/a) * exp(β*xᵢ) * [exp(a*tᵢ) - exp(a*tᵢ₋₁)]
+function piecewise_gom_ph_cumhaz(t, shape, rate, beta, t_changes, x_values)
+    cumhaz = 0.0
+    prev_t = 0.0
+    a = shape
+    b = rate
+    
+    for (i, tc) in enumerate(t_changes)
+        if t <= tc
+            cumhaz += (b / a) * exp(beta * x_values[i]) * (exp(a * t) - exp(a * prev_t))
+            return cumhaz
+        else
+            cumhaz += (b / a) * exp(beta * x_values[i]) * (exp(a * tc) - exp(a * prev_t))
+            prev_t = tc
+        end
+    end
+    cumhaz += (b / a) * exp(beta * x_values[end]) * (exp(a * t) - exp(a * prev_t))
+    return cumhaz
+end
+
+# === AFT with TVC ===
+# For AFT with TVC, the scaled time is: τ(t) = ∫₀ᵗ exp(-β*x(s)) ds
+# This is piecewise constant when x(s) is piecewise constant:
+# τ(t) = Σᵢ exp(-β*xᵢ) * (min(t, tᵢ) - tᵢ₋₁)
+
+# Compute scaled time τ(t) for AFT with piecewise constant TVC
+function compute_scaled_time_aft(t, beta, t_changes, x_values)
+    tau = 0.0
+    prev_t = 0.0
+    for (i, tc) in enumerate(t_changes)
+        scale_factor = exp(-beta * x_values[i])
+        if t <= tc
+            tau += scale_factor * (t - prev_t)
+            return tau
+        else
+            tau += scale_factor * (tc - prev_t)
+            prev_t = tc
+        end
+    end
+    tau += exp(-beta * x_values[end]) * (t - prev_t)
+    return tau
+end
+
+# Exponential AFT TVC: h(t|x(t)) = λ * exp(-β*x(t)), H(t) = λ * τ(t)
+function piecewise_exp_aft_cumhaz(t, rate, beta, t_changes, x_values)
+    tau = compute_scaled_time_aft(t, beta, t_changes, x_values)
+    return rate * tau
+end
+
+# Weibull AFT TVC: H(t) = σ * τ(t)^κ
+# Note: This is the closed-form for AFT where time scaling affects cumulative hazard
+function piecewise_wei_aft_cumhaz(t, shape, scale, beta, t_changes, x_values)
+    tau = compute_scaled_time_aft(t, beta, t_changes, x_values)
+    return scale * (tau^shape)
+end
+
+# Gompertz AFT TVC: H(t) = (b/a') * [exp(a'*τ(t)) - 1] where a' = a (shape unchanged under AFT)
+# The AFT formulation: h(t|x) = h₀(τ(t)) * dτ/dt = h₀(τ(t)) * exp(-β*x(t))
+# For Gompertz: h₀(τ) = b * exp(a*τ), so h(t|x) = b * exp(a*τ(t) - β*x(t))
+# The cumulative hazard follows from integration
+function piecewise_gom_aft_cumhaz(t, shape, rate, beta, t_changes, x_values)
+    tau = compute_scaled_time_aft(t, beta, t_changes, x_values)
+    a = shape
+    b = rate
+    # H(t) = (b/a) * [exp(a*τ(t)) - 1]
+    return (b / a) * (exp(a * tau) - 1)
+end
+
 # Helper for spline evaluation
 function make_spline_basis(cfg)
     # Reconstruct the basis used by MultistateModels
@@ -242,74 +334,107 @@ function expected_curves(scenario::Scenario, times_h::Vector{Float64}, times_cs:
         x_values = cfg.x_values
         beta = cfg.beta
         
+        # Helper to find covariate value at time t
+        function get_x_at_t(t)
+            for (i, tc) in enumerate(t_changes)
+                if t < tc
+                    return x_values[i]
+                end
+            end
+            return x_values[end]
+        end
+        
         if scenario.family == "exp"
             rate = cfg.rate
-            # Piecewise hazard - find which interval each time falls in
-            function get_x_at_t(t)
-                for (i, tc) in enumerate(t_changes)
-                    if t < tc
-                        return x_values[i]
-                    end
-                end
-                return x_values[end]
+            
+            if scenario.effect == :ph
+                # PH: h(t|x) = λ * exp(β*x(t))
+                haz_expected = [rate * exp(beta * get_x_at_t(t)) for t in times_h]
+                cum_expected = [piecewise_exp_ph_cumhaz(t, rate, beta, t_changes, x_values) for t in times_cs]
+            else
+                # AFT: h(t|x(t)) = λ * exp(-β*x(t))
+                haz_expected = [rate * exp(-beta * get_x_at_t(t)) for t in times_h]
+                cum_expected = [piecewise_exp_aft_cumhaz(t, rate, beta, t_changes, x_values) for t in times_cs]
             end
-            
-            haz_expected = [exp_ph_hazard(t, rate, beta, get_x_at_t(t)) for t in times_h]
-            
-            # Piecewise cumulative hazard
-            cum_expected = [piecewise_exp_ph_cumhaz(t, rate, beta, t_changes, x_values) for t in times_cs]
             
         elseif scenario.family == "wei"
             shape = cfg.shape
             scale = cfg.scale
             
-            function get_x_at_t_wei(t)
-                for (i, tc) in enumerate(t_changes)
-                    if t < tc
-                        return x_values[i]
-                    end
+            if scenario.effect == :ph
+                # PH: h(t|x) = κσt^(κ-1) * exp(β*x(t))
+                haz_expected = [shape * scale * (t^(shape - 1)) * exp(beta * get_x_at_t(t)) for t in times_h]
+                cum_expected = [piecewise_wei_ph_cumhaz(t, shape, scale, beta, t_changes, x_values) for t in times_cs]
+            else
+                # AFT: h(t|x) at time t uses τ(t) and dτ/dt = exp(-β*x(t))
+                # h(t) = h₀(τ(t)) * exp(-β*x(t)) = κστ(t)^(κ-1) * exp(-β*x(t))
+                haz_expected = map(times_h) do t
+                    tau = compute_scaled_time_aft(t, beta, t_changes, x_values)
+                    scale_factor = exp(-beta * get_x_at_t(t))
+                    return shape * scale * (tau^(shape - 1)) * scale_factor
                 end
-                return x_values[end]
+                cum_expected = [piecewise_wei_aft_cumhaz(t, shape, scale, beta, t_changes, x_values) for t in times_cs]
             end
             
-            haz_expected = [wei_ph_hazard(t, shape, scale, beta, get_x_at_t_wei(t)) for t in times_h]
-            cum_expected = [piecewise_wei_ph_cumhaz(t, shape, scale, beta, t_changes, x_values) for t in times_cs]
+        elseif scenario.family == "gom"
+            a = cfg.shape
+            b = cfg.rate
+            
+            if scenario.effect == :ph
+                # PH: h(t|x) = b * exp(a*t + β*x(t))
+                haz_expected = [b * exp(a * t + beta * get_x_at_t(t)) for t in times_h]
+                cum_expected = [piecewise_gom_ph_cumhaz(t, a, b, beta, t_changes, x_values) for t in times_cs]
+            else
+                # AFT: h(t) = h₀(τ(t)) * exp(-β*x(t)) = b * exp(a*τ(t)) * exp(-β*x(t))
+                haz_expected = map(times_h) do t
+                    tau = compute_scaled_time_aft(t, beta, t_changes, x_values)
+                    scale_factor = exp(-beta * get_x_at_t(t))
+                    return b * exp(a * tau) * scale_factor
+                end
+                cum_expected = [piecewise_gom_aft_cumhaz(t, a, b, beta, t_changes, x_values) for t in times_cs]
+            end
+            
         elseif scenario.family == "sp"
             basis = make_spline_basis(cfg)
             coefs = cfg.coefs
             
-            function get_x_at_t_sp(t)
-                for (i, tc) in enumerate(t_changes)
-                    if t < tc
-                        return x_values[i]
-                    end
-                end
-                return x_values[end]
-            end
-            
-            # Hazard: h0(t) * exp(beta * x(t))
-            haz_expected = [eval_spline_hazard(t, coefs, basis) * exp(beta * get_x_at_t_sp(t)) for t in times_h]
-            
-            # Cumulative hazard: piecewise integration
-            function piecewise_sp_cumhaz(t)
-                cumhaz = 0.0
-                prev_t = 0.0
-                H0 = u -> eval_spline_cumhaz(u, coefs, basis)
+            if scenario.effect == :ph
+                # PH: h(t|x) = h₀(t) * exp(β*x(t))
+                haz_expected = [eval_spline_hazard(t, coefs, basis) * exp(beta * get_x_at_t(t)) for t in times_h]
                 
-                for (i, tc) in enumerate(t_changes)
-                    if t <= tc
-                        cumhaz += (H0(t) - H0(prev_t)) * exp(beta * x_values[i])
-                        return cumhaz
-                    else
-                        cumhaz += (H0(tc) - H0(prev_t)) * exp(beta * x_values[i])
-                        prev_t = tc
+                # Cumulative hazard: piecewise integration
+                function piecewise_sp_ph_cumhaz(t)
+                    cumhaz = 0.0
+                    prev_t = 0.0
+                    H0 = u -> eval_spline_cumhaz(u, coefs, basis)
+                    
+                    for (i, tc) in enumerate(t_changes)
+                        if t <= tc
+                            cumhaz += (H0(t) - H0(prev_t)) * exp(beta * x_values[i])
+                            return cumhaz
+                        else
+                            cumhaz += (H0(tc) - H0(prev_t)) * exp(beta * x_values[i])
+                            prev_t = tc
+                        end
                     end
+                    cumhaz += (H0(t) - H0(prev_t)) * exp(beta * x_values[end])
+                    return cumhaz
                 end
-                cumhaz += (H0(t) - H0(prev_t)) * exp(beta * x_values[end])
-                return cumhaz
+                
+                cum_expected = [piecewise_sp_ph_cumhaz(t) for t in times_cs]
+            else
+                # AFT: h(t) = h₀(τ(t)) * exp(-β*x(t))
+                haz_expected = map(times_h) do t
+                    tau = compute_scaled_time_aft(t, beta, t_changes, x_values)
+                    scale_factor = exp(-beta * get_x_at_t(t))
+                    return eval_spline_hazard(tau, coefs, basis) * scale_factor
+                end
+                # H(t) = H₀(τ(t))
+                cum_expected = map(times_cs) do t
+                    tau = compute_scaled_time_aft(t, beta, t_changes, x_values)
+                    return eval_spline_cumhaz(tau, coefs, basis)
+                end
             end
-            
-            cum_expected = [piecewise_sp_cumhaz(t) for t in times_cs]
         else
             error("TVC not implemented for family $(scenario.family)")
         end
@@ -378,73 +503,91 @@ function distribution_functions(scenario::Scenario)
         x_values = cfg.x_values
         beta = cfg.beta
         
+        # Helper to find covariate value at time t
+        get_x_at_t = t -> begin
+            for (i, tc) in enumerate(t_changes)
+                if t < tc
+                    return x_values[i]
+                end
+            end
+            return x_values[end]
+        end
+        
         if scenario.family == "exp"
             rate = cfg.rate
-            cumhaz = t -> piecewise_exp_ph_cumhaz(t, rate, beta, t_changes, x_values)
-            hazard = t -> begin
-                # Find which interval t falls into
-                for (i, tc) in enumerate(t_changes)
-                    if t < tc
-                        return rate * exp(beta * x_values[i])
-                    end
-                end
-                return rate * exp(beta * x_values[end])
+            if scenario.effect == :ph
+                cumhaz = t -> piecewise_exp_ph_cumhaz(t, rate, beta, t_changes, x_values)
+                hazard = t -> rate * exp(beta * get_x_at_t(t))
+            else  # AFT
+                cumhaz = t -> piecewise_exp_aft_cumhaz(t, rate, beta, t_changes, x_values)
+                hazard = t -> rate * exp(-beta * get_x_at_t(t))
             end
+            
         elseif scenario.family == "wei"
             shape = cfg.shape
             scale = cfg.scale
-            cumhaz = t -> piecewise_wei_ph_cumhaz(t, shape, scale, beta, t_changes, x_values)
-            hazard = t -> begin
-                for (i, tc) in enumerate(t_changes)
-                    if t < tc
-                        return shape * scale * exp(beta * x_values[i]) * (t^(shape - 1))
-                    end
+            if scenario.effect == :ph
+                cumhaz = t -> piecewise_wei_ph_cumhaz(t, shape, scale, beta, t_changes, x_values)
+                hazard = t -> shape * scale * exp(beta * get_x_at_t(t)) * (t^(shape - 1))
+            else  # AFT
+                cumhaz = t -> piecewise_wei_aft_cumhaz(t, shape, scale, beta, t_changes, x_values)
+                hazard = t -> begin
+                    tau = compute_scaled_time_aft(t, beta, t_changes, x_values)
+                    scale_factor = exp(-beta * get_x_at_t(t))
+                    return shape * scale * (tau^(shape - 1)) * scale_factor
                 end
-                return shape * scale * exp(beta * x_values[end]) * (t^(shape - 1))
             end
+            
+        elseif scenario.family == "gom"
+            a = cfg.shape
+            b = cfg.rate
+            if scenario.effect == :ph
+                cumhaz = t -> piecewise_gom_ph_cumhaz(t, a, b, beta, t_changes, x_values)
+                hazard = t -> b * exp(a * t + beta * get_x_at_t(t))
+            else  # AFT
+                cumhaz = t -> piecewise_gom_aft_cumhaz(t, a, b, beta, t_changes, x_values)
+                hazard = t -> begin
+                    tau = compute_scaled_time_aft(t, beta, t_changes, x_values)
+                    scale_factor = exp(-beta * get_x_at_t(t))
+                    return b * exp(a * tau) * scale_factor
+                end
+            end
+            
         elseif scenario.family == "sp"
             basis = make_spline_basis(cfg)
             coefs = cfg.coefs
             
-            cumhaz = t -> begin
-                total_H = 0.0
-                
-                # Intervals defined by [0, t_changes..., Inf]
-                boundaries = vcat(0.0, t_changes, Inf)
-                
-                for i in 1:length(x_values)
-                    t_start = boundaries[i]
-                    t_end = boundaries[i+1]
-                    x = x_values[i]
-                    linpred = beta * x
-                    
-                    if t <= t_start
-                        break
-                    end
-                    
-                    # Interval contribution
-                    eff_end = min(t, t_end)
-                    
-                    # PH: H(t2) - H(t1) = (H0(t2) - H0(t1)) * exp(linpred)
-                    delta_H0 = eval_spline_cumhaz(eff_end, coefs, basis) - eval_spline_cumhaz(t_start, coefs, basis)
-                    total_H += delta_H0 * exp(linpred)
-                    
-                    if t <= t_end
-                        break
-                    end
-                end
-                return total_H
-            end
-            
-            hazard = t -> begin
-                for (i, tc) in enumerate(t_changes)
-                    if t < tc
+            if scenario.effect == :ph
+                cumhaz = t -> begin
+                    total_H = 0.0
+                    boundaries = vcat(0.0, t_changes, Inf)
+                    for i in 1:length(x_values)
+                        t_start = boundaries[i]
+                        t_end = boundaries[i+1]
+                        if t <= t_start
+                            break
+                        end
+                        eff_end = min(t, t_end)
                         linpred = beta * x_values[i]
-                        return eval_spline_hazard(t, coefs, basis) * exp(linpred)
+                        delta_H0 = eval_spline_cumhaz(eff_end, coefs, basis) - eval_spline_cumhaz(t_start, coefs, basis)
+                        total_H += delta_H0 * exp(linpred)
+                        if t <= t_end
+                            break
+                        end
                     end
+                    return total_H
                 end
-                linpred = beta * x_values[end]
-                return eval_spline_hazard(t, coefs, basis) * exp(linpred)
+                hazard = t -> eval_spline_hazard(t, coefs, basis) * exp(beta * get_x_at_t(t))
+            else  # AFT
+                cumhaz = t -> begin
+                    tau = compute_scaled_time_aft(t, beta, t_changes, x_values)
+                    return eval_spline_cumhaz(tau, coefs, basis)
+                end
+                hazard = t -> begin
+                    tau = compute_scaled_time_aft(t, beta, t_changes, x_values)
+                    scale_factor = exp(-beta * get_x_at_t(t))
+                    return eval_spline_hazard(tau, coefs, basis) * scale_factor
+                end
             end
         else
             error("TVC not implemented for family $(scenario.family)")
@@ -535,7 +678,7 @@ function plot_function_panel(scenario::Scenario, model, data)
     curves = expected_curves(scenario, times_h, times_cs)
     hazard = model.hazards[1]
     # Use natural scale parameters for eval_hazard
-    all_pars = get_hazard_params(model.parameters, model.hazards)
+    all_pars = get_hazard_params_local(model)
     pars = all_pars[hazard.hazname]
     
     if scenario.covariate_mode == :tvc
@@ -589,7 +732,7 @@ function plot_function_panel(scenario::Scenario, model, data)
         surv_tt = [survprob(0.0, t, all_pars, subj_row, model.totalhazards[1], model.hazards; give_log = false, apply_transform = true) for t in times_cs]
     end
 
-    fig = Figure(size = (1200, 900))
+    fig = Figure(size = (1400, 720))
     colors = Dict(:expected => :black, :calc => :dodgerblue, :tt => :darkorange)
 
     ax1 = Axis(fig[1, 1], title = "Hazard", xlabel = "Time", ylabel = "h(t)")
@@ -659,7 +802,7 @@ function plot_distribution_panel(scenario::Scenario, model)
         ks_at_n[idx] = max_diff
     end
 
-    fig = Figure(size = (1500, 600))
+    fig = Figure(size = (1700, 480))
     ax1 = Axis(fig[1, 1], title = "ECDF vs expected", xlabel = "Duration", ylabel = "F(t)")
     lines!(ax1, ts, expected, color = :black, linewidth = 3, label = "analytic")
     lines!(ax1, ts, empirical, color = :dodgerblue, linewidth = 2, label = "simulate_path")
@@ -681,15 +824,222 @@ function plot_distribution_panel(scenario::Scenario, model)
     fname = joinpath(OUTPUT_DIR, "simulation_panel_$(scenario.slug).png")
     save(fname, fig)
     println("saved $(basename(fname)) (max |ΔF| = $(round(max_abs_diff; digits = 3)))")
+    
+    return (max_abs_diff = max_abs_diff, ks_at_n = ks_at_n, eval_ns = eval_ns)
+end
+
+# ===== KS Convergence Analysis =====
+
+# Dvoretzky-Kiefer-Wolfowitz bound: P(D_n > ε) ≤ 2*exp(-2*n*ε²)
+# So for confidence 1-α, threshold is sqrt(log(2/α)/(2n))
+function dkw_bound(n::Int, alpha::Float64=0.05)
+    return sqrt(log(2/alpha) / (2n))
+end
+
+# Compute KS statistic from sorted samples and true CDF values
+function compute_ks_statistic(sorted_samples::Vector{Float64}, cdf_values::Vector{Float64}, n::Int)
+    max_diff = 0.0
+    for i in 1:n
+        cdf_i = cdf_values[i]
+        diff_upper = abs(i / n - cdf_i)
+        diff_lower = abs((i - 1) / n - cdf_i)
+        max_diff = max(max_diff, diff_upper, diff_lower)
+    end
+    return max_diff
+end
+
+# Compute KS statistic at multiple sample sizes
+function compute_ks_by_sample_size(sorted_durations::Vector{Float64}, cdf_fn::Function, 
+                                   sample_sizes::Vector{Int})
+    n_total = length(sorted_durations)
+    cdf_values = cdf_fn.(sorted_durations)
+    
+    ks_stats = Float64[]
+    valid_ns = Int[]
+    
+    for n in sample_sizes
+        if n <= n_total
+            ks = compute_ks_statistic(sorted_durations, cdf_values, n)
+            push!(ks_stats, ks)
+            push!(valid_ns, n)
+        end
+    end
+    
+    return valid_ns, ks_stats
+end
+
+# Compute slope of log(KS) vs log(n) - should be approximately -0.5 for correct distribution
+function compute_ks_slope(ns::Vector{Int}, ks_stats::Vector{Float64})
+    if length(ns) < 2
+        return NaN
+    end
+    log_ns = log.(ns)
+    log_ks = log.(ks_stats)
+    # Simple linear regression
+    n = length(ns)
+    mean_x = sum(log_ns) / n
+    mean_y = sum(log_ks) / n
+    numerator = sum((log_ns .- mean_x) .* (log_ks .- mean_y))
+    denominator = sum((log_ns .- mean_x).^2)
+    slope = denominator > 0 ? numerator / denominator : NaN
+    return slope
+end
+
+# Generate KS convergence plot
+function plot_ks_convergence(scenario::Scenario, ns::Vector{Int}, ks_stats::Vector{Float64})
+    fig = Figure(size = (800, 600))
+    
+    # Main plot: KS vs 1/√n with DKW bound
+    ax1 = Axis(fig[1, 1], 
+               title = "KS Convergence: $(scenario.label)",
+               xlabel = "1/√n",
+               ylabel = "KS statistic (Dₙ)")
+    
+    inv_sqrt_n = 1.0 ./ sqrt.(ns)
+    dkw_bounds = [dkw_bound(n) for n in ns]
+    
+    # Plot DKW bound region
+    band!(ax1, inv_sqrt_n, zeros(length(ns)), dkw_bounds, color = (:gray, 0.2))
+    
+    # Plot DKW bound line
+    lines!(ax1, inv_sqrt_n, dkw_bounds, color = :gray, linestyle = :dash, linewidth = 2, label = "DKW bound (α=0.05)")
+    
+    # Plot observed KS statistics
+    scatterlines!(ax1, inv_sqrt_n, ks_stats, color = :crimson, linewidth = 2, markersize = 10, label = "Observed KS")
+    
+    # Linear fit line
+    slope = compute_ks_slope(ns, ks_stats)
+    if !isnan(slope)
+        # Fit line in log-log space, then transform to 1/sqrt(n) space
+        log_ns = log.(ns)
+        log_ks = log.(ks_stats)
+        mean_log_n = sum(log_ns) / length(ns)
+        mean_log_ks = sum(log_ks) / length(ns)
+        intercept = mean_log_ks - slope * mean_log_n
+        
+        fit_ks = exp.(slope .* log.(ns) .+ intercept)
+        lines!(ax1, inv_sqrt_n, fit_ks, color = :blue, linestyle = :dot, linewidth = 2, 
+               label = "Fit (slope=$(round(slope; digits=3)))")
+    end
+    
+    axislegend(ax1, position = :rt)
+    
+    # Add text annotation with slope check
+    expected_slope = -0.5
+    slope_pass = -0.6 < slope < -0.4
+    status_text = slope_pass ? "✓ PASS" : "✗ FAIL"
+    status_color = slope_pass ? :green : :red
+    
+    text!(ax1, 0.02, 0.98, text = "Slope: $(round(slope; digits=3)) (expected ≈ -0.5)\n$status_text",
+          align = (:left, :top), space = :relative, fontsize = 14, color = status_color)
+    
+    fname = joinpath(OUTPUT_DIR, "ks_convergence_$(scenario.slug).png")
+    save(fname, fig)
+    println("saved $(basename(fname)) (slope = $(round(slope; digits=3)), $(status_text))")
+    
+    return (slope = slope, pass = slope_pass)
+end
+
+# ===== Pass/Fail Tracking =====
+
+mutable struct DiagnosticResult
+    scenario_slug::String
+    function_panel_saved::Bool
+    simulation_panel_saved::Bool
+    ks_convergence_saved::Bool
+    max_delta_f::Float64      # Tang vs fallback parity
+    ks_slope::Float64         # Should be ≈ -0.5
+    delta_f_pass::Bool        # max |ΔF| < 1e-4
+    ks_slope_pass::Bool       # slope ∈ [-0.6, -0.4]
+end
+
+DiagnosticResult(slug::String) = DiagnosticResult(slug, false, false, false, NaN, NaN, false, false)
+
+const DELTA_F_THRESHOLD = 1e-4
+const KS_SLOPE_MIN = -0.6
+const KS_SLOPE_MAX = -0.4
+
+function print_summary(results::Vector{DiagnosticResult})
+    println("\n" * "="^80)
+    println("DIAGNOSTIC SUMMARY")
+    println("="^80)
+    
+    n_total = length(results)
+    n_function_pass = count(r -> r.function_panel_saved, results)
+    n_sim_pass = count(r -> r.simulation_panel_saved, results)
+    n_ks_pass = count(r -> r.ks_convergence_saved, results)
+    n_delta_f_pass = count(r -> r.delta_f_pass, results)
+    n_slope_pass = count(r -> r.ks_slope_pass, results)
+    
+    println("\nPanels Generated:")
+    println("  Function panels:   $n_function_pass / $n_total")
+    println("  Simulation panels: $n_sim_pass / $n_total")
+    println("  KS convergence:    $n_ks_pass / $n_total")
+    
+    println("\nQuality Checks:")
+    println("  Time-transform parity (|ΔF| < $(DELTA_F_THRESHOLD)): $n_delta_f_pass / $n_total")
+    println("  KS slope ∈ [$(KS_SLOPE_MIN), $(KS_SLOPE_MAX)]: $n_slope_pass / $n_total")
+    
+    # List failures
+    failures = filter(r -> !r.delta_f_pass || !r.ks_slope_pass, results)
+    if !isempty(failures)
+        println("\n⚠️  FAILURES:")
+        for r in failures
+            reasons = String[]
+            if !r.delta_f_pass
+                push!(reasons, "ΔF=$(round(r.max_delta_f; sigdigits=3))")
+            end
+            if !r.ks_slope_pass
+                push!(reasons, "slope=$(round(r.ks_slope; digits=3))")
+            end
+            println("  $(r.scenario_slug): $(join(reasons, ", "))")
+        end
+    else
+        println("\n✓ ALL SCENARIOS PASS")
+    end
+    
+    println("="^80)
 end
 
 function generate_all()
+    results = DiagnosticResult[]
+    
     for scenario in sort!(copy(SCENARIOS); by = s -> s.slug)
         println("\n--- $(scenario.label) ---")
+        result = DiagnosticResult(scenario.slug)
+        
         model, data = build_model(scenario)
-        plot_function_panel(scenario, model, data)
-        plot_distribution_panel(scenario, model)
+        
+        # Function panel
+        try
+            plot_function_panel(scenario, model, data)
+            result.function_panel_saved = true
+        catch e
+            println("ERROR in function panel: $e")
+        end
+        
+        # Simulation panel with KS analysis
+        try
+            sim_result = plot_distribution_panel(scenario, model)
+            result.simulation_panel_saved = true
+            result.max_delta_f = sim_result.max_abs_diff
+            result.delta_f_pass = result.max_delta_f < DELTA_F_THRESHOLD
+            
+            # KS convergence plot
+            ks_result = plot_ks_convergence(scenario, sim_result.eval_ns, sim_result.ks_at_n)
+            result.ks_convergence_saved = true
+            result.ks_slope = ks_result.slope
+            result.ks_slope_pass = ks_result.pass
+        catch e
+            println("ERROR in simulation/KS panel: $e")
+            @error "Full error" exception=(e, catch_backtrace())
+        end
+        
+        push!(results, result)
     end
+    
+    print_summary(results)
+    return results
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__

@@ -275,12 +275,16 @@ function build_phasetype_model(tmat::Matrix{Int64}, config::PhaseTypeConfig;
                                           Float64.(CensoringPatterns))
     
     # Step 7: Build the multistate model
+    # Note: Always use verbose=false for model construction since this builds exponential 
+    # hazards on the expanded phase space. The standard validation would incorrectly warn
+    # about "missing transitions" when template data has no actual transitions yet (they're
+    # simulated later). Users see structure info via the earlier verbose print statements.
     model = multistatemodel(hazards...; 
                            data = data_expanded,
                            SubjectWeights = SubjectWeights,
                            CensoringPatterns = CensoringPatterns_expanded,
                            EmissionMatrix = emat_expanded,
-                           verbose = verbose)
+                           verbose = false)
     
     return (
         model = model,

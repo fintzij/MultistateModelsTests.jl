@@ -349,6 +349,9 @@ end
 Plot state prevalence over time comparing true vs fitted model simulations.
 Returns a CairoMakie Figure.
 
+Automatically adapts to the number of states in the results (uses n_states field
+or detects from available state keys).
+
 Colors: Red = true model, Blue = fitted model
 """
 function plot_state_prevalence(result; figsize=(800, 400))
@@ -365,15 +368,23 @@ function plot_state_prevalence(result; figsize=(800, 400))
         return nothing
     end
 
+    # Determine actual states from results (use n_states or detect from keys)
     n_states = result[:n_states]
     
+    # Get actual state keys present in the data (may be fewer than n_states)
+    state_keys = sort([parse(Int, string(k)) for k in keys(result[:prevalence_true])])
+    if isempty(state_keys)
+        return nothing
+    end
+    
+    n_panels = length(state_keys)
     fig = Figure(size=figsize)
     
-    for s in 1:n_states
-        ax = Axis(fig[1, s], 
+    for (panel_idx, s) in enumerate(state_keys)
+        ax = Axis(fig[1, panel_idx], 
             title = "State $s",
-            xlabel = s == 2 ? "Time" : "",
-            ylabel = s == 1 ? "Prevalence" : ""
+            xlabel = panel_idx == (n_panels ÷ 2 + 1) ? "Time" : "",
+            ylabel = panel_idx == 1 ? "Prevalence" : ""
         )
         
         sk = string(s)
@@ -408,7 +419,7 @@ function plot_state_prevalence(result; figsize=(800, 400))
         
         ylims!(ax, 0, 1)
         
-        if s == n_states && has_plots
+        if panel_idx == n_panels && has_plots
             axislegend(ax, position=:rt)
         end
     end
@@ -417,37 +428,42 @@ function plot_state_prevalence(result; figsize=(800, 400))
 end
 
 """
-    plot_cumulative_incidence(result; transitions=[(1,2), (2,3)], figsize=(700, 300)) -> Figure
+    plot_cumulative_incidence(result; figsize=(700, 300)) -> Figure
 
 Plot cumulative incidence over time comparing true vs fitted model simulations.
 Returns a CairoMakie Figure.
 
-Note: Only transitions 1→2 and 2→3 are shown (no 1→3 for progressive models).
+Automatically detects which transitions are available in the results and plots
+only those (adapts to 2-state, 3-state, or other model structures).
 
 Colors: Red = true model, Blue = fitted model
 """
-function plot_cumulative_incidence(result; transitions=[(1,2), (2,3)], figsize=(700, 300))
+function plot_cumulative_incidence(result; figsize=(700, 300))
     if !haskey(result, :cumulative_incidence_times)
+        return nothing
+    end
+    
+    if !haskey(result, :cumulative_incidence_true) || isempty(result[:cumulative_incidence_true])
         return nothing
     end
 
     times = collect(Float64, result[:cumulative_incidence_times])
     
+    # Detect available transitions from the result keys
+    transition_keys = sort(collect(String.(keys(result[:cumulative_incidence_true]))))
+    if isempty(transition_keys)
+        return nothing
+    end
+    
+    n_transitions = length(transition_keys)
     fig = Figure(size=figsize)
     
-    for (i, (from, to)) in enumerate(transitions)
+    for (i, key) in enumerate(transition_keys)
         ax = Axis(fig[1, i], 
-            title = "$from → $to",
+            title = key,
             xlabel = "Time",
             ylabel = i == 1 ? "Cumulative Incidence" : ""
         )
-        
-        key = "$from→$to"
-        
-        # Check if this transition exists in results
-        if !haskey(result[:cumulative_incidence_true], key)
-            continue
-        end
         
         # True model (red)
         ci_true = collect(Float64, result[:cumulative_incidence_true][key])
@@ -467,7 +483,7 @@ function plot_cumulative_incidence(result; transitions=[(1,2), (2,3)], figsize=(
         
         ylims!(ax, 0, 1)
         
-        if i == length(transitions)
+        if i == n_transitions
             axislegend(ax, position=:rb)
         end
     end

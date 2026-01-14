@@ -44,11 +44,11 @@ using BenchmarkTools
 
 *Plot to be generated: ESS vs computation time for each method*
 
-## 2. MCEM Acceleration
+## 2. MCEM Convergence
 
 ### Overview
 
-This section compares standard EM with SQUAREM acceleration.
+This section benchmarks MCEM convergence with adaptive ESS and SIR resampling.
 
 ### Benchmark Setup
 
@@ -56,15 +56,15 @@ This section compares standard EM with SQUAREM acceleration.
 #| eval: false
 #| echo: true
 
-# TODO: Add SQUAREM benchmark code
+# TODO: Add MCEM benchmark code
 ```
 
 ### Convergence Comparison
 
 | Method | Iterations to Convergence | Total Runtime (s) |
 |--------|---------------------------|-------------------|
-| Standard EM | - | - |
-| SQUAREM | - | - |
+| Standard IS | - | - |
+| Adaptive SIR | - | - |
 
 ### Convergence Plots
 

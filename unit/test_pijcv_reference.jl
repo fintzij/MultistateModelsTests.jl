@@ -180,8 +180,9 @@ end
     
     @test k == 8
     
-    # Build penalty matrix
-    S = build_penalty_matrix(basis, 2)
+    # Build penalty matrix using INTEGRAL method (O'Sullivan formulation)
+    # Note: GPS method has different scaling; use integral for exact functional verification
+    S = build_penalty_matrix(basis, 2; method=:integral)
     
     # For any coefficient vector c, c'Sc should equal ∫[f''(x)]² dx
     # Test with a polynomial that we know: f(x) = x²

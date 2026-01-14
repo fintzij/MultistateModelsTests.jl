@@ -1,0 +1,13 @@
+   Resolving package versions...
+     Project No packages added to or removed from `~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/Project.toml`
+    Manifest No packages added to or removed from `~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/Manifest.toml`
+Precompiling packages...
+   1088.6 ms  ✓ SciMLBase → SciMLBaseDistributionsExt
+   1978.2 ms  ✓ BracketingNonlinearSolve
+    937.2 ms  ✓ BracketingNonlinearSolve → BracketingNonlinearSolveForwardDiffExt
+    985.5 ms  ✓ BracketingNonlinearSolve → BracketingNonlinearSolveChainRulesCoreExt
+   4861.9 ms  ✓ SciMLBase → SciMLBaseMakieExt
+   3741.1 ms  ✓ SimpleNonlinearSolve
+   1115.2 ms  ✓ SimpleNonlinearSolve → SimpleNonlinearSolveChainRulesCoreExt
+   6656.9 ms  ✓ NonlinearSolve
+   7566.5 ms  ✓ MultistateModels

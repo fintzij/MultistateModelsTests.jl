@@ -82,12 +82,12 @@ end
         
         # Model with uniform weights
         model_uniform = multistatemodel(h12, h23; data=dat)
-        set_test_params!(model_uniform, [log(0.5), log(0.3)])
+        set_test_params!(model_uniform, [0.5, 0.3])
         
         # Model with observation weights (double first obs of each subject)
         obs_weights = [2.0, 1.0, 2.0, 1.0]
         model_weighted = multistatemodel(h12, h23; data=dat, ObservationWeights=obs_weights)
-        set_test_params!(model_weighted, [log(0.5), log(0.3)])
+        set_test_params!(model_weighted, [0.5, 0.3])
         
         books_uniform = MultistateModels.build_tpm_mapping(model_uniform.data)
         mpd_uniform = MultistateModels.MPanelData(model_uniform, books_uniform)
@@ -126,12 +126,12 @@ end
         
         # Model with uniform weights
         model_uniform = multistatemodel(h12, h23; data=dat)
-        set_test_params!(model_uniform, [log(0.5), log(0.3)])
+        set_test_params!(model_uniform, [0.5, 0.3])
         
         # Model with observation weights
         obs_weights = [2.0, 1.0, 2.0, 1.0]
         model_weighted = multistatemodel(h12, h23; data=dat, ObservationWeights=obs_weights)
-        set_test_params!(model_weighted, [log(0.5), log(0.3)])
+        set_test_params!(model_weighted, [0.5, 0.3])
         
         books_uniform = MultistateModels.build_tpm_mapping(model_uniform.data)
         mpd_uniform = MultistateModels.MPanelData(model_uniform, books_uniform)
@@ -272,7 +272,7 @@ end
         CensoringPatterns = [3.0 0.0 1.0 1.0]
         
         model = multistatemodel(h12, h23; data=dat, CensoringPatterns=CensoringPatterns)
-        set_test_params!(model, [log(0.5), log(0.3)])
+        set_test_params!(model, [0.5, 0.3])
         
         books = MultistateModels.build_tpm_mapping(model.data)
         mpd = MultistateModels.MPanelData(model, books)
@@ -295,7 +295,7 @@ end
         )
         
         model_exact = multistatemodel(h12, h23; data=dat_exact)
-        set_test_params!(model_exact, [log(0.5), log(0.3)])
+        set_test_params!(model_exact, [0.5, 0.3])
         
         books_exact = MultistateModels.build_tpm_mapping(model_exact.data)
         mpd_exact = MultistateModels.MPanelData(model_exact, books_exact)
@@ -328,7 +328,7 @@ end
         CensoringPatterns = [3.0 0.0 1.0 1.0]  # states 2 or 3 allowed
         
         model_censored = multistatemodel(h12, h23; data=dat_censored, CensoringPatterns=CensoringPatterns)
-        set_test_params!(model_censored, [log(0.5), log(0.3)])
+        set_test_params!(model_censored, [0.5, 0.3])
         
         # Compute censored likelihood
         books = MultistateModels.build_tpm_mapping(model_censored.data)
@@ -359,8 +359,8 @@ end
         
         model_to2 = multistatemodel(h12, h23; data=dat_to2)
         model_to3 = multistatemodel(h12, h23; data=dat_to3)
-        set_test_params!(model_to2, [log(0.5), log(0.3)])
-        set_test_params!(model_to3, [log(0.5), log(0.3)])
+        set_test_params!(model_to2, [0.5, 0.3])
+        set_test_params!(model_to3, [0.5, 0.3])
         
         books_to2 = MultistateModels.build_tpm_mapping(model_to2.data)
         mpd_to2 = MultistateModels.MPanelData(model_to2, books_to2)

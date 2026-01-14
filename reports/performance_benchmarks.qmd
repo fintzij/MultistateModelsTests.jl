@@ -53,12 +53,12 @@ if isfile(results_path)
     end
 
     scalability_df = json_to_df(json_data.scalability)
-    squarem_df = json_to_df(json_data.squarem)
+    mcem_df = haskey(json_data, :mcem) ? json_to_df(json_data.mcem) : DataFrame(Method=[], Runtime=[])
     threading_df = json_to_df(json_data.threading)
 else
     println("⚠️ Benchmark results file not found at $results_path")
     scalability_df = DataFrame(N=[], Runtime=[])
-    squarem_df = DataFrame(Method=[], Runtime=[])
+    mcem_df = DataFrame(Method=[], Runtime=[])
     threading_df = DataFrame(Threads=[], Runtime=[])
 end
 ```
@@ -94,14 +94,14 @@ else
 end
 ```
 
-## SQUAREM Acceleration
+## MCEM Performance
 
 ```{julia}
 #| echo: false
-if !isempty(squarem_df)
-    println("SQUAREM Runtime (N=200): $(round(squarem_df.Runtime[1], digits=4)) seconds")
+if !isempty(mcem_df)
+    println("MCEM Runtime (N=200): $(round(mcem_df.Runtime[1], digits=4)) seconds")
 else
-    println("No SQUAREM data available.")
+    println("No MCEM data available.")
 end
 ```
 
@@ -180,17 +180,17 @@ println("Threads available: ", Threads.nthreads())
 
 1. **Exact data fitting**: Scales linearly with sample size
 2. **Panel data (MCEM)**: Slower than exact, but handles interval censoring
-3. **SQUAREM**: Accelerated EM convergence (enabled by default)
-4. **Threading**: Parallel likelihood computation
-5. **Phase-type proposals**: Critical for non-exponential hazards in MCEM
+3. **Threading**: Parallel likelihood computation
+4. **Phase-type proposals**: Critical for non-exponential hazards in MCEM
+5. **SIR/LHS resampling**: Variance reduction for importance sampling
 
 ### Optimization Tips
 
 1. **Use exact observations when available** - much faster than panel
-2. **Enable SQUAREM** - default in `fit()`, significantly faster
-3. **Match threads to physical cores** - avoid hyperthreading overhead
-4. **Use phase-type proposals for semi-Markov** - automatic selection in `fit()`
-5. **Profile before optimizing** - identify actual bottlenecks
+2. **Match threads to physical cores** - avoid hyperthreading overhead
+3. **Use phase-type proposals for semi-Markov** - automatic selection in `fit()`
+4. **Profile before optimizing** - identify actual bottlenecks
+5. **Use adaptive SIR** - automatically switches to resampling when beneficial
 
 ### Memory Management
 

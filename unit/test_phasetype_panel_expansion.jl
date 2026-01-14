@@ -38,9 +38,10 @@ using LinearAlgebra
     @test model.emat[1, 5] == 0.0
 
     # 2. Check Likelihood Calculation
-    # Set parameters to log(0.5) so all rates are 0.5
-    log_rate = log(0.5)
-    flat_params = fill(log_rate, length(model.parameters.flat))
+    # Set parameters to rate = 0.5 (NATURAL scale, post-v0.3.0)
+    # Phase-type rates have box constraints lb=0.0 on natural scale
+    rate = 0.5
+    flat_params = fill(rate, length(model.parameters.flat))
     
     # Build MPanelData
     books = MultistateModels.build_tpm_mapping(model.data)

@@ -5,6 +5,10 @@
 # Tests that verify critical algorithmic correctness:
 # 1. ForwardDiff compatibility (gradients/Hessians work correctly)
 # 2. Batched vs sequential likelihood parity (optimization bugs)
+# Support both standalone execution and module-based test harness
+if !@isdefined(TestFixtures)
+    include(joinpath(@__DIR__, "..", "fixtures", "TestFixtures.jl"))
+end
 using .TestFixtures
 using ForwardDiff
 using LinearAlgebra

@@ -16,17 +16,17 @@ website:
     left:
       - href: index.qmd
         text: Home
-      - href: architecture.qmd
+      - href: 01_architecture.qmd
         text: Architecture
-      - href: unit_tests.qmd
+      - href: 02_unit_tests.qmd
         text: Unit Tests
-      - href: long_tests.qmd
+      - href: 03_long_tests.qmd
         text: Long Tests
-      - href: simulation_diagnostics.qmd
+      - href: 04_simulation_diagnostics.qmd
         text: Simulation
       - text: Benchmarks
         menu:
-          - href: performance_benchmarks.qmd
+          - href: 05_benchmarks.qmd
             text: Performance
           - href: spline_comparison_benchmark.qmd
             text: Spline Methods Comparison

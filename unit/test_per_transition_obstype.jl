@@ -25,6 +25,10 @@ import MultistateModels:
 
 # Import fixtures from TestFixtures module
 include(joinpath(@__DIR__, "..", "fixtures", "TestFixtures.jl"))
+# Support both standalone execution and module-based test harness
+if !@isdefined(TestFixtures)
+    include(joinpath(@__DIR__, "..", "fixtures", "TestFixtures.jl"))
+end
 using .TestFixtures: toy_illness_death_model, toy_multisubject_illness_death_model
 
 # =============================================================================

@@ -146,6 +146,7 @@ function toy_fitted_exact_model()
     fitted = MultistateModelFitted(
         base_model.data,
         base_model.parameters,
+        base_model.bounds,  # bounds
         stored_loglik,
         nothing,  # vcov
         nothing,  # ij_vcov

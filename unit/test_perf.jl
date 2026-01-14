@@ -311,6 +311,88 @@ println("="^70)
         println("    Criterion: $(round(result.criterion, digits=4))")
     end
     
+    # =========================================================================
+    # Known-Answer Tests for PERF Components
+    # =========================================================================
+    
+    @testset "compute_penalty Known-Answer Tests (PERF context)" begin
+        # The penalty function used in PERF/EFS/PIJCV is:
+        #   P(β; λ) = (1/2) Σⱼ λⱼ βⱼᵀ Sⱼ βⱼ
+        # Test with known values to verify correctness
+        
+        # Test 1: β = [1, 2, 3], S = I₃, λ = 0.5
+        # βᵀ I β = 1 + 4 + 9 = 14
+        # Penalty = (1/2) * 0.5 * 14 = 3.5
+        K = 3
+        β = [1.0, 2.0, 3.0]
+        S_I = Matrix{Float64}(I, K, K)
+        λ = 0.5
+        
+        term = MultistateModels.PenaltyTerm(1:K, S_I, λ, 2, [:h12])
+        config = PenaltyConfig(
+            [term],
+            MultistateModels.TotalHazardPenaltyTerm[],
+            MultistateModels.SmoothCovariatePenaltyTerm[],
+            Dict{Int,Vector{Int}}(),
+            Vector{Int}[],
+            1
+        )
+        
+        expected_penalty = 0.5 * λ * 14.0  # = 3.5
+        @test compute_penalty(β, config) ≈ 3.5 rtol=1e-10
+        
+        # Test 2: λ = 0 gives zero penalty
+        term_zero = MultistateModels.PenaltyTerm(1:K, S_I, 0.0, 2, [:h12])
+        config_zero = PenaltyConfig(
+            [term_zero],
+            MultistateModels.TotalHazardPenaltyTerm[],
+            MultistateModels.SmoothCovariatePenaltyTerm[],
+            Dict{Int,Vector{Int}}(),
+            Vector{Int}[],
+            1
+        )
+        @test compute_penalty(β, config_zero) ≈ 0.0 atol=1e-15
+        
+        # Test 3: Penalty scales linearly with λ
+        # If we double λ, penalty should double
+        λ_double = 1.0
+        term_double = MultistateModels.PenaltyTerm(1:K, S_I, λ_double, 2, [:h12])
+        config_double = PenaltyConfig(
+            [term_double],
+            MultistateModels.TotalHazardPenaltyTerm[],
+            MultistateModels.SmoothCovariatePenaltyTerm[],
+            Dict{Int,Vector{Int}}(),
+            Vector{Int}[],
+            1
+        )
+        # With λ = 1.0: penalty = 0.5 * 1.0 * 14 = 7.0
+        @test compute_penalty(β, config_double) ≈ 7.0 rtol=1e-10
+        @test compute_penalty(β, config_double) ≈ 2.0 * compute_penalty(β, config) rtol=1e-10
+        
+        # Test 4: Different penalty matrix
+        # S = [2 0; 0 3], β = [1, 2], λ = 1.0
+        # βᵀ S β = 1*2*1 + 2*3*2 = 2 + 12 = 14
+        # Penalty = (1/2) * 1.0 * 14 = 7.0
+        S_diag = [2.0 0.0; 0.0 3.0]
+        β_2 = [1.0, 2.0]
+        term_diag = MultistateModels.PenaltyTerm(1:2, S_diag, 1.0, 2, [:h12])
+        config_diag = PenaltyConfig(
+            [term_diag],
+            MultistateModels.TotalHazardPenaltyTerm[],
+            MultistateModels.SmoothCovariatePenaltyTerm[],
+            Dict{Int,Vector{Int}}(),
+            Vector{Int}[],
+            1
+        )
+        # βᵀ S β = 1*2 + 4*3 = 2 + 12 = 14
+        @test compute_penalty(β_2, config_diag) ≈ 7.0 rtol=1e-10
+        
+        println("  ✓ compute_penalty known-answer tests pass (PERF context)")
+        println("    β=[1,2,3], S=I, λ=0.5 → penalty = 3.5")
+        println("    β=[1,2,3], S=I, λ=1.0 → penalty = 7.0 (linear scaling)")
+        println("    β=[1,2], S=diag(2,3), λ=1.0 → penalty = 7.0")
+    end
+    
 end
 
 println("\n" * "="^70)

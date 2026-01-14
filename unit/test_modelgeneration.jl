@@ -4,6 +4,10 @@
 #
 # Tests user-facing error handling that prevents silent incorrect behavior.
 
+# Support both standalone execution and module-based test harness
+if !@isdefined(TestFixtures)
+    include(joinpath(@__DIR__, "..", "fixtures", "TestFixtures.jl"))
+end
 using .TestFixtures
 
 # --- Duplicate transition detection ---------------------------------------------

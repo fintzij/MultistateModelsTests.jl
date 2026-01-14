@@ -515,9 +515,9 @@ For panel data with semi-Markov hazards (Weibull, Gompertz, degree>0 splines), M
 **M-step:** Maximize expected complete-data log-likelihood with importance weights
 
 **Features:**
-- SQUAREM acceleration
 - Adaptive ESS targeting
 - Latin Hypercube Sampling (LHS) for variance-reduced resampling
+- Sampling Importance Resampling (SIR) for weight degeneracy
 
 ### Forward-Filtering Backward-Sampling (FFBS)
 

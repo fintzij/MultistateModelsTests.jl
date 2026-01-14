@@ -41,18 +41,18 @@ using StatsModels: @formula
         
         model = multistatemodel(h12, h13, h23; data=template)
         
-        # Set distinct parameter values
-        log_h12 = -1.0  # log(rate) for 1->2
-        log_h13 = -2.0  # log(rate) for 1->3
-        log_h23 = -3.0  # log(rate) for 2->3
+        # Set distinct parameter values (v0.3.0+: natural scale - actual rates, not log rates)
+        rate_h12 = 0.37  # rate for 1->2
+        rate_h13 = 0.14  # rate for 1->3
+        rate_h23 = 0.05  # rate for 2->3
         
-        set_parameters!(model, (h12=[log_h12], h13=[log_h13], h23=[log_h23]))
+        set_parameters!(model, (h12=[rate_h12], h13=[rate_h13], h23=[rate_h23]))
         
         # Verify get_parameters_flat returns in transition matrix order with correct values
         flat = get_parameters_flat(model)
-        @test flat[1] ≈ log_h12  # h12 first (1->2)
-        @test flat[2] ≈ log_h13  # h13 second (1->3)
-        @test flat[3] ≈ log_h23  # h23 third (2->3)
+        @test flat[1] ≈ rate_h12  # h12 first (1->2)
+        @test flat[2] ≈ rate_h13  # h13 second (1->3)
+        @test flat[3] ≈ rate_h23  # h23 third (2->3)
         
         # Verify hazard names match expected order
         @test model.hazards[1].hazname == :h12
@@ -78,14 +78,14 @@ using StatsModels: @formula
         
         model = multistatemodel(h12; data=template)
         
-        # Set parameters: [log_shape, log_scale]
-        log_shape = log(1.5)
-        log_scale = log(0.1)
-        set_parameters!(model, (h12=[log_shape, log_scale],))
+        # Set parameters (v0.3.0+: natural scale): [shape, scale]
+        shape = 1.5
+        scale = 0.1
+        set_parameters!(model, (h12=[shape, scale],))
         
         flat = get_parameters_flat(model)
-        @test flat[1] ≈ log_shape  # First parameter is shape
-        @test flat[2] ≈ log_scale  # Second parameter is scale
+        @test flat[1] ≈ shape  # First parameter is shape
+        @test flat[2] ≈ scale  # Second parameter is scale
         
         # Verify parameter names
         @test model.hazards[1].parnames == [:h12_shape, :h12_scale]
@@ -109,14 +109,15 @@ using StatsModels: @formula
         
         model = multistatemodel(h12; data=template)
         
-        # Set parameters: [log_shape, log_scale]
-        log_shape = log(0.3)
-        log_scale = log(0.05)
-        set_parameters!(model, (h12=[log_shape, log_scale],))
+        # Set parameters (v0.3.0+: natural scale): [shape, scale]
+        # Note: Gompertz shape can be negative (decreasing hazard), rate must be positive
+        shape = 0.3
+        scale = 0.05
+        set_parameters!(model, (h12=[shape, scale],))
         
         flat = get_parameters_flat(model)
-        @test flat[1] ≈ log_shape  # First parameter is shape
-        @test flat[2] ≈ log_scale  # Second parameter is scale
+        @test flat[1] ≈ shape  # First parameter is shape (unconstrained)
+        @test flat[2] ≈ scale  # Second parameter is scale (positive)
         
         # Verify parameter names
         @test model.hazards[1].parnames == [:h12_shape, :h12_scale]
@@ -142,27 +143,27 @@ using StatsModels: @formula
         
         model = multistatemodel(h12, h13, h23; data=template)
         
-        # Set parameters
-        log_rate = log(0.2)
-        log_wei_shape = log(1.5)
-        log_wei_scale = log(0.1)
-        log_gom_shape = log(0.3)
-        log_gom_scale = log(0.05)
+        # Set parameters (v0.3.0+: natural scale)
+        rate = 0.2
+        wei_shape = 1.5
+        wei_scale = 0.1
+        gom_shape = 0.3
+        gom_scale = 0.05
         
         set_parameters!(model, (
-            h12=[log_rate], 
-            h13=[log_wei_shape, log_wei_scale],
-            h23=[log_gom_shape, log_gom_scale]
+            h12=[rate], 
+            h13=[wei_shape, wei_scale],
+            h23=[gom_shape, gom_scale]
         ))
         
         flat = get_parameters_flat(model)
         
         # Check ordering: h12 (1 param), h13 (2 params), h23 (2 params)
-        @test flat[1] ≈ log_rate         # h12 rate
-        @test flat[2] ≈ log_wei_shape    # h13 shape
-        @test flat[3] ≈ log_wei_scale    # h13 scale
-        @test flat[4] ≈ log_gom_shape    # h23 shape
-        @test flat[5] ≈ log_gom_scale    # h23 scale
+        @test flat[1] ≈ rate         # h12 rate
+        @test flat[2] ≈ wei_shape    # h13 shape
+        @test flat[3] ≈ wei_scale    # h13 scale
+        @test flat[4] ≈ gom_shape    # h23 shape
+        @test flat[5] ≈ gom_scale    # h23 scale
     end
 
 end

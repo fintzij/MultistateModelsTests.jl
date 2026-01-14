@@ -92,8 +92,8 @@ end
         model_duplicated = multistatemodel(h12, h23; data=dat_duplicated)
         
         # Set same parameters
-        set_test_params!(model_weighted, [log(0.5), log(0.3)])  # log scale
-        set_test_params!(model_duplicated, [log(0.5), log(0.3)])
+        set_test_params!(model_weighted, [0.5, 0.3])  # log scale
+        set_test_params!(model_duplicated, [0.5, 0.3])
         
         # Compute log-likelihoods
         books_weighted = MultistateModels.build_tpm_mapping(model_weighted.data)
@@ -134,7 +134,7 @@ end
         
         # Model with uniform weights
         model_uniform = multistatemodel(h12, h23; data=dat)
-        set_test_params!(model_uniform, [log(0.5), log(0.3)])
+        set_test_params!(model_uniform, [0.5, 0.3])
         
         books_uniform = MultistateModels.build_tpm_mapping(model_uniform.data)
         mpd_uniform = MultistateModels.MPanelData(model_uniform, books_uniform)
@@ -148,7 +148,7 @@ end
         # Model with non-uniform weights
         weights = [1.0, 2.0, 0.5]
         model_weighted = multistatemodel(h12, h23; data=dat, SubjectWeights=weights)
-        set_test_params!(model_weighted, [log(0.5), log(0.3)])
+        set_test_params!(model_weighted, [0.5, 0.3])
         
         books_weighted = MultistateModels.build_tpm_mapping(model_weighted.data)
         mpd_weighted = MultistateModels.MPanelData(model_weighted, books_weighted)
@@ -280,11 +280,11 @@ end
         
         # Model with weight=2
         model_weighted = multistatemodel(h12, h23; data=dat_single, SubjectWeights=[2.0])
-        set_test_params!(model_weighted, [log(0.5), log(0.3)])
+        set_test_params!(model_weighted, [0.5, 0.3])
         
         # Model with duplicated data
         model_duplicated = multistatemodel(h12, h23; data=dat_duplicated)
-        set_test_params!(model_duplicated, [log(0.5), log(0.3)])
+        set_test_params!(model_duplicated, [0.5, 0.3])
         
         # Create sample paths
         samplepaths_single = [MultistateModels.SamplePath(1, [0.0, 1.0, 2.0], [1, 2, 3])]
@@ -325,7 +325,7 @@ end
         
         weights = [1.0, 2.0, 0.5]
         model = multistatemodel(h12, h23; data=dat, SubjectWeights=weights)
-        set_test_params!(model, [log(0.5), log(0.3)])
+        set_test_params!(model, [0.5, 0.3])
         
         # Create sample paths for ExactData
         samplepaths = [MultistateModels.SamplePath(i, [0.0, 1.0, 2.0], [1, 2, 3]) for i in 1:nsubj]
@@ -341,7 +341,7 @@ end
         # The likelihood should be influenced by weights
         # Create unweighted model for comparison
         model_uniform = multistatemodel(h12, h23; data=dat)
-        set_test_params!(model_uniform, [log(0.5), log(0.3)])
+        set_test_params!(model_uniform, [0.5, 0.3])
         exactdata_uniform = MultistateModels.ExactData(model_uniform, samplepaths)
         ll_uniform = MultistateModels.loglik_exact(params, exactdata_uniform; neg=false)
         
@@ -377,7 +377,7 @@ end
         
         weights = [1.0, 2.0, 0.5]
         model = multistatemodel(h12, h23; data=dat, SubjectWeights=weights)
-        set_test_params!(model, [log(0.5), log(0.3)])
+        set_test_params!(model, [0.5, 0.3])
         
         books = MultistateModels.build_tpm_mapping(model.data)
         mpd = MultistateModels.MPanelData(model, books)
@@ -390,7 +390,7 @@ end
         
         # Gradient with uniform weights for comparison
         model_uniform = multistatemodel(h12, h23; data=dat)
-        set_test_params!(model_uniform, [log(0.5), log(0.3)])
+        set_test_params!(model_uniform, [0.5, 0.3])
         books_uniform = MultistateModels.build_tpm_mapping(model_uniform.data)
         mpd_uniform = MultistateModels.MPanelData(model_uniform, books_uniform)
         
@@ -464,9 +464,10 @@ end
         # Model with duplicated data (uniform weights)
         model_duplicated = multistatemodel(h12, h23; data=dat_duplicated)
         
-        # Set same parameters (Weibull has 2 params per hazard: log_scale, log_shape)
-        set_parameters!(model_weighted, [[0.0, 0.0], [0.0, 0.0]])
-        set_parameters!(model_duplicated, [[0.0, 0.0], [0.0, 0.0]])
+        # Set same parameters (Weibull has 2 params per hazard: shape, scale on natural scale)
+        # Both must be > 0 for valid Weibull hazard
+        set_parameters!(model_weighted, [[1.0, 0.5], [1.0, 0.5]])
+        set_parameters!(model_duplicated, [[1.0, 0.5], [1.0, 0.5]])
         
         # Compute log-likelihoods using the Markov wrapper
         books_weighted = MultistateModels.build_tpm_mapping(model_weighted.data)

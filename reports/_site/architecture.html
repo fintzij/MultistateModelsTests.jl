@@ -160,25 +160,36 @@ window.Quarto = {
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link active" href="./architecture.html" aria-current="page"> 
+    <a class="nav-link" href="./01_architecture.html"> 
 <span class="menu-text">Architecture</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./unit_tests.html"> 
+    <a class="nav-link" href="./02_unit_tests.html"> 
 <span class="menu-text">Unit Tests</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./long_tests.html"> 
+    <a class="nav-link" href="./03_long_tests.html"> 
 <span class="menu-text">Long Tests</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./simulation_diagnostics.html"> 
+    <a class="nav-link" href="./04_simulation_diagnostics.html"> 
 <span class="menu-text">Simulation</span></a>
   </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="./benchmarks.html"> 
-<span class="menu-text">Benchmarks</span></a>
+  <li class="nav-item dropdown ">
+    <a class="nav-link dropdown-toggle" href="#" id="nav-menu-benchmarks" role="link" data-bs-toggle="dropdown" aria-expanded="false">
+ <span class="menu-text">Benchmarks</span>
+    </a>
+    <ul class="dropdown-menu" aria-labelledby="nav-menu-benchmarks">    
+        <li>
+    <a class="dropdown-item" href="./05_benchmarks.html">
+ <span class="dropdown-text">Performance</span></a>
   </li>  
+        <li>
+    <a class="dropdown-item" href="./spline_comparison_benchmark.html">
+ <span class="dropdown-text">Spline Methods Comparison</span></a>
+  </li>  
+    </ul>
+  </li>
 </ul>
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item compact">
@@ -292,7 +303,7 @@ window.Quarto = {
 <section id="internal-hazard-types" class="level3">
 <h3 class="anchored" data-anchor-id="internal-hazard-types">Internal Hazard Types</h3>
 <p>The package uses an internal type hierarchy for hazard functions that distinguishes between <strong>Markov</strong> (time-homogeneous) and <strong>semi-Markov</strong> (sojourn-time-dependent) hazards:</p>
-<div id="bf0c65bc" class="cell" data-fig-height="6" data-fig-width="14" data-execution_count="2">
+<div id="612ec15e" class="cell" data-fig-height="6" data-fig-width="14" data-execution_count="2">
 <div class="cell-output cell-output-display" data-execution_count="3">
 <div>
 <figure class="figure">
@@ -305,7 +316,7 @@ window.Quarto = {
 </section>
 <section id="model-types" class="level3">
 <h3 class="anchored" data-anchor-id="model-types">Model Types</h3>
-<div id="e5dc0c20" class="cell" data-fig-height="4" data-fig-width="10" data-execution_count="3">
+<div id="0d225ef3" class="cell" data-fig-height="4" data-fig-width="10" data-execution_count="3">
 <div class="cell-output cell-output-display" data-execution_count="4">
 <div>
 <figure class="figure">
@@ -557,7 +568,7 @@ Note
 <section id="phase-type-structure" class="level3">
 <h3 class="anchored" data-anchor-id="phase-type-structure">Phase-Type Structure</h3>
 <p>Phase-type hazards (<code>:pt</code>) use a Coxian structure with latent phases:</p>
-<div id="559e1ec5" class="cell" data-fig-height="5" data-fig-width="12" data-execution_count="4">
+<div id="c445719b" class="cell" data-fig-height="5" data-fig-width="12" data-execution_count="4">
 <div class="cell-output cell-output-display" data-execution_count="5">
 <div>
 <figure class="figure">
@@ -713,8 +724,8 @@ Warning
 </tbody>
 </table>
 <div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Access parameters in different scales</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>p_natural <span class="op">=</span> model.parameters.natural   <span class="co"># Interpretable values</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>p_flat <span class="op">=</span> model.parameters.flat         <span class="co"># For optimization (log scale)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>p_natural <span class="op">=</span> <span class="fu">get_parameters</span>(model; scale<span class="op">=:</span>natural)  <span class="co"># Interpretable values</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>p_flat <span class="op">=</span> model.parameters.flat                      <span class="co"># For optimization (log scale)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </section>
 </section>
 <section id="inference-methods" class="level2">
@@ -722,7 +733,7 @@ Warning
 <section id="fitting-strategy-selection" class="level3">
 <h3 class="anchored" data-anchor-id="fitting-strategy-selection">Fitting Strategy Selection</h3>
 <p>The <code>fit()</code> function automatically selects the appropriate method based on data and hazard types:</p>
-<div id="fa303b67" class="cell" data-fig-height="5" data-fig-width="10" data-execution_count="5">
+<div id="7eaa66aa" class="cell" data-fig-height="5" data-fig-width="10" data-execution_count="5">
 <div class="cell-output cell-output-display" data-execution_count="6">
 <div>
 <figure class="figure">

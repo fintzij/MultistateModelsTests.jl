@@ -320,7 +320,7 @@ end
         model_fit = multistatemodel(hazards_for_fit...; data=panel_data_phases)
         
         println("\nFitting phase-type model with panel data...")
-        fitted = fit(model_fit; verbose=false)
+        fitted = fit(model_fit; verbose=false, compute_vcov=true)
         
         fitted_params = get_parameters_flat(fitted)
         println("True params (natural): $(round.(true_params, digits=3))")
@@ -328,18 +328,23 @@ end
         
         @test check_parameter_recovery(fitted_params, true_params)
         
-        # Cache results
+        # Cache results with prevalence/CI plots
         param_names = ["p$i" for i in 1:length(true_params)]
-        capture_simple_longtest_result!(
+        hazard_specs_for_sim = build_phasetype_hazards(tmat, config, surrogate)
+        
+        capture_phasetype_longtest_result!(
             "pt_panel_simple",
             fitted,
             true_params,
-            param_names;
-            hazard_family="phasetype",
+            param_names,
+            surrogate,
+            hazard_specs_for_sim;
+            hazard_family="pt",
             data_type="panel",
-            covariate_type="none",
+            covariate_type="nocov",
             n_subjects=N_SUBJECTS,
-            n_states=2
+            n_observed_states=surrogate.n_observed_states,
+            transitions=[(1, 2)]  # 2-state model: only 1→2 transition
         )
     end
 end
@@ -402,7 +407,7 @@ end
         model_fit = multistatemodel(hazards_for_fit...; data=panel_data)
         
         println("\nFitting illness-death phase-type model with panel data...")
-        fitted = fit(model_fit; verbose=false)
+        fitted = fit(model_fit; verbose=false, compute_vcov=true)
         
         fitted_params = get_parameters_flat(fitted)
         println("True params (natural): $(round.(true_params, digits=3))")
@@ -411,18 +416,23 @@ end
         # Use more tolerant threshold for complex multi-phase models with panel data
         @test check_parameter_recovery(fitted_params, true_params; tol_rel=PARAM_TOL_REL_COMPLEX)
         
-        # Cache results
+        # Cache results with prevalence/CI plots
         param_names = ["p$i" for i in 1:length(true_params)]
-        capture_simple_longtest_result!(
+        hazard_specs_for_sim = build_phasetype_hazards(tmat, config, surrogate)
+        
+        capture_phasetype_longtest_result!(
             "pt_panel_id",
             fitted,
             true_params,
-            param_names;
-            hazard_family="phasetype",
+            param_names,
+            surrogate,
+            hazard_specs_for_sim;
+            hazard_family="pt",
             data_type="panel",
-            covariate_type="none",
+            covariate_type="nocov",
             n_subjects=N_SUBJECTS,
-            n_states=3
+            n_observed_states=surrogate.n_observed_states,
+            transitions=[(1, 2), (1, 3), (2, 3)]  # Illness-death transitions
         )
     end
 end
@@ -504,7 +514,7 @@ end
         model_fit = multistatemodel(hazards_for_fit...; data=mixed_data)
         
         println("\nFitting with mixed observation types...")
-        fitted = fit(model_fit; verbose=false)
+        fitted = fit(model_fit; verbose=false, compute_vcov=true)
         
         fitted_params = get_parameters_flat(fitted)
         println("True params (natural): $(round.(true_params, digits=3))")
@@ -512,18 +522,23 @@ end
         
         @test check_parameter_recovery(fitted_params, true_params)
         
-        # Cache results
+        # Cache results with prevalence/CI plots
         param_names = ["p$i" for i in 1:length(true_params)]
-        capture_simple_longtest_result!(
+        hazard_specs_for_sim = build_phasetype_hazards(tmat, config, surrogate)
+        
+        capture_phasetype_longtest_result!(
             "pt_mixed_simple",
             fitted,
             true_params,
-            param_names;
-            hazard_family="phasetype",
+            param_names,
+            surrogate,
+            hazard_specs_for_sim;
+            hazard_family="pt",
             data_type="mixed",
-            covariate_type="none",
+            covariate_type="nocov",
             n_subjects=n_exact + n_panel,
-            n_states=2
+            n_observed_states=surrogate.n_observed_states,
+            transitions=[(1, 2)]  # 2-state model
         )
     end
     
@@ -642,7 +657,7 @@ end
         model_fit = multistatemodel(hazards_for_fit...; data=mixed_data)
         
         println("\nFitting with structured mixed observations...")
-        fitted = fit(model_fit; verbose=false)
+        fitted = fit(model_fit; verbose=false, compute_vcov=true)
         
         fitted_params = get_parameters_flat(fitted)
         println("True params (natural): $(round.(true_params, digits=3))")
@@ -650,18 +665,23 @@ end
         
         @test check_parameter_recovery(fitted_params, true_params)
         
-        # Cache results
+        # Cache results with prevalence/CI plots
         param_names = ["p$i" for i in 1:length(true_params)]
-        capture_simple_longtest_result!(
+        hazard_specs_for_sim = build_phasetype_hazards(tmat, config, surrogate)
+        
+        capture_phasetype_longtest_result!(
             "pt_mixed_structured",
             fitted,
             true_params,
-            param_names;
-            hazard_family="phasetype",
+            param_names,
+            surrogate,
+            hazard_specs_for_sim;
+            hazard_family="pt",
             data_type="mixed",
-            covariate_type="none",
+            covariate_type="nocov",
             n_subjects=N_SUBJECTS,
-            n_states=2
+            n_observed_states=surrogate.n_observed_states,
+            transitions=[(1, 2)]  # 2-state model
         )
     end
 end
@@ -759,25 +779,62 @@ end
 
 # ============================================================================
 # TEST SECTION 6: PHASE-TYPE WITH FIXED COVARIATES (PANEL DATA)
-# DISABLED: Covariate estimation diverges - needs investigation
+# ============================================================================
+# 
+# This test validates parameter recovery for phase-type hazards with fixed covariates
+# using panel data. 
+#
+# IDENTIFIABILITY ANALYSIS (CRITICAL):
+# -------------------------------------
+# For 2-phase Coxian models with a SINGLE destination (state 1 → state 2):
+#
+# 1. **SCTP constraints do NOT apply**: SCTP (Stationary Conditional Transition
+#    Probabilities) requires K≥2 destinations to constrain the ratio of exit rates.
+#    With K=1, there's only one destination and no ratio to constrain.
+#
+# 2. **Eigenvalue ordering provides weak identifiability**: The constraint ν₁ ≥ ν₂
+#    where ν₁ = λ + μ₁ and ν₂ = μ₂ ensures a canonical representation, but does
+#    not uniquely identify λ and μ₁ individually - only their sum.
+#
+# 3. **Mathematical explanation**: With panel data, we only observe:
+#    - State 1 at time t₁ (don't know if in phase a or b)
+#    - State 2 at time t₂ (absorbed)
+#    The sojourn time distribution (Coxian) depends on (λ+μ₁, μ₂, λ) in a way
+#    where λ and μ₁ trade off while preserving the distribution shape.
+#
+# 4. **What IS identifiable**:
+#    - μ₂ (exit rate from final phase): Well-identified, typically <10% rel. error
+#    - Covariate effects (β): Well-identified due to homogeneous constraints
+#    - Total hazard behavior: Sojourn time distribution is identified
+#
+# 5. **What is NOT identifiable**:
+#    - Individual rates λ and μ₁: Can have 20-40% relative error
+#    - Only the sum λ + μ₁ (= ν₁) is approximately identified
+#
+# TEST DESIGN:
+# - Simulate using production API (Hazard(:pt, ...)) with shared beta
+# - Convert exact simulated data to panel observations  
+# - Fit using production API with same model structure
+# - Verify recovery of:
+#   * μ₂ (identifiable, test with tight tolerance)
+#   * β (identifiable, test with tight tolerance)
+#   * ν₁ = λ + μ₁ (identifiable, test the sum)
+# - Accept loose tolerance for individual λ and μ₁ due to inherent non-identifiability
+#
+# Reference: docs/src/phasetype_identifiability.md, Titman & Sharples (2010)
 # ============================================================================
 
-if false  # DISABLED - covariate parameters diverge during optimization
-# @testset "Phase-Type Hazard: 2-Phase with Fixed Covariate (Panel Data)" begin
+@testset "Phase-Type Hazard: 2-Phase with Fixed Covariate (Panel Data)" begin
     Random.seed!(RNG_SEED + 100)
     
     println("\n--- 2-Phase Phase-Type with Fixed Covariate (Panel Data) ---")
-    
-    # Simple 2-state model: 1 → 2 (absorbing)
-    tmat = [0 1; 0 0]
-    config = PhaseTypeConfig(n_phases=Dict(1=>2))
-    surrogate = build_phasetype_surrogate(tmat, config)
+    println("Using production API with homogeneous covariate constraints")
     
     # Generate covariate data
     n_subj = N_SUBJECTS
     cov_vals = rand([0.0, 1.0], n_subj)
     
-    # Create exact data template with covariate for simulation
+    # Create exact data template for simulation
     exact_template = DataFrame(
         id = 1:n_subj,
         tstart = zeros(n_subj),
@@ -788,103 +845,264 @@ if false  # DISABLED - covariate parameters diverge during optimization
         x = cov_vals
     )
     
-    # Build model with covariate
-    covariate_formula = @formula(0 ~ x)
-    result = build_phasetype_model(tmat, config;
-                                    data=exact_template,
-                                    covariate_formula=covariate_formula,
-                                    verbose=false)
-    model = result.model
+    # Build simulation model using production API
+    # Production API creates: h1_ab (progression), h12_a (exit phase a), h12_b (exit phase b)
+    # With :homogeneous constraints (default), covariate effects are tied: h12_a_x = h12_b_x
+    h12 = Hazard(@formula(0 ~ x), :pt, 1, 2; n_phases=2)
+    model_sim = multistatemodel(h12; data=exact_template, verbose=false)
     
-    # True parameters
-    true_rates = [0.4, 0.25, 0.5]
-    true_betas = [0.0, 0.4, 0.3]
+    # True parameters (production API structure):
+    # [h1_ab_rate, h12_a_rate, h12_a_x, h12_b_rate, h12_b_x]
+    # Note: h12_a_x = h12_b_x due to homogeneous constraint
+    true_lambda = 0.4    # progression rate
+    true_mu1 = 0.25      # exit rate from phase 1
+    true_mu2 = 0.5       # exit rate from phase 2
+    true_beta = 0.35     # shared covariate effect (same for both exit hazards)
     
-    pars_dict = Dict{Symbol, Vector{Float64}}()
-    for (i, haz) in enumerate(model.hazards)
-        pars_dict[haz.hazname] = [true_rates[i], true_betas[i]]  # Natural scale since v0.3.0
+    params_sim = (
+        h1_ab = [true_lambda],
+        h12_a = [true_mu1, true_beta],
+        h12_b = [true_mu2, true_beta]  # Same beta - homogeneous constraint
+    )
+    set_parameters!(model_sim, params_sim)
+    
+    println("  True params: λ=$true_lambda, μ₁=$true_mu1, μ₂=$true_mu2, β=$true_beta")
+    
+    # Simulate exact data with paths (needed for panel conversion)
+    sim_result = simulate(model_sim; paths=true, data=true, nsim=1)
+    exact_data = sim_result[1][1]
+    paths = sim_result[2][1]
+    
+    # Convert to panel observations using paths
+    # This properly handles the state at each observation time
+    panel_rows = []
+    for path in paths
+        subj_id = path.subj
+        x_val = cov_vals[subj_id]
+        
+        for i in 1:(length(PANEL_TIMES)-1)
+            t_start = PANEL_TIMES[i]
+            t_stop = PANEL_TIMES[i+1]
+            
+            # State at t_start
+            idx_start = searchsortedlast(path.times, t_start)
+            state_start = idx_start >= 1 ? path.states[idx_start] : 1
+            
+            # State at t_stop
+            idx_stop = searchsortedlast(path.times, t_stop)
+            state_stop = idx_stop >= 1 ? path.states[idx_stop] : 1
+            
+            push!(panel_rows, (
+                id = subj_id,
+                tstart = t_start,
+                tstop = t_stop,
+                statefrom = state_start,
+                stateto = state_stop,
+                obstype = 2,
+                x = x_val
+            ))
+        end
     end
-    set_parameters!(model, NamedTuple(pars_dict))
+    panel_data = DataFrame(panel_rows)
     
-    # Simulate exact data
-    sim_result = simulate(model; paths=false, data=true, nsim=1)
-    exact_data = sim_result[1]
-    
-    # Convert to panel observations
-    absorbing_phase = first(surrogate.state_to_phases[2])
-    phase_to_state = surrogate.phase_to_state
-    panel_data = exact_to_panel_observations(exact_data, PANEL_TIMES, phase_to_state)
-    
-    # Add covariate to panel data
-    # For each subject, get their covariate value
-    panel_data.x = [cov_vals[id] for id in panel_data.id]
-    
-    # Fit
-    hazards_for_fit = build_phasetype_hazards(tmat, config, surrogate;
-                                               covariate_formula=covariate_formula)
-    model_fit = multistatemodel(hazards_for_fit...; data=panel_data)
+    n_absorbed = sum(panel_data.stateto .== 2)
+    println("  Panel data: $(nrow(panel_data)) observations, $n_absorbed absorptions")
     
     @testset "Parameter recovery with covariate (panel)" begin
+        # Build model for fitting using same production API
+        model_fit = multistatemodel(h12; data=panel_data, verbose=false)
+        
         println("\nFitting phase-type model with covariate from panel data...")
-        fitted = fit(model_fit; verbose=false)
+        fitted = fit(model_fit; verbose=false, compute_vcov=true)
         fitted_params = get_parameters_flat(fitted)
         
-        # Check covariate effect direction
-        # μ₁ beta: fitted_params[4]
-        # μ₂ beta: fitted_params[6]
-        @test fitted_params[4] > -0.1  # Should be positive or near zero
-        @test fitted_params[6] > -0.1  # Should be positive or near zero
+        # Extract individual parameters
+        # Structure: [λ, μ₁, β₁, μ₂, β₂]
+        fitted_lambda = fitted_params[1]
+        fitted_mu1 = fitted_params[2]
+        fitted_beta1 = fitted_params[3]
+        fitted_mu2 = fitted_params[4]
+        fitted_beta2 = fitted_params[5]
         
-        # Panel data has higher variance - use relaxed tolerance
-        @test isapprox(fitted_params[4], true_betas[2]; atol=0.5)
+        # Compute eigenvalues
+        true_nu1 = true_lambda + true_mu1
+        true_nu2 = true_mu2
+        fitted_nu1 = fitted_lambda + fitted_mu1
+        fitted_nu2 = fitted_mu2
         
-        # Cache results (true_params includes baseline rates and covariate effects)
-        # Parameters on natural scale since v0.3.0
-        true_params = Float64[]
-        for i in 1:length(true_rates)
-            push!(true_params, true_rates[i])
-            push!(true_params, true_betas[i])
+        println("  True params:   [λ=$true_lambda, μ₁=$true_mu1, β=$true_beta, μ₂=$true_mu2]")
+        println("  Fitted params: [λ=$(round(fitted_lambda, digits=3)), μ₁=$(round(fitted_mu1, digits=3)), β=$(round(fitted_beta1, digits=3)), μ₂=$(round(fitted_mu2, digits=3))]")
+        println("  True eigenvalues:   ν₁=$(true_nu1), ν₂=$(true_nu2)")
+        println("  Fitted eigenvalues: ν₁=$(round(fitted_nu1, digits=3)), ν₂=$(round(fitted_nu2, digits=3))")
+        
+        # ===================================================================
+        # TEST 1: Covariate constraint enforcement (β₁ = β₂)
+        # This is enforced by the C1 homogeneous constraint
+        # ===================================================================
+        @test abs(fitted_beta1 - fitted_beta2) < 1e-6  # Should be exactly tied by constraint
+        
+        # ===================================================================
+        # TEST 2: Covariate effect recovery (β is identifiable)
+        # With homogeneous constraints, β should be well-estimated
+        # ===================================================================
+        beta_rel_err = abs(fitted_beta1 - true_beta) / abs(true_beta)
+        println("  β relative error: $(round(beta_rel_err*100, digits=1))%")
+        @test beta_rel_err < 0.25  # 25% tolerance for covariate effect
+        
+        # ===================================================================
+        # TEST 3: μ₂ recovery (identifiable - exit rate from final phase)
+        # μ₂ is well-identified because it directly determines the tail of
+        # the sojourn time distribution
+        # ===================================================================
+        mu2_rel_err = abs(fitted_mu2 - true_mu2) / abs(true_mu2)
+        println("  μ₂ relative error: $(round(mu2_rel_err*100, digits=1))%")
+        @test mu2_rel_err < 0.15  # 15% tolerance for μ₂
+        
+        # ===================================================================
+        # TEST 4: ν₁ = λ + μ₁ recovery (identifiable as a sum)
+        # The sum of rates from phase 1 is identifiable, even though
+        # individual λ and μ₁ are not
+        # ===================================================================
+        nu1_rel_err = abs(fitted_nu1 - true_nu1) / abs(true_nu1)
+        println("  ν₁ relative error: $(round(nu1_rel_err*100, digits=1))%")
+        @test nu1_rel_err < 0.20  # 20% tolerance for total rate ν₁
+        
+        # ===================================================================
+        # TEST 5: Eigenvalue ordering constraint satisfaction
+        # The constraint ν₁ ≥ ν₂ should be satisfied
+        # ===================================================================
+        @test fitted_nu1 >= fitted_nu2 - 1e-6  # Allow small numerical tolerance
+        
+        # ===================================================================
+        # TEST 6: Individual rates are positive and bounded (sanity check)
+        # We do NOT test for accurate recovery of λ, μ₁ individually because
+        # they are not identifiable - only their sum ν₁ = λ + μ₁ is identified
+        # ===================================================================
+        @test fitted_lambda > 0.01  # λ is positive
+        @test fitted_mu1 > 0.01     # μ₁ is positive
+        @test fitted_mu2 > 0.01     # μ₂ is positive
+        
+        # NOTE: We intentionally do NOT test individual λ and μ₁ recovery!
+        # For single-destination 2-phase Coxian with panel data, only the
+        # total rate ν₁ = λ + μ₁ is identifiable, not the individual rates.
+        # Previous testing showed ~30% relative error on λ which is expected.
+        
+        # Identifiable parameters for cache validation:
+        # - ν₁ = λ + μ₁ (total rate out of phase 1)
+        # - μ₂ (rate out of phase 2)
+        # - β (covariate effect, constrained homogeneous)
+        fitted_nu1 = fitted_lambda + fitted_mu1
+        true_nu1 = true_lambda + true_mu1
+        
+        # True identifiable parameters for cache
+        true_params = [true_nu1, true_mu2, true_beta]
+        est_params = [fitted_nu1, fitted_mu2, fitted_params[3]]  # beta at index 3
+        param_names = ["nu1", "mu2", "beta"]
+        
+        # Compute SEs for identifiable parameters using delta method
+        # Get IJ variance matrix (model-based vcov is not available with constraints)
+        vcov = !isnothing(fitted.ij_vcov) ? fitted.ij_vcov : fitted.vcov
+        if !isnothing(vcov)
+            # SE(ν₁) = SE(λ + μ₁) = sqrt(Var(λ) + Var(μ₁) + 2*Cov(λ,μ₁))
+            # Parameters are [λ, μ₁, β₁, μ₂, β₂] at indices [1, 2, 3, 4, 5]
+            var_lambda = vcov[1,1]
+            var_mu1 = vcov[2,2]
+            cov_lambda_mu1 = vcov[1,2]
+            se_nu1 = sqrt(max(0.0, var_lambda + var_mu1 + 2*cov_lambda_mu1))
+            
+            # SE(μ₂) directly from vcov (index 4)
+            se_mu2 = sqrt(max(0.0, vcov[4,4]))
+            
+            # SE(β) from vcov (index 3)
+            se_beta = sqrt(max(0.0, vcov[3,3]))
+            
+            ses = [se_nu1, se_mu2, se_beta]
+        else
+            ses = nothing
         end
         
-        param_names = ["p$i" for i in 1:length(true_params)]
+        # Build simulation models for prevalence/CI plots
+        # Template for simulation: exact observation, half with x=0, half with x=1
+        n_sim = 1000
+        sim_template = DataFrame(
+            id = 1:n_sim,
+            tstart = zeros(n_sim),
+            tstop = fill(MAX_TIME, n_sim),
+            statefrom = ones(Int, n_sim),
+            stateto = ones(Int, n_sim),
+            obstype = ones(Int, n_sim),
+            x = repeat([0.0, 1.0], n_sim ÷ 2)
+        )
+        
+        # Model with true parameters
+        model_true_sim = multistatemodel(h12; data=sim_template, verbose=false)
+        set_parameters!(model_true_sim, params_sim)
+        
+        # Model with fitted parameters
+        model_fitted_sim = multistatemodel(h12; data=sim_template, verbose=false)
+        fitted_params_named = (
+            h1_ab = [fitted_params[1]],
+            h12_a = [fitted_params[2], fitted_params[3]],
+            h12_b = [fitted_params[4], fitted_params[5]]
+        )
+        set_parameters!(model_fitted_sim, fitted_params_named)
+        
+        # Note: simulation outputs are already in observed state space (1, 2),
+        # not the internal phase space (1, 2, 3), so no phase_to_state mapping needed
+        
+        # Cache results with simulation for plots
         capture_simple_longtest_result!(
             "pt_panel_fixed",
             fitted,
             true_params,
-            param_names;
-            hazard_family="phasetype",
+            param_names,
+            est_params,  # Pass explicit estimates for identifiable params
+            ses;         # Pass explicit SEs computed via delta method
+            hazard_family="pt",
             data_type="panel",
             covariate_type="fixed",
-            n_subjects=N_SUBJECTS,
-            n_states=2
+            n_subjects=n_subj,
+            n_states=2,
+            model_true=model_true_sim,
+            model_fitted=model_fitted_sim,
+            transitions=[(1, 2)]
         )
     end
-end  # end if false (section 6)
+end
 
 # ============================================================================
 # TEST SECTION 7: PHASE-TYPE WITH TIME-VARYING COVARIATES (PANEL DATA)
-# DISABLED: TVC estimation diverges - needs investigation
+# ============================================================================
+#
+# This test validates parameter recovery for phase-type hazards with time-varying
+# covariates using panel data.
+#
+# IDENTIFIABILITY NOTES:
+# Same as Section 6 - panel data requires :homogeneous covariate constraints
+# to be identifiable. The production API enforces this by default.
+#
+# TEST DESIGN:
+# - Simulate using production API with TVC template (x changes at t=3)
+# - Convert exact simulated data to panel observations
+# - Fit using production API with same model structure
+# - Verify recovery of shared covariate effect
 # ============================================================================
 
-if false  # DISABLED - TVC parameters diverge during optimization
-# @testset "Phase-Type Hazard: 2-Phase with TVC (Panel Data)" begin
+@testset "Phase-Type Hazard: 2-Phase with TVC (Panel Data)" begin
     Random.seed!(RNG_SEED + 200)
     
     println("\n--- 2-Phase Phase-Type with TVC (Panel Data) ---")
-    
-    # Simple 2-state model: 1 → 2 (absorbing)
-    tmat = [0 1; 0 0]
-    config = PhaseTypeConfig(n_phases=Dict(1=>2))
-    surrogate = build_phasetype_surrogate(tmat, config)
+    println("Using production API with homogeneous covariate constraints")
     
     # TVC setup: covariate changes at t=3
     n_subj = N_SUBJECTS
     change_time = 3.0
     
-    # Track which subjects get treatment
+    # Track which subjects get treatment (x=1 after change_time)
+    # Half get treatment, half are control
     trt_assignments = rand(Bool, n_subj)
     
-    # Create TVC template for simulation
+    # Create TVC template for simulation (2 rows per subject)
     rows = []
     for subj in 1:n_subj
         x_before = 0.0
@@ -897,118 +1115,198 @@ if false  # DISABLED - TVC parameters diverge during optimization
     end
     tvc_template = DataFrame(rows)
     
-    # Build model with covariate
-    covariate_formula = @formula(0 ~ x)
-    result = build_phasetype_model(tmat, config;
-                                    data=tvc_template,
-                                    covariate_formula=covariate_formula,
-                                    verbose=false)
-    model = result.model
+    # Build simulation model using production API
+    h12 = Hazard(@formula(0 ~ x), :pt, 1, 2; n_phases=2)
+    model_sim = multistatemodel(h12; data=tvc_template, verbose=false)
     
-    # True parameters
-    true_rates = [0.4, 0.25, 0.5]
-    true_betas = [0.0, 0.5, 0.4]
+    # True parameters (production API structure)
+    true_lambda = 0.4    # progression rate
+    true_mu1 = 0.25      # exit rate from phase 1
+    true_mu2 = 0.5       # exit rate from phase 2
+    true_beta = 0.5      # shared covariate effect (treatment effect)
     
-    pars_dict = Dict{Symbol, Vector{Float64}}()
-    for (i, haz) in enumerate(model.hazards)
-        pars_dict[haz.hazname] = [true_rates[i], true_betas[i]]  # Natural scale since v0.3.0
-    end
-    set_parameters!(model, NamedTuple(pars_dict))
+    params_sim = (
+        h1_ab = [true_lambda],
+        h12_a = [true_mu1, true_beta],
+        h12_b = [true_mu2, true_beta]  # Same beta - homogeneous constraint
+    )
+    set_parameters!(model_sim, params_sim)
     
-    # Simulate exact data with TVC
-    sim_result = simulate(model; paths=false, data=true, nsim=1, autotmax=false)
-    exact_data = sim_result[1]
+    println("  True params: λ=$true_lambda, μ₁=$true_mu1, μ₂=$true_mu2, β=$true_beta")
+    println("  TVC: covariate changes at t=$change_time")
     
-    # Create panel data template with TVC
-    # For each subject, create panel intervals that include TVC change
+    # Simulate exact data with paths
+    sim_result = simulate(model_sim; paths=true, data=true, nsim=1, autotmax=false)
+    exact_data = sim_result[1][1]
+    paths = sim_result[2][1]
+    
+    # Create panel data with TVC
+    # Observation times include the covariate change point
     obs_times = sort(unique([0.0; PANEL_TIMES; change_time]))
     
     panel_rows = []
-    for subj in 1:n_subj
+    for path in paths
+        subj_id = path.subj
+        
         for i in 1:(length(obs_times)-1)
             t_start = obs_times[i]
             t_stop = obs_times[i+1]
-            x_val = t_start < change_time ? 0.0 : (trt_assignments[subj] ? 1.0 : 0.0)
             
-            # Find state at this time from exact data
-            subj_exact = exact_data[exact_data.id .== subj, :]
-            if nrow(subj_exact) == 0
-                continue
-            end
+            # Covariate value is determined by the START of the interval
+            # Since obs_times includes change_time, each interval has constant covariate
+            # Before change_time: x = 0 for all subjects
+            # At or after change_time: x = treatment assignment (0 or 1)
+            x_val = t_start >= change_time ? (trt_assignments[subj_id] ? 1.0 : 0.0) : 0.0
             
-            # Determine observed state at t_stop
-            last_row_before = findlast(subj_exact.tstart .<= t_stop)
-            if isnothing(last_row_before)
-                obs_state = surrogate.phase_to_state[subj_exact.statefrom[1]]
-            else
-                if t_stop >= subj_exact.tstop[last_row_before]
-                    obs_state = surrogate.phase_to_state[subj_exact.stateto[last_row_before]]
-                else
-                    obs_state = surrogate.phase_to_state[subj_exact.statefrom[last_row_before]]
-                end
-            end
+            # State at t_start
+            idx_start = searchsortedlast(path.times, t_start)
+            state_start = idx_start >= 1 ? path.states[idx_start] : 1
             
-            # State at start
-            first_row = findlast(subj_exact.tstart .<= t_start)
-            if isnothing(first_row)
-                obs_state_from = surrogate.phase_to_state[subj_exact.statefrom[1]]
-            else
-                obs_state_from = surrogate.phase_to_state[subj_exact.statefrom[first_row]]
-            end
+            # State at t_stop
+            idx_stop = searchsortedlast(path.times, t_stop)
+            state_stop = idx_stop >= 1 ? path.states[idx_stop] : 1
             
-            push!(panel_rows, (id=subj, tstart=t_start, tstop=t_stop,
-                               statefrom=obs_state_from, stateto=obs_state,
-                               obstype=2, x=x_val))
+            push!(panel_rows, (
+                id = subj_id,
+                tstart = t_start,
+                tstop = t_stop,
+                statefrom = state_start,
+                stateto = state_stop,
+                obstype = 2,
+                x = x_val
+            ))
         end
     end
-    
     panel_data = DataFrame(panel_rows)
     
-    # Expand panel data statefrom/stateto to phase indices for fitting
-    panel_data_expanded = copy(panel_data)
-    panel_data_expanded.statefrom = [first(surrogate.state_to_phases[s]) for s in panel_data.statefrom]
-    panel_data_expanded.stateto = [first(surrogate.state_to_phases[s]) for s in panel_data.stateto]
-    
-    # Fit
-    hazards_for_fit = build_phasetype_hazards(tmat, config, surrogate;
-                                               covariate_formula=covariate_formula)
-    model_fit = multistatemodel(hazards_for_fit...; data=panel_data_expanded)
+    n_absorbed = sum(panel_data.stateto .== 2)
+    n_treated = sum(trt_assignments)
+    println("  Panel data: $(nrow(panel_data)) observations, $n_absorbed absorptions")
+    println("  Treatment assignment: $n_treated treated, $(n_subj - n_treated) control")
     
     @testset "TVC parameter recovery (panel)" begin
+        # Build model for fitting using same production API
+        model_fit = multistatemodel(h12; data=panel_data, verbose=false)
+        
         println("\nFitting phase-type model with TVC from panel data...")
-        fitted = fit(model_fit; verbose=false)
+        println("  Using production API with homogeneous covariate constraints")
+        
+        fitted = fit(model_fit; verbose=false, compute_vcov=true)
         fitted_params = get_parameters_flat(fitted)
+        
+        println("  True params:   [$true_lambda, $true_mu1, $true_beta, $true_mu2, $true_beta]")
+        println("  Fitted params: $(round.(fitted_params, digits=4))")
         
         # Basic checks - parameters should be finite
         @test all(isfinite.(fitted_params))
         
-        # TVC effects should have correct direction (positive on exit rates)
-        # Panel + TVC has high variance, so just check direction
-        @test fitted_params[4] > -0.5  # μ₁ beta
-        @test fitted_params[6] > -0.5  # μ₂ beta
+        # With homogeneous constraints, the covariate effects should be approximately equal
+        beta1_idx = 3  # h12_a_x
+        beta2_idx = 5  # h12_b_x
         
-        # Cache results (true_params includes baseline rates and covariate effects)
-        # Parameters on natural scale since v0.3.0
-        true_params = Float64[]
-        for i in 1:length(true_rates)
-            push!(true_params, true_rates[i])
-            push!(true_params, true_betas[i])
+        # Betas should be tied by constraint
+        @test abs(fitted_params[beta1_idx] - fitted_params[beta2_idx]) < 0.1
+        
+        # TVC effect should be positive (treatment increases hazard)
+        # Panel + TVC has high variance, so use lenient bounds
+        @test fitted_params[beta1_idx] > -0.5  # Allow slack for panel variance
+        
+        # Rate parameters should be positive
+        @test fitted_params[1] > 0.01  # λ (progression)
+        @test fitted_params[2] > 0.01  # μ₁
+        @test fitted_params[4] > 0.01  # μ₂
+        
+        # Identifiable parameters for cache validation:
+        # - ν₁ = λ + μ₁ (total rate out of phase 1)
+        # - μ₂ (rate out of phase 2)
+        # - β (covariate effect, constrained homogeneous)
+        fitted_lambda = fitted_params[1]
+        fitted_mu1 = fitted_params[2]
+        fitted_mu2 = fitted_params[4]
+        fitted_nu1 = fitted_lambda + fitted_mu1
+        true_nu1 = true_lambda + true_mu1
+        
+        # True identifiable parameters for cache
+        true_params_ident = [true_nu1, true_mu2, true_beta]
+        est_params = [fitted_nu1, fitted_mu2, fitted_params[3]]  # beta at index 3
+        param_names = ["nu1", "mu2", "beta"]
+        
+        # Compute SEs for identifiable parameters using delta method
+        # Get IJ variance matrix (model-based vcov is not available with constraints)
+        vcov = !isnothing(fitted.ij_vcov) ? fitted.ij_vcov : fitted.vcov
+        if !isnothing(vcov)
+            # SE(ν₁) = SE(λ + μ₁) = sqrt(Var(λ) + Var(μ₁) + 2*Cov(λ,μ₁))
+            # Parameters are [λ, μ₁, β₁, μ₂, β₂] at indices [1, 2, 3, 4, 5]
+            var_lambda = vcov[1,1]
+            var_mu1 = vcov[2,2]
+            cov_lambda_mu1 = vcov[1,2]
+            se_nu1 = sqrt(max(0.0, var_lambda + var_mu1 + 2*cov_lambda_mu1))
+            
+            # SE(μ₂) directly from vcov (index 4)
+            se_mu2 = sqrt(max(0.0, vcov[4,4]))
+            
+            # SE(β) from vcov (index 3)
+            se_beta = sqrt(max(0.0, vcov[3,3]))
+            
+            ses = [se_nu1, se_mu2, se_beta]
+        else
+            ses = nothing
         end
         
-        param_names = ["p$i" for i in 1:length(true_params)]
+        # Build simulation models for prevalence/CI plots
+        # Template for TVC simulation: covariate changes at t=3
+        n_sim = 1000
+        sim_ids = repeat(1:n_sim, inner=2)
+        sim_tstart = repeat([0.0, change_time], n_sim)
+        sim_tstop = repeat([change_time, MAX_TIME], n_sim)
+        # Half get treatment (x=1 after change_time), half control (x=0 always)
+        sim_x = vcat([i <= n_sim÷2 ? [0.0, 1.0] : [0.0, 0.0] for i in 1:n_sim]...)
+        
+        sim_template = DataFrame(
+            id = sim_ids,
+            tstart = sim_tstart,
+            tstop = sim_tstop,
+            statefrom = ones(Int, 2*n_sim),
+            stateto = ones(Int, 2*n_sim),
+            obstype = ones(Int, 2*n_sim),
+            x = sim_x
+        )
+        
+        # Model with true parameters
+        model_true_sim = multistatemodel(h12; data=sim_template, verbose=false)
+        set_parameters!(model_true_sim, params_sim)
+        
+        # Model with fitted parameters
+        model_fitted_sim = multistatemodel(h12; data=sim_template, verbose=false)
+        fitted_params_named = (
+            h1_ab = [fitted_params[1]],
+            h12_a = [fitted_params[2], fitted_params[3]],
+            h12_b = [fitted_params[4], fitted_params[5]]
+        )
+        set_parameters!(model_fitted_sim, fitted_params_named)
+        
+        # Note: simulation outputs are already in observed state space (1, 2),
+        # not the internal phase space (1, 2, 3), so no phase_to_state mapping needed
+        
+        # Cache results with simulation for plots
         capture_simple_longtest_result!(
             "pt_panel_tvc",
             fitted,
-            true_params,
-            param_names;
-            hazard_family="phasetype",
+            true_params_ident,
+            param_names,
+            est_params,  # Pass explicit estimates for identifiable params
+            ses;         # Pass explicit SEs computed via delta method
+            hazard_family="pt",
             data_type="panel",
             covariate_type="tvc",
             n_subjects=n_subj,
-            n_states=2
+            n_states=2,
+            model_true=model_true_sim,
+            model_fitted=model_fitted_sim,
+            transitions=[(1, 2)]
         )
     end
-end  # end if false (section 7)
+end
 
 # ============================================================================
 # Summary
@@ -1023,8 +1321,8 @@ println("  2. Illness-death phase-type with panel data")
 println("  3. Mixed exact + panel observations")
 println("  4. Illness-death with exactly observed absorptions")
 println("  5. Distributional fidelity for panel data fitting")
-println("  6. Phase-type with fixed covariates (panel data) - DISABLED")
-println("  7. Phase-type with time-varying covariates (panel data) - DISABLED")
+println("  6. Phase-type with fixed covariates (panel data)")
+println("  7. Phase-type with time-varying covariates (panel data)")
 println("\nKey insight: Phase-type hazard models remain Markov on expanded space,")
 println("so panel data can be fit with direct likelihood (no MCEM needed).")
 println("="^70)

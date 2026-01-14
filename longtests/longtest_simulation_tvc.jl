@@ -221,7 +221,7 @@ end
         # Skip test if not enough events
         if length(durations) < 100
             @warn "Insufficient events for exp PH TVC test: $(length(durations))"
-            @test_skip true
+            error("Insufficient events ($(length(durations)) < 100) - increase TVC_SIM_SAMPLES or reduce horizon")
         else
             # Build expected conditional CDF (conditional on event before horizon)
             cumhaz_fn = t -> piecewise_cumhaz_exp_ph(t, cfg.rate, cfg.beta, 
@@ -249,7 +249,7 @@ end
         
         if length(durations) < 100
             @warn "Insufficient events for exp AFT TVC test: $(length(durations))"
-            @test_skip true
+            error("Insufficient events ($(length(durations)) < 100) - increase TVC_SIM_SAMPLES or reduce horizon")
         else
             cumhaz_fn = t -> piecewise_cumhaz_exp_aft(t, cfg.rate, cfg.beta,
                                                       cfg.t_changes, cfg.x_values)
@@ -272,7 +272,7 @@ end
         
         if length(durations) < 100
             @warn "Insufficient events for wei PH TVC test: $(length(durations))"
-            @test_skip true
+            error("Insufficient events ($(length(durations)) < 100) - increase TVC_SIM_SAMPLES or reduce horizon")
         else
             cumhaz_fn = t -> piecewise_cumhaz_wei_ph(t, cfg.shape, cfg.scale, cfg.beta,
                                                      cfg.t_changes, cfg.x_values)
@@ -295,7 +295,7 @@ end
         
         if length(durations) < 100
             @warn "Insufficient events for wei AFT TVC test: $(length(durations))"
-            @test_skip true
+            error("Insufficient events ($(length(durations)) < 100) - increase TVC_SIM_SAMPLES or reduce horizon")
         else
             cumhaz_fn = t -> piecewise_cumhaz_wei_aft(t, cfg.shape, cfg.scale, cfg.beta,
                                                       cfg.t_changes, cfg.x_values)
@@ -318,7 +318,7 @@ end
         
         if length(durations) < 100
             @warn "Insufficient events for gom PH TVC test: $(length(durations))"
-            @test_skip true
+            error("Insufficient events ($(length(durations)) < 100) - increase TVC_SIM_SAMPLES or reduce horizon")
         else
             cumhaz_fn = t -> piecewise_cumhaz_gom_ph(t, cfg.shape, cfg.scale, cfg.beta,
                                                      cfg.t_changes, cfg.x_values)
@@ -341,7 +341,7 @@ end
         
         if length(durations) < 100
             @warn "Insufficient events for gom AFT TVC test: $(length(durations))"
-            @test_skip true
+            error("Insufficient events ($(length(durations)) < 100) - increase TVC_SIM_SAMPLES or reduce horizon")
         else
             cumhaz_fn = t -> piecewise_cumhaz_gom_aft(t, cfg.shape, cfg.scale, cfg.beta,
                                                       cfg.t_changes, cfg.x_values)

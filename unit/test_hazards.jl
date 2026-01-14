@@ -45,6 +45,10 @@
 # go through the exp/log round-trip. Tests use rtol=1e-6 for robustness.
 # =============================================================================
 
+# Support both standalone execution and module-based test harness
+if !@isdefined(TestFixtures)
+    include(joinpath(@__DIR__, "..", "fixtures", "TestFixtures.jl"))
+end
 using .TestFixtures: toy_expwei_model, toy_gompertz_model
 using BSplineKit  # For spline hazard verification
 using Distributions: Exponential, cdf

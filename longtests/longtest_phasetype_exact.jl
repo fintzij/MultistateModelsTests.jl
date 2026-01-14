@@ -222,18 +222,25 @@ end
         
         @test check_parameter_recovery(fitted_params, true_params)
         
-        # Cache results for reporting
+        # Cache results for reporting with prevalence/CI plots
         param_names = ["rate_$i" for i in 1:n_hazards]
-        capture_simple_longtest_result!(
+        
+        # Build hazard specs for simulation (needed by capture function)
+        hazard_specs_for_sim = build_phasetype_hazards(tmat_obs, config, surrogate)
+        
+        capture_phasetype_longtest_result!(
             "pt_exact_nocov",
             fitted,
             true_params,
-            param_names;
+            param_names,
+            surrogate,
+            hazard_specs_for_sim;
             hazard_family = "pt",
             data_type = "exact",
             covariate_type = "nocov",
             n_subjects = N_SUBJECTS,
-            n_states = surrogate.n_expanded_states
+            n_observed_states = surrogate.n_observed_states,
+            transitions = [(1, 2), (1, 3), (2, 3)]  # Include all illness-death transitions
         )
     end
 end
@@ -424,7 +431,7 @@ end
     
     @testset "Parameter recovery with covariate" begin
         println("\nFitting phase-type model with covariate...")
-        fitted = fit(model_fit; verbose=false)
+        fitted = fit(model_fit; verbose=false, compute_vcov=true)
         
         fitted_params = get_parameters_flat(fitted)
         
@@ -455,16 +462,23 @@ end
             push!(param_names, "beta_$i")
         end
         
-        capture_simple_longtest_result!(
+        # Build hazard specs for simulation (with covariate)
+        hazard_specs_for_sim = build_phasetype_hazards(tmat, config, surrogate;
+                                                       covariate_formula=covariate_formula)
+        
+        capture_phasetype_longtest_result!(
             "pt_exact_fixed",
             fitted,
             true_params_flat,
-            param_names;
+            param_names,
+            surrogate,
+            hazard_specs_for_sim;
             hazard_family = "pt",
             data_type = "exact",
             covariate_type = "fixed",
             n_subjects = N_SUBJECTS,
-            n_states = surrogate.n_expanded_states
+            n_observed_states = surrogate.n_observed_states,
+            transitions = [(1, 2)]  # 2-state model: only 1→2 transition
         )
     end
 end
@@ -571,20 +585,23 @@ end
             push!(param_names, "beta_$i")
         end
         
-        capture_simple_longtest_result!(
+        # Build hazard specs for simulation (with TVC)
+        hazard_specs_for_sim = build_phasetype_hazards(tmat, config, surrogate;
+                                                       covariate_formula=covariate_formula)
+        
+        capture_phasetype_longtest_result!(
             "pt_exact_tvc",
             fitted,
             true_params_flat,
-            param_names;
+            param_names,
+            surrogate,
+            hazard_specs_for_sim;
             hazard_family = "pt",
             data_type = "exact",
             covariate_type = "tvc",
             n_subjects = n_subj,
-            n_states = surrogate.n_expanded_states
+            n_observed_states = surrogate.n_observed_states,
+            transitions = [(1, 2)]  # 2-state model: only 1->2 transition
         )
     end
 end
-
-println("\n" * "="^70)
-println("Phase-Type Hazard Model Tests Complete")
-println("="^70)

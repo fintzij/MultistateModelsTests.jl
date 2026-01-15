@@ -282,8 +282,16 @@ end
 All long tests validate statistical parameter recovery with relative tolerances
 of 15-35% depending on the complexity of the model and inference method.
 
-**Last full run**: January 13, 2026  
+**Last full run**: January 15, 2026  
 **Branch**: `penalized_splines`
+
+::: {.callout-note}
+## Bug Fix (2026-01-15): AFT Covariate Scaling in PhaseType Proposal
+
+`build_phasetype_tpm_book()` was using `exp(β'x)` for all models, but AFT models
+require `exp(-β'x)`. This caused wrong-signed estimates for AFT panel models
+fitted via MCEM with PhaseType proposal. Fixed in `src/inference/sampling.jl`.
+:::
 
 ### 1.1 Overall Status
 
@@ -291,11 +299,13 @@ of 15-35% depending on the complexity of the model and inference method.
 |------------|-------|--------|--------|
 | Parametric Suite | 18 | 18 | 0 |
 | Phase-Type Hazard Models | 9 | 9 | 0 |
-| MCEM | 1 | 1 | 0 |
+| MCEM | 13 | 13 | 0 |
+| MCEM TVC | 7 | 7 | 0 |
 | SIR Resampling | 7 | 7 | 0 |
 | Simulation Distribution | 65 | 65 | 0 |
-| AFT Suite | 6 | 6 | 0 |
-| **Total** | **106** | **106** | **0** |
+| AFT Suite | 19 | 19 | 0 |
+| Spline Exact | 6 | 6 | 0 |
+| **Total** | **144** | **144** | **0** |
 
 ---
 
@@ -1061,16 +1071,48 @@ result = load_longtest_result("pt_panel_tvc")
 
 ## 6. AFT Models
 
-Tests in `longtest_aft_suite.jl` validate accelerated failure time models.
+Tests in `longtest_aft_suite.jl` validate accelerated failure time models across
+exponential, Weibull, and Gompertz hazard families.
 
-| Test | Family | Covariates | Data Type | Status |
-|------|--------|------------|-----------|--------|
-| wei_aft_exact_tfc | Weibull | Fixed | Exact | ✅ Pass |
-| wei_aft_panel_tfc | Weibull | Fixed | Panel | ✅ Pass |
-| wei_aft_exact_tvc | Weibull | Time-varying | Exact | ✅ Pass |
-| wei_aft_panel_tvc | Weibull | Time-varying | Panel | ✅ Pass |
-| wei_aft_competing_exact | Weibull | Fixed | Exact (competing) | ✅ Pass |
-| gom_aft_exact_tfc | Gompertz | Fixed | Exact | ✅ Pass |
+### 6.1 Exponential AFT
+
+| Test | Covariates | Data Type | Status |
+|------|------------|-----------|--------|
+| exp_aft_exact_nocov | None | Exact | ✅ Pass |
+| exp_aft_exact_tfc | Fixed | Exact | ✅ Pass |
+| exp_aft_exact_tvc | Time-varying | Exact | ✅ Pass |
+| exp_aft_panel_nocov | None | Panel | ✅ Pass |
+| exp_aft_panel_tfc | Fixed | Panel | ✅ Pass |
+| exp_aft_panel_tvc | Time-varying | Panel | ✅ Pass |
+
+### 6.2 Weibull AFT
+
+| Test | Covariates | Data Type | Status |
+|------|------------|-----------|--------|
+| wei_aft_exact_nocov | None | Exact | ✅ Pass |
+| wei_aft_exact_tfc | Fixed | Exact | ✅ Pass |
+| wei_aft_exact_tvc | Time-varying | Exact | ✅ Pass |
+| wei_aft_panel_nocov | None | Panel | ✅ Pass |
+| wei_aft_panel_tfc | Fixed | Panel | ✅ Pass |
+| wei_aft_panel_tvc | Time-varying | Panel | ✅ Pass |
+
+### 6.3 Gompertz AFT
+
+| Test | Covariates | Data Type | Status |
+|------|------------|-----------|--------|
+| gom_aft_exact_nocov | None | Exact | ✅ Pass |
+| gom_aft_exact_tfc | Fixed | Exact | ✅ Pass |
+| gom_aft_exact_tvc | Time-varying | Exact | ✅ Pass |
+| gom_aft_panel_nocov | None | Panel | ✅ Pass |
+| gom_aft_panel_tfc | Fixed | Panel | ✅ Pass |
+| gom_aft_panel_tvc | Time-varying | Panel | ✅ Pass |
+
+::: {.callout-note}
+## AFT Panel Models Use MCEM with PhaseType Proposal
+
+AFT panel models are fitted via MCEM. The PhaseType proposal must scale rates by
+`exp(-β'x)` (not `exp(β'x)` as in PH models). This was fixed in v0.3.0+.
+:::
 
 ---
 
@@ -1093,7 +1135,21 @@ Tests in `longtest_aft_suite.jl` validate accelerated failure time models.
 | Bilinear | g(x,y) = (x-0.5)(y-0.5) | ✅ Pass |
 | Additive | g(x,y) = sin(2πx) + 0.5cos(2πy) | ✅ Pass |
 
-### 7.3 MCEM with Spline Hazards
+### 7.3 Spline Hazards with Exact Data
+
+Tests in `longtest_spline_exact.jl` validate spline hazard recovery with exact 
+observation data (obstype=1) using a Weibull DGP.
+
+| Test | Effect | Covariates | Status |
+|------|--------|------------|--------|
+| sp_exact_nocov | PH | None | ✅ Pass |
+| sp_exact_tfc | PH | Fixed | ✅ Pass |
+| sp_exact_tvc | PH | Time-varying | ✅ Pass |
+| sp_aft_exact_nocov | AFT | None | ✅ Pass |
+| sp_aft_exact_tfc | AFT | Fixed | ✅ Pass |
+| sp_aft_exact_tvc | AFT | Time-varying | ✅ Pass |
+
+### 7.4 MCEM with Spline Hazards
 
 | Test | Approximates | Status |
 |------|--------------|--------|

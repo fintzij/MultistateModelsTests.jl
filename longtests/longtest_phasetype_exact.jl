@@ -175,14 +175,23 @@ end
     # True rates (positive scale, natural scale since v0.3.0)
     # Progression through phases: λ₁ (phase 1→2 within state 1), etc.
     # Exit rates: μ (phase → absorbing)
-    true_rates = [0.5, 0.3, 0.4, 0.2, 0.25, 0.35, 0.3, 0.15]  # Adjust to match n_hazards
+    # This vector is sized for the expected 8-hazard illness-death phase-type model
+    true_rates = [0.5, 0.3, 0.4, 0.2, 0.25, 0.35, 0.3, 0.15]
     
-    # Truncate or pad if needed
-    if length(true_rates) > n_hazards
-        true_rates = true_rates[1:n_hazards]
-    elseif length(true_rates) < n_hazards
-        true_rates = vcat(true_rates, fill(0.25, n_hazards - length(true_rates)))
-    end
+    # ACTION-5: Replace silent padding/truncation with explicit assertion
+    # The test should fail loudly if the phase-type expansion produces an unexpected
+    # number of hazards, rather than silently adjusting parameters
+    @assert length(true_rates) == n_hazards """
+        Parameter count mismatch in phase-type test:
+          Expected $(length(true_rates)) hazards (from true_rates vector)
+          Got $n_hazards hazards from model expansion
+        
+        This indicates either:
+        1. The phase-type configuration changed (update true_rates to match), or
+        2. A bug in the phase-type expansion code
+        
+        Current true_rates: $true_rates
+        """
     
     # v0.3.0+: Parameters are on natural scale, not log scale
     # Use natural scale rates directly

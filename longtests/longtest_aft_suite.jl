@@ -9,6 +9,7 @@
 # 3. Exact vs Panel Data
 # 4. Covariate Scenarios: None, Time-Fixed (TFC), Time-Varying (TVC)
 # 5. Families: Weibull, Gompertz
+# 6. Markov vs PhaseType Proposal Comparison (for Weibull AFT panel tests)
 #
 # =============================================================================
 
@@ -19,10 +20,16 @@ using Test
 using Printf
 using Statistics
 
+# Import PhaseTypeProposal for proposal comparisons
+import MultistateModels: PhaseTypeProposal
+
 # Include shared configuration and helpers
 include("longtest_config.jl")
 include("longtest_helpers.jl")
 include("../src/LongTestResults.jl")
+
+# Tolerance for Markov vs PhaseType proposal comparison (30% relative)
+const PROPOSAL_COMPARISON_TOL = 0.30
 
 # =============================================================================
 # Scenario Definitions
@@ -54,7 +61,68 @@ const AFT_SCENARIOS = [
     AFTScenario("wei_aft_competing_exact", "wei", :tfc, :exact, true),
     
     # 6. Gompertz AFT (Exact, TFC) - Verify different family
-    AFTScenario("gom_aft_exact_tfc", "gom", :tfc, :exact, false)
+    AFTScenario("gom_aft_exact_tfc", "gom", :tfc, :exact, false),
+    
+    # =========================================================================
+    # Additional Weibull AFT Tests (No Covariates)
+    # =========================================================================
+    # Weibull has 2 baseline parameters: shape, scale
+    # Natural scale: [shape, scale] for nocov
+    # =========================================================================
+    
+    # 7. Weibull AFT - Exact data, no covariates
+    AFTScenario("wei_aft_exact_nocov", "wei", :none, :exact, false),
+    
+    # 8. Weibull AFT - Panel data, no covariates
+    AFTScenario("wei_aft_panel_nocov", "wei", :none, :panel, false),
+    
+    # =========================================================================
+    # Additional Gompertz AFT Tests (Complete Coverage)
+    # =========================================================================
+    # Gompertz has 2 baseline parameters: shape (can be negative), rate
+    # Natural scale: [shape, rate] for nocov, [shape, rate, beta] for covariates
+    # Shape ~0.1-0.15 gives moderate increasing hazard
+    # =========================================================================
+    
+    # 9. Gompertz AFT - Exact data, no covariates  
+    AFTScenario("gom_aft_exact_nocov", "gom", :none, :exact, false),
+    
+    # 10. Gompertz AFT - Exact data, time-varying covariate
+    AFTScenario("gom_aft_exact_tvc", "gom", :tvc, :exact, false),
+    
+    # 11. Gompertz AFT - Panel data, no covariates
+    AFTScenario("gom_aft_panel_nocov", "gom", :none, :panel, false),
+    
+    # 12. Gompertz AFT - Panel data, time-fixed covariate
+    AFTScenario("gom_aft_panel_tfc", "gom", :tfc, :panel, false),
+    
+    # 13. Gompertz AFT - Panel data, time-varying covariate
+    AFTScenario("gom_aft_panel_tvc", "gom", :tvc, :panel, false),
+    
+    # =========================================================================
+    # Exponential AFT Tests (Parameter Recovery)
+    # =========================================================================
+    # Exponential has 1 baseline parameter: rate
+    # Natural scale: [rate] for nocov, [rate, beta] for covariates
+    # =========================================================================
+    
+    # 14. Exponential AFT - Exact data, no covariates
+    AFTScenario("exp_aft_exact_nocov", "exp", :none, :exact, false),
+    
+    # 15. Exponential AFT - Exact data, time-fixed covariate
+    AFTScenario("exp_aft_exact_tfc", "exp", :tfc, :exact, false),
+    
+    # 16. Exponential AFT - Exact data, time-varying covariate  
+    AFTScenario("exp_aft_exact_tvc", "exp", :tvc, :exact, false),
+    
+    # 17. Exponential AFT - Panel data, no covariates
+    AFTScenario("exp_aft_panel_nocov", "exp", :none, :panel, false),
+    
+    # 18. Exponential AFT - Panel data, time-fixed covariate
+    AFTScenario("exp_aft_panel_tfc", "exp", :tfc, :panel, false),
+    
+    # 19. Exponential AFT - Panel data, time-varying covariate
+    AFTScenario("exp_aft_panel_tvc", "exp", :tvc, :panel, false)
 ]
 
 # =============================================================================
@@ -95,6 +163,12 @@ function setup_aft_model(scenario::AFTScenario)
                 h12 = [1.2, 0.5, 0.5],   # shape=1.2, scale=0.5, beta=0.5
                 h13 = [1.2, 0.5, -0.5]   # shape=1.2, scale=0.5, beta=-0.5
             )
+        elseif scenario.family == "exp"
+            # rate, beta (natural scale)
+            true_params = (
+                h12 = [0.25, 0.5],    # rate=0.25, beta=0.5
+                h13 = [0.25, -0.5]    # rate=0.25, beta=-0.5
+            )
         else # gom
             # shape, rate, beta (natural scale since v0.3.0)
             true_params = (
@@ -108,14 +182,18 @@ function setup_aft_model(scenario::AFTScenario)
             h12 = Hazard(@formula(0 ~ 1), scenario.family, 1, 2; linpred_effect=:aft)
             if scenario.family == "wei"
                 true_params = (h12 = [1.2, 0.5],)  # natural scale since v0.3.0
-            else
+            elseif scenario.family == "exp"
+                true_params = (h12 = [0.25],)  # rate=0.25 (natural scale)
+            else # gom
                 true_params = (h12 = [0.1, 0.5],)  # natural scale since v0.3.0
             end
         else
             h12 = Hazard(@formula(0 ~ x), scenario.family, 1, 2; linpred_effect=:aft)
             if scenario.family == "wei"
                 true_params = (h12 = [1.2, 0.5, 0.5],)  # natural scale since v0.3.0
-            else
+            elseif scenario.family == "exp"
+                true_params = (h12 = [0.25, 0.5],)  # rate=0.25, beta=0.5 (natural scale)
+            else # gom
                 true_params = (h12 = [0.1, 0.5, 0.5],)  # natural scale since v0.3.0
             end
         end
@@ -133,6 +211,9 @@ end
     run_aft_scenario(scenario::AFTScenario)
 
 Execute a single AFT test scenario.
+
+For Weibull AFT panel tests (wei_aft_panel_*), also fits with PhaseTypeProposal
+and compares parameter estimates to verify proposal-independence of results.
 """
 function run_aft_scenario(scenario::AFTScenario)
     println("\nRunning Scenario: $(scenario.name)")
@@ -158,12 +239,13 @@ function run_aft_scenario(scenario::AFTScenario)
         model_fit = multistatemodel(hazards...; data=sim_data)
     end
     
-    # Fit Model
+    # Fit Model (default/Markov proposal)
     println("  Fitting model...")
     if scenario.data_type == :panel
         fitted = fit(model_fit; 
             verbose=false, 
             method=:MCEM,
+            proposal=:markov,
             tol=MCEM_TOL,
             ess_target_initial=MCEM_ESS_INITIAL,
             max_ess=MCEM_ESS_MAX,
@@ -171,6 +253,38 @@ function run_aft_scenario(scenario::AFTScenario)
         )
     else
         fitted = fit(model_fit; verbose=false)
+    end
+    
+    # ==========================================================================
+    # Markov vs PhaseType Proposal Comparison (Weibull AFT panel tests only)
+    # ==========================================================================
+    fitted_pt = nothing
+    est_flat_pt = nothing
+    is_wei_aft_panel = scenario.family == "wei" && 
+                       scenario.data_type == :panel && 
+                       !scenario.competing_risks
+    
+    if is_wei_aft_panel
+        println("  Fitting with PhaseTypeProposal(n_phases=3)...")
+        
+        # Re-create model for PhaseType fit (fresh hazard objects)
+        if scenario.covariate_type == :none
+            h12_pt = Hazard(@formula(0 ~ 1), scenario.family, 1, 2; linpred_effect=:aft)
+        else
+            h12_pt = Hazard(@formula(0 ~ x), scenario.family, 1, 2; linpred_effect=:aft)
+        end
+        model_fit_pt = multistatemodel(h12_pt; data=panel_data, surrogate=:markov)
+        
+        fitted_pt = fit(model_fit_pt;
+            verbose=false,
+            method=:MCEM,
+            proposal=PhaseTypeProposal(n_phases=3),
+            tol=MCEM_TOL,
+            ess_target_initial=MCEM_ESS_INITIAL,
+            max_ess=MCEM_ESS_MAX,
+            maxiter=MCEM_MAX_ITER
+        )
+        est_flat_pt = get_parameters_flat(fitted_pt)
     end
     
     # Evaluate Results
@@ -195,18 +309,31 @@ function run_aft_scenario(scenario::AFTScenario)
     all_passed = true
     max_err = 0.0
     
+    # Determine if this is a TVC scenario (harder estimation)
+    is_tvc = scenario.covariate_type == :tvc
+    
     for (i, name) in enumerate(par_names)
         t_val = true_flat[i]
         e_val = est_flat[i]
         
-        # Error calculation
+        # Check if this is a covariate (beta) parameter
+        is_covariate_param = occursin("_x", String(name)) || occursin("_beta", String(name))
+        
+        # Error calculation with tolerance selection based on parameter type
         if abs(t_val) < SMALL_PARAM_THRESHOLD
-            # Absolute error for small params
+            # Absolute error for small params (typically shape parameters)
             err = abs(e_val - t_val)
             rel_err_disp = NaN
-            passed = err <= SHAPE_ABS_TOL # Use looser tolerance for shape/small params
+            passed = err <= SHAPE_ABS_TOL
+        elseif is_covariate_param
+            # For covariate params, use absolute tolerance (beta can be near 0)
+            err = abs(e_val - t_val)
+            rel_err_disp = (t_val != 0) ? abs((e_val - t_val) / t_val) * 100 : NaN
+            # Use relaxed tolerance for TVC scenarios (harder estimation)
+            tol = is_tvc ? MCEM_TVC_BETA_ABS_TOL : BETA_ABS_TOL
+            passed = err <= tol
         else
-            # Relative error
+            # Relative error for baseline parameters
             err = abs((e_val - t_val) / t_val)
             rel_err_disp = err * 100
             passed = err <= PARAM_REL_TOL
@@ -221,17 +348,62 @@ function run_aft_scenario(scenario::AFTScenario)
     println("  " * "-"^60)
     println("  Result: " * (all_passed ? "PASS" : "FAIL"))
     
-    return all_passed
+    # ==========================================================================
+    # Compare Markov vs PhaseType Proposal (Weibull AFT panel tests)
+    # ==========================================================================
+    proposal_agreement = true
+    if is_wei_aft_panel && !isnothing(fitted_pt)
+        println("\n  Markov vs PhaseType Proposal Comparison:")
+        println("  " * "-"^70)
+        println("  ", rpad("Parameter", 18), rpad("Markov", 12), rpad("PhaseType", 12), rpad("Rel Diff", 12), "Status")
+        println("  " * "-"^70)
+        
+        for (i, name) in enumerate(par_names)
+            m_val = est_flat[i]
+            pt_val = est_flat_pt[i]
+            
+            # Compute relative difference (use absolute for small values)
+            if abs(m_val) > 1e-10
+                rel_diff = abs(pt_val - m_val) / abs(m_val)
+            else
+                rel_diff = abs(pt_val - m_val)
+            end
+            
+            param_agrees = rel_diff < PROPOSAL_COMPARISON_TOL
+            proposal_agreement = proposal_agreement && param_agrees
+            status = param_agrees ? "✓" : "✗"
+            
+            @printf "  %-18s %-12.4f %-12.4f %-12.1f%% %s\n" name m_val pt_val (rel_diff * 100) status
+        end
+        
+        println("  " * "-"^70)
+        println("  Proposal Agreement: " * (proposal_agreement ? "PASS" : "FAIL"))
+        
+        # Assert proposal agreement
+        @test proposal_agreement
+    end
+    
+    return all_passed && proposal_agreement
 end
 
 """
-    make_panel_data(exact_data, times, cov_type)
+    make_panel_data(exact_data, times, cov_type; verbose=false)
 
 Helper to convert exact data to panel format.
 Handles TVC logic correctly (sampling x at interval start).
+
+# Censoring Behavior
+Subjects who reach an absorbing state (state > 1) before the first panel observation
+time do not contribute any data rows. This is correct behavior for standard survival
+analysis—subjects only contribute data while at risk. However, this creates a form
+of informative censoring where fast progressors are excluded.
+
+The function logs the number of dropped subjects when verbose=true. If more than
+5% of subjects are dropped, a warning is emitted.
 """
-function make_panel_data(exact_data, times, cov_type)
+function make_panel_data(exact_data, times, cov_type; verbose::Bool=false)
     panel_rows = DataFrame[]
+    n_simulated = length(unique(exact_data.id))
     
     for subj_id in unique(exact_data.id)
         subj_data = filter(r -> r.id == subj_id, exact_data)
@@ -288,6 +460,20 @@ function make_panel_data(exact_data, times, cov_type)
     end
     panel_df = vcat(panel_rows...)
     
+    # Sample size validation (ACTION-1 from longtest review)
+    n_retained = length(unique(panel_df.id))
+    n_dropped = n_simulated - n_retained
+    drop_rate = n_dropped / n_simulated
+    
+    if verbose || drop_rate > 0.05
+        if n_dropped > 0
+            @info "make_panel_data: $n_dropped/$n_simulated subjects dropped ($(round(100*drop_rate, digits=1))% reached absorbing state before first panel time)"
+        end
+        if drop_rate > 0.05
+            @warn "High dropout rate ($(round(100*drop_rate, digits=1))%): this may introduce selection bias favoring slow progressors"
+        end
+    end
+    
     # Re-index IDs to be consecutive
     # MultistateModels requires IDs 1..N
     old_ids = sort(unique(panel_df.id))
@@ -333,8 +519,6 @@ function run_aft_suite()
     return all(values(results))
 end
 
-# Run if executed directly
-if abspath(PROGRAM_FILE) == @__FILE__
-    run_aft_suite()
-end
-
+# Run the suite when this file is included
+# (PROGRAM_FILE check doesn't work when using include())
+run_aft_suite()

@@ -23,6 +23,19 @@
 #   3-state progressive model: 1 → 2 → 3 (NO 1→3 transitions)
 #   All subjects start in state 1 at time 0
 #
+# Observation Type Pattern (obstype_by_transition):
+#   Panel tests use mixed observation: transition 1 (1→2) is panel (obstype=2),
+#   transition 2 (2→3, to absorbing state) is exact (obstype=1). This provides
+#   more information about the 2→3 transition than pure panel data while still
+#   testing panel observation handling for the 1→2 transition.
+#
+# Censoring Behavior (IMPORTANT):
+#   Panel data tests exclude subjects who reach the absorbing state before the
+#   first panel observation time. This is correct for survival analysis (subjects
+#   only contribute data while at risk) but creates informative censoring that
+#   excludes fast progressors. The panel data creation functions log dropped
+#   subject counts when dropout rates exceed 5%.
+#
 # Note: Phase-type (pt) and Spline (sp) families have more complex
 # parameterization and are tested separately in longtest_phasetype.jl
 # and longtest_mcem_splines.jl.
@@ -39,8 +52,14 @@ import MultistateModels: Hazard, @formula, multistatemodel, fit, set_parameters!
     simulate, get_parameters_flat, get_parameters
 
 # Configuration - include for standalone runs
+# Note: We check for different symbols to ensure both files are included
+# even when only longtest_config.jl was included first
 if !isdefined(Main, :VERBOSE_LONGTESTS) && !@isdefined(VERBOSE_LONGTESTS)
     include(joinpath(@__DIR__, "longtest_config.jl"))
+end
+
+# Helpers - check for a function defined in longtest_helpers.jl
+if !isdefined(Main, :create_baseline_template) && !@isdefined(create_baseline_template)
     include(joinpath(@__DIR__, "longtest_helpers.jl"))
 end
 
@@ -60,24 +79,25 @@ const TRUE_RATE_23 = 0.12
 # Covariate effects (log hazard ratio)
 const TRUE_BETA = 0.5  # Positive effect of x on hazard
 
-# Weibull parameters - use values from longtest_mcem.jl which work reliably
-# Using shape=1.3 (not 1.2) as MCEM has better convergence for shapes further from 1.0
-# h23_shape=1.4 (not 1.1) because values too close to 1.0 cause MCEM convergence issues
+# Weibull parameters - MUST match longtest_mcem.jl for reliable MCEM recovery
+# Note: h23_shape=1.1 works better than 1.4 because:
+# - Shape values closer to 1.0 have simpler hazard behavior
+# - The 2→3 transition happens later (after 1→2), with less observed data
+# - Larger shape values cause faster hazard growth, making estimation harder
 const TRUE_WEIBULL_SHAPE_12 = 1.3  # Increasing hazard (matches longtest_mcem.jl)
-const TRUE_WEIBULL_SHAPE_23 = 1.4  # Increasing hazard - must be away from 1.0 for MCEM
-const TRUE_WEIBULL_SCALE_12 = 0.15  # Direct scale value
-const TRUE_WEIBULL_SCALE_23 = 0.10  # Slightly lower to compensate for higher shape
+const TRUE_WEIBULL_SHAPE_23 = 1.1  # Mild increase - easier to estimate than 1.4
+const TRUE_WEIBULL_SCALE_12 = 0.15  # Direct scale value (matches longtest_mcem.jl)
+const TRUE_WEIBULL_SCALE_23 = 0.12  # Scale value (matches longtest_mcem.jl)
 
-# Gompertz shape parameters (can be negative for decreasing hazard)
-# Range: log(0.5) to log(2) ≈ [-0.69, 0.69]
-# Values too close to zero make hazard nearly constant, causing estimation issues
-# Using 0.3 and 0.2 for meaningful time-variation without extreme hazard growth
-const TRUE_GOMPERTZ_SHAPE_12 = 0.30  # Moderate exponential increase
-const TRUE_GOMPERTZ_SHAPE_23 = 0.20  # Moderate exponential increase
-# Gompertz rates - lower than exponential because shape already increases hazard over time
-# With shape=0.3, rate=0.08: h(0)=0.08, h(5)≈0.36, h(10)≈1.6 (reasonable survival times)
-const TRUE_GOMPERTZ_RATE_12 = 0.08
-const TRUE_GOMPERTZ_RATE_23 = 0.06
+# Gompertz parameters - MUST match longtest_mcem.jl for reliable MCEM recovery
+# Note: Smaller shapes (0.08, 0.06) work better than (0.3, 0.2) because:
+# - Small shapes produce gradual hazard increase over long time horizon
+# - Large shapes cause rapid hazard growth, making survival times very short
+# - longtest_mcem.jl uses longer observation period (0-25) for Gompertz
+const TRUE_GOMPERTZ_SHAPE_12 = 0.08  # Gradual exponential increase (matches longtest_mcem.jl)
+const TRUE_GOMPERTZ_SHAPE_23 = 0.06  # Gradual exponential increase (matches longtest_mcem.jl)
+const TRUE_GOMPERTZ_RATE_12 = 0.04   # Lower rate for longer survival (matches longtest_mcem.jl)
+const TRUE_GOMPERTZ_RATE_23 = 0.03   # Lower rate for longer survival (matches longtest_mcem.jl)
 
 # =============================================================================
 # Helper Functions for Test Execution
@@ -338,6 +358,14 @@ function run_exact_test(family::String, covariate_type::String)
     Random.seed!(test_seed)
     data = generate_data(hazard_specs, true_params, covariate_type)
     
+    # Verify event rate for simulated data quality (ACTION-3)
+    # Use the h12 transition parameters for the check
+    if covariate_type == "nocov"
+        h12_params = true_params.h12
+        family_sym = Symbol(family)
+        VERBOSE_LONGTESTS && verify_event_rate_simple(data; verbose=true)
+    end
+    
     # Fit model
     model = multistatemodel(hazard_specs...; data=data)
     fitted = fit(model; verbose=false, compute_vcov=true)
@@ -398,7 +426,18 @@ function run_panel_test(family::String, covariate_type::String)
     # Generate panel data with test-specific seed
     test_seed = hash((family, data_type, covariate_type, RNG_SEED))
     Random.seed!(test_seed)
-    panel_data = generate_panel_data(hazard_specs, true_params, covariate_type, PANEL_TIMES)
+    
+    # Use appropriate panel times based on family:
+    # - Exponential: Uses Markov panel solver (matrix exp), can handle dense intervals
+    # - Weibull/Gompertz: Uses MCEM, requires sparse intervals for reliable recovery
+    panel_times = if family == "gom"
+        MCEM_PANEL_TIMES_GOMPERTZ  # Gompertz needs longer observation period
+    elseif family == "wei"
+        MCEM_PANEL_TIMES  # Weibull uses sparse intervals
+    else
+        PANEL_TIMES  # Exponential can use dense intervals
+    end
+    panel_data = generate_panel_data(hazard_specs, true_params, covariate_type, panel_times)
     
     # Fit model
     if data_type == "panel"

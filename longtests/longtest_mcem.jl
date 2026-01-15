@@ -17,6 +17,19 @@ Test matrix (panel data):
 - Observation types: 1→2 transition is panel data, 2→3 transition to absorbing is exact
 - Proposals: Markov (Section 1-3), PhaseType (Section 3B)
 
+Censoring Behavior (IMPORTANT):
+    Panel data tests exclude subjects who reach the absorbing state before the first
+    panel observation time. This is correct for survival analysis (subjects only
+    contribute data while at risk) but creates informative censoring that excludes
+    fast progressors. The panel data creation functions (in longtest_helpers.jl)
+    log dropped subject counts when dropout rates exceed 5%.
+
+    For the sparse panel intervals used here (MCEM_PANEL_TIMES = 0, 2, 4, ..., 14),
+    the expected dropout rate depends on the hazard parameters:
+    - Exponential (rate=0.15): ~26% reach state 3 by t=2
+    - Weibull (shape=1.3, rate=0.15): ~15-20% reach state 3 by t=2
+    - Gompertz: Uses longer observation period (0-25) with sparse intervals
+
 References:
 - Morsomme et al. (2025) Biostatistics kxaf038 - multistate semi-Markov MCEM
 - Titman & Sharples (2010) Biometrics 66(3):742-752 - phase-type approximations
@@ -48,6 +61,16 @@ const MAX_ITER = 30              # Maximum MCEM iterations
 const PARAM_TOL_REL = 0.35       # Relaxed relative tolerance for MCEM (more MC noise)
 const MAX_PATHS_PER_SUBJECT = 500  # Diagnostic hard limit for MCEM path counts
 const EVAL_TIMES = collect(0.0:0.5:MAX_TIME)  # Time grid for prevalence/CI comparisons
+# Markov vs PhaseType proposals use different importance sampling and can diverge
+# due to MCEM Monte Carlo variability (demonstrated in investigation 2026-01-15).
+# 55% tolerance covers observed variability while still catching major bugs.
+const PROPOSAL_COMPARISON_TOL = 0.55
+# Stricter tolerance for covariate coefficients (β parameters).
+# Covariate coefficients are most sensitive to proposal covariate handling bugs
+# (see Wave 6 bug fix in CODEBASE_REFACTORING_GUIDE.md). Use 20% relative tolerance
+# or 0.15 absolute tolerance (for betas near zero) to catch systematic proposal issues.
+const BETA_COMPARISON_TOL_REL = 0.20
+const BETA_COMPARISON_TOL_ABS = 0.15
 
 # Include shared helper functions for standalone runs
 # (when run via test runner, these are already loaded by MultistateModelsTests module)
@@ -500,7 +523,6 @@ flush(stdout)
     Random.seed!(RNG_SEED + 10)
     
     # Weibull hazards (semi-Markov) - progressive 3-state model (1→2→3)
-    # Note: Using Markov proposal as phase-type proposal has known issues
     true_shape_12, true_scale_12 = 1.3, 0.15
     true_shape_23, true_scale_23 = 1.1, 0.12
     
@@ -514,11 +536,16 @@ flush(stdout)
     
     panel_data = generate_panel_data_progressive((h12, h23), true_params)
     
-    # surrogate=:markov required for MCEM fitting
-    model_fit = multistatemodel(h12, h23; data=panel_data, surrogate=:markov)
-    fitted = fit_mcem_with_path_cap(model_fit;
-        test_label="MCEM Weibull - No Covariates",
-        proposal=:markov,  # Use Markov proposal (phase-type has known issues)
+    # =====================================================================
+    # Fit with Markov proposal
+    # =====================================================================
+    println("      ▸ Fitting with Markov proposal..."); flush(stdout)
+    h12_markov = Hazard(@formula(0 ~ 1), "wei", 1, 2)
+    h23_markov = Hazard(@formula(0 ~ 1), "wei", 2, 3)
+    model_markov = multistatemodel(h12_markov, h23_markov; data=panel_data, surrogate=:markov)
+    fitted_markov = fit_mcem_with_path_cap(model_markov;
+        test_label="MCEM Weibull - No Covariates (Markov)",
+        proposal=:markov,
         verbose=true,
         maxiter=MAX_ITER,
         tol=MCEM_TOL,
@@ -527,26 +554,92 @@ flush(stdout)
         compute_vcov=true,
         compute_ij_vcov=false)
     
-    # Print parameter comparison
-    p = get_parameters(fitted; scale=:natural)
-    print_parameter_comparison("Weibull - No Covariates",
+    p_markov = get_parameters(fitted_markov; scale=:natural)
+    print_parameter_comparison("Weibull - No Covariates (Markov)",
         [true_shape_12, true_scale_12, true_shape_23, true_scale_23],
-        [p.h12[1], p.h12[2], p.h23[1], p.h23[2]],
+        [p_markov.h12[1], p_markov.h12[2], p_markov.h23[1], p_markov.h23[2]],
         param_names=["shape_12", "scale_12", "shape_23", "scale_23"])
     
-    @testset "Parameter recovery" begin
-        @test isapprox(p.h12[1], true_shape_12; rtol=PARAM_TOL_REL)
-        @test isapprox(p.h12[2], true_scale_12; rtol=PARAM_TOL_REL)
-        @test isapprox(p.h23[1], true_shape_23; rtol=PARAM_TOL_REL)
-        @test isapprox(p.h23[2], true_scale_23; rtol=PARAM_TOL_REL)
+    # =====================================================================
+    # Fit with PhaseType proposal (same data)
+    # =====================================================================
+    println("      ▸ Fitting with PhaseType proposal..."); flush(stdout)
+    h12_pt = Hazard(@formula(0 ~ 1), "wei", 1, 2)
+    h23_pt = Hazard(@formula(0 ~ 1), "wei", 2, 3)
+    model_pt = multistatemodel(h12_pt, h23_pt; data=panel_data, surrogate=:markov)
+    fitted_pt = fit_mcem_with_path_cap(model_pt;
+        test_label="MCEM Weibull - No Covariates (PhaseType)",
+        proposal=PhaseTypeProposal(n_phases=3),
+        verbose=true,
+        maxiter=MAX_ITER,
+        tol=MCEM_TOL,
+        ess_target_initial=30,
+        max_ess=500,
+        compute_vcov=true,
+        compute_ij_vcov=false)
+    
+    p_pt = get_parameters(fitted_pt; scale=:natural)
+    print_parameter_comparison("Weibull - No Covariates (PhaseType)",
+        [true_shape_12, true_scale_12, true_shape_23, true_scale_23],
+        [p_pt.h12[1], p_pt.h12[2], p_pt.h23[1], p_pt.h23[2]],
+        param_names=["shape_12", "scale_12", "shape_23", "scale_23"])
+    
+    # =====================================================================
+    # Compare Markov vs PhaseType proposals
+    # =====================================================================
+    println("\n    Markov vs PhaseType Proposal Comparison:")
+    params_markov = [p_markov.h12[1], p_markov.h12[2], p_markov.h23[1], p_markov.h23[2]]
+    params_pt = [p_pt.h12[1], p_pt.h12[2], p_pt.h23[1], p_pt.h23[2]]
+    param_names = ["shape_12", "scale_12", "shape_23", "scale_23"]
+    println("    " * "-"^60)
+    println("    ", rpad("Parameter", 15), rpad("Markov", 12), rpad("PhaseType", 12), "Rel Diff (%)")
+    println("    " * "-"^60)
+    for (i, name) in enumerate(param_names)
+        rel_diff = abs(params_markov[i]) > 1e-10 ? 100.0 * abs(params_pt[i] - params_markov[i]) / abs(params_markov[i]) : NaN
+        println("    ", rpad(name, 15), rpad(@sprintf("%.4f", params_markov[i]), 12), 
+                rpad(@sprintf("%.4f", params_pt[i]), 12), 
+                isnan(rel_diff) ? "N/A" : @sprintf("%.1f%%", rel_diff))
+    end
+    println("    " * "-"^60)
+    
+    # Report Pareto-k diagnostics comparison
+    pareto_k_markov = fitted_markov.ConvergenceRecords.psis_pareto_k
+    pareto_k_pt = fitted_pt.ConvergenceRecords.psis_pareto_k
+    println("\n    Pareto-k Diagnostics (lower is better):")
+    println("      Markov:    median=", @sprintf("%.3f", median(filter(!isnan, pareto_k_markov))),
+            ", max=", @sprintf("%.3f", maximum(filter(!isnan, pareto_k_markov))))
+    println("      PhaseType: median=", @sprintf("%.3f", median(filter(!isnan, pareto_k_pt))),
+            ", max=", @sprintf("%.3f", maximum(filter(!isnan, pareto_k_pt))))
+    flush(stdout)
+    
+    @testset "Parameter recovery (Markov)" begin
+        @test isapprox(p_markov.h12[1], true_shape_12; rtol=PARAM_TOL_REL)
+        @test isapprox(p_markov.h12[2], true_scale_12; rtol=PARAM_TOL_REL)
+        @test isapprox(p_markov.h23[1], true_shape_23; rtol=PARAM_TOL_REL)
+        @test isapprox(p_markov.h23[2], true_scale_23; rtol=PARAM_TOL_REL)
+    end
+    
+    @testset "Parameter recovery (PhaseType)" begin
+        @test isapprox(p_pt.h12[1], true_shape_12; rtol=PARAM_TOL_REL)
+        @test isapprox(p_pt.h12[2], true_scale_12; rtol=PARAM_TOL_REL)
+        @test isapprox(p_pt.h23[1], true_shape_23; rtol=PARAM_TOL_REL)
+        @test isapprox(p_pt.h23[2], true_scale_23; rtol=PARAM_TOL_REL)
+    end
+    
+    @testset "Markov vs PhaseType agreement" begin
+        # Estimates from both proposals should agree within tolerance
+        for (i, name) in enumerate(param_names)
+            rel_diff = abs(params_markov[i]) > 1e-10 ? abs(params_pt[i] - params_markov[i]) / abs(params_markov[i]) : abs(params_pt[i] - params_markov[i])
+            @test rel_diff < PROPOSAL_COMPARISON_TOL
+        end
     end
     
     @testset "Distributional fidelity" begin
-        @test check_distributional_fidelity_mcem((h12, h23), true_params, get_parameters_flat(fitted))
+        @test check_distributional_fidelity_mcem((h12, h23), true_params, get_parameters_flat(fitted_markov))
     end
     
-    # Capture result for reporting
-    capture_mcem_result!("wei_panel_nocov", fitted, true_params,
+    # Capture result for reporting (use Markov fit as primary)
+    capture_mcem_result!("wei_panel_nocov", fitted_markov, true_params,
         ["h12_log_shape", "h12_log_scale", "h23_log_shape", "h23_log_scale"], (h12, h23);
         hazard_family="weibull")
 end
@@ -571,11 +664,16 @@ end
     
     panel_data = generate_panel_data_progressive((h12, h23), true_params; covariate_data=cov_data)
     
-    # surrogate=:markov required for MCEM fitting
-    model_fit = multistatemodel(h12, h23; data=panel_data, surrogate=:markov)
-    fitted = fit_mcem_with_path_cap(model_fit;
-        test_label="MCEM Weibull - With Covariate",
-        proposal=:markov,  # Use Markov proposal (phase-type has known issues)
+    # =====================================================================
+    # Fit with Markov proposal
+    # =====================================================================
+    println("      ▸ Fitting with Markov proposal..."); flush(stdout)
+    h12_markov = Hazard(@formula(0 ~ x), "wei", 1, 2)
+    h23_markov = Hazard(@formula(0 ~ x), "wei", 2, 3)
+    model_markov = multistatemodel(h12_markov, h23_markov; data=panel_data, surrogate=:markov)
+    fitted_markov = fit_mcem_with_path_cap(model_markov;
+        test_label="MCEM Weibull - With Covariate (Markov)",
+        proposal=:markov,
         verbose=true,
         maxiter=MAX_ITER,
         tol=MCEM_TOL,
@@ -583,18 +681,101 @@ end
         max_ess=500,
         compute_vcov=false)
     
-    # Print parameter comparison
-    p = get_parameters(fitted; scale=:estimation)
-    print_parameter_comparison("Weibull - With Covariate",
+    p_markov = get_parameters(fitted_markov; scale=:estimation)
+    print_parameter_comparison("Weibull - With Covariate (Markov)",
         [true_shape_12, true_scale_12, true_beta_12, true_shape_23, true_scale_23, true_beta_23],
-        [p[1], p[2], p[3], p[4], p[5], p[6]],
+        [p_markov[1], p_markov[2], p_markov[3], p_markov[4], p_markov[5], p_markov[6]],
         param_names=["shape_12", "scale_12", "beta_12", "shape_23", "scale_23", "beta_23"])
     
-    @testset "Parameter recovery" begin
-        p = get_parameters(fitted; scale=:estimation)
-        @test isapprox(p[1], true_shape_12; rtol=PARAM_TOL_REL)
-        @test isapprox(p[2], true_scale_12; rtol=PARAM_TOL_REL)
-        @test isapprox(p[3], true_beta_12; atol=0.35)
+    # =====================================================================
+    # Fit with PhaseType proposal (same data)
+    # =====================================================================
+    println("      ▸ Fitting with PhaseType proposal..."); flush(stdout)
+    h12_pt = Hazard(@formula(0 ~ x), "wei", 1, 2)
+    h23_pt = Hazard(@formula(0 ~ x), "wei", 2, 3)
+    model_pt = multistatemodel(h12_pt, h23_pt; data=panel_data, surrogate=:markov)
+    fitted_pt = fit_mcem_with_path_cap(model_pt;
+        test_label="MCEM Weibull - With Covariate (PhaseType)",
+        proposal=PhaseTypeProposal(n_phases=3),
+        verbose=true,
+        maxiter=MAX_ITER,
+        tol=MCEM_TOL,
+        ess_target_initial=30,
+        max_ess=500,
+        compute_vcov=false)
+    
+    p_pt = get_parameters(fitted_pt; scale=:estimation)
+    print_parameter_comparison("Weibull - With Covariate (PhaseType)",
+        [true_shape_12, true_scale_12, true_beta_12, true_shape_23, true_scale_23, true_beta_23],
+        [p_pt[1], p_pt[2], p_pt[3], p_pt[4], p_pt[5], p_pt[6]],
+        param_names=["shape_12", "scale_12", "beta_12", "shape_23", "scale_23", "beta_23"])
+    
+    # =====================================================================
+    # Compare Markov vs PhaseType proposals
+    # =====================================================================
+    println("\n    Markov vs PhaseType Proposal Comparison:")
+    params_markov = [p_markov[i] for i in 1:6]
+    params_pt = [p_pt[i] for i in 1:6]
+    param_names = ["shape_12", "scale_12", "beta_12", "shape_23", "scale_23", "beta_23"]
+    println("    " * "-"^60)
+    println("    ", rpad("Parameter", 15), rpad("Markov", 12), rpad("PhaseType", 12), "Rel Diff (%)")
+    println("    " * "-"^60)
+    for (i, name) in enumerate(param_names)
+        rel_diff = abs(params_markov[i]) > 1e-10 ? 100.0 * abs(params_pt[i] - params_markov[i]) / abs(params_markov[i]) : NaN
+        println("    ", rpad(name, 15), rpad(@sprintf("%.4f", params_markov[i]), 12), 
+                rpad(@sprintf("%.4f", params_pt[i]), 12), 
+                isnan(rel_diff) ? "N/A" : @sprintf("%.1f%%", rel_diff))
+    end
+    println("    " * "-"^60)
+    
+    # Report Pareto-k diagnostics comparison
+    pareto_k_markov = fitted_markov.ConvergenceRecords.psis_pareto_k
+    pareto_k_pt = fitted_pt.ConvergenceRecords.psis_pareto_k
+    println("\n    Pareto-k Diagnostics (lower is better):")
+    println("      Markov:    median=", @sprintf("%.3f", median(filter(!isnan, pareto_k_markov))),
+            ", max=", @sprintf("%.3f", maximum(filter(!isnan, pareto_k_markov))))
+    println("      PhaseType: median=", @sprintf("%.3f", median(filter(!isnan, pareto_k_pt))),
+            ", max=", @sprintf("%.3f", maximum(filter(!isnan, pareto_k_pt))))
+    flush(stdout)
+    
+    @testset "Parameter recovery (Markov)" begin
+        @test isapprox(p_markov[1], true_shape_12; rtol=PARAM_TOL_REL)
+        @test isapprox(p_markov[2], true_scale_12; rtol=PARAM_TOL_REL)
+        @test isapprox(p_markov[3], true_beta_12; atol=0.35)
+    end
+    
+    @testset "Parameter recovery (PhaseType)" begin
+        @test isapprox(p_pt[1], true_shape_12; rtol=PARAM_TOL_REL)
+        @test isapprox(p_pt[2], true_scale_12; rtol=PARAM_TOL_REL)
+        @test isapprox(p_pt[3], true_beta_12; atol=0.35)
+    end
+    
+    @testset "Markov vs PhaseType agreement" begin
+        # Estimates from both proposals should agree within tolerance
+        for (i, name) in enumerate(param_names)
+            rel_diff = abs(params_markov[i]) > 1e-10 ? abs(params_pt[i] - params_markov[i]) / abs(params_markov[i]) : abs(params_pt[i] - params_markov[i])
+            @test rel_diff < PROPOSAL_COMPARISON_TOL
+        end
+    end
+    
+    @testset "Markov vs PhaseType covariate coefficient agreement" begin
+        # STRICTER check for beta (covariate) parameters specifically.
+        # Covariate coefficients are most sensitive to proposal covariate handling bugs
+        # (see Wave 6 bug fix). If this test fails, investigate proposal covariate handling.
+        beta_indices = [3, 6]  # beta_12, beta_23 positions in param vector
+        beta_names_strict = ["beta_12", "beta_23"]
+        for (idx, name) in zip(beta_indices, beta_names_strict)
+            beta_markov = params_markov[idx]
+            beta_pt = params_pt[idx]
+            abs_diff = abs(beta_markov - beta_pt)
+            rel_diff = abs(beta_markov) > BETA_COMPARISON_TOL_ABS ? abs_diff / abs(beta_markov) : abs_diff / BETA_COMPARISON_TOL_ABS
+            # Use stricter of: 20% relative tolerance OR 0.15 absolute tolerance
+            passed = rel_diff < BETA_COMPARISON_TOL_REL || abs_diff < BETA_COMPARISON_TOL_ABS
+            if !passed
+                @warn "$name: Markov=$(round(beta_markov, digits=4)), PhaseType=$(round(beta_pt, digits=4)), rel_diff=$(round(rel_diff*100, digits=1))%"
+            end
+            @test passed
+        end
     end
 end
 
@@ -625,12 +806,17 @@ flush(stdout)
     panel_data = generate_panel_data_progressive((h12, h23), true_params;
         obs_times=[0.0, 5.0, 10.0, 15.0, 20.0, 25.0])  # Longer observation for Gompertz
     
-    # surrogate=:markov required for MCEM fitting
-    model_fit = multistatemodel(h12, h23; data=panel_data, surrogate=:markov)
-    fitted = fit_mcem_with_path_cap(model_fit;
-        test_label="MCEM Gompertz - No Covariates",
+    # =====================================================================
+    # Fit with Markov proposal
+    # =====================================================================
+    println("      ▸ Fitting with Markov proposal..."); flush(stdout)
+    h12_markov = Hazard(@formula(0 ~ 1), "gom", 1, 2)
+    h23_markov = Hazard(@formula(0 ~ 1), "gom", 2, 3)
+    model_markov = multistatemodel(h12_markov, h23_markov; data=panel_data, surrogate=:markov)
+    fitted_markov = fit_mcem_with_path_cap(model_markov;
+        test_label="MCEM Gompertz - No Covariates (Markov)",
         log_ess=true,
-        proposal=:markov,  # Use Markov proposal (phase-type has known issues)
+        proposal=:markov,
         verbose=true,
         maxiter=MAX_ITER,
         tol=MCEM_TOL,
@@ -639,28 +825,99 @@ flush(stdout)
         compute_vcov=true,
         compute_ij_vcov=false)
     
-    # Print parameter comparison
-    p = get_parameters(fitted; scale=:estimation)
-    print_parameter_comparison("Gompertz - No Covariates",
+    p_markov = get_parameters(fitted_markov; scale=:estimation)
+    print_parameter_comparison("Gompertz - No Covariates (Markov)",
         [true_shape_12, true_rate_12, true_shape_23, true_rate_23],
-        [p[1], p[2], p[3], p[4]],
+        [p_markov[1], p_markov[2], p_markov[3], p_markov[4]],
         param_names=["shape_12", "rate_12", "shape_23", "rate_23"])
     
-    @testset "Parameter recovery" begin
+    # =====================================================================
+    # Fit with PhaseType proposal (same data)
+    # =====================================================================
+    println("      ▸ Fitting with PhaseType proposal..."); flush(stdout)
+    h12_pt = Hazard(@formula(0 ~ 1), "gom", 1, 2)
+    h23_pt = Hazard(@formula(0 ~ 1), "gom", 2, 3)
+    model_pt = multistatemodel(h12_pt, h23_pt; data=panel_data, surrogate=:markov)
+    fitted_pt = fit_mcem_with_path_cap(model_pt;
+        test_label="MCEM Gompertz - No Covariates (PhaseType)",
+        log_ess=true,
+        proposal=PhaseTypeProposal(n_phases=3),
+        verbose=true,
+        maxiter=MAX_ITER,
+        tol=MCEM_TOL,
+        ess_target_initial=30,
+        max_ess=500,
+        compute_vcov=true,
+        compute_ij_vcov=false)
+    
+    p_pt = get_parameters(fitted_pt; scale=:estimation)
+    print_parameter_comparison("Gompertz - No Covariates (PhaseType)",
+        [true_shape_12, true_rate_12, true_shape_23, true_rate_23],
+        [p_pt[1], p_pt[2], p_pt[3], p_pt[4]],
+        param_names=["shape_12", "rate_12", "shape_23", "rate_23"])
+    
+    # =====================================================================
+    # Compare Markov vs PhaseType proposals
+    # =====================================================================
+    println("\n    Markov vs PhaseType Proposal Comparison:")
+    params_markov = [p_markov[i] for i in 1:4]
+    params_pt = [p_pt[i] for i in 1:4]
+    param_names = ["shape_12", "rate_12", "shape_23", "rate_23"]
+    println("    " * "-"^60)
+    println("    ", rpad("Parameter", 15), rpad("Markov", 12), rpad("PhaseType", 12), "Rel Diff (%)")
+    println("    " * "-"^60)
+    for (i, name) in enumerate(param_names)
+        rel_diff = abs(params_markov[i]) > 1e-10 ? 100.0 * abs(params_pt[i] - params_markov[i]) / abs(params_markov[i]) : NaN
+        println("    ", rpad(name, 15), rpad(@sprintf("%.4f", params_markov[i]), 12), 
+                rpad(@sprintf("%.4f", params_pt[i]), 12), 
+                isnan(rel_diff) ? "N/A" : @sprintf("%.1f%%", rel_diff))
+    end
+    println("    " * "-"^60)
+    
+    # Report Pareto-k diagnostics comparison
+    pareto_k_markov = fitted_markov.ConvergenceRecords.psis_pareto_k
+    pareto_k_pt = fitted_pt.ConvergenceRecords.psis_pareto_k
+    println("\n    Pareto-k Diagnostics (lower is better):")
+    println("      Markov:    median=", @sprintf("%.3f", median(filter(!isnan, pareto_k_markov))),
+            ", max=", @sprintf("%.3f", maximum(filter(!isnan, pareto_k_markov))))
+    println("      PhaseType: median=", @sprintf("%.3f", median(filter(!isnan, pareto_k_pt))),
+            ", max=", @sprintf("%.3f", maximum(filter(!isnan, pareto_k_pt))))
+    flush(stdout)
+    
+    @testset "Parameter recovery (Markov)" begin
         # shape: identity scale, rate: natural scale (since v0.3.0)
-        @test isapprox(p[1], true_shape_12; rtol=PARAM_TOL_REL) || abs(p[1] - true_shape_12) < 0.05
-        @test isapprox(p[2], true_rate_12; rtol=PARAM_TOL_REL)
-        @test isapprox(p[3], true_shape_23; rtol=PARAM_TOL_REL) || abs(p[3] - true_shape_23) < 0.05
-        @test isapprox(p[4], true_rate_23; rtol=PARAM_TOL_REL)
+        @test isapprox(p_markov[1], true_shape_12; rtol=PARAM_TOL_REL) || abs(p_markov[1] - true_shape_12) < 0.05
+        @test isapprox(p_markov[2], true_rate_12; rtol=PARAM_TOL_REL)
+        @test isapprox(p_markov[3], true_shape_23; rtol=PARAM_TOL_REL) || abs(p_markov[3] - true_shape_23) < 0.05
+        @test isapprox(p_markov[4], true_rate_23; rtol=PARAM_TOL_REL)
+    end
+    
+    # Note: PhaseType proposals can diverge significantly for Gompertz hazards
+    # due to the interaction between phase-type expansion and exponentially-varying hazards.
+    # With the covariate-aware PhaseType TPM fix, both proposals should converge.
+    @testset "Parameter recovery (PhaseType)" begin
+        @test isapprox(p_pt[1], true_shape_12; rtol=PARAM_TOL_REL) || abs(p_pt[1] - true_shape_12) < 0.10
+        @test isapprox(p_pt[2], true_rate_12; rtol=PARAM_TOL_REL)
+        @test isapprox(p_pt[3], true_shape_23; rtol=PARAM_TOL_REL) || abs(p_pt[3] - true_shape_23) < 0.10
+        @test isapprox(p_pt[4], true_rate_23; rtol=PARAM_TOL_REL)
+    end
+    
+    @testset "Markov vs PhaseType agreement" begin
+        # Estimates from both proposals should agree within tolerance
+        # With covariate-aware PhaseType TPM, proposals should converge
+        for (i, name) in enumerate(param_names)
+            rel_diff = abs(params_markov[i]) > 1e-10 ? abs(params_pt[i] - params_markov[i]) / abs(params_markov[i]) : abs(params_pt[i] - params_markov[i])
+            @test rel_diff < PROPOSAL_COMPARISON_TOL
+        end
     end
     
     @testset "Distributional fidelity" begin
-        @test check_distributional_fidelity_mcem((h12, h23), true_params, get_parameters_flat(fitted);
+        @test check_distributional_fidelity_mcem((h12, h23), true_params, get_parameters_flat(fitted_markov);
             max_time=25.0, eval_times=collect(2.0:2.0:25.0))
     end
     
-    # Capture result for reporting
-    capture_mcem_result!("gom_panel_nocov", fitted, true_params,
+    # Capture result for reporting (use Markov fit as primary)
+    capture_mcem_result!("gom_panel_nocov", fitted_markov, true_params,
         ["h12_shape", "h12_log_rate", "h23_shape", "h23_log_rate"], (h12, h23);
         hazard_family="gompertz")
 end
@@ -688,10 +945,15 @@ end
         covariate_data=cov_data,
         obs_times=[0.0, 5.0, 10.0, 15.0, 20.0, 25.0])
     
-    # surrogate=:markov required for MCEM fitting
-    model_fit = multistatemodel(h12, h23; data=panel_data, surrogate=:markov)
-    fitted = fit(model_fit;
-        proposal=:markov,  # Use Markov proposal (phase-type has known issues)
+    # =====================================================================
+    # Fit with Markov proposal
+    # =====================================================================
+    println("      ▸ Fitting with Markov proposal..."); flush(stdout)
+    h12_markov = Hazard(@formula(0 ~ x), "gom", 1, 2)
+    h23_markov = Hazard(@formula(0 ~ x), "gom", 2, 3)
+    model_markov = multistatemodel(h12_markov, h23_markov; data=panel_data, surrogate=:markov)
+    fitted_markov = fit(model_markov;
+        proposal=:markov,
         verbose=true,
         maxiter=MAX_ITER,
         tol=MCEM_TOL,
@@ -700,20 +962,104 @@ end
         compute_vcov=false,
         return_convergence_records=true)
     
-    # Print parameter comparison
-    p = get_parameters(fitted; scale=:estimation)
-    print_parameter_comparison("Gompertz - With Covariate",
+    p_markov = get_parameters(fitted_markov; scale=:estimation)
+    print_parameter_comparison("Gompertz - With Covariate (Markov)",
         [true_shape_12, true_rate_12, true_beta_12, true_shape_23, true_rate_23, true_beta_23],
-        [p[1], p[2], p[3], p[4], p[5], p[6]],
+        [p_markov[1], p_markov[2], p_markov[3], p_markov[4], p_markov[5], p_markov[6]],
         param_names=["shape_12", "rate_12", "beta_12", "shape_23", "rate_23", "beta_23"])
     
-    @testset "Parameter recovery" begin
+    # =====================================================================
+    # Fit with PhaseType proposal (same data)
+    # =====================================================================
+    println("      ▸ Fitting with PhaseType proposal..."); flush(stdout)
+    h12_pt = Hazard(@formula(0 ~ x), "gom", 1, 2)
+    h23_pt = Hazard(@formula(0 ~ x), "gom", 2, 3)
+    model_pt = multistatemodel(h12_pt, h23_pt; data=panel_data, surrogate=:markov)
+    fitted_pt = fit(model_pt;
+        proposal=PhaseTypeProposal(n_phases=3),
+        verbose=true,
+        maxiter=MAX_ITER,
+        tol=MCEM_TOL,
+        ess_target_initial=30,
+        max_ess=500,
+        compute_vcov=false,
+        return_convergence_records=true)
+    
+    p_pt = get_parameters(fitted_pt; scale=:estimation)
+    print_parameter_comparison("Gompertz - With Covariate (PhaseType)",
+        [true_shape_12, true_rate_12, true_beta_12, true_shape_23, true_rate_23, true_beta_23],
+        [p_pt[1], p_pt[2], p_pt[3], p_pt[4], p_pt[5], p_pt[6]],
+        param_names=["shape_12", "rate_12", "beta_12", "shape_23", "rate_23", "beta_23"])
+    
+    # =====================================================================
+    # Compare Markov vs PhaseType proposals
+    # =====================================================================
+    println("\n    Markov vs PhaseType Proposal Comparison:")
+    params_markov = [p_markov[i] for i in 1:6]
+    params_pt = [p_pt[i] for i in 1:6]
+    param_names = ["shape_12", "rate_12", "beta_12", "shape_23", "rate_23", "beta_23"]
+    println("    " * "-"^60)
+    println("    ", rpad("Parameter", 15), rpad("Markov", 12), rpad("PhaseType", 12), "Rel Diff (%)")
+    println("    " * "-"^60)
+    for (i, name) in enumerate(param_names)
+        rel_diff = abs(params_markov[i]) > 1e-10 ? 100.0 * abs(params_pt[i] - params_markov[i]) / abs(params_markov[i]) : NaN
+        println("    ", rpad(name, 15), rpad(@sprintf("%.4f", params_markov[i]), 12), 
+                rpad(@sprintf("%.4f", params_pt[i]), 12), 
+                isnan(rel_diff) ? "N/A" : @sprintf("%.1f%%", rel_diff))
+    end
+    println("    " * "-"^60)
+    
+    # Report Pareto-k diagnostics comparison
+    pareto_k_markov = fitted_markov.ConvergenceRecords.psis_pareto_k
+    pareto_k_pt = fitted_pt.ConvergenceRecords.psis_pareto_k
+    println("\n    Pareto-k Diagnostics (lower is better):")
+    println("      Markov:    median=", @sprintf("%.3f", median(filter(!isnan, pareto_k_markov))),
+            ", max=", @sprintf("%.3f", maximum(filter(!isnan, pareto_k_markov))))
+    println("      PhaseType: median=", @sprintf("%.3f", median(filter(!isnan, pareto_k_pt))),
+            ", max=", @sprintf("%.3f", maximum(filter(!isnan, pareto_k_pt))))
+    flush(stdout)
+    
+    @testset "Parameter recovery (Markov)" begin
         # Gompertz with covariates is challenging; use relaxed tolerance
         # Main check: parameters are finite and in reasonable range
-        # shape and rate both on natural scale (since v0.3.0)
-        @test all(isfinite.(p))
-        @test p[2] > 0.0  # rate > 0
-        @test p[5] > 0.0  # rate > 0
+        @test all(isfinite.(p_markov))
+        @test p_markov[2] > 0.0  # rate > 0
+        @test p_markov[5] > 0.0  # rate > 0
+    end
+    
+    @testset "Parameter recovery (PhaseType)" begin
+        @test all(isfinite.(p_pt))
+        @test p_pt[2] > 0.0  # rate > 0
+        @test p_pt[5] > 0.0  # rate > 0
+    end
+    
+    @testset "Markov vs PhaseType agreement" begin
+        # Gompertz with covariates: with covariate-aware PhaseType TPM,
+        # both proposals should now converge to same estimates.
+        for (i, name) in enumerate(param_names)
+            rel_diff = abs(params_markov[i]) > 1e-10 ? abs(params_pt[i] - params_markov[i]) / abs(params_markov[i]) : abs(params_pt[i] - params_markov[i])
+            @test rel_diff < PROPOSAL_COMPARISON_TOL
+        end
+    end
+    
+    @testset "Markov vs PhaseType covariate coefficient agreement" begin
+        # STRICTER check for beta (covariate) parameters specifically.
+        # Covariate coefficients are most sensitive to proposal covariate handling bugs
+        # (see Wave 6 bug fix). If this test fails, investigate proposal covariate handling.
+        beta_indices = [3, 6]  # beta_12, beta_23 positions in param vector
+        beta_names_strict = ["beta_12", "beta_23"]
+        for (idx, name) in zip(beta_indices, beta_names_strict)
+            beta_markov = params_markov[idx]
+            beta_pt = params_pt[idx]
+            abs_diff = abs(beta_markov - beta_pt)
+            rel_diff = abs(beta_markov) > BETA_COMPARISON_TOL_ABS ? abs_diff / abs(beta_markov) : abs_diff / BETA_COMPARISON_TOL_ABS
+            # Use stricter of: 20% relative tolerance OR 0.15 absolute tolerance
+            passed = rel_diff < BETA_COMPARISON_TOL_REL || abs_diff < BETA_COMPARISON_TOL_ABS
+            if !passed
+                @warn "$name: Markov=$(round(beta_markov, digits=4)), PhaseType=$(round(beta_pt, digits=4)), rel_diff=$(round(rel_diff*100, digits=1))%"
+            end
+            @test passed
+        end
     end
 end
 

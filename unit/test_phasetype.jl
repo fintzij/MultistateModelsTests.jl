@@ -835,7 +835,7 @@ using LinearAlgebra
         emat_ph = MultistateModels.build_phasetype_emat_expanded(model, surrogate)
         books = MultistateModels.build_tpm_mapping(model.data)
         absorbingstates = findall([isa(h, MultistateModels._TotalHazardAbsorbing) for h in model.totalhazards])
-        tpm_book_ph, hazmat_book_ph = MultistateModels.build_phasetype_tpm_book(surrogate, books, model.data)
+        tpm_book_ph, hazmat_book_ph = MultistateModels.build_phasetype_tpm_book(surrogate, surrogate_fitted, books, model.data)
         fbmats_ph = MultistateModels.build_fbmats_phasetype(model, surrogate)
         
         # Compute marginal likelihood under phase-type
@@ -963,6 +963,9 @@ using LinearAlgebra
         
         model = multistatemodel(h12, h13, h23; data=dat)
         
+        # Fit Markov surrogate (needed for build_phasetype_tpm_book)
+        markov_surrogate = MultistateModels.fit_surrogate(model; verbose=false)
+        
         # Build phase-type
         tmat = model.tmat
         config = MultistateModels.PhaseTypeConfig(n_phases=Dict(1=>2, 2=>2))
@@ -971,7 +974,7 @@ using LinearAlgebra
         emat_ph = MultistateModels.build_phasetype_emat_expanded(model, surrogate)
         books = MultistateModels.build_tpm_mapping(model.data)
         absorbingstates = findall([isa(h, MultistateModels._TotalHazardAbsorbing) for h in model.totalhazards])
-        tpm_book_ph, hazmat_book_ph = MultistateModels.build_phasetype_tpm_book(surrogate, books, model.data)
+        tpm_book_ph, hazmat_book_ph = MultistateModels.build_phasetype_tpm_book(surrogate, markov_surrogate, books, model.data)
         fbmats_ph = MultistateModels.build_fbmats_phasetype(model, surrogate)
         
         # Sample paths and verify validity
@@ -1030,6 +1033,9 @@ using LinearAlgebra
         
         model = multistatemodel(h12; data=dat)
         
+        # Fit Markov surrogate (needed for build_phasetype_tpm_book)
+        markov_surrogate = MultistateModels.fit_surrogate(model; verbose=false)
+        
         # Build phase-type surrogate with 2 phases
         tmat = model.tmat
         config = MultistateModels.PhaseTypeConfig(n_phases=Dict(1=>2))
@@ -1038,7 +1044,7 @@ using LinearAlgebra
         emat_ph = MultistateModels.build_phasetype_emat_expanded(model, surrogate)
         books = MultistateModels.build_tpm_mapping(model.data)
         absorbingstates = findall([isa(h, MultistateModels._TotalHazardAbsorbing) for h in model.totalhazards])
-        tpm_book_ph, hazmat_book_ph = MultistateModels.build_phasetype_tpm_book(surrogate, books, model.data)
+        tpm_book_ph, hazmat_book_ph = MultistateModels.build_phasetype_tpm_book(surrogate, markov_surrogate, books, model.data)
         fbmats_ph = MultistateModels.build_fbmats_phasetype(model, surrogate)
         
         ll_marginal = MultistateModels.compute_phasetype_marginal_loglik(model, surrogate, emat_ph)

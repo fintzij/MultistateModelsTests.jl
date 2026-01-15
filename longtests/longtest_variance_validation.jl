@@ -41,7 +41,28 @@ const RNG_SEED = 0xABCD2030
 const N_SUBJECTS = 2000           # Large sample for variance validation
 const N_REPS = 200                # Number of simulation replicates for empirical variance
 const MAX_TIME = 10.0             # Follow-up time
+
+# VAR_RATIO_TOL: Tolerance for IJ vs model-based variance ratio comparison
+# Under correct model specification, the ratio Var_IJ / Var_model should equal 1.0.
+# However, we use 50% tolerance (not 25%) for these reasons:
+#
+# 1. Monte Carlo variability: With N_REPS=200 simulation replicates, the empirical
+#    variance estimate itself has ~7% standard error (σ/√N ≈ 1/√200 ≈ 0.07 for ratios).
+#    Variance ratios involving outer product sums (K = Σ gᵢgᵢᵀ) have even higher
+#    variability because they involve fourth moments.
+#
+# 2. Finite-sample bias: The sandwich estimator is asymptotically valid but has
+#    finite-sample bias, especially for multiparameter models. With n=2000 subjects,
+#    we're well into asymptotic regime but not infinitely so.
+#
+# 3. Numerical conditioning: The Hessian inversion H⁻¹ in both variance estimates
+#    can amplify small numerical differences, especially for parameters near bounds.
+#
+# To achieve 25% tolerance reliably would require N_REPS ≥ 500 and careful attention
+# to numerical stability. We prioritize test reliability over test stringency here.
+# The DIAG_VAR_TOL=0.25 provides a tighter check on individual variance elements.
 const VAR_RATIO_TOL = 0.5         # 50% tolerance on variance ratio (ratio should be ~1)
+
 const DIAG_VAR_TOL = 0.25         # 25% tolerance on diagonal variance elements (tighter with 1000 reps)
 const JK_IJ_RATIO_TOL = 1e-10     # JK = ((n-1)/n) * IJ is algebraic identity
 

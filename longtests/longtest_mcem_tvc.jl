@@ -19,6 +19,13 @@ Key scenarios:
 - Continuous TVC (time-varying biomarker)
 - Multiple covariate change points per subject
 
+Censoring Behavior (IMPORTANT):
+    Panel data tests exclude subjects who reach the absorbing state before the first
+    panel observation time. This is correct for survival analysis (subjects only
+    contribute data while at risk) but creates informative censoring that excludes
+    fast progressors. The panel data creation functions (in longtest_helpers.jl)
+    log dropped subject counts when dropout rates exceed 5%.
+
 Notes on ESS behavior:
 - Subjects with early transitions (in the first observation interval) may have ESS ≈ 1.0
   because the path structure is deterministic (only the exact transition time varies).
@@ -48,6 +55,10 @@ const N_SUBJECTS = 2000       # Increased sample size to reduce finite-sample bi
 const MCEM_TOL = 0.05
 const MAX_ITER = 25
 const PARAM_TOL_REL = 0.15  # Relative tolerance for parameter recovery (15% - standard for long tests)
+# Stricter tolerance for covariate coefficients (β parameters) in proposal comparison.
+# Covariate coefficients are most sensitive to proposal covariate handling bugs.
+const BETA_COMPARISON_TOL_REL = 0.20  # 20% relative tolerance
+const BETA_COMPARISON_TOL_ABS = 0.15  # 0.15 absolute tolerance for betas near zero
 
 # ============================================================================
 # Helper Functions
@@ -434,7 +445,56 @@ set_parameters!(model_sim, (h12 = [true_shape, true_scale, true_beta],))
     # Convergence check
     @test isfinite(fitted.loglik.loglik)
     
+    # =========================================================================
+    # Markov vs PhaseType Proposal Comparison
+    # =========================================================================
+    println("  Fitting with PhaseTypeProposal(n_phases=3)...")
+    
+    h12_pt = Hazard(@formula(0 ~ x), "wei", 1, 2)
+    model_fit_pt = multistatemodel(h12_pt; data=simulated_data, surrogate=:markov)
+    
+    fitted_pt = fit(model_fit_pt;
+        proposal=PhaseTypeProposal(n_phases=3),
+        verbose=true,
+        maxiter=MAX_ITER,
+        tol=MCEM_TOL,
+        ess_target_initial=30,
+        max_ess=500,
+        compute_vcov=false)
+    
+    fitted_params_pt = get_parameters_flat(fitted_pt)
+    
+    # Compare Markov vs PhaseType estimates
+    println("\n    Markov vs PhaseType Proposal Comparison:")
+    println("    " * "-"^60)
+    println("    Parameter   Markov        PhaseType     Rel Diff")
+    println("    " * "-"^60)
+    
+    param_names = ["shape", "scale", "beta"]
+    comparison_passed = true
+    for (i, pname) in enumerate(param_names)
+        m_val = fitted_params[i]
+        pt_val = fitted_params_pt[i]
+        rel_diff = abs(m_val - pt_val) / max(abs(m_val), abs(pt_val), 0.01)
+        # With covariate-aware PhaseType TPM fix, proposals should converge
+        # Use 45% tolerance for TVC scenarios (includes MCEM Monte Carlo variance)
+        passed = rel_diff <= 0.45
+        comparison_passed &= passed
+        status = passed ? "✓" : "✗"
+        @printf("    %-11s %-13.4f %-13.4f %-10.3f %s\n", pname, m_val, pt_val, rel_diff, status)
+    end
+    println("    " * "-"^60)
+    @test comparison_passed
+    
+    # STRICTER check for beta (covariate) parameter specifically (Item #26)
+    beta_markov = fitted_params[3]
+    beta_pt = fitted_params_pt[3]
+    beta_abs_diff = abs(beta_markov - beta_pt)
+    beta_rel_diff = abs(beta_markov) > BETA_COMPARISON_TOL_ABS ? beta_abs_diff / abs(beta_markov) : beta_abs_diff / BETA_COMPARISON_TOL_ABS
+    @test (beta_rel_diff < BETA_COMPARISON_TOL_REL || beta_abs_diff < BETA_COMPARISON_TOL_ABS) "beta: Markov=$(round(beta_markov, digits=4)), PhaseType=$(round(beta_pt, digits=4)), rel_diff=$(round(beta_rel_diff*100, digits=1))%"
+    
     println("  ✓ Weibull + TVC (semi-Markov) MCEM fitting works")
+    println("  ✓ Markov vs PhaseType proposal estimates agree")
 end
 
 # ============================================================================
@@ -768,7 +828,56 @@ end
     beta_est = fitted_params[end]  # Last param is TVC beta
     @test sign(beta_est) == sign(true_beta)
     
+    # =========================================================================
+    # Markov vs PhaseType Proposal Comparison
+    # =========================================================================
+    println("  Fitting with PhaseTypeProposal(n_phases=3)...")
+    
+    h12_sp_pt = Hazard(@formula(0 ~ x), "sp", 1, 2; degree=3, knots=[3.0],
+                       boundaryknots=[0.0, max_time], extrapolation="constant")
+    
+    model_fit_pt = multistatemodel(h12_sp_pt; data=simulated_data, surrogate=:markov)
+    
+    fitted_pt = fit(model_fit_pt;
+        proposal=PhaseTypeProposal(n_phases=3),
+        verbose=true,
+        maxiter=MAX_ITER,
+        tol=MCEM_TOL,
+        ess_target_initial=30,
+        max_ess=500,
+        compute_vcov=false)
+    
+    fitted_params_pt = get_parameters_flat(fitted_pt)
+    
+    # Compare hazard values at test times (spline params not directly comparable)
+    pars_markov = get_parameters(fitted, 1, scale=:log)
+    pars_pt = get_parameters(fitted_pt, 1, scale=:log)
+    
+    println("\n    Markov vs PhaseType Hazard Comparison (Spline + TVC):")
+    println("    " * "-"^60)
+    println("    Time   x   Markov h(t)   PhaseType h(t)  Rel Diff")
+    println("    " * "-"^60)
+    
+    comparison_passed = true
+    for t in [1.0, 2.0, 4.0, 6.0]
+        for x_val in [0.0, 1.0]
+            covars = (x = x_val,)
+            h_markov = fitted.hazards[1](t, pars_markov, covars)
+            h_pt = fitted_pt.hazards[1](t, pars_pt, covars)
+            rel_diff = abs(h_markov - h_pt) / max(h_markov, h_pt, 0.01)
+            # With covariate-aware PhaseType TPM fix, proposals should converge
+            # Use 45% tolerance (includes MCEM variance + spline approximation error)
+            passed = rel_diff <= 0.45
+            comparison_passed &= passed
+            status = passed ? "✓" : "✗"
+            @printf("    %-6.1f %-3d %-13.4f %-15.4f %-10.3f %s\n", t, Int(x_val), h_markov, h_pt, rel_diff, status)
+        end
+    end
+    println("    " * "-"^60)
+    @test comparison_passed
+    
     println("  ✓ Spline + TVC MCEM fitting works")
+    println("  ✓ Markov vs PhaseType proposal estimates agree")
 end
 
 # ============================================================================

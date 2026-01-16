@@ -149,7 +149,7 @@ ul.task-list li input[type="checkbox"] {
 <!-- sidebar -->
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-        <nav id="TOC" role="doc-toc" class="toc-active">
+        <nav id="TOC" role="doc-toc" class="toc-active" data-toc-expanded="1">
     <h2 id="toc-title">On this page</h2>
    
   <ul>
@@ -210,7 +210,37 @@ ul.task-list li input[type="checkbox"] {
   <li><a href="#spline-hazards-with-exact-data" id="toc-spline-hazards-with-exact-data" class="nav-link" data-scroll-target="#spline-hazards-with-exact-data">7.3 Spline Hazards with Exact Data</a></li>
   <li><a href="#mcem-with-spline-hazards" id="toc-mcem-with-spline-hazards" class="nav-link" data-scroll-target="#mcem-with-spline-hazards">7.4 MCEM with Spline Hazards</a></li>
   </ul></li>
-  <li><a href="#notes" id="toc-notes" class="nav-link" data-scroll-target="#notes">8. Notes</a></li>
+  <li><a href="#unpenalized-spline-suite" id="toc-unpenalized-spline-suite" class="nav-link" data-scroll-target="#unpenalized-spline-suite">8. Unpenalized Spline Suite</a>
+  <ul>
+  <li><a href="#exact-data-tests-6-tests" id="toc-exact-data-tests-6-tests" class="nav-link" data-scroll-target="#exact-data-tests-6-tests">8.1 Exact Data Tests (6 tests)</a>
+  <ul class="collapse">
+  <li><a href="#sp_ph_exact_nocov" id="toc-sp_ph_exact_nocov" class="nav-link" data-scroll-target="#sp_ph_exact_nocov">8.1.1 sp_ph_exact_nocov</a></li>
+  <li><a href="#sp_ph_exact_fixed" id="toc-sp_ph_exact_fixed" class="nav-link" data-scroll-target="#sp_ph_exact_fixed">8.1.2 sp_ph_exact_fixed</a></li>
+  <li><a href="#sp_ph_exact_tvc" id="toc-sp_ph_exact_tvc" class="nav-link" data-scroll-target="#sp_ph_exact_tvc">8.1.3 sp_ph_exact_tvc</a></li>
+  <li><a href="#sp_aft_exact_nocov" id="toc-sp_aft_exact_nocov" class="nav-link" data-scroll-target="#sp_aft_exact_nocov">8.1.4 sp_aft_exact_nocov</a></li>
+  <li><a href="#sp_aft_exact_fixed" id="toc-sp_aft_exact_fixed" class="nav-link" data-scroll-target="#sp_aft_exact_fixed">8.1.5 sp_aft_exact_fixed</a></li>
+  <li><a href="#sp_aft_exact_tvc" id="toc-sp_aft_exact_tvc" class="nav-link" data-scroll-target="#sp_aft_exact_tvc">8.1.6 sp_aft_exact_tvc</a></li>
+  </ul></li>
+  <li><a href="#panel-data-tests---markov-surrogate-6-tests" id="toc-panel-data-tests---markov-surrogate-6-tests" class="nav-link" data-scroll-target="#panel-data-tests---markov-surrogate-6-tests">8.2 Panel Data Tests - Markov Surrogate (6 tests)</a>
+  <ul class="collapse">
+  <li><a href="#sp_ph_panel_markov_nocov" id="toc-sp_ph_panel_markov_nocov" class="nav-link" data-scroll-target="#sp_ph_panel_markov_nocov">8.2.1 sp_ph_panel_markov_nocov</a></li>
+  <li><a href="#sp_ph_panel_markov_fixed" id="toc-sp_ph_panel_markov_fixed" class="nav-link" data-scroll-target="#sp_ph_panel_markov_fixed">8.2.2 sp_ph_panel_markov_fixed</a></li>
+  <li><a href="#sp_ph_panel_markov_tvc" id="toc-sp_ph_panel_markov_tvc" class="nav-link" data-scroll-target="#sp_ph_panel_markov_tvc">8.2.3 sp_ph_panel_markov_tvc</a></li>
+  <li><a href="#sp_aft_panel_markov_nocov" id="toc-sp_aft_panel_markov_nocov" class="nav-link" data-scroll-target="#sp_aft_panel_markov_nocov">8.2.4 sp_aft_panel_markov_nocov</a></li>
+  <li><a href="#sp_aft_panel_markov_fixed" id="toc-sp_aft_panel_markov_fixed" class="nav-link" data-scroll-target="#sp_aft_panel_markov_fixed">8.2.5 sp_aft_panel_markov_fixed</a></li>
+  <li><a href="#sp_aft_panel_markov_tvc" id="toc-sp_aft_panel_markov_tvc" class="nav-link" data-scroll-target="#sp_aft_panel_markov_tvc">8.2.6 sp_aft_panel_markov_tvc</a></li>
+  </ul></li>
+  <li><a href="#panel-data-tests---phasetype-surrogate-6-tests" id="toc-panel-data-tests---phasetype-surrogate-6-tests" class="nav-link" data-scroll-target="#panel-data-tests---phasetype-surrogate-6-tests">8.3 Panel Data Tests - PhaseType Surrogate (6 tests)</a>
+  <ul class="collapse">
+  <li><a href="#sp_ph_panel_phasetype_nocov" id="toc-sp_ph_panel_phasetype_nocov" class="nav-link" data-scroll-target="#sp_ph_panel_phasetype_nocov">8.3.1 sp_ph_panel_phasetype_nocov</a></li>
+  <li><a href="#sp_ph_panel_phasetype_fixed" id="toc-sp_ph_panel_phasetype_fixed" class="nav-link" data-scroll-target="#sp_ph_panel_phasetype_fixed">8.3.2 sp_ph_panel_phasetype_fixed</a></li>
+  <li><a href="#sp_ph_panel_phasetype_tvc" id="toc-sp_ph_panel_phasetype_tvc" class="nav-link" data-scroll-target="#sp_ph_panel_phasetype_tvc">8.3.3 sp_ph_panel_phasetype_tvc</a></li>
+  <li><a href="#sp_aft_panel_phasetype_nocov" id="toc-sp_aft_panel_phasetype_nocov" class="nav-link" data-scroll-target="#sp_aft_panel_phasetype_nocov">8.3.4 sp_aft_panel_phasetype_nocov</a></li>
+  <li><a href="#sp_aft_panel_phasetype_fixed" id="toc-sp_aft_panel_phasetype_fixed" class="nav-link" data-scroll-target="#sp_aft_panel_phasetype_fixed">8.3.5 sp_aft_panel_phasetype_fixed</a></li>
+  <li><a href="#sp_aft_panel_phasetype_tvc" id="toc-sp_aft_panel_phasetype_tvc" class="nav-link" data-scroll-target="#sp_aft_panel_phasetype_tvc">8.3.6 sp_aft_panel_phasetype_tvc</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#notes" id="toc-notes" class="nav-link" data-scroll-target="#notes">9. Notes</a></li>
   </ul>
 <div class="toc-actions"><ul><li><a href="https://github.com/fintzij/MultistateModelsTests.jl/blob/main/03_long_tests.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/fintzij/MultistateModelsTests.jl/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
     </div>
@@ -322,9 +352,15 @@ ul.task-list li input[type="checkbox"] {
 <td>0</td>
 </tr>
 <tr class="odd">
+<td>Unpenalized Spline Suite</td>
+<td>18</td>
+<td>18</td>
+<td>0</td>
+</tr>
+<tr class="even">
 <td><strong>Total</strong></td>
-<td><strong>144</strong></td>
-<td><strong>144</strong></td>
+<td><strong>162</strong></td>
+<td><strong>162</strong></td>
 <td><strong>0</strong></td>
 </tr>
 </tbody>
@@ -3415,8 +3451,273 @@ Figure&nbsp;54: State Prevalence (Observed State Space)
 <hr>
 </section>
 </section>
+<section id="unpenalized-spline-suite" class="level2">
+<h2 class="anchored" data-anchor-id="unpenalized-spline-suite">8. Unpenalized Spline Suite</h2>
+<p>Tests in <code>longtest_spline_suite.jl</code> comprehensively validate unpenalized spline hazard inference. The test matrix covers: (exact × panel) × (PH × AFT) × (Markov × PhaseType surrogate) × (nocov × fixed × tvc).</p>
+<p><strong>Validation Strategy</strong>: Generate data from spline models with known B-spline coefficients, then fit the same spline model to directly compare estimated coefficients to true values.</p>
+<p><strong>Spline Configuration</strong>: degree=3 (cubic), 2 interior knots, boundary=[0.0, 15.0], no penalization.</p>
+<section id="exact-data-tests-6-tests" class="level3">
+<h3 class="anchored" data-anchor-id="exact-data-tests-6-tests">8.1 Exact Data Tests (6 tests)</h3>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Test</th>
+<th>Effect</th>
+<th>Covariates</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>sp_ph_exact_nocov</td>
+<td>PH</td>
+<td>None</td>
+<td>✅ Pass</td>
+</tr>
+<tr class="even">
+<td>sp_ph_exact_fixed</td>
+<td>PH</td>
+<td>Fixed</td>
+<td>✅ Pass</td>
+</tr>
+<tr class="odd">
+<td>sp_ph_exact_tvc</td>
+<td>PH</td>
+<td>Time-varying</td>
+<td>✅ Pass</td>
+</tr>
+<tr class="even">
+<td>sp_aft_exact_nocov</td>
+<td>AFT</td>
+<td>None</td>
+<td>✅ Pass</td>
+</tr>
+<tr class="odd">
+<td>sp_aft_exact_fixed</td>
+<td>AFT</td>
+<td>Fixed</td>
+<td>✅ Pass</td>
+</tr>
+<tr class="even">
+<td>sp_aft_exact_tvc</td>
+<td>AFT</td>
+<td>Time-varying</td>
+<td>✅ Pass</td>
+</tr>
+</tbody>
+</table>
+<section id="sp_ph_exact_nocov" class="level4">
+<h4 class="anchored" data-anchor-id="sp_ph_exact_nocov">8.1.1 sp_ph_exact_nocov</h4>
+<p>Spline PH hazard, exact data, no covariates. Tests direct coefficient recovery.</p>
+<p><em>Test <code>sp_ph_exact_nocov</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
+</section>
+<section id="sp_ph_exact_fixed" class="level4">
+<h4 class="anchored" data-anchor-id="sp_ph_exact_fixed">8.1.2 sp_ph_exact_fixed</h4>
+<p>Spline PH hazard, exact data, time-fixed covariate.</p>
+<p><em>Test <code>sp_ph_exact_fixed</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
+</section>
+<section id="sp_ph_exact_tvc" class="level4">
+<h4 class="anchored" data-anchor-id="sp_ph_exact_tvc">8.1.3 sp_ph_exact_tvc</h4>
+<p>Spline PH hazard, exact data, time-varying covariate.</p>
+<p><em>Test <code>sp_ph_exact_tvc</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
+</section>
+<section id="sp_aft_exact_nocov" class="level4">
+<h4 class="anchored" data-anchor-id="sp_aft_exact_nocov">8.1.4 sp_aft_exact_nocov</h4>
+<p>Spline AFT hazard, exact data, no covariates.</p>
+<p><em>Test <code>sp_aft_exact_nocov</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
+</section>
+<section id="sp_aft_exact_fixed" class="level4">
+<h4 class="anchored" data-anchor-id="sp_aft_exact_fixed">8.1.5 sp_aft_exact_fixed</h4>
+<p>Spline AFT hazard, exact data, time-fixed covariate.</p>
+<p><em>Test <code>sp_aft_exact_fixed</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
+</section>
+<section id="sp_aft_exact_tvc" class="level4">
+<h4 class="anchored" data-anchor-id="sp_aft_exact_tvc">8.1.6 sp_aft_exact_tvc</h4>
+<p>Spline AFT hazard, exact data, time-varying covariate.</p>
+<p><em>Test <code>sp_aft_exact_tvc</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
+</section>
+</section>
+<section id="panel-data-tests---markov-surrogate-6-tests" class="level3">
+<h3 class="anchored" data-anchor-id="panel-data-tests---markov-surrogate-6-tests">8.2 Panel Data Tests - Markov Surrogate (6 tests)</h3>
+<p>Tests with panel data using MCEM with Markov surrogate.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Test</th>
+<th>Effect</th>
+<th>Covariates</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>sp_ph_panel_markov_nocov</td>
+<td>PH</td>
+<td>None</td>
+<td>✅ Pass</td>
+</tr>
+<tr class="even">
+<td>sp_ph_panel_markov_fixed</td>
+<td>PH</td>
+<td>Fixed</td>
+<td>✅ Pass</td>
+</tr>
+<tr class="odd">
+<td>sp_ph_panel_markov_tvc</td>
+<td>PH</td>
+<td>Time-varying</td>
+<td>✅ Pass</td>
+</tr>
+<tr class="even">
+<td>sp_aft_panel_markov_nocov</td>
+<td>AFT</td>
+<td>None</td>
+<td>✅ Pass</td>
+</tr>
+<tr class="odd">
+<td>sp_aft_panel_markov_fixed</td>
+<td>AFT</td>
+<td>Fixed</td>
+<td>✅ Pass</td>
+</tr>
+<tr class="even">
+<td>sp_aft_panel_markov_tvc</td>
+<td>AFT</td>
+<td>Time-varying</td>
+<td>✅ Pass</td>
+</tr>
+</tbody>
+</table>
+<section id="sp_ph_panel_markov_nocov" class="level4">
+<h4 class="anchored" data-anchor-id="sp_ph_panel_markov_nocov">8.2.1 sp_ph_panel_markov_nocov</h4>
+<p>Spline PH, panel data, Markov surrogate, no covariates.</p>
+<p><em>Test <code>sp_ph_panel_markov_nocov</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
+</section>
+<section id="sp_ph_panel_markov_fixed" class="level4">
+<h4 class="anchored" data-anchor-id="sp_ph_panel_markov_fixed">8.2.2 sp_ph_panel_markov_fixed</h4>
+<p>Spline PH, panel data, Markov surrogate, time-fixed covariate.</p>
+<p><em>Test <code>sp_ph_panel_markov_fixed</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
+</section>
+<section id="sp_ph_panel_markov_tvc" class="level4">
+<h4 class="anchored" data-anchor-id="sp_ph_panel_markov_tvc">8.2.3 sp_ph_panel_markov_tvc</h4>
+<p>Spline PH, panel data, Markov surrogate, time-varying covariate.</p>
+<p><em>Test <code>sp_ph_panel_markov_tvc</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
+</section>
+<section id="sp_aft_panel_markov_nocov" class="level4">
+<h4 class="anchored" data-anchor-id="sp_aft_panel_markov_nocov">8.2.4 sp_aft_panel_markov_nocov</h4>
+<p>Spline AFT, panel data, Markov surrogate, no covariates.</p>
+<p><em>Test <code>sp_aft_panel_markov_nocov</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
+</section>
+<section id="sp_aft_panel_markov_fixed" class="level4">
+<h4 class="anchored" data-anchor-id="sp_aft_panel_markov_fixed">8.2.5 sp_aft_panel_markov_fixed</h4>
+<p>Spline AFT, panel data, Markov surrogate, time-fixed covariate.</p>
+<p><em>Test <code>sp_aft_panel_markov_fixed</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
+</section>
+<section id="sp_aft_panel_markov_tvc" class="level4">
+<h4 class="anchored" data-anchor-id="sp_aft_panel_markov_tvc">8.2.6 sp_aft_panel_markov_tvc</h4>
+<p>Spline AFT, panel data, Markov surrogate, time-varying covariate.</p>
+<p><em>Test <code>sp_aft_panel_markov_tvc</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
+</section>
+</section>
+<section id="panel-data-tests---phasetype-surrogate-6-tests" class="level3">
+<h3 class="anchored" data-anchor-id="panel-data-tests---phasetype-surrogate-6-tests">8.3 Panel Data Tests - PhaseType Surrogate (6 tests)</h3>
+<p>Tests with panel data using MCEM with PhaseType surrogate.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Test</th>
+<th>Effect</th>
+<th>Covariates</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>sp_ph_panel_phasetype_nocov</td>
+<td>PH</td>
+<td>None</td>
+<td>✅ Pass</td>
+</tr>
+<tr class="even">
+<td>sp_ph_panel_phasetype_fixed</td>
+<td>PH</td>
+<td>Fixed</td>
+<td>✅ Pass</td>
+</tr>
+<tr class="odd">
+<td>sp_ph_panel_phasetype_tvc</td>
+<td>PH</td>
+<td>Time-varying</td>
+<td>✅ Pass</td>
+</tr>
+<tr class="even">
+<td>sp_aft_panel_phasetype_nocov</td>
+<td>AFT</td>
+<td>None</td>
+<td>✅ Pass</td>
+</tr>
+<tr class="odd">
+<td>sp_aft_panel_phasetype_fixed</td>
+<td>AFT</td>
+<td>Fixed</td>
+<td>✅ Pass</td>
+</tr>
+<tr class="even">
+<td>sp_aft_panel_phasetype_tvc</td>
+<td>AFT</td>
+<td>Time-varying</td>
+<td>✅ Pass</td>
+</tr>
+</tbody>
+</table>
+<section id="sp_ph_panel_phasetype_nocov" class="level4">
+<h4 class="anchored" data-anchor-id="sp_ph_panel_phasetype_nocov">8.3.1 sp_ph_panel_phasetype_nocov</h4>
+<p>Spline PH, panel data, PhaseType surrogate, no covariates.</p>
+<p><em>Test <code>sp_ph_panel_phasetype_nocov</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
+</section>
+<section id="sp_ph_panel_phasetype_fixed" class="level4">
+<h4 class="anchored" data-anchor-id="sp_ph_panel_phasetype_fixed">8.3.2 sp_ph_panel_phasetype_fixed</h4>
+<p>Spline PH, panel data, PhaseType surrogate, time-fixed covariate.</p>
+<p><em>Test <code>sp_ph_panel_phasetype_fixed</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
+</section>
+<section id="sp_ph_panel_phasetype_tvc" class="level4">
+<h4 class="anchored" data-anchor-id="sp_ph_panel_phasetype_tvc">8.3.3 sp_ph_panel_phasetype_tvc</h4>
+<p>Spline PH, panel data, PhaseType surrogate, time-varying covariate.</p>
+<p><em>Test <code>sp_ph_panel_phasetype_tvc</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
+</section>
+<section id="sp_aft_panel_phasetype_nocov" class="level4">
+<h4 class="anchored" data-anchor-id="sp_aft_panel_phasetype_nocov">8.3.4 sp_aft_panel_phasetype_nocov</h4>
+<p>Spline AFT, panel data, PhaseType surrogate, no covariates.</p>
+<p><em>Test <code>sp_aft_panel_phasetype_nocov</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
+</section>
+<section id="sp_aft_panel_phasetype_fixed" class="level4">
+<h4 class="anchored" data-anchor-id="sp_aft_panel_phasetype_fixed">8.3.5 sp_aft_panel_phasetype_fixed</h4>
+<p>Spline AFT, panel data, PhaseType surrogate, time-fixed covariate.</p>
+<p><em>Test <code>sp_aft_panel_phasetype_fixed</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
+</section>
+<section id="sp_aft_panel_phasetype_tvc" class="level4">
+<h4 class="anchored" data-anchor-id="sp_aft_panel_phasetype_tvc">8.3.6 sp_aft_panel_phasetype_tvc</h4>
+<p>Spline AFT, panel data, PhaseType surrogate, time-varying covariate.</p>
+<p><em>Test <code>sp_aft_panel_phasetype_tvc</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Surrogate Comparison
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Both Markov and PhaseType surrogates should produce similar estimates. For each test case, we verify that estimates from both surrogates are within 35% relative tolerance of each other (20% for β parameters).</p>
+</div>
+</div>
+<hr>
+</section>
+</section>
+</section>
 <section id="notes" class="level2">
-<h2 class="anchored" data-anchor-id="notes">8. Notes</h2>
+<h2 class="anchored" data-anchor-id="notes">9. Notes</h2>
 <ul>
 <li><strong>Model</strong>: 3-state progressive: State 1 → State 2 → State 3</li>
 <li><strong>Tolerance</strong>: 35% relative error for main parameters</li>

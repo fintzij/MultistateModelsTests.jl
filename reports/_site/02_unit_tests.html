@@ -396,7 +396,7 @@ window.Quarto = {
 <tr class="even">
 <td>MCEM Algorithm</td>
 <td><code>test_mcem.jl</code></td>
-<td>Monte Carlo EM, SQUAREM acceleration</td>
+<td>Monte Carlo EM helper functions</td>
 </tr>
 <tr class="odd">
 <td>Phase-Type</td>
@@ -1104,7 +1104,7 @@ window.Quarto = {
 </section>
 <section id="mcem-algorithm-test_mcem.jl" class="level2">
 <h2 class="anchored" data-anchor-id="mcem-algorithm-test_mcem.jl">5. MCEM Algorithm (<code>test_mcem.jl</code>)</h2>
-<p>Tests verify Monte Carlo EM helper functions and SQUAREM acceleration.</p>
+<p>Tests verify Monte Carlo EM helper functions.</p>
 <section id="mathematical-reference-3" class="level3">
 <h3 class="anchored" data-anchor-id="mathematical-reference-3">5.1 Mathematical Reference</h3>
 <div class="callout callout-style-default callout-note callout-titled">
@@ -1124,11 +1124,6 @@ window.Quarto = {
 <p>where <span class="math inline">\(w_i\)</span> = subject weight, <span class="math inline">\(p_{ij}\)</span> = importance weight for path <span class="math inline">\(j\)</span> of subject <span class="math inline">\(i\)</span>.</p>
 <p><strong>MCEM Asymptotic Standard Error:</strong></p>
 <p><span class="math display">\[\text{ASE} = \sqrt{\sum_{i=1}^n w_i^2 \cdot \text{Var}_{p_i}[\ell(\theta; y_i, z_i) - \ell(\theta_0; y_i, z_i)]}\]</span></p>
-<p><strong>SQUAREM Acceleration:</strong></p>
-<ul>
-<li>Step length: <span class="math inline">\(\alpha = -r'r / (r'v)\)</span> where <span class="math inline">\(r = \theta_1 - \theta_0\)</span>, <span class="math inline">\(v = \theta_2 - 2\theta_1 + \theta_0\)</span></li>
-<li>Accelerated: <span class="math inline">\(\theta_\text{acc} = \theta_0 - 2\alpha r + \alpha^2 v\)</span></li>
-</ul>
 </div>
 </div>
 </div>
@@ -1206,43 +1201,6 @@ window.Quarto = {
 </tr>
 </tbody>
 </table>
-<p><strong>SQUAREM Helpers:</strong></p>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 37%">
-<col style="width: 22%">
-<col style="width: 40%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Function</th>
-<th>Test</th>
-<th>Criterion</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><code>squarem_step_length</code></td>
-<td>Known inputs</td>
-<td>Correct <span class="math inline">\(r\)</span>, <span class="math inline">\(v\)</span>, <span class="math inline">\(\alpha\)</span></td>
-</tr>
-<tr class="even">
-<td><code>squarem_accelerate</code></td>
-<td>Formula</td>
-<td><span class="math inline">\(\theta_\text{acc} = \theta_0 - 2\alpha r + \alpha^2 v\)</span></td>
-</tr>
-<tr class="odd">
-<td><code>squarem_should_accept</code></td>
-<td>Better than start</td>
-<td>Returns true</td>
-</tr>
-<tr class="even">
-<td><code>SquaremState</code></td>
-<td>Initialization</td>
-<td>Zero-initialized, step=0</td>
-</tr>
-</tbody>
-</table>
 <p><strong>MCEM Monotonicity (Limited Iterations):</strong></p>
 <table class="caption-top table">
 <thead>
@@ -1290,16 +1248,6 @@ window.Quarto = {
 <tr class="odd">
 <td><code>mcem_ase</code> correctness</td>
 <td>1 edge case</td>
-<td>✅ Pass</td>
-</tr>
-<tr class="even">
-<td>SQUAREM step length</td>
-<td>1 known case</td>
-<td>✅ Pass</td>
-</tr>
-<tr class="odd">
-<td>SQUAREM acceleration</td>
-<td>1 formula check</td>
 <td>✅ Pass</td>
 </tr>
 <tr class="even">

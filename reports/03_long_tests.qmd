@@ -6,6 +6,7 @@ format:
   html:
     toc: true
     toc-depth: 4
+    toc-expand: 1
     code-fold: true
 ---
 
@@ -305,7 +306,8 @@ fitted via MCEM with PhaseType proposal. Fixed in `src/inference/sampling.jl`.
 | Simulation Distribution | 65 | 65 | 0 |
 | AFT Suite | 19 | 19 | 0 |
 | Spline Exact | 6 | 6 | 0 |
-| **Total** | **144** | **144** | **0** |
+| Unpenalized Spline Suite | 18 | 18 | 0 |
+| **Total** | **162** | **162** | **0** |
 
 ---
 
@@ -1159,7 +1161,532 @@ observation data (obstype=1) using a Weibull DGP.
 
 ---
 
-## 8. Notes
+## 8. Unpenalized Spline Suite
+
+Tests in `longtest_spline_suite.jl` comprehensively validate unpenalized spline hazard inference.
+The test matrix covers: (exact × panel) × (PH × AFT) × (Markov × PhaseType surrogate) × (nocov × fixed × tvc).
+
+**Validation Strategy**: Generate data from spline models with known B-spline coefficients, then fit
+the same spline model to directly compare estimated coefficients to true values.
+
+**Spline Configuration**: degree=3 (cubic), 2 interior knots, boundary=[0.0, 15.0], no penalization.
+
+### 8.1 Exact Data Tests (6 tests)
+
+| Test | Effect | Covariates | Status |
+|------|--------|------------|--------|
+| sp_ph_exact_nocov | PH | None | ✅ Pass |
+| sp_ph_exact_fixed | PH | Fixed | ✅ Pass |
+| sp_ph_exact_tvc | PH | Time-varying | ✅ Pass |
+| sp_aft_exact_nocov | AFT | None | ✅ Pass |
+| sp_aft_exact_fixed | AFT | Fixed | ✅ Pass |
+| sp_aft_exact_tvc | AFT | Time-varying | ✅ Pass |
+
+#### 8.1.1 sp_ph_exact_nocov
+
+Spline PH hazard, exact data, no covariates. Tests direct coefficient recovery.
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("sp_ph_exact_nocov")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-sp-ph-exact-nocov-ci
+#| fig-cap: "Cumulative Incidence"
+result = load_longtest_result("sp_ph_exact_nocov")
+!isnothing(result) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-sp-ph-exact-nocov-prev
+#| fig-cap: "State Prevalence"
+result = load_longtest_result("sp_ph_exact_nocov")
+!isnothing(result) ? plot_state_prevalence(result) : nothing
+```
+
+#### 8.1.2 sp_ph_exact_fixed
+
+Spline PH hazard, exact data, time-fixed covariate.
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("sp_ph_exact_fixed")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-sp-ph-exact-fixed-ci
+#| fig-cap: "Cumulative Incidence"
+result = load_longtest_result("sp_ph_exact_fixed")
+!isnothing(result) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-sp-ph-exact-fixed-prev
+#| fig-cap: "State Prevalence"
+result = load_longtest_result("sp_ph_exact_fixed")
+!isnothing(result) ? plot_state_prevalence(result) : nothing
+```
+
+#### 8.1.3 sp_ph_exact_tvc
+
+Spline PH hazard, exact data, time-varying covariate.
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("sp_ph_exact_tvc")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-sp-ph-exact-tvc-ci
+#| fig-cap: "Cumulative Incidence"
+result = load_longtest_result("sp_ph_exact_tvc")
+!isnothing(result) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-sp-ph-exact-tvc-prev
+#| fig-cap: "State Prevalence"
+result = load_longtest_result("sp_ph_exact_tvc")
+!isnothing(result) ? plot_state_prevalence(result) : nothing
+```
+
+#### 8.1.4 sp_aft_exact_nocov
+
+Spline AFT hazard, exact data, no covariates.
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("sp_aft_exact_nocov")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-sp-aft-exact-nocov-ci
+#| fig-cap: "Cumulative Incidence"
+result = load_longtest_result("sp_aft_exact_nocov")
+!isnothing(result) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-sp-aft-exact-nocov-prev
+#| fig-cap: "State Prevalence"
+result = load_longtest_result("sp_aft_exact_nocov")
+!isnothing(result) ? plot_state_prevalence(result) : nothing
+```
+
+#### 8.1.5 sp_aft_exact_fixed
+
+Spline AFT hazard, exact data, time-fixed covariate.
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("sp_aft_exact_fixed")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-sp-aft-exact-fixed-ci
+#| fig-cap: "Cumulative Incidence"
+result = load_longtest_result("sp_aft_exact_fixed")
+!isnothing(result) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-sp-aft-exact-fixed-prev
+#| fig-cap: "State Prevalence"
+result = load_longtest_result("sp_aft_exact_fixed")
+!isnothing(result) ? plot_state_prevalence(result) : nothing
+```
+
+#### 8.1.6 sp_aft_exact_tvc
+
+Spline AFT hazard, exact data, time-varying covariate.
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("sp_aft_exact_tvc")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-sp-aft-exact-tvc-ci
+#| fig-cap: "Cumulative Incidence"
+result = load_longtest_result("sp_aft_exact_tvc")
+!isnothing(result) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-sp-aft-exact-tvc-prev
+#| fig-cap: "State Prevalence"
+result = load_longtest_result("sp_aft_exact_tvc")
+!isnothing(result) ? plot_state_prevalence(result) : nothing
+```
+
+### 8.2 Panel Data Tests - Markov Surrogate (6 tests)
+
+Tests with panel data using MCEM with Markov surrogate.
+
+| Test | Effect | Covariates | Status |
+|------|--------|------------|--------|
+| sp_ph_panel_markov_nocov | PH | None | ✅ Pass |
+| sp_ph_panel_markov_fixed | PH | Fixed | ✅ Pass |
+| sp_ph_panel_markov_tvc | PH | Time-varying | ✅ Pass |
+| sp_aft_panel_markov_nocov | AFT | None | ✅ Pass |
+| sp_aft_panel_markov_fixed | AFT | Fixed | ✅ Pass |
+| sp_aft_panel_markov_tvc | AFT | Time-varying | ✅ Pass |
+
+#### 8.2.1 sp_ph_panel_markov_nocov
+
+Spline PH, panel data, Markov surrogate, no covariates.
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("sp_ph_panel_markov_nocov")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-sp-ph-panel-markov-nocov-ci
+#| fig-cap: "Cumulative Incidence"
+result = load_longtest_result("sp_ph_panel_markov_nocov")
+!isnothing(result) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-sp-ph-panel-markov-nocov-prev
+#| fig-cap: "State Prevalence"
+result = load_longtest_result("sp_ph_panel_markov_nocov")
+!isnothing(result) ? plot_state_prevalence(result) : nothing
+```
+
+#### 8.2.2 sp_ph_panel_markov_fixed
+
+Spline PH, panel data, Markov surrogate, time-fixed covariate.
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("sp_ph_panel_markov_fixed")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-sp-ph-panel-markov-fixed-ci
+#| fig-cap: "Cumulative Incidence"
+result = load_longtest_result("sp_ph_panel_markov_fixed")
+!isnothing(result) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-sp-ph-panel-markov-fixed-prev
+#| fig-cap: "State Prevalence"
+result = load_longtest_result("sp_ph_panel_markov_fixed")
+!isnothing(result) ? plot_state_prevalence(result) : nothing
+```
+
+#### 8.2.3 sp_ph_panel_markov_tvc
+
+Spline PH, panel data, Markov surrogate, time-varying covariate.
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("sp_ph_panel_markov_tvc")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-sp-ph-panel-markov-tvc-ci
+#| fig-cap: "Cumulative Incidence"
+result = load_longtest_result("sp_ph_panel_markov_tvc")
+!isnothing(result) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-sp-ph-panel-markov-tvc-prev
+#| fig-cap: "State Prevalence"
+result = load_longtest_result("sp_ph_panel_markov_tvc")
+!isnothing(result) ? plot_state_prevalence(result) : nothing
+```
+
+#### 8.2.4 sp_aft_panel_markov_nocov
+
+Spline AFT, panel data, Markov surrogate, no covariates.
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("sp_aft_panel_markov_nocov")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-sp-aft-panel-markov-nocov-ci
+#| fig-cap: "Cumulative Incidence"
+result = load_longtest_result("sp_aft_panel_markov_nocov")
+!isnothing(result) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-sp-aft-panel-markov-nocov-prev
+#| fig-cap: "State Prevalence"
+result = load_longtest_result("sp_aft_panel_markov_nocov")
+!isnothing(result) ? plot_state_prevalence(result) : nothing
+```
+
+#### 8.2.5 sp_aft_panel_markov_fixed
+
+Spline AFT, panel data, Markov surrogate, time-fixed covariate.
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("sp_aft_panel_markov_fixed")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-sp-aft-panel-markov-fixed-ci
+#| fig-cap: "Cumulative Incidence"
+result = load_longtest_result("sp_aft_panel_markov_fixed")
+!isnothing(result) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-sp-aft-panel-markov-fixed-prev
+#| fig-cap: "State Prevalence"
+result = load_longtest_result("sp_aft_panel_markov_fixed")
+!isnothing(result) ? plot_state_prevalence(result) : nothing
+```
+
+#### 8.2.6 sp_aft_panel_markov_tvc
+
+Spline AFT, panel data, Markov surrogate, time-varying covariate.
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("sp_aft_panel_markov_tvc")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-sp-aft-panel-markov-tvc-ci
+#| fig-cap: "Cumulative Incidence"
+result = load_longtest_result("sp_aft_panel_markov_tvc")
+!isnothing(result) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-sp-aft-panel-markov-tvc-prev
+#| fig-cap: "State Prevalence"
+result = load_longtest_result("sp_aft_panel_markov_tvc")
+!isnothing(result) ? plot_state_prevalence(result) : nothing
+```
+
+### 8.3 Panel Data Tests - PhaseType Surrogate (6 tests)
+
+Tests with panel data using MCEM with PhaseType surrogate.
+
+| Test | Effect | Covariates | Status |
+|------|--------|------------|--------|
+| sp_ph_panel_phasetype_nocov | PH | None | ✅ Pass |
+| sp_ph_panel_phasetype_fixed | PH | Fixed | ✅ Pass |
+| sp_ph_panel_phasetype_tvc | PH | Time-varying | ✅ Pass |
+| sp_aft_panel_phasetype_nocov | AFT | None | ✅ Pass |
+| sp_aft_panel_phasetype_fixed | AFT | Fixed | ✅ Pass |
+| sp_aft_panel_phasetype_tvc | AFT | Time-varying | ✅ Pass |
+
+#### 8.3.1 sp_ph_panel_phasetype_nocov
+
+Spline PH, panel data, PhaseType surrogate, no covariates.
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("sp_ph_panel_phasetype_nocov")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-sp-ph-panel-phasetype-nocov-ci
+#| fig-cap: "Cumulative Incidence"
+result = load_longtest_result("sp_ph_panel_phasetype_nocov")
+!isnothing(result) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-sp-ph-panel-phasetype-nocov-prev
+#| fig-cap: "State Prevalence"
+result = load_longtest_result("sp_ph_panel_phasetype_nocov")
+!isnothing(result) ? plot_state_prevalence(result) : nothing
+```
+
+#### 8.3.2 sp_ph_panel_phasetype_fixed
+
+Spline PH, panel data, PhaseType surrogate, time-fixed covariate.
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("sp_ph_panel_phasetype_fixed")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-sp-ph-panel-phasetype-fixed-ci
+#| fig-cap: "Cumulative Incidence"
+result = load_longtest_result("sp_ph_panel_phasetype_fixed")
+!isnothing(result) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-sp-ph-panel-phasetype-fixed-prev
+#| fig-cap: "State Prevalence"
+result = load_longtest_result("sp_ph_panel_phasetype_fixed")
+!isnothing(result) ? plot_state_prevalence(result) : nothing
+```
+
+#### 8.3.3 sp_ph_panel_phasetype_tvc
+
+Spline PH, panel data, PhaseType surrogate, time-varying covariate.
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("sp_ph_panel_phasetype_tvc")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-sp-ph-panel-phasetype-tvc-ci
+#| fig-cap: "Cumulative Incidence"
+result = load_longtest_result("sp_ph_panel_phasetype_tvc")
+!isnothing(result) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-sp-ph-panel-phasetype-tvc-prev
+#| fig-cap: "State Prevalence"
+result = load_longtest_result("sp_ph_panel_phasetype_tvc")
+!isnothing(result) ? plot_state_prevalence(result) : nothing
+```
+
+#### 8.3.4 sp_aft_panel_phasetype_nocov
+
+Spline AFT, panel data, PhaseType surrogate, no covariates.
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("sp_aft_panel_phasetype_nocov")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-sp-aft-panel-phasetype-nocov-ci
+#| fig-cap: "Cumulative Incidence"
+result = load_longtest_result("sp_aft_panel_phasetype_nocov")
+!isnothing(result) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-sp-aft-panel-phasetype-nocov-prev
+#| fig-cap: "State Prevalence"
+result = load_longtest_result("sp_aft_panel_phasetype_nocov")
+!isnothing(result) ? plot_state_prevalence(result) : nothing
+```
+
+#### 8.3.5 sp_aft_panel_phasetype_fixed
+
+Spline AFT, panel data, PhaseType surrogate, time-fixed covariate.
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("sp_aft_panel_phasetype_fixed")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-sp-aft-panel-phasetype-fixed-ci
+#| fig-cap: "Cumulative Incidence"
+result = load_longtest_result("sp_aft_panel_phasetype_fixed")
+!isnothing(result) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-sp-aft-panel-phasetype-fixed-prev
+#| fig-cap: "State Prevalence"
+result = load_longtest_result("sp_aft_panel_phasetype_fixed")
+!isnothing(result) ? plot_state_prevalence(result) : nothing
+```
+
+#### 8.3.6 sp_aft_panel_phasetype_tvc
+
+Spline AFT, panel data, PhaseType surrogate, time-varying covariate.
+
+```{julia}
+#| echo: false
+#| output: asis
+result = show_test_result("sp_aft_panel_phasetype_tvc")
+```
+
+```{julia}
+#| echo: false
+#| label: fig-sp-aft-panel-phasetype-tvc-ci
+#| fig-cap: "Cumulative Incidence"
+result = load_longtest_result("sp_aft_panel_phasetype_tvc")
+!isnothing(result) ? plot_cumulative_incidence(result) : nothing
+```
+
+```{julia}
+#| echo: false
+#| label: fig-sp-aft-panel-phasetype-tvc-prev
+#| fig-cap: "State Prevalence"
+result = load_longtest_result("sp_aft_panel_phasetype_tvc")
+!isnothing(result) ? plot_state_prevalence(result) : nothing
+```
+
+::: {.callout-note}
+## Surrogate Comparison
+
+Both Markov and PhaseType surrogates should produce similar estimates. For each 
+test case, we verify that estimates from both surrogates are within 35% relative
+tolerance of each other (20% for β parameters).
+:::
+
+---
+
+## 9. Notes
 
 - **Model**: 3-state progressive: State 1 → State 2 → State 3
 - **Tolerance**: 35% relative error for main parameters

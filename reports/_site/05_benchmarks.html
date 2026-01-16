@@ -6,7 +6,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="dcterms.date" content="2025-12-31">
+<meta name="dcterms.date" content="2026-01-12">
 
 <title>Benchmarks – MultistateModels Test Reports</title>
 <style>
@@ -192,7 +192,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#results" id="toc-results" class="nav-link" data-scroll-target="#results">Results</a></li>
   <li><a href="#effective-sample-size-comparison" id="toc-effective-sample-size-comparison" class="nav-link" data-scroll-target="#effective-sample-size-comparison">Effective Sample Size Comparison</a></li>
   </ul></li>
-  <li><a href="#mcem-acceleration" id="toc-mcem-acceleration" class="nav-link" data-scroll-target="#mcem-acceleration">2. MCEM Acceleration</a>
+  <li><a href="#mcem-convergence" id="toc-mcem-convergence" class="nav-link" data-scroll-target="#mcem-convergence">2. MCEM Convergence</a>
   <ul class="collapse">
   <li><a href="#overview-1" id="toc-overview-1" class="nav-link" data-scroll-target="#overview-1">Overview</a></li>
   <li><a href="#benchmark-setup-1" id="toc-benchmark-setup-1" class="nav-link" data-scroll-target="#benchmark-setup-1">Benchmark Setup</a></li>
@@ -229,7 +229,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">December 31, 2025</p>
+      <p class="date">January 12, 2026</p>
     </div>
   </div>
   
@@ -267,7 +267,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 <section id="benchmark-setup" class="level3">
 <h3 class="anchored" data-anchor-id="benchmark-setup">Benchmark Setup</h3>
-<div id="f2cfdc07" class="cell" data-execution_count="1">
+<div id="ff869e06" class="cell" data-execution_count="1">
 <details class="code-fold">
 <summary>Show code</summary>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># </span><span class="al">TODO</span><span class="co">: Add benchmark setup code</span></span>
@@ -316,18 +316,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p><em>Plot to be generated: ESS vs computation time for each method</em></p>
 </section>
 </section>
-<section id="mcem-acceleration" class="level2">
-<h2 class="anchored" data-anchor-id="mcem-acceleration">2. MCEM Acceleration</h2>
+<section id="mcem-convergence" class="level2">
+<h2 class="anchored" data-anchor-id="mcem-convergence">2. MCEM Convergence</h2>
 <section id="overview-1" class="level3">
 <h3 class="anchored" data-anchor-id="overview-1">Overview</h3>
-<p>This section compares standard EM with SQUAREM acceleration.</p>
+<p>This section benchmarks MCEM convergence with adaptive ESS and SIR resampling.</p>
 </section>
 <section id="benchmark-setup-1" class="level3">
 <h3 class="anchored" data-anchor-id="benchmark-setup-1">Benchmark Setup</h3>
-<div id="85270e64" class="cell" data-execution_count="2">
+<div id="036a872f" class="cell" data-execution_count="2">
 <details class="code-fold">
 <summary>Show code</summary>
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># </span><span class="al">TODO</span><span class="co">: Add SQUAREM benchmark code</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode julia code-with-copy"><code class="sourceCode julia"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># </span><span class="al">TODO</span><span class="co">: Add MCEM benchmark code</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 </div>
 </section>
@@ -343,12 +343,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </thead>
 <tbody>
 <tr class="odd">
-<td>Standard EM</td>
+<td>Standard IS</td>
 <td>-</td>
 <td>-</td>
 </tr>
 <tr class="even">
-<td>SQUAREM</td>
+<td>Adaptive SIR</td>
 <td>-</td>
 <td>-</td>
 </tr>

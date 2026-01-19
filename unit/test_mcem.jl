@@ -93,17 +93,59 @@ using ForwardDiff
         # Using Weibull hazards makes it semi-Markov (shape != 1 means memory)
         Random.seed!(12345)
         
-        # Create panel data: states observed at discrete times, not exact transitions
-        nsubj = 15
-        nobs_per_subj = 3
-        dat = DataFrame(
-            id = repeat(1:nsubj, inner=nobs_per_subj),
-            tstart = repeat([0.0, 2.0, 4.0], outer=nsubj),
-            tstop = repeat([2.0, 4.0, 6.0], outer=nsubj),
-            statefrom = fill(1, nsubj * nobs_per_subj),
-            stateto = fill(1, nsubj * nobs_per_subj),  # State at observation time
-            obstype = fill(2, nsubj * nobs_per_subj)   # Panel observation (obstype=2)
-        )
+        # Create panel data with varied transitions to avoid degenerate case
+        # where all importance weights are identical (causes ParetoSmooth to fail).
+        # IMPORTANT: Panel data (obstype=2) means we observe the state at discrete times,
+        # so only the final state matters for each row (statefrom shows previous state).
+        
+        # Mix of trajectories:
+        # Group A (5 subjects): stay in state 1 throughout
+        # Group B (5 subjects): transition 1→2 by time 2.0, stay in 2
+        # Group C (5 subjects): transition 1→2 by time 2.0, back to 1 by time 4.0
+        
+        rows = DataFrame[]
+        id = 1
+        
+        # Group A: stay in state 1 (5 subjects)
+        for _ in 1:5
+            push!(rows, DataFrame(
+                id = fill(id, 3),
+                tstart = [0.0, 2.0, 4.0],
+                tstop = [2.0, 4.0, 6.0],
+                statefrom = [1, 1, 1],
+                stateto = [1, 1, 1],
+                obstype = [2, 2, 2]
+            ))
+            id += 1
+        end
+        
+        # Group B: 1→2 transition, stay in 2 (5 subjects)
+        for _ in 1:5
+            push!(rows, DataFrame(
+                id = fill(id, 3),
+                tstart = [0.0, 2.0, 4.0],
+                tstop = [2.0, 4.0, 6.0],
+                statefrom = [1, 2, 2],
+                stateto = [2, 2, 2],
+                obstype = [2, 2, 2]
+            ))
+            id += 1
+        end
+        
+        # Group C: 1→2→1 transition pattern (5 subjects)
+        for _ in 1:5
+            push!(rows, DataFrame(
+                id = fill(id, 3),
+                tstart = [0.0, 2.0, 4.0],
+                tstop = [2.0, 4.0, 6.0],
+                statefrom = [1, 2, 1],
+                stateto = [2, 1, 1],
+                obstype = [2, 2, 2]
+            ))
+            id += 1
+        end
+        
+        dat = vcat(rows...)
         
         # Weibull hazards (semi-Markov because shape can differ from 1)
         h12 = Hazard(@formula(0 ~ 1), "wei", 1, 2)

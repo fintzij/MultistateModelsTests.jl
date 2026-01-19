@@ -242,13 +242,22 @@ using MultistateModels: _interpolate_covariates!, _is_semimarkov,
         h23 = Hazard(@formula(0 ~ 1), :wei, 2, 3)
         
         # Progressive 3-state model with panel data
+        # Include some transitions to avoid degenerate MLE (rate=0 on boundary)
         n_subj = 30
         data = DataFrame(
             id = repeat(1:n_subj, inner=4),
             tstart = repeat([0.0, 2.0, 4.0, 6.0], n_subj),
             tstop = repeat([2.0, 4.0, 6.0, 8.0], n_subj),
-            statefrom = ones(Int, n_subj * 4),
-            stateto = ones(Int, n_subj * 4),
+            statefrom = vcat(
+                repeat([1, 1, 1, 1], 20),  # 20 subjects stay in state 1
+                repeat([1, 1, 2, 2], 5),   # 5 subjects transition 1→2
+                repeat([1, 2, 2, 3], 5)    # 5 subjects transition 1→2→3
+            ),
+            stateto = vcat(
+                repeat([1, 1, 1, 1], 20),
+                repeat([1, 2, 2, 2], 5),
+                repeat([2, 2, 3, 3], 5)
+            ),
             obstype = fill(2, n_subj * 4)
         )
         

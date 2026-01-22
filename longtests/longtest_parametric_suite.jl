@@ -368,7 +368,7 @@ function run_exact_test(family::String, covariate_type::String)
     
     # Fit model
     model = multistatemodel(hazard_specs...; data=data)
-    fitted = fit(model; verbose=false, compute_vcov=true)
+    fitted = fit(model; verbose=false, vcov_type=:ij)
     
     # Capture results
     result = capture_longtest_result!(
@@ -443,13 +443,13 @@ function run_panel_test(family::String, covariate_type::String)
     if data_type == "panel"
         # Direct matrix exponential for Markov models
         model = multistatemodel(hazard_specs...; data=panel_data)
-        fitted = fit(model; verbose=false, compute_vcov=true)
+        fitted = fit(model; verbose=false, vcov_type=:ij)
     else
         # MCEM for semi-Markov models - need surrogate
         model = multistatemodel(hazard_specs...; data=panel_data, surrogate=:markov)
         fitted = fit(model; 
             verbose=false, 
-            compute_vcov=true,
+            vcov_type=:ij,
             method=:MCEM,
             tol=MCEM_TOL,
             ess_target_initial=MCEM_ESS_INITIAL,

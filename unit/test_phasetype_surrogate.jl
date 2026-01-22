@@ -21,13 +21,17 @@ using MultistateModels
 using DataFrames
 using Random
 using LinearAlgebra
+using Distributions: Exponential
 
 # Import internal functions needed for testing
 import MultistateModels: 
     Hazard, multistatemodel, set_parameters!, 
     MarkovSurrogate, PhaseTypeSurrogate, PhaseTypeProposal,
     _build_phasetype_from_markov, build_tpm_mapping,
-    build_phasetype_tpm_book, fit_surrogate, @formula
+    build_phasetype_tpm_book, fit_surrogate, @formula,
+    SamplePath, convert_expanded_path_to_censored_data,
+    compute_forward_loglik, loglik_phasetype_expanded_path,
+    build_hazmat_book
 
 """
     create_panel_data_with_transitions(n_subj; seed, transition_prob_x0, transition_prob_x1)
@@ -966,8 +970,11 @@ import MultistateModels: convert_expanded_path_to_censored_data, loglik_phasetyp
             expanded_path, phasetype_surrogate
         )
         
-        # One macro-state transition => 2 rows (survival + exact transition)
-        @test nrow(censored_data) == 2
+        # One macro-state transition followed by survival in state 2 => 3 rows:
+        # 1. Survival in macro-state 1 (t=0 to t=2.5)
+        # 2. Exact transition to state 2 (dt=0 at t=2.5)
+        # 3. Survival in macro-state 2 (t=2.5 to t=5.0)
+        @test nrow(censored_data) == 3
         
         # Row 1: Survival in macro-state 1
         @test censored_data.tstart[1] == 0.0
@@ -983,8 +990,13 @@ import MultistateModels: convert_expanded_path_to_censored_data, loglik_phasetyp
         @test censored_data.stateto[2] == first_phase_state2  # Known destination
         @test censored_data.obstype[2] == 1   # Exact observation
         
+        # Row 3: Survival in macro-state 2
+        @test censored_data.tstart[3] == 2.5
+        @test censored_data.tstop[3] == 5.0
+        @test censored_data.statefrom[3] == first_phase_state2  # Known entry phase
+        
         # Emission matrix check
-        @test size(emat, 1) == 2
+        @test size(emat, 1) == 3
         # Row 1: allow any phase of state 1
         for p in phasetype_surrogate.state_to_phases[1]
             @test emat[1, p] == 1.0
@@ -992,6 +1004,10 @@ import MultistateModels: convert_expanded_path_to_censored_data, loglik_phasetyp
         # Row 2: only destination phase
         @test emat[2, first_phase_state2] == 1.0
         @test sum(emat[2, :]) == 1.0
+        # Row 3: only phases of state 2
+        for p in phasetype_surrogate.state_to_phases[2]
+            @test emat[3, p] == 1.0
+        end
     end
     
     @testset "Path with multiple macro-state transitions" begin
@@ -1033,8 +1049,13 @@ import MultistateModels: convert_expanded_path_to_censored_data, loglik_phasetyp
             expanded_path, phasetype_surrogate
         )
         
-        # Two macro-state transitions => 4 rows (2 survival + 2 exact)
-        @test nrow(censored_data) == 4
+        # Two macro-state transitions + final survival => 5 rows:
+        # 1. Survival in state 1 [0, 1.5]
+        # 2. Exact transition to state 2 at t=1.5
+        # 3. Survival in state 2 [1.5, 4.5]
+        # 4. Exact transition to state 3 at t=4.5
+        # 5. Survival in state 3 [4.5, 5.5]
+        @test nrow(censored_data) == 5
         
         # Row 1: Survival in state 1 [0, 1.5]
         @test censored_data.tstart[1] == 0.0
@@ -1057,6 +1078,10 @@ import MultistateModels: convert_expanded_path_to_censored_data, loglik_phasetyp
         @test censored_data.tstop[4] == 4.5
         @test censored_data.obstype[4] == 1  # Exact
         @test censored_data.stateto[4] == first_phase_state3
+        
+        # Row 5: Survival in state 3 [4.5, 5.5]
+        @test censored_data.tstart[5] == 4.5
+        @test censored_data.tstop[5] == 5.5
     end
 end
 
@@ -1493,8 +1518,14 @@ import MultistateModels:
     end
     
     @testset "Exponential equivalence: PhaseType(n=1) ≈ Markov exponential" begin
-        # With n_phases=1, a PhaseType surrogate should give the same likelihood
-        # as a Markov (exponential) surrogate for exact observation data.
+        # =================================================================
+        # KEY MATHEMATICAL PROPERTY TO VERIFY:
+        # When n_phases=1, there is no phase uncertainty to marginalize over.
+        # Therefore:
+        #   forward_algorithm_marginal(path) == CTMC_path_density(path)
+        #
+        # This is the fundamental "exponential equivalence" test.
+        # =================================================================
         
         Random.seed!(42)
         
@@ -1528,25 +1559,652 @@ import MultistateModels:
         fitted_rate = markov_surrogate.parameters.nested.h12.baseline.h12_rate
         
         # Check Q matrix structure in PhaseType surrogate
-        # With n_phases=1, the Q matrix for state 1→2 should just be [-λ, λ; 0, 0]
-        # (single phase in state 1, absorbing state 2)
-        @test phasetype_surrogate.pt_distribution.n_phases == 1
+        # With n_phases=1, the Q matrix should be 2x2: [-λ, λ; 0, 0]
+        @test phasetype_surrogate.phasetype_dists[1].n_phases == 1
+        Q = phasetype_surrogate.expanded_Q
+        @test size(Q) == (2, 2)  # 2 states total with n_phases=1
+        @test Q[1, 1] ≈ -fitted_rate atol=1e-10
+        @test Q[1, 2] ≈ fitted_rate atol=1e-10
+        @test Q[2, 1] == 0.0
+        @test Q[2, 2] == 0.0
         
-        # The key test: compute path likelihoods for a few subjects using both methods
-        # and verify they are proportional (same up to a constant)
+        # =================================================================
+        # CRITICAL TEST: Compare forward algorithm marginal vs CTMC path density
+        # For n_phases=1, these MUST be equal since there is no marginalization.
+        # =================================================================
         
-        # For an exact 1→2 transition at time t:
-        # Markov likelihood: λ × exp(-λ×t)
-        # PhaseType(n=1) should give the same after collapsing phases
+        # Create a simple expanded path (state 1 → state 2 at time t=2.0)
+        # SamplePath(subj, times, states)
+        test_path = SamplePath(1, [0.0, 2.0], [1, 2])  # In expanded space, state 1 is phase 1 of macro-state 1
         
-        # Test with a specific transition time
-        test_t = 2.5
-        # Markov log-likelihood: log(λ) - λ×t
-        markov_ll = log(fitted_rate) - fitted_rate * test_t
+        # Method 1: CTMC path density directly
+        ctmc_ll = loglik_phasetype_expanded_path(test_path, Q)
         
-        # PhaseType should give equivalent result (may differ by constant factor
-        # due to how the forward algorithm normalizes)
-        @test fitted_rate > 0  # Sanity check
-        @test isfinite(markov_ll)
+        # Method 2: Forward algorithm on censored data
+        censored_data, emat, tpm_map, tpm_book, hazmat_book = 
+            convert_expanded_path_to_censored_data(
+                test_path, phasetype_surrogate;
+                hazmat = Q
+            )
+        forward_ll = compute_forward_loglik(
+            censored_data, emat, tpm_map, tpm_book, hazmat_book,
+            phasetype_surrogate.n_expanded_states
+        )
+        
+        # THESE MUST BE EQUAL for n_phases=1
+        @test ctmc_ll ≈ forward_ll atol=1e-10
+        
+        # Also verify the computed value is mathematically correct
+        # For path: survive in state 1 for 2.0 time units, then transition to state 2
+        # loglik = -λ * 2.0 + log(λ)
+        expected_ll = -fitted_rate * 2.0 + log(fitted_rate)
+        @test ctmc_ll ≈ expected_ll atol=1e-10
+        @test forward_ll ≈ expected_ll atol=1e-10
+        
+        # Test with multiple different transition times
+        test_times = [0.5, 1.0, 3.0, 5.0]
+        for t in test_times
+            path = SamplePath(1, [0.0, t], [1, 2])
+            
+            ctmc = loglik_phasetype_expanded_path(path, Q)
+            
+            cd, em, tm, tb, hb = convert_expanded_path_to_censored_data(
+                path, phasetype_surrogate; hazmat = Q
+            )
+            forward = compute_forward_loglik(cd, em, tm, tb, hb, phasetype_surrogate.n_expanded_states)
+            
+            expected = -fitted_rate * t + log(fitted_rate)
+            
+            # CTMC and forward should match (n_phases=1, no marginalization needed)
+            @test ctmc ≈ forward atol=1e-10
+            # Both should match expected analytical value
+            @test ctmc ≈ expected atol=1e-10
+        end
+        
+        # =================================================================
+        # VERIFY: n_phases > 1 should give DIFFERENT results
+        # (forward algorithm marginalizes over phases)
+        # =================================================================
+        
+        # Build PhaseType with n_phases=3
+        phasetype_surrogate_3 = _build_phasetype_from_markov(
+            model, markov_surrogate;
+            config=PhaseTypeProposal(n_phases=3),
+            verbose=false
+        )
+        
+        @test phasetype_surrogate_3.phasetype_dists[1].n_phases == 3
+        Q3 = phasetype_surrogate_3.expanded_Q
+        @test size(Q3) == (4, 4)  # 3 phases for state 1 + 1 absorbing state 2
+        
+        # Create expanded path with specific phase
+        # Path: phase 1 of state 1 → phase 2 of state 1 → phase 3 of state 1 → state 2
+        # (transitions through all phases before exiting)
+        path_specific_phases = SamplePath(1, [0.0, 0.5, 1.0, 2.0], [1, 2, 3, 4])  # Phases 1, 2, 3 of macro-state 1, then macro-state 2
+        
+        # CTMC density of this specific path
+        ctmc_specific = loglik_phasetype_expanded_path(path_specific_phases, Q3)
+        
+        # Forward algorithm on censored data (marginalizes over phases)
+        cd3, em3, tm3, tb3, hb3 = convert_expanded_path_to_censored_data(
+            path_specific_phases, phasetype_surrogate_3; hazmat = Q3
+        )
+        forward_marginal = compute_forward_loglik(cd3, em3, tm3, tb3, hb3, phasetype_surrogate_3.n_expanded_states)
+        
+        # For n_phases > 1, the marginal should be HIGHER than the specific path density
+        # because the marginal includes all paths that collapse to the same macro-state sequence
+        # 
+        # Actually, the relationship depends on the path. The key point is they should NOT
+        # be equal (unless by coincidence) because the forward algorithm is marginalizing.
+        # The marginal is a SUM over all phase paths, weighted by probability.
+        # 
+        # With Coxian structure, the marginal should be >= any single path density when
+        # there are multiple ways to achieve the same macro-path.
+        @test isfinite(ctmc_specific)
+        @test isfinite(forward_marginal)
+        # The marginal integrates over phase possibilities, so it should be 
+        # greater than (or possibly equal to if the path is the only possibility)
+        # a specific phase path.
+        @test forward_marginal >= ctmc_specific - 1e-10
     end
-end
+end  # End of main testset "Exponential equivalence: forward loglik = CTMC path density for n_phases=1"
+
+# =============================================================================
+# DISABLED_API_CHANGE: # Fitted τ MLE Tests
+# DISABLED_API_CHANGE: # =============================================================================
+# DISABLED_API_CHANGE: #
+# DISABLED_API_CHANGE: # These tests verify the τ estimation via MLE functionality:
+# DISABLED_API_CHANGE: # - Fitted τ values are positive and have correct length
+# DISABLED_API_CHANGE: # - Ordering constraints are satisfied for :sctp_increasing/:sctp_decreasing
+# DISABLED_API_CHANGE: # - Fitted phase-type produces non-exponential hazard
+# DISABLED_API_CHANGE: # - PhaseTypeSurrogate correctly stores fitted_tau field
+# DISABLED_API_CHANGE: #
+# DISABLED_API_CHANGE: # Added: 2026-01-20
+# DISABLED_API_CHANGE: # =============================================================================
+# DISABLED_API_CHANGE: 
+# DISABLED_API_CHANGE: # Import additional internal functions for τ estimation tests
+# DISABLED_API_CHANGE: import MultistateModels: 
+# DISABLED_API_CHANGE:     _fit_phasetype_mle, _fit_phasetype_surrogate, phasetype_marginal_loglik,
+# DISABLED_API_CHANGE:     _build_coxian_from_rate, _build_state_mappings, build_expanded_Q,
+# DISABLED_API_CHANGE:     _build_default_phasetype
+# DISABLED_API_CHANGE: 
+# DISABLED_API_CHANGE: @testset "PhaseType Surrogate τ MLE Estimation" begin
+# DISABLED_API_CHANGE: 
+# DISABLED_API_CHANGE:     @testset "Basic τ MLE fitting returns valid results" begin
+# DISABLED_API_CHANGE:         # Create simple panel data with Weibull-like sojourn times (increasing hazard)
+# DISABLED_API_CHANGE:         Random.seed!(42)
+# DISABLED_API_CHANGE:         n_subj = 100
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         # Create data where transition probability increases over time
+# DISABLED_API_CHANGE:         # This simulates an increasing hazard pattern
+# DISABLED_API_CHANGE:         rows = []
+# DISABLED_API_CHANGE:         for i in 1:n_subj
+# DISABLED_API_CHANGE:             # First observation period - lower transition probability
+# DISABLED_API_CHANGE:             transitioned_t1 = rand() < 0.2
+# DISABLED_API_CHANGE:             state_t1 = transitioned_t1 ? 2 : 1
+# DISABLED_API_CHANGE:             push!(rows, (id=i, tstart=0.0, tstop=1.0, statefrom=1, stateto=state_t1, obstype=2))
+# DISABLED_API_CHANGE:             
+# DISABLED_API_CHANGE:             if state_t1 == 1
+# DISABLED_API_CHANGE:                 # Second period - medium transition probability
+# DISABLED_API_CHANGE:                 transitioned_t2 = rand() < 0.35
+# DISABLED_API_CHANGE:                 state_t2 = transitioned_t2 ? 2 : 1
+# DISABLED_API_CHANGE:                 push!(rows, (id=i, tstart=1.0, tstop=2.0, statefrom=1, stateto=state_t2, obstype=2))
+# DISABLED_API_CHANGE:                 
+# DISABLED_API_CHANGE:                 if state_t2 == 1
+# DISABLED_API_CHANGE:                     # Third period - higher transition probability
+# DISABLED_API_CHANGE:                     transitioned_t3 = rand() < 0.5
+# DISABLED_API_CHANGE:                     state_t3 = transitioned_t3 ? 2 : 1
+# DISABLED_API_CHANGE:                     push!(rows, (id=i, tstart=2.0, tstop=3.0, statefrom=1, stateto=state_t3, obstype=2))
+# DISABLED_API_CHANGE:                 else
+# DISABLED_API_CHANGE:                     push!(rows, (id=i, tstart=2.0, tstop=3.0, statefrom=2, stateto=2, obstype=2))
+# DISABLED_API_CHANGE:                 end
+# DISABLED_API_CHANGE:             else
+# DISABLED_API_CHANGE:                 push!(rows, (id=i, tstart=1.0, tstop=2.0, statefrom=2, stateto=2, obstype=2))
+# DISABLED_API_CHANGE:                 push!(rows, (id=i, tstart=2.0, tstop=3.0, statefrom=2, stateto=2, obstype=2))
+# DISABLED_API_CHANGE:             end
+# DISABLED_API_CHANGE:         end
+# DISABLED_API_CHANGE:         data = DataFrame(rows)
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         # Create and fit model
+# DISABLED_API_CHANGE:         h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
+# DISABLED_API_CHANGE:         model = multistatemodel(h12; data=data, surrogate=:markov)
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         # Fit Markov surrogate
+# DISABLED_API_CHANGE:         markov_surrogate = fit_surrogate(model; type=:markov, method=:mle, verbose=false)
+# DISABLED_API_CHANGE:         model.markovsurrogate = markov_surrogate
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         # Test τ MLE fitting
+# DISABLED_API_CHANGE:         n_phases_vec = [3, 1]  # 3 phases for state 1, 1 for absorbing state 2
+# DISABLED_API_CHANGE:         fitted_tau = _fit_phasetype_mle(model, markov_surrogate, n_phases_vec;
+# DISABLED_API_CHANGE:                                          structure=:sctp, verbose=false, maxiter=50)
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         # Verify fitted_tau has correct structure
+# DISABLED_API_CHANGE:         @test haskey(fitted_tau, 1)  # State 1 is transient
+# DISABLED_API_CHANGE:         @test length(fitted_tau[1]) == 3  # 3 phases
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         # Verify all τ values are positive (box constraint enforced)
+# DISABLED_API_CHANGE:         @test all(τ > 0 for τ in fitted_tau[1])
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         # Verify τ values are not all equal (would indicate no fitting happened)
+# DISABLED_API_CHANGE:         # With real data showing increasing hazard pattern, τ should show variation
+# DISABLED_API_CHANGE:         # But with default :sctp (no ordering), we just check they're valid
+# DISABLED_API_CHANGE:         @test all(isfinite.(fitted_tau[1]))
+# DISABLED_API_CHANGE:     end
+# DISABLED_API_CHANGE:     
+# DISABLED_API_CHANGE:     @testset "τ ordering constraints for :sctp_increasing" begin
+# DISABLED_API_CHANGE:         # Use data with increasing hazard pattern
+# DISABLED_API_CHANGE:         Random.seed!(123)
+# DISABLED_API_CHANGE:         n_subj = 150
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         rows = []
+# DISABLED_API_CHANGE:         for i in 1:n_subj
+# DISABLED_API_CHANGE:             # Time-increasing transition probability
+# DISABLED_API_CHANGE:             t = 0.0
+# DISABLED_API_CHANGE:             state = 1
+# DISABLED_API_CHANGE:             for period in 1:4
+# DISABLED_API_CHANGE:                 trans_prob = 0.15 * period  # 0.15, 0.30, 0.45, 0.60
+# DISABLED_API_CHANGE:                 transitioned = rand() < trans_prob && state == 1
+# DISABLED_API_CHANGE:                 new_state = transitioned ? 2 : state
+# DISABLED_API_CHANGE:                 push!(rows, (id=i, tstart=t, tstop=t+1.0, statefrom=state, stateto=new_state, obstype=2))
+# DISABLED_API_CHANGE:                 state = new_state
+# DISABLED_API_CHANGE:                 t += 1.0
+# DISABLED_API_CHANGE:             end
+# DISABLED_API_CHANGE:         end
+# DISABLED_API_CHANGE:         data = DataFrame(rows)
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
+# DISABLED_API_CHANGE:         model = multistatemodel(h12; data=data, surrogate=:markov)
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         markov_surrogate = fit_surrogate(model; type=:markov, method=:mle, verbose=false)
+# DISABLED_API_CHANGE:         model.markovsurrogate = markov_surrogate
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         n_phases_vec = [3, 1]
+# DISABLED_API_CHANGE:         fitted_tau = _fit_phasetype_mle(model, markov_surrogate, n_phases_vec;
+# DISABLED_API_CHANGE:                                          structure=:sctp_increasing, verbose=false, maxiter=50)
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         # Verify ordering constraint: τ₁ ≤ τ₂ ≤ τ₃
+# DISABLED_API_CHANGE:         τ = fitted_tau[1]
+# DISABLED_API_CHANGE:         @test length(τ) == 3
+# DISABLED_API_CHANGE:         @test τ[1] <= τ[2] + 1e-6  # Allow small numerical tolerance
+# DISABLED_API_CHANGE:         @test τ[2] <= τ[3] + 1e-6
+# DISABLED_API_CHANGE:     end
+# DISABLED_API_CHANGE:     
+# DISABLED_API_CHANGE:     @testset "τ ordering constraints for :sctp_decreasing" begin
+# DISABLED_API_CHANGE:         # Use data with decreasing hazard pattern (high early risk, lower later)
+# DISABLED_API_CHANGE:         Random.seed!(456)
+# DISABLED_API_CHANGE:         n_subj = 150
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         rows = []
+# DISABLED_API_CHANGE:         for i in 1:n_subj
+# DISABLED_API_CHANGE:             # Time-decreasing transition probability
+# DISABLED_API_CHANGE:             t = 0.0
+# DISABLED_API_CHANGE:             state = 1
+# DISABLED_API_CHANGE:             for period in 1:4
+# DISABLED_API_CHANGE:                 trans_prob = 0.6 - 0.15 * (period - 1)  # 0.60, 0.45, 0.30, 0.15
+# DISABLED_API_CHANGE:                 transitioned = rand() < trans_prob && state == 1
+# DISABLED_API_CHANGE:                 new_state = transitioned ? 2 : state
+# DISABLED_API_CHANGE:                 push!(rows, (id=i, tstart=t, tstop=t+1.0, statefrom=state, stateto=new_state, obstype=2))
+# DISABLED_API_CHANGE:                 state = new_state
+# DISABLED_API_CHANGE:                 t += 1.0
+# DISABLED_API_CHANGE:             end
+# DISABLED_API_CHANGE:         end
+# DISABLED_API_CHANGE:         data = DataFrame(rows)
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
+# DISABLED_API_CHANGE:         model = multistatemodel(h12; data=data, surrogate=:markov)
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         markov_surrogate = fit_surrogate(model; type=:markov, method=:mle, verbose=false)
+# DISABLED_API_CHANGE:         model.markovsurrogate = markov_surrogate
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         n_phases_vec = [3, 1]
+# DISABLED_API_CHANGE:         fitted_tau = _fit_phasetype_mle(model, markov_surrogate, n_phases_vec;
+# DISABLED_API_CHANGE:                                          structure=:sctp_decreasing, verbose=false, maxiter=50)
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         # Verify ordering constraint: τ₁ ≥ τ₂ ≥ τ₃
+# DISABLED_API_CHANGE:         τ = fitted_tau[1]
+# DISABLED_API_CHANGE:         @test length(τ) == 3
+# DISABLED_API_CHANGE:         @test τ[1] >= τ[2] - 1e-6  # Allow small numerical tolerance
+# DISABLED_API_CHANGE:         @test τ[2] >= τ[3] - 1e-6
+# DISABLED_API_CHANGE:     end
+# DISABLED_API_CHANGE:     
+# DISABLED_API_CHANGE:     @testset "PhaseTypeSurrogate stores fitted_tau" begin
+# DISABLED_API_CHANGE:         Random.seed!(789)
+# DISABLED_API_CHANGE:         n_subj = 100
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         rows = []
+# DISABLED_API_CHANGE:         for i in 1:n_subj
+# DISABLED_API_CHANGE:             transitioned = rand() < 0.4
+# DISABLED_API_CHANGE:             push!(rows, (id=i, tstart=0.0, tstop=2.0, statefrom=1, stateto=transitioned ? 2 : 1, obstype=2))
+# DISABLED_API_CHANGE:             if !transitioned
+# DISABLED_API_CHANGE:                 push!(rows, (id=i, tstart=2.0, tstop=4.0, statefrom=1, stateto=rand() < 0.5 ? 2 : 1, obstype=2))
+# DISABLED_API_CHANGE:             else
+# DISABLED_API_CHANGE:                 push!(rows, (id=i, tstart=2.0, tstop=4.0, statefrom=2, stateto=2, obstype=2))
+# DISABLED_API_CHANGE:             end
+# DISABLED_API_CHANGE:         end
+# DISABLED_API_CHANGE:         data = DataFrame(rows)
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
+# DISABLED_API_CHANGE:         model = multistatemodel(h12; data=data, surrogate=:markov)
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         # Fit phase-type surrogate with τ MLE (fit_tau=true is default)
+# DISABLED_API_CHANGE:         phasetype_surrogate = _fit_phasetype_surrogate(model;
+# DISABLED_API_CHANGE:             method=:mle, n_phases=3, verbose=false, fit_tau=true)
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         # Verify fitted_tau is stored
+# DISABLED_API_CHANGE:         @test !isnothing(phasetype_surrogate.fitted_tau)
+# DISABLED_API_CHANGE:         @test haskey(phasetype_surrogate.fitted_tau, 1)
+# DISABLED_API_CHANGE:         @test length(phasetype_surrogate.fitted_tau[1]) == 3
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         # Test with fit_tau=false (should have nothing)
+# DISABLED_API_CHANGE:         phasetype_surrogate_no_tau = _fit_phasetype_surrogate(model;
+# DISABLED_API_CHANGE:             method=:mle, n_phases=3, verbose=false, fit_tau=false)
+# DISABLED_API_CHANGE:         @test isnothing(phasetype_surrogate_no_tau.fitted_tau)
+# DISABLED_API_CHANGE:     end
+# DISABLED_API_CHANGE:     
+# DISABLED_API_CHANGE:     @testset "Non-exponential hazard from non-uniform τ" begin
+# DISABLED_API_CHANGE:         # Verify that non-uniform τ produces a different hazard shape than τ = 1
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         n_phases = 3
+# DISABLED_API_CHANGE:         total_rate = 0.5
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         # Build Coxian with uniform τ (exponential baseline)
+# DISABLED_API_CHANGE:         ph_uniform = _build_coxian_from_rate(n_phases, total_rate; structure=:sctp, tau=ones(n_phases))
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         # Build Coxian with increasing τ (increasing hazard)
+# DISABLED_API_CHANGE:         tau_increasing = [0.5, 1.0, 1.5]
+# DISABLED_API_CHANGE:         ph_increasing = _build_coxian_from_rate(n_phases, total_rate; structure=:sctp, tau=tau_increasing)
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         # Build Coxian with decreasing τ (decreasing hazard)
+# DISABLED_API_CHANGE:         tau_decreasing = [1.5, 1.0, 0.5]
+# DISABLED_API_CHANGE:         ph_decreasing = _build_coxian_from_rate(n_phases, total_rate; structure=:sctp, tau=tau_decreasing)
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         # Compute marginal hazard at different times using numerical differentiation
+# DISABLED_API_CHANGE:         # h(t) = -d/dt log(S(t)) where S(t) = π' exp(St) 1
+# DISABLED_API_CHANGE:         function marginal_hazard(ph::PhaseTypeDistribution, t::Float64)
+# DISABLED_API_CHANGE:             S = subintensity(ph)
+# DISABLED_API_CHANGE:             π = ph.initial
+# DISABLED_API_CHANGE:             ones_vec = ones(ph.n_phases)
+# DISABLED_API_CHANGE:             
+# DISABLED_API_CHANGE:             # S(t) = π' exp(S*t) 1
+# DISABLED_API_CHANGE:             exp_St = exp(S * t)
+# DISABLED_API_CHANGE:             survival = π' * exp_St * ones_vec
+# DISABLED_API_CHANGE:             
+# DISABLED_API_CHANGE:             # d/dt S(t) = π' S exp(St) 1
+# DISABLED_API_CHANGE:             deriv_survival = π' * S * exp_St * ones_vec
+# DISABLED_API_CHANGE:             
+# DISABLED_API_CHANGE:             # h(t) = -deriv_survival / survival
+# DISABLED_API_CHANGE:             return -deriv_survival / survival
+# DISABLED_API_CHANGE:         end
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         # Compute hazard at t=1 and t=3 for each distribution
+# DISABLED_API_CHANGE:         t1, t3 = 1.0, 3.0
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         h_uniform_t1 = marginal_hazard(ph_uniform, t1)
+# DISABLED_API_CHANGE:         h_uniform_t3 = marginal_hazard(ph_uniform, t3)
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         h_increasing_t1 = marginal_hazard(ph_increasing, t1)
+# DISABLED_API_CHANGE:         h_increasing_t3 = marginal_hazard(ph_increasing, t3)
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         h_decreasing_t1 = marginal_hazard(ph_decreasing, t1)
+# DISABLED_API_CHANGE:         h_decreasing_t3 = marginal_hazard(ph_decreasing, t3)
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         # Test: uniform τ gives approximately constant hazard (exponential)
+# DISABLED_API_CHANGE:         @test h_uniform_t1 ≈ h_uniform_t3 rtol=0.1
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         # Test: increasing τ gives increasing hazard
+# DISABLED_API_CHANGE:         @test h_increasing_t3 > h_increasing_t1
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         # Test: decreasing τ gives decreasing hazard
+# DISABLED_API_CHANGE:         @test h_decreasing_t3 < h_decreasing_t1
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         # Test: all hazards are positive
+# DISABLED_API_CHANGE:         @test h_uniform_t1 > 0
+# DISABLED_API_CHANGE:         @test h_increasing_t1 > 0
+# DISABLED_API_CHANGE:         @test h_decreasing_t1 > 0
+# DISABLED_API_CHANGE:     end
+# DISABLED_API_CHANGE:     
+# DISABLED_API_CHANGE:     @testset "Single phase states skip τ optimization" begin
+# DISABLED_API_CHANGE:         # When all states have n_phases=1, no τ optimization is needed
+# DISABLED_API_CHANGE:         Random.seed!(111)
+# DISABLED_API_CHANGE:         n_subj = 50
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         rows = []
+# DISABLED_API_CHANGE:         for i in 1:n_subj
+# DISABLED_API_CHANGE:             push!(rows, (id=i, tstart=0.0, tstop=2.0, statefrom=1, stateto=rand() < 0.4 ? 2 : 1, obstype=2))
+# DISABLED_API_CHANGE:         end
+# DISABLED_API_CHANGE:         data = DataFrame(rows)
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
+# DISABLED_API_CHANGE:         model = multistatemodel(h12; data=data, surrogate=:markov)
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         markov_surrogate = fit_surrogate(model; type=:markov, method=:mle, verbose=false)
+# DISABLED_API_CHANGE:         model.markovsurrogate = markov_surrogate
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         # n_phases=1 for all states
+# DISABLED_API_CHANGE:         n_phases_vec = [1, 1]
+# DISABLED_API_CHANGE:         fitted_tau = _fit_phasetype_mle(model, markov_surrogate, n_phases_vec;
+# DISABLED_API_CHANGE:                                          structure=:sctp, verbose=false)
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         # Should return empty dict when all states have 1 phase
+# DISABLED_API_CHANGE:         @test isempty(fitted_tau)
+# DISABLED_API_CHANGE:     end
+# DISABLED_API_CHANGE:     
+# DISABLED_API_CHANGE:     @testset "Multiple transient states with different n_phases" begin
+# DISABLED_API_CHANGE:         # Test a model with multiple transient states
+# DISABLED_API_CHANGE:         Random.seed!(222)
+# DISABLED_API_CHANGE:         n_subj = 100
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         # Create 3-state model: 1 ↔ 2 → 3 (absorbing)
+# DISABLED_API_CHANGE:         rows = []
+# DISABLED_API_CHANGE:         for i in 1:n_subj
+# DISABLED_API_CHANGE:             state = 1
+# DISABLED_API_CHANGE:             t = 0.0
+# DISABLED_API_CHANGE:             for _ in 1:3
+# DISABLED_API_CHANGE:                 if state == 1
+# DISABLED_API_CHANGE:                     dest = rand() < 0.3 ? 2 : 1
+# DISABLED_API_CHANGE:                 elseif state == 2
+# DISABLED_API_CHANGE:                     dest = rand() < 0.2 ? 1 : (rand() < 0.5 ? 3 : 2)
+# DISABLED_API_CHANGE:                 else
+# DISABLED_API_CHANGE:                     dest = 3  # Absorbing
+# DISABLED_API_CHANGE:                 end
+# DISABLED_API_CHANGE:                 push!(rows, (id=i, tstart=t, tstop=t+1.0, statefrom=state, stateto=dest, obstype=2))
+# DISABLED_API_CHANGE:                 state = dest
+# DISABLED_API_CHANGE:                 t += 1.0
+# DISABLED_API_CHANGE:             end
+# DISABLED_API_CHANGE:         end
+# DISABLED_API_CHANGE:         data = DataFrame(rows)
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
+# DISABLED_API_CHANGE:         h21 = Hazard(@formula(0 ~ 1), "exp", 2, 1)
+# DISABLED_API_CHANGE:         h23 = Hazard(@formula(0 ~ 1), "exp", 2, 3)
+# DISABLED_API_CHANGE:         model = multistatemodel(h12, h21, h23; data=data, surrogate=:markov)
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         markov_surrogate = fit_surrogate(model; type=:markov, method=:mle, verbose=false)
+# DISABLED_API_CHANGE:         model.markovsurrogate = markov_surrogate
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         # Different n_phases per state
+# DISABLED_API_CHANGE:         n_phases_vec = [2, 3, 1]  # State 1: 2 phases, State 2: 3 phases, State 3: 1 (absorbing)
+# DISABLED_API_CHANGE:         fitted_tau = _fit_phasetype_mle(model, markov_surrogate, n_phases_vec;
+# DISABLED_API_CHANGE:                                          structure=:sctp, verbose=false, maxiter=50)
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         # Should have τ for states 1 and 2
+# DISABLED_API_CHANGE:         @test haskey(fitted_tau, 1)
+# DISABLED_API_CHANGE:         @test haskey(fitted_tau, 2)
+# DISABLED_API_CHANGE:         @test !haskey(fitted_tau, 3)  # Absorbing state
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         # Verify lengths
+# DISABLED_API_CHANGE:         @test length(fitted_tau[1]) == 2
+# DISABLED_API_CHANGE:         @test length(fitted_tau[2]) == 3
+# DISABLED_API_CHANGE:         
+# DISABLED_API_CHANGE:         # Verify all positive
+# DISABLED_API_CHANGE:         @test all(τ > 0 for τ in fitted_tau[1])
+# DISABLED_API_CHANGE:         @test all(τ > 0 for τ in fitted_tau[2])
+# DISABLED_API_CHANGE:     end
+# end  # Old testset end
+
+# =============================================================================
+# Phase-Type Rate MLE Tests (New API)
+# =============================================================================
+#
+# These tests verify the full rate estimation via MLE functionality:
+# - Fitted rates (progression λ and absorption μ) have correct structure
+# - All rates are positive
+# - PhaseTypeSurrogate correctly stores fitted_rates field
+#
+# Added: 2026-01-20
+# =============================================================================
+
+# Import additional internal functions for rate estimation tests
+import MultistateModels:
+    _fit_phasetype_mle, _fit_phasetype_surrogate, phasetype_marginal_loglik,
+    _build_coxian_from_rate, _build_state_mappings, build_expanded_Q,
+    _build_default_phasetype
+
+@testset "PhaseType Surrogate Rate MLE Estimation" begin
+
+    @testset "Basic rate MLE fitting returns valid results" begin
+        # Create simple panel data
+        Random.seed!(42)
+        n_subj = 100
+
+        rows = []
+        for i in 1:n_subj
+            # First observation period
+            transitioned_t1 = rand() < 0.2
+            state_t1 = transitioned_t1 ? 2 : 1
+            push!(rows, (id=i, tstart=0.0, tstop=1.0, statefrom=1, stateto=state_t1, obstype=2))
+
+            if state_t1 == 1
+                # Second period
+                transitioned_t2 = rand() < 0.35
+                state_t2 = transitioned_t2 ? 2 : 1
+                push!(rows, (id=i, tstart=1.0, tstop=2.0, statefrom=1, stateto=state_t2, obstype=2))
+
+                if state_t2 == 1
+                    # Third period
+                    transitioned_t3 = rand() < 0.5
+                    state_t3 = transitioned_t3 ? 2 : 1
+                    push!(rows, (id=i, tstart=2.0, tstop=3.0, statefrom=1, stateto=state_t3, obstype=2))
+                else
+                    push!(rows, (id=i, tstart=2.0, tstop=3.0, statefrom=2, stateto=2, obstype=2))
+                end
+            else
+                push!(rows, (id=i, tstart=1.0, tstop=2.0, statefrom=2, stateto=2, obstype=2))
+                push!(rows, (id=i, tstart=2.0, tstop=3.0, statefrom=2, stateto=2, obstype=2))
+            end
+        end
+        data = DataFrame(rows)
+
+        # Create and fit model
+        h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
+        model = multistatemodel(h12; data=data, surrogate=:markov)
+
+        # Fit Markov surrogate
+        markov_surrogate = fit_surrogate(model; type=:markov, method=:mle, verbose=false)
+        model.markovsurrogate = markov_surrogate
+
+        # Test rate MLE fitting
+        n_phases_vec = [3, 1]  # 3 phases for state 1, 1 for absorbing state 2
+        fitted_rates = _fit_phasetype_mle(model, markov_surrogate, n_phases_vec; verbose=false)
+
+        # Verify fitted_rates has correct structure
+        @test haskey(fitted_rates, :progression)
+        @test haskey(fitted_rates, :absorption)
+        @test haskey(fitted_rates, :destinations)
+        @test haskey(fitted_rates, :param_layout)
+        @test haskey(fitted_rates, :theta)
+
+        # Verify state 1 has progression rates (n_phases - 1 = 2)
+        @test haskey(fitted_rates[:progression], 1)
+        @test length(fitted_rates[:progression][1]) == 2
+
+        # Verify state 1 has absorption rates (n_phases × n_destinations = 3 × 1)
+        @test haskey(fitted_rates[:absorption], 1)
+        @test size(fitted_rates[:absorption][1]) == (3, 1)
+
+        # Verify all rates are positive
+        @test all(λ > 0 for λ in fitted_rates[:progression][1])
+        @test all(μ > 0 for μ in fitted_rates[:absorption][1])
+
+        # Verify theta vector is finite
+        @test all(isfinite.(fitted_rates[:theta]))
+    end
+
+    @testset "PhaseTypeSurrogate stores fitted_rates" begin
+        Random.seed!(789)
+        n_subj = 100
+
+        rows = []
+        for i in 1:n_subj
+            transitioned = rand() < 0.4
+            push!(rows, (id=i, tstart=0.0, tstop=2.0, statefrom=1, stateto=transitioned ? 2 : 1, obstype=2))
+            if !transitioned
+                push!(rows, (id=i, tstart=2.0, tstop=4.0, statefrom=1, stateto=rand() < 0.5 ? 2 : 1, obstype=2))
+            else
+                push!(rows, (id=i, tstart=2.0, tstop=4.0, statefrom=2, stateto=2, obstype=2))
+            end
+        end
+        data = DataFrame(rows)
+
+        h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
+        model = multistatemodel(h12; data=data, surrogate=:markov)
+
+        # Fit phase-type surrogate with rate MLE (fit_rates=true is default)
+        phasetype_surrogate = _fit_phasetype_surrogate(model;
+            method=:mle, n_phases=3, verbose=false, fit_rates=true)
+
+        # Verify fitted_rates is stored
+        @test !isnothing(phasetype_surrogate.fitted_rates)
+        @test haskey(phasetype_surrogate.fitted_rates, :progression)
+        @test haskey(phasetype_surrogate.fitted_rates, :absorption)
+
+        # Test with fit_rates=false (should have nothing)
+        phasetype_surrogate_no_rates = _fit_phasetype_surrogate(model;
+            method=:mle, n_phases=3, verbose=false, fit_rates=false)
+        @test isnothing(phasetype_surrogate_no_rates.fitted_rates)
+    end
+
+    @testset "Single phase states skip rate optimization" begin
+        # When all states have n_phases=1, no optimization is needed
+        Random.seed!(111)
+        n_subj = 50
+
+        rows = []
+        for i in 1:n_subj
+            push!(rows, (id=i, tstart=0.0, tstop=2.0, statefrom=1, stateto=rand() < 0.4 ? 2 : 1, obstype=2))
+        end
+        data = DataFrame(rows)
+
+        h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
+        model = multistatemodel(h12; data=data, surrogate=:markov)
+
+        markov_surrogate = fit_surrogate(model; type=:markov, method=:mle, verbose=false)
+        model.markovsurrogate = markov_surrogate
+
+        # n_phases=1 for all states
+        n_phases_vec = [1, 1]
+        fitted_rates = _fit_phasetype_mle(model, markov_surrogate, n_phases_vec; verbose=false)
+
+        # Should return empty dict when all states have 1 phase
+        @test isempty(fitted_rates[:progression])
+        @test isempty(fitted_rates[:absorption])
+    end
+
+    @testset "Multiple transient states with different n_phases" begin
+        # Test a model with multiple transient states
+        Random.seed!(222)
+        n_subj = 100
+
+        # Create 3-state model: 1 ↔ 2 → 3 (absorbing)
+        rows = []
+        for i in 1:n_subj
+            state = 1
+            t = 0.0
+            for _ in 1:3
+                if state == 1
+                    dest = rand() < 0.3 ? 2 : 1
+                elseif state == 2
+                    dest = rand() < 0.2 ? 1 : (rand() < 0.5 ? 3 : 2)
+                else
+                    dest = 3  # Absorbing
+                end
+                push!(rows, (id=i, tstart=t, tstop=t+1.0, statefrom=state, stateto=dest, obstype=2))
+                state = dest
+                t += 1.0
+            end
+        end
+        data = DataFrame(rows)
+
+        h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
+        h21 = Hazard(@formula(0 ~ 1), "exp", 2, 1)
+        h23 = Hazard(@formula(0 ~ 1), "exp", 2, 3)
+        model = multistatemodel(h12, h21, h23; data=data, surrogate=:markov)
+
+        markov_surrogate = fit_surrogate(model; type=:markov, method=:mle, verbose=false)
+        model.markovsurrogate = markov_surrogate
+
+        # Different n_phases per state
+        n_phases_vec = [2, 3, 1]  # State 1: 2 phases, State 2: 3 phases, State 3: 1 (absorbing)
+        fitted_rates = _fit_phasetype_mle(model, markov_surrogate, n_phases_vec; verbose=false)
+
+        # Should have progression rates for states 1 and 2
+        @test haskey(fitted_rates[:progression], 1)
+        @test haskey(fitted_rates[:progression], 2)
+        @test !haskey(fitted_rates[:progression], 3)  # Absorbing state
+
+        # Verify lengths of progression rates
+        @test length(fitted_rates[:progression][1]) == 1  # 2 phases - 1
+        @test length(fitted_rates[:progression][2]) == 2  # 3 phases - 1
+
+        # Should have absorption rates for states 1 and 2
+        @test haskey(fitted_rates[:absorption], 1)
+        @test haskey(fitted_rates[:absorption], 2)
+
+        # Verify all rates are positive
+        @test all(λ > 0 for λ in fitted_rates[:progression][1])
+        @test all(λ > 0 for λ in fitted_rates[:progression][2])
+        @test all(μ > 0 for μ in fitted_rates[:absorption][1])
+        @test all(μ > 0 for μ in fitted_rates[:absorption][2])
+    end
+
+end  # End of "PhaseType Surrogate Rate MLE Estimation" testset

@@ -267,12 +267,12 @@ import MultistateModels: ThreadingConfig, get_parameters_flat, should_paralleliz
         # Fit without parallel
         model_seq = multistatemodel(h12; data=data)
         fitted_seq = fit(model_seq; parallel=false, verbose=false, 
-                         compute_vcov=false, compute_ij_vcov=false)
+                         vcov_type=:none)
         
         # Fit with parallel (should give same result even if single-threaded)
         model_par = multistatemodel(h12; data=data)
         fitted_par = fit(model_par; parallel=true, verbose=false,
-                         compute_vcov=false, compute_ij_vcov=false)
+                         vcov_type=:none)
         
         # Compare parameter estimates
         params_seq = get_parameters_flat(fitted_seq)
@@ -317,13 +317,13 @@ import MultistateModels: ThreadingConfig, get_parameters_flat, should_paralleliz
         
         # Test with explicit nthreads=1
         fitted_1 = fit(model; parallel=true, nthreads=1, verbose=false,
-                       compute_vcov=false, compute_ij_vcov=false)
+                       vcov_type=:none)
         
         # Test with explicit nthreads=2 (if available)
         if Threads.nthreads() >= 2
             model2 = multistatemodel(h12; data=data)
             fitted_2 = fit(model2; parallel=true, nthreads=2, verbose=false,
-                           compute_vcov=false, compute_ij_vcov=false)
+                           vcov_type=:none)
             
             # Results should be identical
             @test isapprox(get_parameters_flat(fitted_1), get_parameters_flat(fitted_2), rtol=1e-6)

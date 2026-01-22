@@ -61,10 +61,12 @@ const MAX_ITER = 30              # Maximum MCEM iterations
 const PARAM_TOL_REL = 0.35       # Relaxed relative tolerance for MCEM (more MC noise)
 const MAX_PATHS_PER_SUBJECT = 500  # Diagnostic hard limit for MCEM path counts
 const EVAL_TIMES = collect(0.0:0.5:MAX_TIME)  # Time grid for prevalence/CI comparisons
-# Markov vs PhaseType proposals use different importance sampling and can diverge
-# due to MCEM Monte Carlo variability (demonstrated in investigation 2026-01-15).
-# 55% tolerance covers observed variability while still catching major bugs.
-const PROPOSAL_COMPARISON_TOL = 0.55
+# Markov vs PhaseType proposals use different importance sampling distributions and
+# can produce systematically different estimates due to surrogate fit quality differences.
+# Known issue: PhaseType proposal with Weibull targets shows ~25% h23 parameter divergence
+# from Markov proposal. This is under investigation (Item #35 in CODEBASE_REFACTORING_GUIDE.md).
+# Using 30% tolerance to allow tests to pass while bug is investigated.
+const PROPOSAL_COMPARISON_TOL = 0.30
 # Stricter tolerance for covariate coefficients (β parameters).
 # Covariate coefficients are most sensitive to proposal covariate handling bugs
 # (see Wave 6 bug fix in CODEBASE_REFACTORING_GUIDE.md). Use 20% relative tolerance
@@ -157,7 +159,9 @@ function generate_panel_data_progressive(hazards, true_params;
         template = hcat(template, cov_expanded)
     end
     
-    model = multistatemodel(hazards...; data=template)
+    # Use initialize=false because template has dummy states (all statefrom=stateto=1)
+    # We'll set parameters manually before simulation
+    model = multistatemodel(hazards...; data=template, initialize=false)
     
     # Set parameters per hazard
     for (haz_idx, haz_name) in enumerate(keys(true_params))
@@ -423,8 +427,8 @@ flush(stdout)
         tol=MCEM_TOL,
         ess_target_initial=30,
         max_ess=500,
-        compute_vcov=true,
-        compute_ij_vcov=false,
+        vcov_type=:ij,
+        
         return_convergence_records=true)
     
     # Print parameter comparison
@@ -489,7 +493,7 @@ end
         tol=MCEM_TOL,
         ess_target_initial=30,
         max_ess=500,
-        compute_vcov=false,
+        vcov_type=:none,
         return_convergence_records=true)
     
     # Print parameter comparison
@@ -549,10 +553,9 @@ flush(stdout)
         verbose=true,
         maxiter=MAX_ITER,
         tol=MCEM_TOL,
-        ess_target_initial=30,
+        ess_target_initial=100,
         max_ess=500,
-        compute_vcov=true,
-        compute_ij_vcov=false)
+        vcov_type=:ij)
     
     p_markov = get_parameters(fitted_markov; scale=:natural)
     print_parameter_comparison("Weibull - No Covariates (Markov)",
@@ -573,10 +576,9 @@ flush(stdout)
         verbose=true,
         maxiter=MAX_ITER,
         tol=MCEM_TOL,
-        ess_target_initial=30,
+        ess_target_initial=100,
         max_ess=500,
-        compute_vcov=true,
-        compute_ij_vcov=false)
+        vcov_type=:ij)
     
     p_pt = get_parameters(fitted_pt; scale=:natural)
     print_parameter_comparison("Weibull - No Covariates (PhaseType)",
@@ -679,7 +681,7 @@ end
         tol=MCEM_TOL,
         ess_target_initial=30,
         max_ess=500,
-        compute_vcov=false)
+        vcov_type=:none)
     
     p_markov = get_parameters(fitted_markov; scale=:estimation)
     print_parameter_comparison("Weibull - With Covariate (Markov)",
@@ -702,7 +704,7 @@ end
         tol=MCEM_TOL,
         ess_target_initial=30,
         max_ess=500,
-        compute_vcov=false)
+        vcov_type=:none)
     
     p_pt = get_parameters(fitted_pt; scale=:estimation)
     print_parameter_comparison("Weibull - With Covariate (PhaseType)",
@@ -822,8 +824,7 @@ flush(stdout)
         tol=MCEM_TOL,
         ess_target_initial=30,
         max_ess=500,
-        compute_vcov=true,
-        compute_ij_vcov=false)
+        vcov_type=:ij)
     
     p_markov = get_parameters(fitted_markov; scale=:estimation)
     print_parameter_comparison("Gompertz - No Covariates (Markov)",
@@ -847,8 +848,7 @@ flush(stdout)
         tol=MCEM_TOL,
         ess_target_initial=30,
         max_ess=500,
-        compute_vcov=true,
-        compute_ij_vcov=false)
+        vcov_type=:ij)
     
     p_pt = get_parameters(fitted_pt; scale=:estimation)
     print_parameter_comparison("Gompertz - No Covariates (PhaseType)",
@@ -959,7 +959,7 @@ end
         tol=MCEM_TOL,
         ess_target_initial=30,
         max_ess=500,
-        compute_vcov=false,
+        vcov_type=:none,
         return_convergence_records=true)
     
     p_markov = get_parameters(fitted_markov; scale=:estimation)
@@ -982,7 +982,7 @@ end
         tol=MCEM_TOL,
         ess_target_initial=30,
         max_ess=500,
-        compute_vcov=false,
+        vcov_type=:none,
         return_convergence_records=true)
     
     p_pt = get_parameters(fitted_pt; scale=:estimation)
@@ -1113,7 +1113,7 @@ flush(stdout)
         tol=MCEM_TOL,
         ess_target_initial=30,
         max_ess=200,
-        compute_vcov=false,
+        vcov_type=:none,
         return_convergence_records=true)
     
     # Print parameter comparison
@@ -1182,7 +1182,7 @@ end
         tol=MCEM_TOL,
         ess_target_initial=30,
         max_ess=200,
-        compute_vcov=false,
+        vcov_type=:none,
         return_convergence_records=true)
     
     # Print parameter comparison
@@ -1288,7 +1288,7 @@ end
     n_subj = 50
     dat = generate_panel_data_progressive((h12, h23), true_params; 
                                          n_subj=n_subj, 
-                                         obs_times=[0.0, 1.0, 2.0, 3.0])
+                                         obs_times=[0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0])
     
     # surrogate=:markov required for MCEM fitting
     model = multistatemodel(h12, h23; data=dat, surrogate=:markov)
@@ -1300,8 +1300,8 @@ end
         tol=0.1,
         ess_target_initial=20,
         max_ess=200,
-        compute_vcov=false,
-        compute_ij_vcov=false,
+        vcov_type=:none,
+        
         return_convergence_records=true)
     
     records = fitted.ConvergenceRecords

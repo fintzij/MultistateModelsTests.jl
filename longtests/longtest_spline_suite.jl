@@ -3,34 +3,39 @@
 # =============================================================================
 #
 # Comprehensive test suite covering unpenalized spline hazard inference.
-# Tests: (exact × panel) × (PH × AFT) × (Markov × PhaseType surrogate) × (nocov × fixed × tvc)
 #
 # Test Matrix:
-#   Exact data: 2 effect types × 3 covariate types = 6 tests (no surrogate needed)
-#   Panel data: 2 effect types × 2 surrogates × 3 covariate types = 12 tests
-#   Total: 18 tests
+#   degree=1 splines × 2 interior knots
+#   × (exact, panel)
+#   × (ph, aft)
+#   × (nocov, fixed, tvc)
+#   × (markov, phasetype) - panel only
+#   × (non-monotone, monotone increasing)
 #
-# Naming Convention: sp_{effect}{data}{surrogate}_{covariate}
+# Counts:
+#   Exact data: 2 effects × 3 covariates × 2 monotonicity = 12 tests
+#   Panel data: 2 effects × 3 covariates × 2 surrogates × 2 monotonicity = 24 tests
+#   Total: 36 tests
+#
+# Naming Convention: sp_{effect}_{data}_{surrogate}_{covariate}_{monotone}
 #   - Effect: ph or aft
 #   - Data: exact or panel
 #   - Surrogate (panel only): markov or phasetype
 #   - Covariate: nocov, fixed, tvc
+#   - Monotone: free or mono
 #
-# Data Generating Process:
-#   Generate data from spline models with known B-spline coefficients.
-#   The true spline coefficients produce hazard curves with realistic shapes
-#   (gradually increasing hazard). We use the same spline model for both DGP
-#   and fitting so we can directly compare estimated coefficients to true.
-#
-# Model Structure:
-#   3-state progressive model: 1 → 2 → 3 (NO 1→3 transitions)
-#   All subjects start in state 1 at time 0
+# DGP Workflow (ALWAYS):
+#   1. Simulate exact data from Weibull model
+#   2. Fit spline to exact Weibull data → calibrated "true" coefficients
+#   3. Simulate NEW data (exact or panel) from calibrated spline
+#   4. Fit spline with SAME specification to new data
+#   5. Verify PARAMETER RECOVERY (calibrated vs fitted coefficients)
 #
 # Spline Configuration:
-#   degree=3 (cubic)
-#   n_interior_knots=2 (giving 6 basis functions = degree + n_interior_knots + 1)
+#   degree=1 (linear splines)
+#   n_interior_knots=2
 #   boundaryknots=[0.0, MAX_TIME]
-#   extrapolation="constant"
+#   extrapolation="flat" (for degree=1)
 #   No penalization (λ=0)
 #
 # =============================================================================
@@ -64,39 +69,44 @@ end
 # Spline-Specific Configuration
 # =============================================================================
 
-# Spline structure
-const SPLINE_DEGREE_SUITE = 3                  # Cubic splines
-const N_INTERIOR_KNOTS_SUITE = 2               # Number of interior knots
-const SPLINE_BOUNDARYKNOTS = [0.0, MAX_TIME]   # [0.0, 15.0]
+# Spline structure for fitting
+const SPLINE_DEGREE_SUITE = 1                  # Linear splines (for identifiability)
+const N_INTERIOR_KNOTS_SUITE = 2               # Two interior knots
+const SPLINE_MAX_TIME = 5.0                    # Observation window
+const SPLINE_BOUNDARYKNOTS = [0.0, SPLINE_MAX_TIME]
 
-# True covariate effect (log hazard ratio)
-const TRUE_SPLINE_BETA = 0.5  # Same as parametric tests
+# Number of spline coefficients: degree + n_interior_knots + 1 = 1 + 2 + 1 = 4
+const N_SPLINE_COEFS = SPLINE_DEGREE_SUITE + N_INTERIOR_KNOTS_SUITE + 1  # = 4
 
-# True spline coefficients (NATURAL SCALE - must be non-negative!)
-# With degree=3 and 2 interior knots: MultistateModels uses 4 basis functions
-# (n_interior_knots + 2, which includes boundary constraints)
-# These coefficients represent the HAZARD directly (not log-hazard)
-# Values chosen to give hazard rates in reasonable range ~0.05-0.20
-const TRUE_SPLINE_COEFS_H12 = [0.08, 0.10, 0.14, 0.18]  # Gradually increasing hazard
-const TRUE_SPLINE_COEFS_H23 = [0.06, 0.08, 0.11, 0.14]  # Gradually increasing hazard
+# True covariate effect (log hazard ratio) - used by Weibull DGP
+const TRUE_SPLINE_BETA = 0.5
 
-# Tolerances for spline coefficient recovery
-# Spline coefficients can have more variability than parametric models
-const SPLINE_COEF_RTOL = 0.35        # 35% relative tolerance for coefficients
+# =============================================================================
+# Weibull DGP Parameters (for calibration)
+# =============================================================================
+
+const TRUE_WEIBULL_SHAPE_H12 = 1.3   # Slightly increasing hazard
+const TRUE_WEIBULL_SCALE_H12 = 0.15  # Rate parameter
+const TRUE_WEIBULL_SHAPE_H23 = 1.2   # Slightly increasing hazard
+const TRUE_WEIBULL_SCALE_H23 = 0.10  # Rate parameter
+
+# Parameter recovery tolerances
+const PARAM_RTOL_EXACT = 0.25        # 25% relative tolerance for exact data
+const PARAM_RTOL_MCEM = 0.35         # 35% relative tolerance for MCEM
+const BETA_ABS_TOL_SUITE = 0.20      # Absolute tolerance for covariate effects
 
 # MCEM settings for panel tests
 const SPLINE_MCEM_TOL = 0.05         # MCEM convergence tolerance
 const SPLINE_MCEM_MAX_ITER = 25      # Maximum MCEM iterations
 
-# Surrogate comparison tolerances
-const PROPOSAL_COMPARISON_TOL = 0.35     # Tolerance for surrogate comparison
-const BETA_COMPARISON_TOL_REL = 0.20     # Tighter tolerance for beta comparison
+# Panel observation times
+const SPLINE_PANEL_TIMES = collect(0.0:0.5:SPLINE_MAX_TIME)  # 10 intervals
 
-# Panel observation times for spline tests
-const SPLINE_PANEL_TIMES = [0.0, 2.5, 5.0, 7.5, 10.0, 12.5, 15.0]
+# TVC changepoint
+const SPLINE_TVC_CHANGEPOINT = 2.5   # Covariate changes at t=2.5
 
 # =============================================================================
-# Helper Functions for Spline Tests
+# Helper Functions
 # =============================================================================
 
 """
@@ -112,12 +122,12 @@ function get_spline_knots(n_interior::Int, boundary_knots::Vector{Float64})
 end
 
 """
-    get_spline_hazard_specs(effect_type::String, covariate_type::String)
+    get_spline_hazard_specs(effect_type::String, covariate_type::String, is_monotone::Bool)
 
-Get spline hazard specifications for the given effect type and covariate type.
+Get spline hazard specifications for the given configuration.
 Returns tuple of (h12, h23) Hazard objects.
 """
-function get_spline_hazard_specs(effect_type::String, covariate_type::String)
+function get_spline_hazard_specs(effect_type::String, covariate_type::String, is_monotone::Bool)
     formula = if covariate_type == "nocov"
         @formula(0 ~ 1)
     else
@@ -125,95 +135,124 @@ function get_spline_hazard_specs(effect_type::String, covariate_type::String)
     end
     
     knots = get_spline_knots(N_INTERIOR_KNOTS_SUITE, SPLINE_BOUNDARYKNOTS)
+    monotone_val = is_monotone ? 1 : 0  # 1 = increasing (matching Weibull with shape > 1)
     
     h12 = Hazard(formula, "sp", 1, 2;
         degree=SPLINE_DEGREE_SUITE,
         knots=knots,
         boundaryknots=SPLINE_BOUNDARYKNOTS,
-        extrapolation="constant",
+        extrapolation="flat",
+        monotone=monotone_val,
         linpred_effect = effect_type == "aft" ? :aft : :ph)
     
     h23 = Hazard(formula, "sp", 2, 3;
         degree=SPLINE_DEGREE_SUITE,
         knots=knots,
         boundaryknots=SPLINE_BOUNDARYKNOTS,
-        extrapolation="constant",
+        extrapolation="flat",
+        monotone=monotone_val,
         linpred_effect = effect_type == "aft" ? :aft : :ph)
     
     return (h12, h23)
 end
 
 """
-    get_spline_true_params(covariate_type::String)
+    get_weibull_hazard_specs(effect_type::String, covariate_type::String)
 
-Get true parameter values for spline model.
-Returns NamedTuple with h12 and h23 coefficient vectors.
+Get Weibull hazard specifications for calibration DGP.
 """
-function get_spline_true_params(covariate_type::String)
+function get_weibull_hazard_specs(effect_type::String, covariate_type::String)
+    formula = if covariate_type == "nocov"
+        @formula(0 ~ 1)
+    else
+        @formula(0 ~ x)
+    end
+    
+    h12 = Hazard(formula, "wei", 1, 2;
+        linpred_effect = effect_type == "aft" ? :aft : :ph)
+    
+    h23 = Hazard(formula, "wei", 2, 3;
+        linpred_effect = effect_type == "aft" ? :aft : :ph)
+    
+    return (h12, h23)
+end
+
+"""
+    get_weibull_true_params(covariate_type::String)
+
+Get true Weibull parameters for calibration DGP.
+"""
+function get_weibull_true_params(covariate_type::String)
     has_covariate = covariate_type != "nocov"
     
-    h12 = has_covariate ? vcat(TRUE_SPLINE_COEFS_H12, TRUE_SPLINE_BETA) : TRUE_SPLINE_COEFS_H12
-    h23 = has_covariate ? vcat(TRUE_SPLINE_COEFS_H23, TRUE_SPLINE_BETA) : TRUE_SPLINE_COEFS_H23
+    h12 = has_covariate ? [TRUE_WEIBULL_SHAPE_H12, TRUE_WEIBULL_SCALE_H12, TRUE_SPLINE_BETA] : 
+                          [TRUE_WEIBULL_SHAPE_H12, TRUE_WEIBULL_SCALE_H12]
+    h23 = has_covariate ? [TRUE_WEIBULL_SHAPE_H23, TRUE_WEIBULL_SCALE_H23, TRUE_SPLINE_BETA] :
+                          [TRUE_WEIBULL_SHAPE_H23, TRUE_WEIBULL_SCALE_H23]
     
     return (h12 = h12, h23 = h23)
 end
 
 """
-    get_spline_param_names(covariate_type::String)
+    calibrate_spline_from_weibull(effect_type, covariate_type, is_monotone; verbose=false)
 
-Get parameter names for display/comparison.
+Calibrate spline coefficients by fitting spline to exact data from Weibull DGP.
+Returns calibrated_params and exact_data used for calibration.
 """
-function get_spline_param_names(covariate_type::String)
-    has_covariate = covariate_type != "nocov"
-    n_coefs = length(TRUE_SPLINE_COEFS_H12)
+function calibrate_spline_from_weibull(effect_type::String, covariate_type::String, is_monotone::Bool;
+                                         verbose::Bool=false)
+    weibull_specs = get_weibull_hazard_specs(effect_type, covariate_type)
+    weibull_params = get_weibull_true_params(covariate_type)
     
-    names = String[]
-    
-    # h12 spline coefficients
-    for i in 1:n_coefs
-        push!(names, "h12_coef_$i")
+    template = if covariate_type == "nocov"
+        create_baseline_template(N_SUBJECTS; max_time=SPLINE_MAX_TIME)
+    elseif covariate_type == "fixed"
+        create_tfc_template(N_SUBJECTS; max_time=SPLINE_MAX_TIME)
+    else
+        create_tvc_template(N_SUBJECTS; max_time=SPLINE_MAX_TIME,
+                            changepoint=SPLINE_TVC_CHANGEPOINT)
     end
-    has_covariate && push!(names, "h12_beta")
     
-    # h23 spline coefficients  
-    for i in 1:n_coefs
-        push!(names, "h23_coef_$i")
+    weibull_model = multistatemodel(weibull_specs...; data=template)
+    set_parameters!(weibull_model, weibull_params)
+    exact_data = simulate(weibull_model; data=true, paths=false, nsim=1)[1]
+    
+    verbose && @info "    Calibration: generated $(nrow(exact_data)) exact observations from Weibull"
+    
+    spline_specs = get_spline_hazard_specs(effect_type, covariate_type, is_monotone)
+    spline_model = multistatemodel(spline_specs...; data=exact_data)
+    fitted_spline = fit(spline_model; verbose=false, vcov_type=:none, penalty=:none)
+    
+    calibrated_h12 = get_parameters(fitted_spline, 1, scale=:natural)
+    calibrated_h23 = get_parameters(fitted_spline, 2, scale=:natural)
+    calibrated_params = (h12 = calibrated_h12, h23 = calibrated_h23)
+    
+    if verbose
+        @info "    Calibration complete:"
+        @info "      h12: $(round.(calibrated_h12, digits=4))"
+        @info "      h23: $(round.(calibrated_h23, digits=4))"
     end
-    has_covariate && push!(names, "h23_beta")
     
-    return names
+    return calibrated_params, exact_data
 end
 
 """
-    get_spline_beta_param_names(covariate_type::String)
-
-Get names of beta (covariate) parameters for tolerance checking.
-"""
-function get_spline_beta_param_names(covariate_type::String)
-    if covariate_type == "nocov"
-        return String[]
-    end
-    return ["h12_beta", "h23_beta"]
-end
-
-"""
-    generate_spline_data(hazard_specs, true_params, covariate_type::String)
+    generate_spline_exact_data(hazard_specs, params, covariate_type)
 
 Generate exact observation data from spline model.
 """
-function generate_spline_data(hazard_specs, true_params, covariate_type::String)
-    # Create template based on covariate type
+function generate_spline_exact_data(hazard_specs, params, covariate_type::String)
     template = if covariate_type == "nocov"
-        create_baseline_template(N_SUBJECTS; max_time=MAX_TIME)
+        create_baseline_template(N_SUBJECTS; max_time=SPLINE_MAX_TIME)
     elseif covariate_type == "fixed"
-        create_tfc_template(N_SUBJECTS; max_time=MAX_TIME)
-    else  # tvc
-        create_tvc_template(N_SUBJECTS; max_time=MAX_TIME)
+        create_tfc_template(N_SUBJECTS; max_time=SPLINE_MAX_TIME)
+    else
+        create_tvc_template(N_SUBJECTS; max_time=SPLINE_MAX_TIME, 
+                            changepoint=SPLINE_TVC_CHANGEPOINT)
     end
     
-    # Build model and simulate
     model = multistatemodel(hazard_specs...; data=template)
-    set_parameters!(model, true_params)
+    set_parameters!(model, params)
     
     sim_data = simulate(model; data=true, paths=false, nsim=1)[1]
     
@@ -221,14 +260,14 @@ function generate_spline_data(hazard_specs, true_params, covariate_type::String)
 end
 
 """
-    generate_spline_panel_data(hazard_specs, true_params, covariate_type::String, panel_times::Vector{Float64})
+    generate_spline_panel_data(hazard_specs, params, covariate_type)
 
-Generate panel observation data from spline model using simulate() with obstype_by_transition.
+Generate panel observation data from spline model.
 """
-function generate_spline_panel_data(hazard_specs, true_params, covariate_type::String, panel_times::Vector{Float64})
+function generate_spline_panel_data(hazard_specs, params, covariate_type::String)
+    panel_times = SPLINE_PANEL_TIMES
     nobs = length(panel_times) - 1
     
-    # Create template with panel observation structure
     if covariate_type == "nocov"
         template = DataFrame(
             id = repeat(1:N_SUBJECTS, inner=nobs),
@@ -249,8 +288,8 @@ function generate_spline_panel_data(hazard_specs, true_params, covariate_type::S
             obstype = fill(2, N_SUBJECTS * nobs),
             x = repeat(x_vals, inner=nobs)
         )
-    else  # tvc
-        cp = TVC_CHANGEPOINT
+    else
+        cp = SPLINE_TVC_CHANGEPOINT
         rows = []
         for subj in 1:N_SUBJECTS
             for i in 1:(length(panel_times) - 1)
@@ -269,16 +308,91 @@ function generate_spline_panel_data(hazard_specs, true_params, covariate_type::S
         template = DataFrame(rows)
     end
     
-    # Build model
     model = multistatemodel(hazard_specs...; data=template)
-    set_parameters!(model, true_params)
+    set_parameters!(model, params)
     
-    # Simulate with mixed observation types
-    obstype_map = Dict(1 => 2, 2 => 1)  # h12 panel, h23 exact
+    obstype_map = Dict(1 => 2, 2 => 1)
     sim_result = simulate(model; paths=false, data=true, nsim=1, autotmax=false,
                          obstype_by_transition=obstype_map)
     
     return sim_result[1, 1]
+end
+
+"""
+    check_parameter_recovery(fitted, calibrated_params, hazard_idx; rtol=0.25, verbose=false)
+
+Check if fitted spline coefficients match calibrated coefficients.
+"""
+function check_parameter_recovery(fitted, calibrated_params::NamedTuple, hazard_idx::Int;
+                                   rtol::Float64=0.25, verbose::Bool=false)
+    hazard = fitted.hazards[hazard_idx]
+    hazname = hazard.hazname
+    
+    fitted_params = get_parameters(fitted, hazard_idx, scale=:natural)
+    calib_params = calibrated_params[hazname]
+    
+    n_baseline = hazard.npar_baseline
+    
+    details = Tuple[]
+    max_rel_err = 0.0
+    all_passed = true
+    
+    for i in 1:n_baseline
+        true_val = calib_params[i]
+        fit_val = fitted_params[i]
+        
+        rel_err = abs(true_val) > 1e-6 ? abs(fit_val - true_val) / abs(true_val) : abs(fit_val - true_val)
+        max_rel_err = max(max_rel_err, rel_err)
+        
+        passed = rel_err <= rtol
+        all_passed = all_passed && passed
+        push!(details, ("coef_$i", true_val, fit_val, rel_err, passed))
+    end
+    
+    if verbose
+        println("    Parameter recovery for $hazname:")
+        println("    " * "-"^65)
+        println("    Param       Calibrated  Fitted      Rel Error   Status")
+        println("    " * "-"^65)
+        for (name, true_val, fit_val, rel_err, passed) in details
+            status = passed ? "PASS" : "FAIL"
+            println("    $(rpad(name, 11)) $(rpad(round(true_val, digits=4), 11)) $(rpad(round(fit_val, digits=4), 11)) $(rpad(round(rel_err*100, digits=1), 9))% $status")
+        end
+        println("    " * "-"^65)
+        println("    Max relative error: $(round(max_rel_err*100, digits=1))%, tolerance: $(round(rtol*100, digits=0))%")
+    end
+    
+    return (passed=all_passed, max_rel_err=max_rel_err, details=details)
+end
+
+"""
+    check_beta_recovery(fitted, calibrated_params, hazard_idx; abs_tol=0.20, verbose=false)
+
+Check if covariate effect (beta) is recovered within tolerance.
+"""
+function check_beta_recovery(fitted, calibrated_params::NamedTuple, hazard_idx::Int;
+                              abs_tol::Float64=BETA_ABS_TOL_SUITE, verbose::Bool=false)
+    hazard = fitted.hazards[hazard_idx]
+    hazname = hazard.hazname
+    
+    if !hazard.has_covariates
+        return (passed=true, abs_err=0.0, true_val=NaN, fit_val=NaN)
+    end
+    
+    fitted_params = get_parameters(fitted, hazard_idx, scale=:natural)
+    calib_params = calibrated_params[hazname]
+    
+    true_val = calib_params[end]
+    fit_val = fitted_params[end]
+    abs_err = abs(fit_val - true_val)
+    passed = abs_err <= abs_tol
+    
+    if verbose
+        status = passed ? "PASS" : "FAIL"
+        println("    Beta recovery for $hazname: true=$(round(true_val, digits=3)), fitted=$(round(fit_val, digits=3)), err=$(round(abs_err, digits=3)) $status")
+    end
+    
+    return (passed=passed, abs_err=abs_err, true_val=true_val, fit_val=fit_val)
 end
 
 # =============================================================================
@@ -286,146 +400,121 @@ end
 # =============================================================================
 
 """
-    run_spline_exact_test(effect_type::String, covariate_type::String) -> LongTestResult
+    run_spline_exact_test(effect_type, covariate_type, is_monotone)
 
-Run exact data test for spline model with given effect and covariate type.
+Run exact data test for spline model.
 """
-function run_spline_exact_test(effect_type::String, covariate_type::String)
-    test_name = "sp_$(effect_type)_exact_$(covariate_type)"
+function run_spline_exact_test(effect_type::String, covariate_type::String, is_monotone::Bool)
+    mono_str = is_monotone ? "mono" : "free"
+    test_name = "sp_$(effect_type)_exact_$(covariate_type)_$(mono_str)"
     
     VERBOSE_LONGTESTS && @info "  Running: $test_name"
     
-    # Get specifications
-    hazard_specs = get_spline_hazard_specs(effect_type, covariate_type)
-    true_params = get_spline_true_params(covariate_type)
-    param_names = get_spline_param_names(covariate_type)
-    beta_names = get_spline_beta_param_names(covariate_type)
-    
-    # Generate data with test-specific seed
-    test_seed = hash(("sp", effect_type, "exact", covariate_type, RNG_SEED))
+    test_seed = hash(("sp", effect_type, "exact", covariate_type, is_monotone, RNG_SEED))
     Random.seed!(test_seed)
-    data = generate_spline_data(hazard_specs, true_params, covariate_type)
     
-    # Verify event rate
-    if covariate_type == "nocov"
-        VERBOSE_LONGTESTS && verify_event_rate_simple(data; verbose=true)
-    end
-    
-    # Fit model (no penalty for unpenalized splines)
-    model = multistatemodel(hazard_specs...; data=data)
-    fitted = fit(model; verbose=false, compute_vcov=true)
-    
-    # Capture results
-    result = capture_longtest_result!(
-        test_name,
-        fitted,
-        true_params,
-        param_names,
-        hazard_specs;
-        hazard_family = "sp",
-        data_type = "exact",
-        covariate_type = covariate_type,
-        data = data,
-        beta_param_names = beta_names,
-        shape_param_names = String[]  # Spline coefficients, not shapes
+    calibrated_params, _ = calibrate_spline_from_weibull(
+        effect_type, covariate_type, is_monotone; verbose=VERBOSE_LONGTESTS
     )
     
-    VERBOSE_LONGTESTS && @info "    Result: $(result.passed ? "PASS" : "FAIL")"
+    spline_specs = get_spline_hazard_specs(effect_type, covariate_type, is_monotone)
+    data = generate_spline_exact_data(spline_specs, calibrated_params, covariate_type)
     
-    return result
+    model = multistatemodel(spline_specs...; data=data)
+    fitted = fit(model; verbose=false, vcov_type=:ij, penalty=:none)
+    
+    h12_result = check_parameter_recovery(
+        fitted, calibrated_params, 1;
+        rtol=PARAM_RTOL_EXACT, verbose=VERBOSE_LONGTESTS
+    )
+    
+    h23_result = check_parameter_recovery(
+        fitted, calibrated_params, 2;
+        rtol=PARAM_RTOL_EXACT, verbose=VERBOSE_LONGTESTS
+    )
+    
+    beta_h12 = check_beta_recovery(fitted, calibrated_params, 1; verbose=VERBOSE_LONGTESTS)
+    beta_h23 = check_beta_recovery(fitted, calibrated_params, 2; verbose=VERBOSE_LONGTESTS)
+    
+    passed = h12_result.passed && h23_result.passed && beta_h12.passed && beta_h23.passed
+    
+    VERBOSE_LONGTESTS && @info "    Result: $(passed ? "PASS" : "FAIL")"
+    
+    return (
+        test_name = test_name,
+        passed = passed,
+        h12_passed = h12_result.passed,
+        h23_passed = h23_result.passed,
+        beta_passed = beta_h12.passed && beta_h23.passed,
+        h12_max_err = h12_result.max_rel_err,
+        h23_max_err = h23_result.max_rel_err
+    )
 end
 
 """
-    run_spline_panel_test(effect_type::String, covariate_type::String, surrogate_type::String) -> LongTestResult
+    run_spline_panel_test(effect_type, covariate_type, surrogate_type, is_monotone)
 
-Run panel data test for spline model with given effect, covariate, and surrogate type.
+Run panel data test for spline model with MCEM.
 """
-function run_spline_panel_test(effect_type::String, covariate_type::String, surrogate_type::String)
-    test_name = "sp_$(effect_type)_panel_$(surrogate_type)_$(covariate_type)"
+function run_spline_panel_test(effect_type::String, covariate_type::String, 
+                                surrogate_type::String, is_monotone::Bool)
+    mono_str = is_monotone ? "mono" : "free"
+    test_name = "sp_$(effect_type)_panel_$(surrogate_type)_$(covariate_type)_$(mono_str)"
     
     VERBOSE_LONGTESTS && @info "  Running: $test_name"
     
-    # Get specifications
-    hazard_specs = get_spline_hazard_specs(effect_type, covariate_type)
-    true_params = get_spline_true_params(covariate_type)
-    param_names = get_spline_param_names(covariate_type)
-    beta_names = get_spline_beta_param_names(covariate_type)
-    
-    # Generate panel data with test-specific seed
-    test_seed = hash(("sp", effect_type, "panel", surrogate_type, covariate_type, RNG_SEED))
+    test_seed = hash(("sp", effect_type, "panel", surrogate_type, covariate_type, is_monotone, RNG_SEED))
     Random.seed!(test_seed)
-    panel_data = generate_spline_panel_data(hazard_specs, true_params, covariate_type, SPLINE_PANEL_TIMES)
     
-    # Determine surrogate
+    calibrated_params, _ = calibrate_spline_from_weibull(
+        effect_type, covariate_type, is_monotone; verbose=VERBOSE_LONGTESTS
+    )
+    
+    spline_specs = get_spline_hazard_specs(effect_type, covariate_type, is_monotone)
+    panel_data = generate_spline_panel_data(spline_specs, calibrated_params, covariate_type)
+    
     surrogate = surrogate_type == "markov" ? :markov : :phasetype
     
-    # Fit model with MCEM
-    model = multistatemodel(hazard_specs...; data=panel_data, surrogate=surrogate)
+    model = multistatemodel(spline_specs...; data=panel_data, surrogate=surrogate)
     fitted = fit(model;
         verbose=false,
-        compute_vcov=true,
+        vcov_type=:ij,
         method=:MCEM,
+        penalty=:none,
         tol=SPLINE_MCEM_TOL,
         ess_target_initial=MCEM_ESS_INITIAL,
         max_ess=MCEM_ESS_MAX,
         maxiter=SPLINE_MCEM_MAX_ITER
     )
     
-    # Use relaxed tolerance for MCEM panel tests
-    is_mcem_with_covariates = covariate_type != "nocov"
-    beta_tol = is_mcem_with_covariates ? MCEM_TVC_BETA_ABS_TOL : BETA_ABS_TOL
-    
-    # Capture results
-    result = capture_longtest_result!(
-        test_name,
-        fitted,
-        true_params,
-        param_names,
-        hazard_specs;
-        hazard_family = "sp",
-        data_type = "mcem",
-        covariate_type = covariate_type,
-        data = panel_data,
-        beta_param_names = beta_names,
-        shape_param_names = String[],
-        beta_abs_tol = beta_tol
+    h12_result = check_parameter_recovery(
+        fitted, calibrated_params, 1;
+        rtol=PARAM_RTOL_MCEM, verbose=VERBOSE_LONGTESTS
     )
     
-    VERBOSE_LONGTESTS && @info "    Result: $(result.passed ? "PASS" : "FAIL")"
+    h23_result = check_parameter_recovery(
+        fitted, calibrated_params, 2;
+        rtol=PARAM_RTOL_MCEM, verbose=VERBOSE_LONGTESTS
+    )
     
-    return result
-end
-
-"""
-    compare_surrogate_results(result_markov::LongTestResult, result_phasetype::LongTestResult) -> Bool
-
-Compare results from Markov and PhaseType surrogates to verify consistency.
-Returns true if estimates are within tolerance of each other.
-"""
-function compare_surrogate_results(result_markov::LongTestResult, result_phasetype::LongTestResult)
-    all_close = true
+    beta_tol = covariate_type != "nocov" ? MCEM_TVC_BETA_ABS_TOL : BETA_ABS_TOL_SUITE
     
-    for param_name in keys(result_markov.estimated_params)
-        est_markov = result_markov.estimated_params[param_name]
-        est_phasetype = result_phasetype.estimated_params[param_name]
-        
-        # Use relative tolerance for comparison
-        if abs(est_markov) > 0.01
-            rel_diff = abs(est_markov - est_phasetype) / abs(est_markov)
-        else
-            rel_diff = abs(est_markov - est_phasetype)
-        end
-        
-        # Use tighter tolerance for beta parameters
-        tol = contains(param_name, "beta") ? BETA_COMPARISON_TOL_REL : PROPOSAL_COMPARISON_TOL
-        
-        if rel_diff > tol
-            VERBOSE_LONGTESTS && @warn "Surrogate comparison: $param_name differs by $(round(100*rel_diff, digits=1))%"
-            all_close = false
-        end
-    end
+    beta_h12 = check_beta_recovery(fitted, calibrated_params, 1; abs_tol=beta_tol, verbose=VERBOSE_LONGTESTS)
+    beta_h23 = check_beta_recovery(fitted, calibrated_params, 2; abs_tol=beta_tol, verbose=VERBOSE_LONGTESTS)
     
-    return all_close
+    passed = h12_result.passed && h23_result.passed && beta_h12.passed && beta_h23.passed
+    
+    VERBOSE_LONGTESTS && @info "    Result: $(passed ? "PASS" : "FAIL")"
+    
+    return (
+        test_name = test_name,
+        passed = passed,
+        h12_passed = h12_result.passed,
+        h23_passed = h23_result.passed,
+        beta_passed = beta_h12.passed && beta_h23.passed,
+        h12_max_err = h12_result.max_rel_err,
+        h23_max_err = h23_result.max_rel_err
+    )
 end
 
 # =============================================================================
@@ -433,43 +522,21 @@ end
 # =============================================================================
 
 const EFFECT_TYPES = ["ph", "aft"]
+const COV_TYPES = ["nocov", "fixed", "tvc"]
 const SURROGATE_TYPES = ["markov", "phasetype"]
-const COV_TYPES_SPLINE = ["nocov", "fixed", "tvc"]
-
-# Option to save results to cache for reports
-const SAVE_RESULTS_TO_CACHE_SPLINE = get(ENV, "LONGTEST_SAVE_RESULTS", "true") == "true"
+const MONOTONE_TYPES = [false, true]
 
 @testset "Unpenalized Spline Long Test Suite" begin
     
-    # =========================================================================
-    # Exact Data Tests (6 tests)
-    # =========================================================================
     @testset "Exact Data Tests" begin
         for effect_type in EFFECT_TYPES
             @testset "$(uppercase(effect_type))" begin
-                for cov_type in COV_TYPES_SPLINE
-                    @testset "$cov_type" begin
-                        result = run_spline_exact_test(effect_type, cov_type)
-                        SAVE_RESULTS_TO_CACHE_SPLINE && save_longtest_result(result; force=true)
-                        @test result.passed
-                    end
-                end
-            end
-        end
-    end
-    
-    # =========================================================================
-    # Panel Data Tests (12 tests)
-    # =========================================================================
-    @testset "Panel Data Tests (MCEM)" begin
-        for effect_type in EFFECT_TYPES
-            @testset "$(uppercase(effect_type))" begin
-                for surrogate_type in SURROGATE_TYPES
-                    @testset "$surrogate_type surrogate" begin
-                        for cov_type in COV_TYPES_SPLINE
+                for is_monotone in MONOTONE_TYPES
+                    mono_label = is_monotone ? "monotone" : "free"
+                    @testset "$mono_label" begin
+                        for cov_type in COV_TYPES
                             @testset "$cov_type" begin
-                                result = run_spline_panel_test(effect_type, cov_type, surrogate_type)
-                                SAVE_RESULTS_TO_CACHE_SPLINE && save_longtest_result(result; force=true)
+                                result = run_spline_exact_test(effect_type, cov_type, is_monotone)
                                 @test result.passed
                             end
                         end
@@ -479,23 +546,23 @@ const SAVE_RESULTS_TO_CACHE_SPLINE = get(ENV, "LONGTEST_SAVE_RESULTS", "true") =
         end
     end
     
-    # =========================================================================
-    # Surrogate Comparison Tests
-    # =========================================================================
-    @testset "Surrogate Comparison" begin
-        # Compare Markov vs PhaseType surrogates for same test cases
+    @testset "Panel Data Tests (MCEM)" begin
         for effect_type in EFFECT_TYPES
             @testset "$(uppercase(effect_type))" begin
-                for cov_type in COV_TYPES_SPLINE
-                    @testset "$cov_type" begin
-                        # Load results from panel tests
-                        result_markov = load_longtest_result("sp_$(effect_type)_panel_markov_$(cov_type)")
-                        result_phasetype = load_longtest_result("sp_$(effect_type)_panel_phasetype_$(cov_type)")
-                        
-                        if !isnothing(result_markov) && !isnothing(result_phasetype)
-                            @test compare_surrogate_results(result_markov, result_phasetype)
-                        else
-                            @warn "Skipping surrogate comparison for sp_$(effect_type)_panel_*_$(cov_type): results not available"
+                for is_monotone in MONOTONE_TYPES
+                    mono_label = is_monotone ? "monotone" : "free"
+                    @testset "$mono_label" begin
+                        for surrogate_type in SURROGATE_TYPES
+                            @testset "$surrogate_type" begin
+                                for cov_type in COV_TYPES
+                                    @testset "$cov_type" begin
+                                        result = run_spline_panel_test(
+                                            effect_type, cov_type, surrogate_type, is_monotone
+                                        )
+                                        @test result.passed
+                                    end
+                                end
+                            end
                         end
                     end
                 end

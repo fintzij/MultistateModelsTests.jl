@@ -229,7 +229,7 @@ end
     fitted = fit(model; 
         penalty=SplinePenalty(),
         verbose=false,
-        compute_vcov=false)
+        vcov_type=:none)
     
     println("  Log-likelihood: ", @sprintf("%.2f", fitted.loglik.loglik))
     
@@ -289,7 +289,7 @@ end
     fitted = fit(model; 
         penalty=SplinePenalty(),
         verbose=false,
-        compute_vcov=false)
+        vcov_type=:none)
     
     println("  Log-likelihood: ", @sprintf("%.2f", fitted.loglik.loglik))
     
@@ -330,7 +330,7 @@ end
     fitted = fit(model; 
         penalty=SplinePenalty(),
         verbose=false,
-        compute_vcov=false)
+        vcov_type=:none)
     
     println("  Log-likelihood: ", @sprintf("%.2f", fitted.loglik.loglik))
     
@@ -370,7 +370,7 @@ end
     fitted_add = fit(model_add; 
         penalty=SplinePenalty(),
         verbose=false,
-        compute_vcov=false)
+        vcov_type=:none)
     
     # Fit with tensor product
     h12_tensor = Hazard(@formula(0 ~ te(x, y, 6, 6, 2)), :exp, 1, 2)
@@ -380,7 +380,7 @@ end
     fitted_te = fit(model_te; 
         penalty=SplinePenalty(),
         verbose=false,
-        compute_vcov=false)
+        vcov_type=:none)
     
     ll_add = fitted_add.loglik.loglik
     ll_te = fitted_te.loglik.loglik

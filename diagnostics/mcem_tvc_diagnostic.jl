@@ -156,7 +156,7 @@ model_mcem.markovsurrogate = surrogate
 
 fitted_mcem = fit(model_mcem; 
     verbose=true,
-    compute_vcov=false,
+    vcov_type=:none,
     MaxIter=25,
     MaxESS=300
 )

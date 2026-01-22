@@ -222,7 +222,7 @@ end
     
     @testset "Parameter recovery" begin
         println("\nFitting phase-type model with direct MLE...")
-        fitted = fit(model_fit; verbose=false, compute_vcov=true)
+        fitted = fit(model_fit; verbose=false, vcov_type=:ij)
         
         # v0.3.0+: get_parameters_flat returns natural scale
         fitted_params = get_parameters_flat(fitted)
@@ -440,7 +440,7 @@ end
     
     @testset "Parameter recovery with covariate" begin
         println("\nFitting phase-type model with covariate...")
-        fitted = fit(model_fit; verbose=false, compute_vcov=true)
+        fitted = fit(model_fit; verbose=false, vcov_type=:ij)
         
         fitted_params = get_parameters_flat(fitted)
         
@@ -563,7 +563,7 @@ end
     
     @testset "TVC parameter recovery" begin
         println("\nFitting phase-type model with TVC...")
-        fitted = fit(model_fit; verbose=false, compute_vcov=true)
+        fitted = fit(model_fit; verbose=false, vcov_type=:ij)
         
         fitted_params = get_parameters_flat(fitted)
         n_hazards = 3

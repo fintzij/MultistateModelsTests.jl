@@ -166,8 +166,8 @@ using ForwardDiff
             tol = 1e-6,  # Will not converge in 3 iters, that is fine
             verbose = false,
             sir = :none,  # Pure importance sampling
-            compute_vcov = false,
-            compute_ij_vcov = false,
+            vcov_type = :none,
+            
             return_convergence_records = true
         )
         
@@ -430,6 +430,160 @@ using ForwardDiff
         expected_ll_at_mle = n_events * (log(n_events) - log(sum_times) - 1)
         actual_ll_at_mle = MultistateModels.loglik_exact([lambda_mle], exactdata; neg=false)
         @test actual_ll_at_mle ≈ expected_ll_at_mle rtol=1e-10
+    end
+
+    # =========================================================================
+    # Test 5: MCEM RNG Reproducibility with Markov Surrogate
+    # =========================================================================
+    # Verify that MCEM produces identical MLEs when run with the same RNG seed.
+    # This tests the refactored MCEM infrastructure for determinism.
+    # =========================================================================
+    @testset "MCEM RNG reproducibility (Markov surrogate)" begin
+        # Create panel data for semi-Markov model
+        rows = DataFrame[]
+        id = 1
+        
+        # Mix of transition patterns for non-trivial importance sampling
+        for _ in 1:5  # Group A: stay in state 1
+            push!(rows, DataFrame(
+                id = fill(id, 2),
+                tstart = [0.0, 2.0],
+                tstop = [2.0, 4.0],
+                statefrom = [1, 1],
+                stateto = [1, 1],
+                obstype = [2, 2]
+            ))
+            id += 1
+        end
+        
+        for _ in 1:5  # Group B: 1→2 transition
+            push!(rows, DataFrame(
+                id = fill(id, 2),
+                tstart = [0.0, 2.0],
+                tstop = [2.0, 4.0],
+                statefrom = [1, 2],
+                stateto = [2, 2],
+                obstype = [2, 2]
+            ))
+            id += 1
+        end
+        
+        dat = vcat(rows...)
+        
+        # Weibull hazard (semi-Markov)
+        h12 = Hazard(@formula(0 ~ 1), "wei", 1, 2)
+        
+        # Build two identical models
+        model1 = multistatemodel(h12; data=dat, surrogate=:markov)
+        model2 = multistatemodel(h12; data=dat, surrogate=:markov)
+        
+        # Set identical initial parameters
+        set_parameters!(model1, (h12 = [1.2, 0.3],))
+        set_parameters!(model2, (h12 = [1.2, 0.3],))
+        
+        # Fit with same seed - Run 1
+        Random.seed!(98765)
+        fitted1 = fit(model1;
+            maxiter = 10,
+            ess_target_initial = 30,
+            tol = 1e-6,
+            verbose = false,
+            sir = :none,
+            vcov_type = :none
+        )
+        params1 = get_parameters(fitted1)
+        
+        # Fit with same seed - Run 2
+        Random.seed!(98765)
+        fitted2 = fit(model2;
+            maxiter = 10,
+            ess_target_initial = 30,
+            tol = 1e-6,
+            verbose = false,
+            sir = :none,
+            vcov_type = :none
+        )
+        params2 = get_parameters(fitted2)
+        
+        # Parameters should be identical (same seed, same algorithm)
+        @test params1.h12 ≈ params2.h12 rtol=1e-12
+    end
+    
+    # =========================================================================
+    # Test 6: MCEM RNG Reproducibility with PhaseType Surrogate
+    # =========================================================================
+    # Same as Test 5 but using PhaseType surrogate for importance sampling.
+    # This validates that the refactored PhaseType MCEM path is deterministic.
+    # =========================================================================
+    @testset "MCEM RNG reproducibility (PhaseType surrogate)" begin
+        # Create panel data for semi-Markov model
+        rows = DataFrame[]
+        id = 1
+        
+        # Mix of transition patterns
+        for _ in 1:5  # Group A: stay in state 1
+            push!(rows, DataFrame(
+                id = fill(id, 2),
+                tstart = [0.0, 2.0],
+                tstop = [2.0, 4.0],
+                statefrom = [1, 1],
+                stateto = [1, 1],
+                obstype = [2, 2]
+            ))
+            id += 1
+        end
+        
+        for _ in 1:5  # Group B: 1→2 transition
+            push!(rows, DataFrame(
+                id = fill(id, 2),
+                tstart = [0.0, 2.0],
+                tstop = [2.0, 4.0],
+                statefrom = [1, 2],
+                stateto = [2, 2],
+                obstype = [2, 2]
+            ))
+            id += 1
+        end
+        
+        dat = vcat(rows...)
+        
+        # Weibull hazard (semi-Markov)
+        h12 = Hazard(@formula(0 ~ 1), "wei", 1, 2)
+        
+        # Build two identical models with PhaseType surrogate
+        model1 = multistatemodel(h12; data=dat, surrogate=:phasetype)
+        model2 = multistatemodel(h12; data=dat, surrogate=:phasetype)
+        
+        # Set identical initial parameters
+        set_parameters!(model1, (h12 = [1.2, 0.3],))
+        set_parameters!(model2, (h12 = [1.2, 0.3],))
+        
+        # Fit with same seed - Run 1
+        Random.seed!(87654)
+        fitted1 = fit(model1;
+            maxiter = 10,
+            ess_target_initial = 30,
+            tol = 1e-6,
+            verbose = false,
+            sir = :none,
+            vcov_type = :none
+        )
+        params1 = get_parameters(fitted1)
+        
+        # Fit with same seed - Run 2
+        Random.seed!(87654)
+        fitted2 = fit(model2;
+            maxiter = 10,
+            ess_target_initial = 30,
+            tol = 1e-6,
+            verbose = false,
+            sir = :none,
+            vcov_type = :none
+        )
+        params2 = get_parameters(fitted2)
+        
+        # Parameters should be identical (same seed, same algorithm)
+        @test params1.h12 ≈ params2.h12 rtol=1e-12
     end
     
 end

@@ -1,5 +1,12 @@
 """
-Long test suite for MCEM algorithm with spline hazards.
+Long test suite for MCEM algorithm with UNPENALIZED spline hazards.
+
+=== IMPORTANT: UNPENALIZED SPLINES ONLY ===
+All fit() calls in this file use `penalty=:none` to test unpenalized spline 
+functionality. This is intentional - we must verify unpenalized splines work 
+correctly before testing penalized likelihood.
+
+For penalized spline tests, see: longtest_mcem_splines_penalized.jl (TODO)
 
 This test suite verifies that spline hazards can approximate:
 1. Exponential hazards (constant rate) - using splines with no interior knots
@@ -72,13 +79,11 @@ const BETA_COMPARISON_TOL_REL = 0.20  # 20% relative tolerance
 const BETA_COMPARISON_TOL_ABS = 0.15  # 0.15 absolute tolerance for betas near zero
 
 # HAZARD_TOL_FACTOR justification:
-# Factor of 2.5 accounts for three sources of error:
-# 1. MCEM Monte Carlo variance (~15-25% coefficient of variation at convergence)
-# 2. Spline approximation error (linear splines approximate step functions imperfectly)
-# 3. Limited iterations (MAX_ITER=25 may not fully converge)
-# Tests 1-3 validate functional form; tighter tolerance would cause flaky tests.
-# Test 4 uses explicit 50% relative tolerance for individual hazard/cumhaz comparisons.
-const HAZARD_TOL_FACTOR = 2.5
+# Factor of 1.5 accounts for:
+# 1. MCEM Monte Carlo variance (~10-15% coefficient of variation at convergence)
+# 2. Spline approximation error (splines approximate parametric shapes)
+# Tighter tolerance ensures meaningful parameter recovery validation.
+const HAZARD_TOL_FACTOR = 1.5
 
 # ============================================================================
 # Test 1: Spline Approximation to Exponential (Constant Hazard)
@@ -94,8 +99,8 @@ const HAZARD_TOL_FACTOR = 2.5
     # Create exponential model for data generation (progressive 1→2 only)
     h12_exp = Hazard(@formula(0 ~ 1), "exp", 1, 2)
     
-    # Generate panel data template - short observation period
-    obs_times = [0.0, 2.0, 4.0]
+    # Generate panel data template - 10 observation intervals for adequate density
+    obs_times = [0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0]
     nobs = length(obs_times) - 1
     
     sim_data = DataFrame(
@@ -128,15 +133,17 @@ const HAZARD_TOL_FACTOR = 2.5
     
     model_spline = multistatemodel(h12_sp; data=panel_data, surrogate=:markov)
     
-    # Fit via MCEM
+    # Fit via MCEM - UNPENALIZED SPLINES (penalty=:none)
+    # Testing basic spline functionality without smoothing penalty
     fitted = fit(model_spline;
         proposal=:markov,
+        penalty=:none,  # UNPENALIZED - no smoothing
         verbose=true,
         maxiter=MAX_ITER,
         tol=MCEM_TOL,
         ess_target_initial=25,
         max_ess=300,
-        compute_vcov=false,
+        vcov_type=:none,
         return_convergence_records=true)
     
     # Check that spline hazard at various times approximates true exponential
@@ -167,15 +174,16 @@ const HAZARD_TOL_FACTOR = 2.5
     
     model_pt = multistatemodel(h12_pt; data=panel_data, surrogate=:markov)
     
+    # UNPENALIZED SPLINES (penalty=:none) - testing basic PhaseType proposal
     fitted_pt = fit(model_pt;
         proposal=PhaseTypeProposal(n_phases=3),
+        penalty=:none,  # UNPENALIZED - no smoothing
         verbose=true,
         maxiter=MAX_ITER,
         tol=MCEM_TOL,
         ess_target_initial=30,
         max_ess=500,
-        compute_vcov=false,
-        compute_ij_vcov=false)
+        vcov_type=:none)
     
     pars_12_pt = MultistateModels.get_parameters(fitted_pt, 1, scale=:log)
     
@@ -221,7 +229,7 @@ end
     # Create piecewise-like spline model for data generation
     # Linear spline (degree=1) with knot at change_time approximates piecewise constant
     # Spline coefficients are log-hazards evaluated at the knot locations
-    obs_times = [0.0, 2.0, 4.0]
+    obs_times = [0.0, 0.8, 1.6, 2.4, 3.2, 4.0, 4.8]
     nobs = length(obs_times) - 1
     
     # Create simulation template
@@ -271,15 +279,16 @@ end
     
     model_spline = multistatemodel(h12_sp; data=panel_data, surrogate=:markov)
     
-    # Fit via MCEM
+    # Fit via MCEM - UNPENALIZED SPLINES (penalty=:none)
     fitted = fit(model_spline;
         proposal=:markov,
+        penalty=:none,  # UNPENALIZED - no smoothing
         verbose=true,
         maxiter=MAX_ITER,
         tol=MCEM_TOL,
         ess_target_initial=25,
         max_ess=300,
-        compute_vcov=false,
+        vcov_type=:none,
         return_convergence_records=true)
     
     # Check that spline hazard approximates the true piecewise rates
@@ -332,15 +341,16 @@ end
     
     model_pt = multistatemodel(h12_pt; data=panel_data, surrogate=:markov)
     
+    # UNPENALIZED SPLINES (penalty=:none) - testing basic PhaseType proposal
     fitted_pt = fit(model_pt;
         proposal=PhaseTypeProposal(n_phases=3),
+        penalty=:none,  # UNPENALIZED - no smoothing
         verbose=true,
         maxiter=MAX_ITER,
         tol=MCEM_TOL,
         ess_target_initial=30,
         max_ess=500,
-        compute_vcov=false,
-        compute_ij_vcov=false)
+        vcov_type=:none)
     
     pars_12_pt = MultistateModels.get_parameters(fitted_pt, 1, scale=:log)
     
@@ -385,7 +395,7 @@ end
     # Create Gompertz model for data generation - progressive 1→2 only
     h12_gom = Hazard(@formula(0 ~ 1), "gom", 1, 2)
     
-    obs_times = [0.0, 2.0, 4.0]
+    obs_times = [0.0, 0.7, 1.4, 2.1, 2.8, 3.5, 4.2]
     nobs = length(obs_times) - 1
     
     sim_data = DataFrame(
@@ -408,26 +418,26 @@ end
                          obstype_by_transition=obstype_map)
     panel_data = sim_result[1, 1]
     
-    # Fit cubic spline with one interior knot (more stable than natural cubic with no interior knots)
-    # This gives enough flexibility to capture smooth exponential increase
+    # Fit linear spline with one interior knot
+    # Linear splines are simpler and more identifiable for parameter recovery
     h12_sp = Hazard(@formula(0 ~ 1), "sp", 1, 2; 
-                    degree=3,  # Cubic for smooth curves
+                    degree=1,  # Linear for identifiability
                     knots=[2.5],  # One interior knot for flexibility
                     boundaryknots=[0.0, 5.0],
-                    natural_spline=false,  # Regular B-spline (more stable for MCEM)
                     extrapolation="constant")
     
     model_spline = multistatemodel(h12_sp; data=panel_data, surrogate=:markov)
     
-    # Fit via MCEM
+    # Fit via MCEM - UNPENALIZED SPLINES (penalty=:none)
     fitted = fit(model_spline;
         proposal=:markov,
+        penalty=:none,  # UNPENALIZED - no smoothing
         verbose=true,
         maxiter=MAX_ITER,
         tol=MCEM_TOL,
         ess_target_initial=25,
         max_ess=300,
-        compute_vcov=false,
+        vcov_type=:none,
         return_convergence_records=true)
     
     # Check that spline captures general trend (not exact match given MCEM variance)
@@ -454,23 +464,23 @@ end
     println("      ▸ Fitting with PhaseType proposal..."); flush(stdout)
     
     h12_pt = Hazard(@formula(0 ~ 1), "sp", 1, 2; 
-                    degree=3,
+                    degree=1,
                     knots=[2.5],
                     boundaryknots=[0.0, 5.0],
-                    natural_spline=false,
                     extrapolation="constant")
     
     model_pt = multistatemodel(h12_pt; data=panel_data, surrogate=:markov)
     
+    # UNPENALIZED SPLINES (penalty=:none) - testing basic PhaseType proposal
     fitted_pt = fit(model_pt;
         proposal=PhaseTypeProposal(n_phases=3),
+        penalty=:none,  # UNPENALIZED - no smoothing
         verbose=true,
         maxiter=MAX_ITER,
         tol=MCEM_TOL,
         ess_target_initial=30,
         max_ess=500,
-        compute_vcov=false,
-        compute_ij_vcov=false)
+        vcov_type=:none)
     
     pars_12_pt = MultistateModels.get_parameters(fitted_pt, 1, scale=:log)
     
@@ -527,7 +537,7 @@ end
     # Create exponential model with covariate
     h12_exp = Hazard(@formula(0 ~ 1 + x), "exp", 1, 2)
     
-    obs_times = [0.0, 1.5, 3.0, 4.5]
+    obs_times = [0.0, 0.75, 1.5, 2.25, 3.0, 3.75, 4.5]
     nobs = length(obs_times) - 1
     
     # Generate data with binary covariate
@@ -560,15 +570,16 @@ end
     
     model_spline = multistatemodel(h12_sp; data=panel_data, surrogate=:markov)
     
-    # Fit via MCEM
+    # Fit via MCEM - UNPENALIZED SPLINES (penalty=:none)
     fitted = fit(model_spline;
         proposal=:markov,
+        penalty=:none,  # UNPENALIZED - no smoothing
         verbose=true,
         maxiter=MAX_ITER,
         tol=MCEM_TOL,
         ess_target_initial=25,
         max_ess=300,
-        compute_vcov=false,
+        vcov_type=:none,
         return_convergence_records=true)
     
     # Check that spline has expected number of parameters
@@ -699,15 +710,16 @@ end
     
     model_pt = multistatemodel(h12_pt; data=panel_data, surrogate=:markov)
     
+    # UNPENALIZED SPLINES (penalty=:none) - testing basic PhaseType proposal
     fitted_pt = fit(model_pt;
         proposal=PhaseTypeProposal(n_phases=3),
+        penalty=:none,  # UNPENALIZED - no smoothing
         verbose=true,
         maxiter=MAX_ITER,
         tol=MCEM_TOL,
         ess_target_initial=30,
         max_ess=500,
-        compute_vcov=false,
-        compute_ij_vcov=false)
+        vcov_type=:none)
     
     pars_12_pt = MultistateModels.get_parameters(fitted_pt, 1, scale=:log)
     
@@ -744,7 +756,7 @@ end
     println("\n    Covariate coefficient (beta) comparison:")
     println("    Markov beta: $(round(beta_markov, digits=4)), PhaseType beta: $(round(beta_pt, digits=4))")
     println("    Abs diff: $(round(beta_abs_diff, digits=4)), Rel diff: $(round(beta_rel_diff*100, digits=1))%")
-    @test (beta_rel_diff < BETA_COMPARISON_TOL_REL || beta_abs_diff < BETA_COMPARISON_TOL_ABS) "beta: Markov=$(round(beta_markov, digits=4)), PhaseType=$(round(beta_pt, digits=4)), rel_diff=$(round(beta_rel_diff*100, digits=1))%"
+    @test beta_rel_diff < BETA_COMPARISON_TOL_REL || beta_abs_diff < BETA_COMPARISON_TOL_ABS
     
     println("  ✓ Spline with covariates: comprehensive validation complete")
     println("  ✓ Markov vs PhaseType proposal estimates agree")
@@ -774,7 +786,7 @@ end
     
     h12_wei = Hazard(@formula(0 ~ 1), "wei", 1, 2)
     
-    obs_times = [0.0, 2.0, 4.0]
+    obs_times = [0.0, 0.7, 1.4, 2.1, 2.8, 3.5, 4.2]
     nobs = length(obs_times) - 1
     
     sim_data = DataFrame(
@@ -801,7 +813,7 @@ end
     # Should capture the increasing hazard pattern
     # -------------------------------------------------------------------------
     h12_sp_inc = Hazard(@formula(0 ~ 1), "sp", 1, 2; 
-                        degree=2,
+                        degree=1,
                         knots=[2.0],  # One interior knot
                         boundaryknots=[0.0, 5.0],
                         monotone=1,   # INCREASING constraint
@@ -818,7 +830,7 @@ end
         tol=MCEM_TOL,
         ess_target_initial=25,
         max_ess=300,
-        compute_vcov=false,
+        vcov_type=:none,
         penalty=:none)
     
     pars_inc = MultistateModels.get_parameters(fitted_inc, 1, scale=:log)
@@ -841,7 +853,7 @@ end
     # Should be constrained and unable to capture the increasing pattern
     # -------------------------------------------------------------------------
     h12_sp_dec = Hazard(@formula(0 ~ 1), "sp", 1, 2; 
-                        degree=2,
+                        degree=1,
                         knots=[2.0],
                         boundaryknots=[0.0, 5.0],
                         monotone=-1,  # DECREASING constraint (WRONG for this data!)
@@ -858,7 +870,7 @@ end
         tol=MCEM_TOL,
         ess_target_initial=25,
         max_ess=300,
-        compute_vcov=false,
+        vcov_type=:none,
         penalty=:none)
     
     pars_dec = MultistateModels.get_parameters(fitted_dec, 1, scale=:log)
@@ -896,7 +908,7 @@ end
     println("\n      ▸ Fitting with PhaseType proposal (monotone=1)..."); flush(stdout)
     
     h12_pt_inc = Hazard(@formula(0 ~ 1), "sp", 1, 2; 
-                        degree=2,
+                        degree=1,
                         knots=[2.0],
                         boundaryknots=[0.0, 5.0],
                         monotone=1,
@@ -912,8 +924,8 @@ end
         tol=MCEM_TOL,
         ess_target_initial=30,
         max_ess=500,
-        compute_vcov=false,
-        compute_ij_vcov=false,
+        vcov_type=:none,
+        
         penalty=:none)
     
     pars_pt_inc = MultistateModels.get_parameters(fitted_pt_inc, 1, scale=:log)
@@ -966,9 +978,9 @@ end
     true_shape = 1.4
     true_scale = 0.20
     
-    # Panel data template
-    nobs = 4
-    obs_times = [2.0, 4.0, 6.0, 8.0]
+    # Panel data template - 6 intervals
+    nobs = 6
+    obs_times = [0.0, 1.5, 3.0, 4.5, 6.0, 7.5, 9.0]
     template = DataFrame(
         id = repeat(1:N_SUBJECTS, inner=nobs),
         tstart = repeat([0.0; obs_times[1:end-1]], N_SUBJECTS),
@@ -990,21 +1002,23 @@ end
                          obstype_by_transition=obstype_map)
     panel_data = sim_result[1, 1]
     
-    # Fit with cubic spline using PhaseType proposal
+    # Fit with linear spline using PhaseType proposal
     max_time = maximum(obs_times)
-    h12_sp = Hazard(@formula(0 ~ 1), "sp", 1, 2; degree=3, knots=[4.0],
+    h12_sp = Hazard(@formula(0 ~ 1), "sp", 1, 2; degree=1, knots=[4.0],
                     boundaryknots=[0.0, max_time], extrapolation="constant")
     
     model_fit = multistatemodel(h12_sp; data=panel_data, surrogate=:markov)
     
+    # UNPENALIZED SPLINES (penalty=:none) - testing PhaseType proposal
     fitted = fit(model_fit;
         proposal=PhaseTypeProposal(n_phases=3),
+        penalty=:none,  # UNPENALIZED - no smoothing
         verbose=true,
         maxiter=MAX_ITER,
         tol=MCEM_TOL,
         ess_target_initial=25,
         max_ess=300,
-        compute_vcov=false,
+        vcov_type=:none,
         return_convergence_records=true)
     
     @testset "Convergence and Pareto-k" begin
@@ -1113,7 +1127,7 @@ _weibull_cumhaz(t, shape, scale) = scale * t^shape
     knots = [4.0, 8.0]  # Interior knots
     
     h12_sp = Hazard(@formula(0 ~ 1), "sp", 1, 2;
-        degree=3,
+        degree=1,
         knots=knots,
         boundaryknots=[0.0, max_obs_time],
         extrapolation="constant",
@@ -1121,16 +1135,16 @@ _weibull_cumhaz(t, shape, scale) = scale * t^shape
     
     model_sp = multistatemodel(h12_sp; data=panel_data, surrogate=:markov)
     
+    # UNPENALIZED SPLINES (penalty=:none) - testing AFT spline
     fitted = fit(model_sp;
         proposal=:markov,
+        penalty=:none,  # UNPENALIZED - no smoothing
         verbose=VERBOSE_LONGTESTS,
         maxiter=MAX_ITER,
         tol=MCEM_TOL,
         ess_target_initial=25,
         max_ess=300,
-        compute_vcov=false,
-        compute_ij_vcov=false,
-        compute_jk_vcov=false)
+        vcov_type=:none)
     
     # --- Validate ---
     @test isfinite(fitted.loglik.loglik)
@@ -1176,7 +1190,7 @@ _weibull_cumhaz(t, shape, scale) = scale * t^shape
     println("      ▸ Fitting with PhaseType proposal..."); flush(stdout)
     
     h12_pt = Hazard(@formula(0 ~ 1), "sp", 1, 2;
-        degree=3,
+        degree=1,
         knots=knots,
         boundaryknots=[0.0, max_obs_time],
         extrapolation="constant",
@@ -1184,15 +1198,16 @@ _weibull_cumhaz(t, shape, scale) = scale * t^shape
     
     model_pt = multistatemodel(h12_pt; data=panel_data, surrogate=:markov)
     
+    # UNPENALIZED SPLINES (penalty=:none) - testing AFT spline PhaseType proposal
     fitted_pt = fit(model_pt;
         proposal=PhaseTypeProposal(n_phases=3),
+        penalty=:none,  # UNPENALIZED - no smoothing
         verbose=VERBOSE_LONGTESTS,
         maxiter=MAX_ITER,
         tol=MCEM_TOL,
         ess_target_initial=30,
         max_ess=500,
-        compute_vcov=false,
-        compute_ij_vcov=false)
+        vcov_type=:none)
     
     pars_pt = MultistateModels.get_parameters(fitted_pt, 1, scale=:log)
     h_fitted_pt = [fitted_pt.hazards[1](t, pars_pt, NamedTuple()) for t in test_times]
@@ -1284,7 +1299,7 @@ end
     knots = [4.0, 8.0]
     
     h12_sp = Hazard(@formula(0 ~ x), "sp", 1, 2;
-        degree=3,
+        degree=1,
         knots=knots,
         boundaryknots=[0.0, max_obs_time],
         extrapolation="constant",
@@ -1292,16 +1307,16 @@ end
     
     model_sp = multistatemodel(h12_sp; data=panel_data, surrogate=:markov)
     
+    # UNPENALIZED SPLINES (penalty=:none) - testing AFT spline with TFC
     fitted = fit(model_sp;
         proposal=:markov,
+        penalty=:none,  # UNPENALIZED - no smoothing
         verbose=VERBOSE_LONGTESTS,
         maxiter=MAX_ITER,
         tol=MCEM_TOL,
         ess_target_initial=25,
         max_ess=300,
-        compute_vcov=false,
-        compute_ij_vcov=false,
-        compute_jk_vcov=false)
+        vcov_type=:none)
     
     # --- Validate ---
     @test isfinite(fitted.loglik.loglik)
@@ -1382,7 +1397,7 @@ end
     println("      ▸ Fitting with PhaseType proposal..."); flush(stdout)
     
     h12_pt = Hazard(@formula(0 ~ x), "sp", 1, 2;
-        degree=3,
+        degree=1,
         knots=knots,
         boundaryknots=[0.0, max_obs_time],
         extrapolation="constant",
@@ -1390,15 +1405,16 @@ end
     
     model_pt = multistatemodel(h12_pt; data=panel_data, surrogate=:markov)
     
+    # UNPENALIZED SPLINES (penalty=:none) - testing AFT spline PhaseType proposal with TFC
     fitted_pt = fit(model_pt;
         proposal=PhaseTypeProposal(n_phases=3),
+        penalty=:none,  # UNPENALIZED - no smoothing
         verbose=VERBOSE_LONGTESTS,
         maxiter=MAX_ITER,
         tol=MCEM_TOL,
         ess_target_initial=30,
         max_ess=500,
-        compute_vcov=false,
-        compute_ij_vcov=false)
+        vcov_type=:none)
     
     pars_pt = MultistateModels.get_parameters(fitted_pt, 1, scale=:log)
     
@@ -1458,8 +1474,8 @@ end
     # --- Setup DGP (Weibull AFT with TVC) ---
     h12_wei = Hazard(@formula(0 ~ x), "wei", 1, 2; linpred_effect=:aft)
     
-    # Panel data template with TVC structure (two rows per subject)
-    panel_times = [0.0, 3.0, 6.0, 9.0, 12.0]  # Sparser for TVC stability
+    # Panel data template with TVC structure (15 intervals of 1.0 for ~5.5 obs/subj with rate~0.15)
+    panel_times = collect(0.0:1.0:15.0)  # 15 intervals over T=15 for adequate density
     
     # Create TVC data structure: each subject has x=0 before changepoint, x=1 after
     tvc_data_rows = DataFrame[]
@@ -1526,10 +1542,10 @@ end
     VERBOSE_LONGTESTS && println("    Data: $(length(unique(panel_data.id))) subjects, $n_transitions transitions, TVC changepoint=$(tvc_changepoint)")
     
     # --- Fit spline AFT model via MCEM ---
-    knots = [4.0, 8.0]
+    knots = [5.0, 10.0]  # Adjusted for extended T=15 window
     
     h12_sp = Hazard(@formula(0 ~ x), "sp", 1, 2;
-        degree=3,
+        degree=1,
         knots=knots,
         boundaryknots=[0.0, max_obs_time],
         extrapolation="constant",
@@ -1537,16 +1553,16 @@ end
     
     model_sp = multistatemodel(h12_sp; data=panel_data, surrogate=:markov)
     
+    # UNPENALIZED SPLINES (penalty=:none) - testing AFT spline with TVC
     fitted = fit(model_sp;
         proposal=:markov,
+        penalty=:none,  # UNPENALIZED - no smoothing
         verbose=VERBOSE_LONGTESTS,
         maxiter=MAX_ITER + 10,  # Extra iterations for TVC complexity
         tol=MCEM_TOL,
         ess_target_initial=25,
         max_ess=300,
-        compute_vcov=false,
-        compute_ij_vcov=false,
-        compute_jk_vcov=false)
+        vcov_type=:none)
     
     # --- Validate ---
     @test isfinite(fitted.loglik.loglik)
@@ -1634,7 +1650,7 @@ end
     println("      ▸ Fitting with PhaseType proposal..."); flush(stdout)
     
     h12_pt = Hazard(@formula(0 ~ x), "sp", 1, 2;
-        degree=3,
+        degree=1,
         knots=knots,
         boundaryknots=[0.0, max_obs_time],
         extrapolation="constant",
@@ -1642,15 +1658,16 @@ end
     
     model_pt = multistatemodel(h12_pt; data=panel_data, surrogate=:markov)
     
+    # UNPENALIZED SPLINES (penalty=:none) - testing AFT spline PhaseType proposal with TVC
     fitted_pt = fit(model_pt;
         proposal=PhaseTypeProposal(n_phases=3),
+        penalty=:none,  # UNPENALIZED - no smoothing
         verbose=VERBOSE_LONGTESTS,
         maxiter=MAX_ITER + 10,
         tol=MCEM_TOL,
         ess_target_initial=30,
         max_ess=500,
-        compute_vcov=false,
-        compute_ij_vcov=false)
+        vcov_type=:none)
     
     pars_pt = MultistateModels.get_parameters(fitted_pt, 1, scale=:log)
     

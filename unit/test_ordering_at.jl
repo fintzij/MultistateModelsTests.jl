@@ -129,9 +129,9 @@ end
 @testset "Model Construction with ordering_at" begin
     data = create_pt_test_data()
     
-    @testset "Default is :reference (backward compatible)" begin
+    @testset "Default is :mean (interpretable baseline)" begin
         h12 = Hazard(@formula(0 ~ 1), :pt, 1, 2)
-        # Should not error
+        # Should not error - default is now :mean for more interpretable baseline
         model = multistatemodel(h12; data=data, n_phases=Dict(1=>2))
         @test has_phasetype_expansion(model)
     end
@@ -196,9 +196,8 @@ end
     
     @testset "Reference ordering generates linear expressions" begin
         h12 = Hazard(@formula(0 ~ 1), :pt, 1, 2)
-        # Note: :eigorder_sctp was planned but not implemented - using :sctp_decreasing instead
         model = multistatemodel(h12; data=data, n_phases=Dict(1=>2), 
-                                 ordering_at=:reference, coxian_structure=:sctp_decreasing)
+                                 ordering_at=:reference, coxian_structure=:sctp)
         
         # Check that model has constraints
         @test haskey(model.modelcall, :constraints)
@@ -211,9 +210,8 @@ end
     
     @testset "Non-reference ordering with heterogeneous covariates generates nonlinear expressions" begin
         h12 = Hazard(@formula(0 ~ 1 + age), :pt, 1, 2; covariate_constraints=:unstructured)
-        # Note: :eigorder_sctp was planned but not implemented - using :sctp_decreasing instead
         model = multistatemodel(h12; data=data, n_phases=Dict(1=>2), 
-                                 ordering_at=:mean, coxian_structure=:sctp_decreasing)
+                                 ordering_at=:mean, coxian_structure=:sctp)
         
         constraints = model.modelcall.constraints
         @test !isnothing(constraints)
@@ -232,9 +230,8 @@ end
     
     @testset "Fit with :reference ordering" begin
         h12 = Hazard(@formula(0 ~ 1), :pt, 1, 2)
-        # Note: :eigorder_sctp was planned but not implemented - using :sctp_decreasing instead
         model = multistatemodel(h12; data=data, n_phases=Dict(1=>2), 
-                                 ordering_at=:reference, coxian_structure=:sctp_decreasing)
+                                 ordering_at=:reference, coxian_structure=:sctp)
         
         # Should be able to fit
         fitted = fit(model; verbose=false)
@@ -243,9 +240,8 @@ end
     
     @testset "Fit with :mean ordering (no covariates)" begin
         h12 = Hazard(@formula(0 ~ 1), :pt, 1, 2)
-        # Note: :eigorder_sctp was planned but not implemented - using :sctp_decreasing instead
         model = multistatemodel(h12; data=data, n_phases=Dict(1=>2), 
-                                 ordering_at=:mean, coxian_structure=:sctp_decreasing)
+                                 ordering_at=:mean, coxian_structure=:sctp)
         
         # Should be able to fit (no covariates = same as reference)
         fitted = fit(model; verbose=false)

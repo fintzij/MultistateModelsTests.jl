@@ -51,7 +51,7 @@ end
 const RNG_SEED = 0xDEAD0001
 const N_SUBJECTS = 1000            # Standard sample size for longtests
 const MAX_TIME = 10.0              # Maximum follow-up time
-const PANEL_TIMES = [0.0, 2.5, 5.0, 7.5, 10.0]  # Observation times for panel data
+const PANEL_TIMES = collect(0.0:0.5:10.0)  # 20 intervals of 0.5 for adequate obs density (~5 obs/subj with rate~0.35)
 const PARAM_TOL_REL = 0.20         # 20% relative tolerance for panel data (less info than exact)
 const PARAM_TOL_REL_COMPLEX = 0.30 # 30% tolerance for complex multi-phase models
 
@@ -320,7 +320,7 @@ end
         model_fit = multistatemodel(hazards_for_fit...; data=panel_data_phases)
         
         println("\nFitting phase-type model with panel data...")
-        fitted = fit(model_fit; verbose=false, compute_vcov=true)
+        fitted = fit(model_fit; verbose=false, vcov_type=:ij)
         
         fitted_params = get_parameters_flat(fitted)
         println("True params (natural): $(round.(true_params, digits=3))")
@@ -407,7 +407,7 @@ end
         model_fit = multistatemodel(hazards_for_fit...; data=panel_data)
         
         println("\nFitting illness-death phase-type model with panel data...")
-        fitted = fit(model_fit; verbose=false, compute_vcov=true)
+        fitted = fit(model_fit; verbose=false, vcov_type=:ij)
         
         fitted_params = get_parameters_flat(fitted)
         println("True params (natural): $(round.(true_params, digits=3))")
@@ -514,7 +514,7 @@ end
         model_fit = multistatemodel(hazards_for_fit...; data=mixed_data)
         
         println("\nFitting with mixed observation types...")
-        fitted = fit(model_fit; verbose=false, compute_vcov=true)
+        fitted = fit(model_fit; verbose=false, vcov_type=:ij)
         
         fitted_params = get_parameters_flat(fitted)
         println("True params (natural): $(round.(true_params, digits=3))")
@@ -657,7 +657,7 @@ end
         model_fit = multistatemodel(hazards_for_fit...; data=mixed_data)
         
         println("\nFitting with structured mixed observations...")
-        fitted = fit(model_fit; verbose=false, compute_vcov=true)
+        fitted = fit(model_fit; verbose=false, vcov_type=:ij)
         
         fitted_params = get_parameters_flat(fitted)
         println("True params (natural): $(round.(true_params, digits=3))")
@@ -854,9 +854,11 @@ end
     # True parameters (production API structure):
     # [h1_ab_rate, h12_a_rate, h12_a_x, h12_b_rate, h12_b_x]
     # Note: h12_a_x = h12_b_x due to homogeneous constraint
-    true_lambda = 0.4    # progression rate
-    true_mu1 = 0.25      # exit rate from phase 1
-    true_mu2 = 0.5       # exit rate from phase 2
+    # IMPORTANT: SCTP constraint enforces INCREASING eigenvalue ordering: ν₁ ≤ ν₂
+    # where ν₁ = λ + μ₁ and ν₂ = μ₂. So we need μ₂ ≥ λ + μ₁.
+    true_lambda = 0.2    # progression rate
+    true_mu1 = 0.15      # exit rate from phase 1  → ν₁ = 0.35
+    true_mu2 = 0.5       # exit rate from phase 2  → ν₂ = 0.5 ≥ ν₁ ✓
     true_beta = 0.35     # shared covariate effect (same for both exit hazards)
     
     params_sim = (
@@ -913,7 +915,7 @@ end
         model_fit = multistatemodel(h12; data=panel_data, verbose=false)
         
         println("\nFitting phase-type model with covariate from panel data...")
-        fitted = fit(model_fit; verbose=false, compute_vcov=true)
+        fitted = fit(model_fit; verbose=false, vcov_type=:ij)
         fitted_params = get_parameters_flat(fitted)
         
         # Extract individual parameters
@@ -969,9 +971,9 @@ end
         
         # ===================================================================
         # TEST 5: Eigenvalue ordering constraint satisfaction
-        # The constraint ν₁ ≥ ν₂ should be satisfied
+        # SCTP enforces INCREASING ordering: ν₁ ≤ ν₂ (early phases can exit faster)
         # ===================================================================
-        @test fitted_nu1 >= fitted_nu2 - 1e-6  # Allow small numerical tolerance
+        @test fitted_nu1 <= fitted_nu2 + 1e-6  # Allow small numerical tolerance
         
         # ===================================================================
         # TEST 6: Individual rates are positive and bounded (sanity check)
@@ -1120,9 +1122,11 @@ end
     model_sim = multistatemodel(h12; data=tvc_template, verbose=false)
     
     # True parameters (production API structure)
-    true_lambda = 0.4    # progression rate
-    true_mu1 = 0.25      # exit rate from phase 1
-    true_mu2 = 0.5       # exit rate from phase 2
+    # IMPORTANT: SCTP constraint enforces INCREASING eigenvalue ordering: ν₁ ≤ ν₂
+    # where ν₁ = λ + μ₁ and ν₂ = μ₂. So we need μ₂ ≥ λ + μ₁.
+    true_lambda = 0.2    # progression rate
+    true_mu1 = 0.15      # exit rate from phase 1  → ν₁ = 0.35
+    true_mu2 = 0.5       # exit rate from phase 2  → ν₂ = 0.5 ≥ ν₁ ✓
     true_beta = 0.5      # shared covariate effect (treatment effect)
     
     params_sim = (
@@ -1191,7 +1195,7 @@ end
         println("\nFitting phase-type model with TVC from panel data...")
         println("  Using production API with homogeneous covariate constraints")
         
-        fitted = fit(model_fit; verbose=false, compute_vcov=true)
+        fitted = fit(model_fit; verbose=false, vcov_type=:ij)
         fitted_params = get_parameters_flat(fitted)
         
         println("  True params:   [$true_lambda, $true_mu1, $true_beta, $true_mu2, $true_beta]")

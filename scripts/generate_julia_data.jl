@@ -158,7 +158,7 @@ fitted_sp = fit(model_sp;
     tol=1e-4,
     ess_target_initial=100,
     max_ess=1000,
-    compute_vcov=false)
+    vcov_type=:none)
 
 println("Fitting complete!")
 

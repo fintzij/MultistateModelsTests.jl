@@ -98,7 +98,7 @@ end
     exact_data = generate_exact_data((h12, h23, h13), true_params)
     
     model_fit = multistatemodel(h12, h23, h13; data=exact_data)
-    fitted = fit(model_fit; verbose=false, compute_vcov=true)
+    fitted = fit(model_fit; verbose=false, vcov_type=:ij)
     
     # Extract fitted parameters on natural scale
     p = get_parameters(fitted; scale=:natural)
@@ -141,7 +141,7 @@ end
     exact_data = generate_exact_data((h12, h23, h13), true_params; covariate_data=cov_data)
     
     model_fit = multistatemodel(h12, h23, h13; data=exact_data)
-    fitted = fit(model_fit; verbose=false, compute_vcov=true)
+    fitted = fit(model_fit; verbose=false, vcov_type=:ij)
     
     p = get_parameters(fitted; scale=:natural)
     p_est = get_parameters(fitted; scale=:estimation)
@@ -202,7 +202,7 @@ end
     exact_data = sim_result[1, 1]
     
     model_fit = multistatemodel(h12; data=exact_data)
-    fitted = fit(model_fit; verbose=false, compute_vcov=true)
+    fitted = fit(model_fit; verbose=false, vcov_type=:ij)
     
     p_est = get_parameters_flat(fitted)
     
@@ -242,7 +242,7 @@ end
     exact_data = generate_exact_data((h12, h13, h23), true_params)
     
     model_fit = multistatemodel(h12, h13, h23; data=exact_data)
-    fitted = fit(model_fit; verbose=false, compute_vcov=true)
+    fitted = fit(model_fit; verbose=false, vcov_type=:ij)
     
     p = get_parameters(fitted; scale=:natural)
     
@@ -291,7 +291,7 @@ end
     exact_data = sim_result[1, 1]
     
     model_fit = multistatemodel(h12; data=exact_data)
-    fitted = fit(model_fit; verbose=false, compute_vcov=true)
+    fitted = fit(model_fit; verbose=false, vcov_type=:ij)
     
     p_est = get_parameters_flat(fitted)
     
@@ -352,7 +352,7 @@ const N_SUBJECTS_GOMPERTZ = 50000
     
     model_fit = multistatemodel(h12, h13; data=exact_data)
     # Default Ipopt solver handles box constraints and is also second-order (interior point)
-    fitted = fit(model_fit; verbose=false, compute_vcov=true)
+    fitted = fit(model_fit; verbose=false, vcov_type=:ij)
     
     p = get_parameters(fitted; scale=:natural)
     
@@ -401,7 +401,7 @@ end
     
     model_fit = multistatemodel(h12; data=exact_data)
     # Default Ipopt solver handles box constraints and is also second-order
-    fitted = fit(model_fit; verbose=false, compute_vcov=true)
+    fitted = fit(model_fit; verbose=false, vcov_type=:ij)
     
     p_est = get_parameters_flat(fitted)
     

@@ -801,15 +801,26 @@ using LinearAlgebra
         h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
         
         # Panel data - larger dataset for stability
+        # MUST generate state-continuous data: statefrom[i+1] == stateto[i]
         n_subj = 50
-        dat = DataFrame(
-            id = repeat(1:n_subj, inner=3),
-            tstart = repeat([0.0, 1.0, 2.0], n_subj),
-            tstop = repeat([1.0, 2.0, 3.0], n_subj),
-            statefrom = repeat([1, 1, 1], n_subj),
-            stateto = vcat([[rand() < 0.3 ? 2 : 1, rand() < 0.5 ? 2 : 1, 2] for _ in 1:n_subj]...),
-            obstype = repeat([2, 2, 2], n_subj)
-        )
+        data_rows = Vector{NamedTuple{(:id, :tstart, :tstop, :statefrom, :stateto, :obstype), Tuple{Int, Float64, Float64, Int, Int, Int}}}()
+        
+        for subj in 1:n_subj
+            state = 1  # Start in state 1
+            for (t1, t2) in [(0.0, 1.0), (1.0, 2.0), (2.0, 3.0)]
+                statefrom = state
+                # In first two intervals, may transition; in last interval, always transition
+                if t1 < 2.0
+                    stateto = rand() < 0.3 ? 2 : state
+                else
+                    stateto = 2
+                end
+                push!(data_rows, (id=subj, tstart=t1, tstop=t2, statefrom=statefrom, stateto=stateto, obstype=2))
+                state = stateto  # Next interval starts where this one ends
+                state == 2 && break  # Absorbing state - no more intervals
+            end
+        end
+        dat = DataFrame(data_rows)
         
         model = multistatemodel(h12; data=dat)
         
@@ -835,7 +846,7 @@ using LinearAlgebra
         emat_ph = MultistateModels.build_phasetype_emat_expanded(model, surrogate)
         books = MultistateModels.build_tpm_mapping(model.data)
         absorbingstates = findall([isa(h, MultistateModels._TotalHazardAbsorbing) for h in model.totalhazards])
-        tpm_book_ph, hazmat_book_ph = MultistateModels.build_phasetype_tpm_book(surrogate, surrogate_fitted, books, model.data)
+        tpm_book_ph, hazmat_book_ph = MultistateModels.build_phasetype_tpm_book(surrogate, books, model.data)
         fbmats_ph = MultistateModels.build_fbmats_phasetype(model, surrogate)
         
         # Compute marginal likelihood under phase-type
@@ -884,10 +895,12 @@ using LinearAlgebra
         absorbingstates = [3]
         
         # Test 1: Path that stays in one observed state (phases 1→2→1)
+        # All phases map to observed state 1, so collapsed path shows survival in state 1
+        # MUST include final time for likelihood computation (survival/censoring probability)
         expanded = MultistateModels.SamplePath(1, [0.0, 0.5, 1.0], [1, 2, 1])
         collapsed = MultistateModels.collapse_phasetype_path(expanded, surrogate, absorbingstates)
-        @test collapsed.states == [1]  # All phases map to state 1
-        @test collapsed.times == [0.0]
+        @test collapsed.states == [1, 1]  # Start and end in state 1 (survival)
+        @test collapsed.times == [0.0, 1.0]  # Need endpoint time for likelihood
         
         # Test 2: Path with transition between observed states
         expanded = MultistateModels.SamplePath(1, [0.0, 0.5, 1.0, 1.5], [1, 2, 3, 5])
@@ -963,9 +976,6 @@ using LinearAlgebra
         
         model = multistatemodel(h12, h13, h23; data=dat)
         
-        # Fit Markov surrogate (needed for build_phasetype_tpm_book)
-        markov_surrogate = MultistateModels.fit_surrogate(model; verbose=false)
-        
         # Build phase-type
         tmat = model.tmat
         config = MultistateModels.PhaseTypeConfig(n_phases=Dict(1=>2, 2=>2))
@@ -974,7 +984,7 @@ using LinearAlgebra
         emat_ph = MultistateModels.build_phasetype_emat_expanded(model, surrogate)
         books = MultistateModels.build_tpm_mapping(model.data)
         absorbingstates = findall([isa(h, MultistateModels._TotalHazardAbsorbing) for h in model.totalhazards])
-        tpm_book_ph, hazmat_book_ph = MultistateModels.build_phasetype_tpm_book(surrogate, markov_surrogate, books, model.data)
+        tpm_book_ph, hazmat_book_ph = MultistateModels.build_phasetype_tpm_book(surrogate, books, model.data)
         fbmats_ph = MultistateModels.build_fbmats_phasetype(model, surrogate)
         
         # Sample paths and verify validity
@@ -1020,21 +1030,28 @@ using LinearAlgebra
         # Weibull model (semi-Markov)
         h12 = Hazard(@formula(0 ~ 1), "wei", 1, 2)
         
-        # Panel data
+        # Panel data - MUST generate state-continuous data
         n_subj = 30
-        dat = DataFrame(
-            id = repeat(1:n_subj, inner=2),
-            tstart = repeat([0.0, 1.0], n_subj),
-            tstop = repeat([1.0, 2.0], n_subj),
-            statefrom = repeat([1, 1], n_subj),
-            stateto = vcat([[rand() < 0.4 ? 2 : 1, 2] for _ in 1:n_subj]...),
-            obstype = repeat([2, 2], n_subj)
-        )
+        data_rows = Vector{NamedTuple{(:id, :tstart, :tstop, :statefrom, :stateto, :obstype), Tuple{Int, Float64, Float64, Int, Int, Int}}}()
+        
+        for subj in 1:n_subj
+            state = 1  # Start in state 1
+            for (t1, t2) in [(0.0, 1.0), (1.0, 2.0)]
+                statefrom = state
+                # May transition in first interval; always transition in second
+                if t1 < 1.0
+                    stateto = rand() < 0.4 ? 2 : state
+                else
+                    stateto = 2
+                end
+                push!(data_rows, (id=subj, tstart=t1, tstop=t2, statefrom=statefrom, stateto=stateto, obstype=2))
+                state = stateto
+                state == 2 && break  # Absorbing state
+            end
+        end
+        dat = DataFrame(data_rows)
         
         model = multistatemodel(h12; data=dat)
-        
-        # Fit Markov surrogate (needed for build_phasetype_tpm_book)
-        markov_surrogate = MultistateModels.fit_surrogate(model; verbose=false)
         
         # Build phase-type surrogate with 2 phases
         tmat = model.tmat
@@ -1044,7 +1061,7 @@ using LinearAlgebra
         emat_ph = MultistateModels.build_phasetype_emat_expanded(model, surrogate)
         books = MultistateModels.build_tpm_mapping(model.data)
         absorbingstates = findall([isa(h, MultistateModels._TotalHazardAbsorbing) for h in model.totalhazards])
-        tpm_book_ph, hazmat_book_ph = MultistateModels.build_phasetype_tpm_book(surrogate, markov_surrogate, books, model.data)
+        tpm_book_ph, hazmat_book_ph = MultistateModels.build_phasetype_tpm_book(surrogate, books, model.data)
         fbmats_ph = MultistateModels.build_fbmats_phasetype(model, surrogate)
         
         ll_marginal = MultistateModels.compute_phasetype_marginal_loglik(model, surrogate, emat_ph)
@@ -1086,7 +1103,10 @@ using LinearAlgebra
         total_rate = 1.5
         n_phases = 3
         
-        # Test :unstructured structure
+        # Test :unstructured structure (uniform τ=1 initialization for MCEM)
+        # Note: ":unstructured" provides a neutral initialization with uniform absorption
+        # rates (τ=1). The non-exponential behavior comes from the PHASE STRUCTURE itself.
+        # During optimization, rates are free parameters.
         @testset ":unstructured structure" begin
             ph = MultistateModels._build_coxian_from_rate(n_phases, total_rate; structure=:unstructured)
             
@@ -1096,16 +1116,16 @@ using LinearAlgebra
             
             # Get subintensity for checking transient rates
             S = MultistateModels.subintensity(ph)
-            
-            # For :unstructured, all rates are initialized uniformly
-            prog_rates = [S[i, i+1] for i in 1:n_phases-1]
             abs_rates = MultistateModels.absorption_rates(ph)
             
-            # All progression rates should be equal (uniform initialization)
-            @test all(prog_rates .≈ prog_rates[1])
+            # For :unstructured with τ=1, all phases have equal absorption rate = total_rate
+            @test all(abs_rates[1:n_phases-1] .≈ total_rate)
+            @test abs_rates[n_phases] ≈ total_rate
             
-            # All absorption rates should be equal (uniform initialization)
-            @test all(abs_rates .≈ abs_rates[1])
+            # Progression rates should be uniform and equal to n_phases * total_rate
+            prog_rates = [S[i, i+1] for i in 1:n_phases-1]
+            expected_prog = n_phases * total_rate
+            @test all(prog_rates .≈ expected_prog)
             
             # Diagonal should be negative for transient states
             @test all(diag(S) .< 0)
@@ -1114,7 +1134,10 @@ using LinearAlgebra
             @test all(ph.Q[end, :] .== 0)
         end
         
-        # Test :sctp structure (Stationary Conditional Transition Probability)
+        # Test :sctp structure (uniform τ=1 initialization for SCTP constraint)
+        # Note: SCTP requires τ_j = 1 for all phases (uniform absorption rates).
+        # The non-exponential behavior comes from the phase structure itself
+        # (phases 1 to n-1 can progress OR absorb; phase n absorbs only).
         @testset ":sctp structure" begin
             ph = MultistateModels._build_coxian_from_rate(n_phases, total_rate; structure=:sctp)
             
@@ -1124,16 +1147,18 @@ using LinearAlgebra
             
             # Get subintensity for checking transient rates
             S = MultistateModels.subintensity(ph)
-            
-            # Check structure: absorption rates proportional to progression rates
-            # For phases 1 to n-1: a_i = c * r_i where c is constant (SCTP property)
-            prog_rates = [S[i, i+1] for i in 1:n_phases-1]
             abs_rates = MultistateModels.absorption_rates(ph)
             
-            # For :sctp, intermediate absorption rates should be proportional to progression
-            # Compute ratios a_i / r_i for phases 1 to n-1
-            ratios = [abs_rates[i] / prog_rates[i] for i in 1:n_phases-1]
-            @test all(ratios .≈ ratios[1])  # All ratios should be equal (= c)
+            # For :sctp with τ=1, all phases have EQUAL absorption rate = total_rate
+            @test all(abs_rates .≈ total_rate)
+            
+            # All phases have positive absorption
+            @test all(abs_rates .> 0)
+            
+            # Progression rates should be uniform = n_phases * total_rate
+            prog_rates = [S[i, i+1] for i in 1:n_phases-1]
+            @test all(prog_rates .≈ prog_rates[1])
+            @test prog_rates[1] ≈ n_phases * total_rate
             
             # Diagonal should be negative
             @test all(diag(S) .< 0)
@@ -1339,7 +1364,7 @@ using LinearAlgebra
         model = multistatemodel(h12, h23; data=data, coxian_structure=:unstructured)
         
         # Fit the model
-        fitted = fit(model; verbose=false, compute_vcov=false)
+        fitted = fit(model; verbose=false, vcov_type=:none)
         
         # Check return type - now returns MultistateModelFitted
         @test fitted isa MultistateModels.MultistateModelFitted
@@ -1378,6 +1403,7 @@ using LinearAlgebra
     @testset "Fitting with Variance-Covariance" begin
         # Larger dataset for stable vcov - use panel data (obstype=2)
         # Panel data produces more stable estimates than exact data for phase-type
+        Random.seed!(54321)  # Reproducibility
         n_large = 200
         data_rows_large = []
         for i in 1:n_large
@@ -1388,13 +1414,13 @@ using LinearAlgebra
         end
         data_large = DataFrame(data_rows_large)
         
-        # Use :sctp structure since crude initialization may violate eigenvalue ordering
+        # Use :unstructured to avoid ordering constraints that crude initialization may violate
         h12 = Hazard(@formula(0 ~ 1), "pt", 1, 2; n_phases=2)
         h23 = Hazard(@formula(0 ~ 1), "exp", 2, 3)
         
         # coxian_structure must be passed to multistatemodel(), not just Hazard()
-        model = multistatemodel(h12, h23; data=data_large, coxian_structure=:sctp)
-        fitted = fit(model; verbose=false, compute_vcov=true, compute_ij_vcov=false)
+        model = multistatemodel(h12, h23; data=data_large, coxian_structure=:unstructured)
+        fitted = fit(model; verbose=false, vcov_type=:model)
         
         # Check vcov is returned
         vcov = get_vcov(fitted)
@@ -1415,7 +1441,7 @@ using LinearAlgebra
         
         # coxian_structure must be passed to multistatemodel(), not just Hazard()
         model = multistatemodel(h12, h23; data=data, coxian_structure=:sctp)
-        fitted = fit(model; verbose=false, compute_vcov=false)
+        fitted = fit(model; verbose=false, vcov_type=:none)
         
         # The fitted model IS the expanded model now (no wrapper)
         @test fitted isa MultistateModels.MultistateModelFitted
@@ -1446,7 +1472,7 @@ using LinearAlgebra
         
         # coxian_structure must be passed to multistatemodel(), not just Hazard()
         model = multistatemodel(h12, h23; data=data, coxian_structure=:sctp)
-        fitted = fit(model; verbose=false, compute_vcov=false)
+        fitted = fit(model; verbose=false, vcov_type=:none)
         
         # Get user-facing parameters
         params = get_parameters(fitted)
@@ -1768,14 +1794,24 @@ end
         
         cons = model.modelcall.constraints
         
-        # For 3 phases and 2 destinations, expect (3-1) * (2-1) = 2 constraints
-        @test length(cons.cons) == 2
-        @test length(cons.lcons) == 2
-        @test length(cons.ucons) == 2
+        # For 3 phases and 2 destinations:
+        # - SCTP constraints: (n_phases - 1) * (n_destinations - 1) = 2 * 1 = 2
+        # - Ordering constraints: (n_phases - 1) = 2
+        # Total: 4 constraints
+        @test length(cons.cons) == 4
+        @test length(cons.lcons) == 4
+        @test length(cons.ucons) == 4
         
-        # All constraints should be equality (lcons = ucons = 0)
-        @test all(cons.lcons .== 0.0)
+        # All upper bounds should be 0
         @test all(cons.ucons .== 0.0)
+        
+        # 2 SCTP constraints should be equality (lcons = ucons = 0)
+        n_equality = sum(cons.lcons .== 0.0)
+        @test n_equality == 2
+        
+        # 2 ordering constraints should be inequality (lcons = -Inf, ucons = 0)
+        n_inequality = sum(cons.lcons .== -Inf)
+        @test n_inequality == 2
     end
     
     @testset "No SCTP constraints for unstructured" begin
@@ -1912,13 +1948,12 @@ end
 end
 
 # =============================================================================
-# Eigenvalue Ordering Constraint Tests (:eigorder_sctp)
+# Eigenvalue Ordering Constraint Tests
 # =============================================================================
-# These tests verify the :sctp_decreasing constraint option that combines
-# SCTP constraints with eigenvalue ordering (ν₁ ≥ ν₂ ≥ ... ≥ νₙ) for identifiability.
-# Note: :eigorder_sctp was planned but not implemented - using :sctp_decreasing instead.
+# These tests verify that :sctp constraint option combines SCTP constraints with
+# eigenvalue ordering (ν₁ ≤ ν₂ ≤ ... ≤ νₙ) for identifiability.
 
-@testset "Eigenvalue Ordering Constraints (:sctp_decreasing)" begin
+@testset "Eigenvalue Ordering Constraints (:sctp)" begin
     
     @testset "Default coxian_structure is :sctp" begin
         # Create simple test data
@@ -1937,12 +1972,12 @@ end
         # Default (no coxian_structure specified) should use :sctp
         model = multistatemodel(h12, h13; data=df, n_phases=Dict(1 => 3))
         
-        # Should have constraints (SCTP constraints)
+        # Should have constraints (SCTP + eigenvalue ordering constraints)
         @test haskey(model.modelcall, :constraints)
         @test !isnothing(model.modelcall.constraints)
     end
     
-    @testset ":sctp_decreasing generates SCTP + eigenvalue ordering constraints" begin
+    @testset ":sctp generates SCTP + eigenvalue ordering constraints" begin
         # Create test data with 2 destinations (required for SCTP)
         df = DataFrame(
             id = 1:6,
@@ -1956,77 +1991,24 @@ end
         h12 = Hazard(@formula(0 ~ 1), "pt", 1, 2)
         h13 = Hazard(@formula(0 ~ 1), "pt", 1, 3)
         
-        # Build model with explicit :sctp_decreasing
-        model = multistatemodel(h12, h13; data=df, n_phases=Dict(1 => 3), coxian_structure=:sctp_decreasing)
+        # Build model with explicit :sctp
+        model = multistatemodel(h12, h13; data=df, n_phases=Dict(1 => 3), coxian_structure=:sctp)
         
         cons = model.modelcall.constraints
         
         # For 3 phases, 2 destinations (intercept-only models - no C1 constraints):
         # - SCTP constraints: (n_phases - 1) * (n_dest - 1) = 2 * 1 = 2 (equality: lcons = ucons = 0)
-        # - Eigenvalue ordering: (n_phases - 1) = 2 (νⱼ - ν_{j-1} ≤ 0: lcons = -Inf, ucons = 0)
+        # - Eigenvalue ordering: (n_phases - 1) = 2 (ν_{j-1} - νⱼ ≤ 0: lcons = -Inf, ucons = 0)
         # Total: 2 + 2 = 4
         @test length(cons.cons) == 4
         
         # SCTP constraints are equality (lcons = ucons = 0)
         # Eigenvalue ordering are one-sided inequality (lcons = -Inf, ucons = 0)
-        n_equality = count(cons.lcons .== cons.ucons)  # SCTP
-        n_onesided = count(cons.lcons .== -Inf)  # Ordering constraints
+        n_equality = count(cons.lcons .== cons.ucons)  # SCTP (both lcons=0 and ucons=0)
+        n_onesided = count(cons.lcons .== -Inf)  # Ordering constraints (lcons=-Inf, ucons=0)
         
         @test n_equality == 2  # 2 SCTP constraints
         @test n_onesided == 2  # 2 eigenvalue ordering constraints
-    end
-    
-    @testset ":sctp_increasing is implemented (alias test removed)" begin
-        # Note: :ordered_sctp was planned but not implemented
-        # :sctp_increasing and :sctp_decreasing are the implemented options
-        df = DataFrame(
-            id = 1:6,
-            tstart = fill(0.0, 6),
-            tstop = [1.0, 1.5, 2.0, 1.2, 1.8, 2.2],
-            statefrom = fill(1, 6),
-            stateto = [2, 2, 2, 3, 3, 3],
-            obstype = fill(1, 6)
-        )
-        
-        h12 = Hazard(@formula(0 ~ 1), "pt", 1, 2)
-        h13 = Hazard(@formula(0 ~ 1), "pt", 1, 3)
-        
-        # Both should produce similar constraint structure
-        model_decreasing = multistatemodel(h12, h13; data=df, n_phases=Dict(1 => 3), coxian_structure=:sctp_decreasing)
-        model_increasing = multistatemodel(h12, h13; data=df, n_phases=Dict(1 => 3), coxian_structure=:sctp_increasing)
-        
-        cons_dec = model_decreasing.modelcall.constraints
-        cons_inc = model_increasing.modelcall.constraints
-        
-        # Same number of constraints (differ in direction)
-        @test length(cons_dec.cons) == length(cons_inc.cons)
-    end
-    
-    @testset ":sctp generates only SCTP constraints (no eigenvalue ordering)" begin
-        df = DataFrame(
-            id = 1:6,
-            tstart = fill(0.0, 6),
-            tstop = [1.0, 1.5, 2.0, 1.2, 1.8, 2.2],
-            statefrom = fill(1, 6),
-            stateto = [2, 2, 2, 3, 3, 3],
-            obstype = fill(1, 6)
-        )
-        
-        h12 = Hazard(@formula(0 ~ 1), "pt", 1, 2)
-        h13 = Hazard(@formula(0 ~ 1), "pt", 1, 3)
-        
-        # Build model with explicit :sctp (no eigenvalue ordering)
-        model = multistatemodel(h12, h13; data=df, n_phases=Dict(1 => 3), coxian_structure=:sctp)
-        
-        cons = model.modelcall.constraints
-        
-        # For 3 phases, 2 destinations:
-        # - SCTP constraints only: (n_phases - 1) * (n_dest - 1) = 2
-        @test length(cons.cons) == 2
-        
-        # All SCTP constraints should be equality
-        @test all(cons.lcons .== 0.0)
-        @test all(cons.ucons .== 0.0)
     end
     
     @testset ":unstructured generates no constraints" begin
@@ -2051,7 +2033,7 @@ end
         end
     end
     
-    @testset "Single destination with :sctp_decreasing generates only ordering constraints" begin
+    @testset "Single destination with :sctp generates only ordering constraints" begin
         # With only 1 destination, SCTP constraints don't apply
         # But eigenvalue ordering should still be generated
         df = DataFrame(
@@ -2065,17 +2047,17 @@ end
         
         h12 = Hazard(@formula(0 ~ 1), "pt", 1, 2)
         
-        # Build model with sctp_decreasing but only 1 destination
-        model = multistatemodel(h12; data=df, n_phases=Dict(1 => 3), coxian_structure=:sctp_decreasing)
+        # Build model with :sctp but only 1 destination
+        model = multistatemodel(h12; data=df, n_phases=Dict(1 => 3), coxian_structure=:sctp)
         
         cons = model.modelcall.constraints
         
         # No SCTP constraints (need ≥2 destinations)
-        # Eigenvalue ordering: (n_phases - 1) = 2 constraints (νⱼ - ν_{j-1} ≤ 0)
+        # Eigenvalue ordering: (n_phases - 1) = 2 constraints (ν_{j-1} - νⱼ ≤ 0 for increasing order)
         # No C1 constraints (intercept-only model)
         @test length(cons.cons) == 2
         
-        # All should be one-sided inequality constraints (lcons = -Inf, ucons = 0)
+        # All should be one-sided inequality constraints (lcons = -Inf, ucons = 0 for ≤ constraints)
         @test all(cons.lcons .== -Inf)
         @test all(cons.ucons .== 0.0)
     end
@@ -2094,6 +2076,304 @@ end
         
         # Should throw error for invalid option
         @test_throws ArgumentError multistatemodel(h12; data=df, n_phases=Dict(1 => 3), coxian_structure=:invalid)
+    end
+end
+
+# =============================================================================
+# REGRESSION TESTS: Phase-Type Path Likelihood Bug Fixes (2026-01-17)
+# =============================================================================
+#
+# These tests prevent regression of three critical bugs discovered in phase-type
+# MCEM path sampling and likelihood computation. The bugs caused 50-70% divergence
+# between Markov and PhaseType proposal estimates.
+#
+# Bug 1: collapse_phasetype_path missing final endpoint for survival/censoring paths
+# Bug 2: _draw_samplepath_phasetype_original using wrong endpoint check
+# Bug 3: loglik_expanded_path treating pseudo-transitions (same state) as real transitions
+#
+# After fixes, Markov vs PhaseType proposal agreement improved to ≤8.5% for
+# spline hazards and 0% (exact match) for exponential hazards with n_phases=1.
+# =============================================================================
+
+@testset "PhaseType Path Likelihood Regression Tests" begin
+    
+    # -------------------------------------------------------------------------
+    # Item #31: Pseudo-Transition Unit Test (HIGH PRIORITY)
+    # 
+    # Rationale: Paths can have same state at consecutive time points (observation
+    # times in panel data). Must return finite likelihood.
+    #
+    # Bug Being Tested: loglik_expanded_path was computing log(Q[i,i]) for 
+    # pseudo-transitions where state_from == state_to, returning -Inf because
+    # diagonal elements of Q are negative (rates out of state).
+    # -------------------------------------------------------------------------
+    @testset "loglik_expanded_path pseudo-transitions (Bug #3 fix)" begin
+        # Create surrogate with known Q matrix
+        tmat = [0 1 0; 0 0 1; 0 0 0]
+        config = MultistateModels.PhaseTypeConfig(n_phases=1)
+        surrogate = MultistateModels.build_phasetype_surrogate(tmat, config)
+        
+        # Set Q matrix manually for precise control
+        # Q = [-1  1  0]
+        #     [ 0 -2  2]
+        #     [ 0  0  0]
+        Q = [-1.0 1.0 0.0; 0.0 -2.0 2.0; 0.0 0.0 0.0]
+        surrogate.expanded_Q .= Q
+        
+        # Path with pseudo-transition: state 1 at t=0, state 1 at t=0.5 (no actual jump)
+        # This occurs when observation times are recorded in the path (panel data)
+        path_pseudo = MultistateModels.SamplePath(1, [0.0, 0.5, 1.0], [1, 1, 2])
+        ll_pseudo = MultistateModels.loglik_expanded_path(path_pseudo, surrogate)
+        
+        # REGRESSION TEST: Should be finite (was -Inf before fix because log(0) from Q[1,1])
+        @test isfinite(ll_pseudo)
+        
+        # Manual calculation:
+        # Interval 1: state 1 for 0.5, NO transition (pseudo)
+        #   survival: exp(-1 * 0.5) → log = -0.5
+        #   transition: SKIP (same state - the bug fix)
+        # Interval 2: state 1 for 0.5, then transition to 2
+        #   survival: exp(-1 * 0.5) → log = -0.5
+        #   transition: log(1) = 0
+        # Total: -0.5 + 0 - 0.5 + 0 = -1.0
+        @test ll_pseudo ≈ -1.0 atol=1e-10
+        
+        # Additional test: multiple pseudo-transitions in a row
+        path_multi_pseudo = MultistateModels.SamplePath(1, [0.0, 0.25, 0.5, 0.75, 1.0], [1, 1, 1, 1, 2])
+        ll_multi = MultistateModels.loglik_expanded_path(path_multi_pseudo, surrogate)
+        @test isfinite(ll_multi)
+        # Same total time in state 1 (1.0), same transition
+        # Survival: exp(-1 * 1.0) = exp(-1) → log = -1.0
+        # Transition: log(1) = 0
+        @test ll_multi ≈ -1.0 atol=1e-10
+        
+        # Test: actual transition should still include log(rate)
+        path_real = MultistateModels.SamplePath(1, [0.0, 0.5], [1, 2])
+        ll_real = MultistateModels.loglik_expanded_path(path_real, surrogate)
+        # Survival: exp(-1 * 0.5) → log = -0.5
+        # Transition: log(1) = 0
+        @test ll_real ≈ -0.5 atol=1e-10
+    end
+    
+    # -------------------------------------------------------------------------
+    # Item #32: Survival Path Unit Test (HIGH PRIORITY)
+    #
+    # Rationale: Subject who survives entire observation period without 
+    # transitioning must have valid collapsed path with endpoint for likelihood.
+    #
+    # Bug Being Tested: collapse_phasetype_path wasn't recording the final time
+    # for paths where the subject stays in the same observed state. This caused
+    # the collapsed path to have no duration information, yielding incorrect
+    # likelihood = 0 (exp(0) = 1 instead of survival probability < 1).
+    # -------------------------------------------------------------------------
+    @testset "collapse_phasetype_path survival paths (Bug #1 fix)" begin
+        tmat = [0 1 0; 0 0 1; 0 0 0]
+        config = MultistateModels.PhaseTypeConfig(n_phases=Dict(1=>3, 2=>2))
+        surrogate = MultistateModels.build_phasetype_surrogate(tmat, config)
+        absorbingstates = [3]
+        
+        # Path cycles through phases of observed state 1 but never transitions to state 2
+        # Phases 1, 2, 3 all map to observed state 1
+        expanded = MultistateModels.SamplePath(1, [0.0, 0.3, 0.7, 1.0], [1, 2, 3, 2])
+        collapsed = MultistateModels.collapse_phasetype_path(expanded, surrogate, absorbingstates)
+        
+        # REGRESSION TEST: MUST include endpoint for survival likelihood computation
+        @test collapsed.times == [0.0, 1.0]
+        @test collapsed.states == [1, 1]
+        
+        # Path that starts and ends in same observed state without any jumps
+        expanded_static = MultistateModels.SamplePath(1, [0.0, 2.0], [1, 1])
+        collapsed_static = MultistateModels.collapse_phasetype_path(expanded_static, surrogate, absorbingstates)
+        
+        @test collapsed_static.times == [0.0, 2.0]
+        @test collapsed_static.states == [1, 1]
+        
+        # Path with longer duration - survival in state 1 for 4 time units
+        expanded_long = MultistateModels.SamplePath(1, [0.0, 1.0, 2.0, 3.0, 4.0], [1, 2, 3, 2, 1])
+        collapsed_long = MultistateModels.collapse_phasetype_path(expanded_long, surrogate, absorbingstates)
+        
+        @test collapsed_long.times == [0.0, 4.0]
+        @test collapsed_long.states == [1, 1]
+        
+        # Verify that paths with actual transitions still work correctly
+        expanded_with_trans = MultistateModels.SamplePath(1, [0.0, 0.5, 1.0, 1.5], [1, 2, 4, 6])
+        # Phase 4 maps to state 2, phase 6 maps to state 3 (absorbing)
+        collapsed_trans = MultistateModels.collapse_phasetype_path(expanded_with_trans, surrogate, absorbingstates)
+        
+        @test collapsed_trans.states == [1, 2, 3]
+        @test collapsed_trans.times == [0.0, 1.0, 1.5]
+    end
+    
+    # -------------------------------------------------------------------------
+    # Item #30: MCEM Proposal Equivalence Unit Test (CRITICAL PRIORITY)
+    #
+    # Rationale: Exponential hazards with n_phases=1 in PhaseType are 
+    # mathematically equivalent to Markov. When target = proposal (Markov MLE),
+    # importance sampling weights should be EXACTLY 1.0.
+    #
+    # This test would have caught all three bugs because:
+    # - Bug 1 caused missing endpoints → wrong likelihood
+    # - Bug 2 caused wrong endpoint times → wrong likelihood  
+    # - Bug 3 caused -Inf for pseudo-transitions → weight = 0
+    #
+    # With bugs present, weights diverged significantly from 1.0.
+    # -------------------------------------------------------------------------
+    @testset "MCEM Proposal Equivalence (exponential n_phases=1 = Markov)" begin
+        Random.seed!(20260117)  # Reproducible
+        
+        # Simple 2-state model with exponential hazard (Markov)
+        h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
+        
+        # Panel data - need multiple subjects for stability
+        # MUST generate state-continuous data: statefrom[i+1] == stateto[i]
+        n_subj = 30
+        data_rows = Vector{NamedTuple{(:id, :tstart, :tstop, :statefrom, :stateto, :obstype), Tuple{Int, Float64, Float64, Int, Int, Int}}}()
+        
+        for subj in 1:n_subj
+            state = 1  # Start in state 1
+            for (t1, t2) in [(0.0, 1.0), (1.0, 2.0), (2.0, 3.0)]
+                statefrom = state
+                # In first two intervals, may transition; in last interval, always transition
+                if t1 < 2.0
+                    stateto = rand() < 0.3 ? 2 : state
+                else
+                    stateto = 2
+                end
+                push!(data_rows, (id=subj, tstart=t1, tstop=t2, statefrom=statefrom, stateto=stateto, obstype=2))
+                state = stateto  # Next interval starts where this one ends
+                state == 2 && break  # Absorbing state - no more intervals
+            end
+        end
+        dat = DataFrame(data_rows)
+        
+        model = multistatemodel(h12; data=dat)
+        
+        # Fit Markov surrogate to get MLE
+        surrogate_fitted = MultistateModels.fit_surrogate(model; verbose=false)
+        
+        # Set target parameters to EXACTLY match Markov surrogate MLE
+        # This makes target ≡ proposal for 1-phase PhaseType
+        MultistateModels.set_parameters!(model, [collect(surrogate_fitted.parameters[1])])
+        
+        # Build phase-type with 1 phase (mathematically equivalent to Markov/exponential)
+        tmat = model.tmat
+        phasetype_config = MultistateModels.PhaseTypeConfig(n_phases=1)
+        surrogate = MultistateModels.build_phasetype_surrogate(tmat, phasetype_config)
+        
+        # Update phase-type Q matrix to match fitted Markov surrogate
+        markov_rate = surrogate_fitted.parameters.flat[1]  # Natural scale
+        surrogate.expanded_Q[1, 1] = -markov_rate
+        surrogate.expanded_Q[1, 2] = markov_rate
+        
+        # Build FFBS infrastructure
+        emat_ph = MultistateModels.build_phasetype_emat_expanded(model, surrogate)
+        books = MultistateModels.build_tpm_mapping(model.data)
+        absorbingstates = findall([isa(h, MultistateModels._TotalHazardAbsorbing) for h in model.totalhazards])
+        tpm_book_ph, hazmat_book_ph = MultistateModels.build_phasetype_tpm_book(surrogate, books, model.data)
+        fbmats_ph = MultistateModels.build_fbmats_phasetype(model, surrogate)
+        
+        # Sample paths and compute importance weights
+        n_paths = 100
+        log_weights = Float64[]
+        
+        for _ in 1:n_paths
+            path_result = MultistateModels.draw_samplepath_phasetype(
+                1, model, tpm_book_ph, hazmat_book_ph, books[2],
+                fbmats_ph, emat_ph, surrogate, absorbingstates)
+            
+            params = MultistateModels.get_hazard_params(model.parameters, model.hazards)
+            ll_target = MultistateModels.loglik(params, path_result.collapsed, model.hazards, model)
+            ll_surrog = MultistateModels.loglik_expanded_path(path_result.expanded, surrogate)
+            push!(log_weights, ll_target - ll_surrog)
+        end
+        
+        weights = exp.(log_weights)
+        mean_weight = mean(weights)
+        
+        # REGRESSION TEST: When target ≡ proposal, weights MUST be exactly 1.0
+        # This is an algebraic identity, not a statistical property.
+        # log_weight = ll_target - ll_proposal = 0 when target ≡ proposal
+        # Therefore weight = exp(0) = 1.0 exactly.
+        #
+        # With the three bugs present, this test would have FAILED because:
+        # - Missing endpoints caused ll_target ≠ ll_proposal
+        # - Pseudo-transition -Inf caused some weights = 0
+        
+        # Allow small numerical tolerance for floating point
+        # All IS weights should be 1.0 when target = proposal
+        @test all(w -> isapprox(w, 1.0; atol=1e-8), weights)
+        # Mean weight should be exactly 1.0
+        @test mean_weight ≈ 1.0 atol=1e-8
+    end
+    
+    # -------------------------------------------------------------------------
+    # Item #33: Data Continuity Validation Helper Test
+    #
+    # Rationale: Manual test data creation caused bugs. validate_data_continuity
+    # catches state discontinuities that would otherwise cause cryptic failures.
+    # -------------------------------------------------------------------------
+    @testset "validate_data_continuity" begin
+        # Valid data: statefrom[i+1] == stateto[i]
+        df_valid = DataFrame(
+            id = [1, 1, 1],
+            tstart = [0.0, 1.0, 2.0],
+            tstop = [1.0, 2.0, 3.0],
+            statefrom = [1, 1, 2],
+            stateto = [1, 2, 3],
+            obstype = [2, 2, 1]
+        )
+        @test MultistateModels.validate_data_continuity(df_valid) == true
+        
+        # Valid data with multiple subjects
+        df_multi = DataFrame(
+            id = [1, 1, 2, 2],
+            tstart = [0.0, 1.0, 0.0, 1.0],
+            tstop = [1.0, 2.0, 1.0, 2.0],
+            statefrom = [1, 1, 1, 2],
+            stateto = [1, 2, 2, 3],
+            obstype = [2, 1, 1, 1]
+        )
+        @test MultistateModels.validate_data_continuity(df_multi) == true
+        
+        # Invalid data: state discontinuity
+        df_invalid = DataFrame(
+            id = [1, 1],
+            tstart = [0.0, 1.0],
+            tstop = [1.0, 2.0],
+            statefrom = [1, 2],  # BUG: should be [1, 1] since stateto[1] = 1
+            stateto = [1, 3],
+            obstype = [2, 1]
+        )
+        @test_throws ArgumentError MultistateModels.validate_data_continuity(df_invalid)
+        
+        # Check error message contains useful info
+        try
+            MultistateModels.validate_data_continuity(df_invalid)
+        catch e
+            @test e isa ArgumentError
+            @test occursin("discontinuity", lowercase(e.msg))
+            @test occursin("subject", lowercase(e.msg))
+        end
+        
+        # Valid data: censored observation (stateto=0) shouldn't cause error
+        df_censored = DataFrame(
+            id = [1, 1],
+            tstart = [0.0, 1.0],
+            tstop = [1.0, 2.0],
+            statefrom = [1, 1],  # Can start anywhere after censoring
+            stateto = [0, 2],    # First interval censored
+            obstype = [3, 1]
+        )
+        @test MultistateModels.validate_data_continuity(df_censored) == true
+        
+        # Missing required column
+        df_missing_col = DataFrame(
+            id = [1],
+            tstart = [0.0],
+            tstop = [1.0]
+            # Missing statefrom, stateto
+        )
+        @test_throws ArgumentError MultistateModels.validate_data_continuity(df_missing_col)
     end
 end
 

@@ -453,7 +453,7 @@ end
         set_parameters!(model, (h12 = [1.25], h21 = [1.25]))
         
         # Fit with constraints
-        fitted = fit(model; constraints=cons, verbose=false, compute_vcov=true)
+        fitted = fit(model; constraints=cons, verbose=false, vcov_type=:ij)
         
         # Item #27: Variance SHOULD be computed even with constraints (reduced Hessian approach)
         vcov = get_vcov(fitted; type=:model)

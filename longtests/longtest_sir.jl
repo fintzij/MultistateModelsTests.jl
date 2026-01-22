@@ -184,9 +184,9 @@ function fit_sir_model(data::DataFrame;
             maxiter = SIR_MCEM_MAX_ITER,
             tol = SIR_MCEM_TOL,
             verbose = verbose,
-            compute_vcov = true,
-            compute_ij_vcov = false,
-            compute_jk_vcov = false,
+            vcov_type = :ij,
+            
+            
             return_convergence_records = true
         )
         result.runtime_seconds = time() - start_time

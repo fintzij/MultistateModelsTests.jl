@@ -57,7 +57,7 @@ using LinearAlgebra
     )
     
     # Set up surrogate
-    set_surrogate!(model)
+    initialize_surrogate!(model)
     
     nsubj = length(unique(data.id))
     
@@ -73,8 +73,7 @@ using LinearAlgebra
         maxiter = 3,  # Just a few iterations to get paths
         verbose = false,
         return_proposed_paths = true,
-        compute_vcov = false,
-        compute_ij_vcov = false
+        vcov_type = :none
     )
     
     # Extract paths and weights from fitted model

@@ -59,9 +59,10 @@ import Distributions
     
     h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
     model = multistatemodel(h12; data=dat)
-    fitted = fit(model; verbose=false, compute_vcov=true)
+    # Fit with model-based variance for analytical comparison
+    fitted = fit(model; verbose=false, vcov_type=:model)
     
-    vcov_model = get_vcov(fitted; type=:model)
+    vcov_model = get_vcov(fitted)
     params = get_parameters(fitted; scale=:natural)
     λ_hat = params.h12[1]
     
@@ -114,10 +115,14 @@ end
         
         h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
         model = multistatemodel(h12; data=dat)
-        fitted = fit(model; verbose=false, compute_vcov=true, compute_ij_vcov=true)
         
-        vcov_model = get_vcov(fitted; type=:model)
-        vcov_ij = get_vcov(fitted; type=:ij)
+        # Fit with model-based variance
+        fitted_model = fit(model; verbose=false, vcov_type=:model)
+        vcov_model = get_vcov(fitted_model)
+        
+        # Fit with IJ variance (same model, different fit)
+        fitted_ij = fit(model; verbose=false, vcov_type=:ij)
+        vcov_ij = get_vcov(fitted_ij)
         
         # For 1×1 matrix, eigenvalue = the single element
         eig_model = eigvals(Symmetric(vcov_model))[1]
@@ -127,7 +132,7 @@ end
         @test eig_ij ≈ vcov_ij[1, 1] atol=1e-12
         
         # Analytical: Var(λ̂) = λ̂²/n at the MLE
-        λ_hat = get_parameters(fitted; scale=:natural).h12[1]
+        λ_hat = get_parameters(fitted_model; scale=:natural).h12[1]
         expected_var = λ_hat^2 / n_subj
         
         @test isapprox(vcov_model[1, 1], expected_var; rtol=0.01)
@@ -155,10 +160,14 @@ end
         simdat = sim_result[1, 1]
         
         model_fit = multistatemodel(h12; data=simdat)
-        fitted = fit(model_fit; verbose=false, compute_vcov=true, compute_ij_vcov=true)
         
-        vcov_model = get_vcov(fitted; type=:model)
-        vcov_ij = get_vcov(fitted; type=:ij)
+        # Fit with model-based variance
+        fitted_model = fit(model_fit; verbose=false, vcov_type=:model)
+        vcov_model = get_vcov(fitted_model)
+        
+        # Fit with IJ variance
+        fitted_ij = fit(model_fit; verbose=false, vcov_type=:ij)
+        vcov_ij = get_vcov(fitted_ij)
         
         # Symmetry is structural (must hold exactly)
         @test vcov_model ≈ vcov_model' atol=1e-12
@@ -178,7 +187,7 @@ end
         @test sum(eig_ij) ≈ tr(vcov_ij) rtol=1e-10
         
         # Dimensions match number of parameters
-        n_params = length(get_parameters(fitted; scale=:flat))
+        n_params = length(get_parameters(fitted_model; scale=:flat))
         @test n_params == 2
         @test size(vcov_model) == (n_params, n_params)
         @test size(vcov_ij) == (n_params, n_params)
@@ -199,22 +208,27 @@ end
             obstype = ones(Int, 5)
         )
         model = multistatemodel(h12; data=dat)
-        fitted = fit(model; verbose=false, compute_vcov=true, compute_ij_vcov=true, compute_jk_vcov=true)
         
-        # All three variance types should be available
-        vcov_model = get_vcov(fitted; type=:model)
-        vcov_ij = get_vcov(fitted; type=:ij)
-        vcov_jk = get_vcov(fitted; type=:jk)
+        # Fit with each variance type and verify
+        fitted_model = fit(model; verbose=false, vcov_type=:model)
+        fitted_ij = fit(model; verbose=false, vcov_type=:ij)
+        fitted_jk = fit(model; verbose=false, vcov_type=:jk)
         
-        @test !isnothing(vcov_model)
-        @test !isnothing(vcov_ij)
-        @test !isnothing(vcov_jk)
+        # All should have computed vcov
+        @test !isnothing(get_vcov(fitted_model))
+        @test !isnothing(get_vcov(fitted_ij))
+        @test !isnothing(get_vcov(fitted_jk))
+        
+        # vcov_type should be set correctly
+        @test fitted_model.vcov_type == :model
+        @test fitted_ij.vcov_type == :ij
+        @test fitted_jk.vcov_type == :jk
         
         # All should have same dimensions
-        @test size(vcov_model) == size(vcov_ij) == size(vcov_jk)
+        @test size(get_vcov(fitted_model)) == size(get_vcov(fitted_ij)) == size(get_vcov(fitted_jk))
         
         # All should be square with size = number of parameters
-        @test size(vcov_model, 1) == size(vcov_model, 2)
+        @test size(get_vcov(fitted_model), 1) == size(get_vcov(fitted_model), 2)
     end
     
     @testset "returns nothing when variance not computed" begin
@@ -229,15 +243,14 @@ end
         )
         model = multistatemodel(h12; data=dat)
         
-        # Fit without IJ/JK variance
-        fitted = fit(model; verbose=false, compute_vcov=true, compute_ij_vcov=false, compute_jk_vcov=false)
+        # Fit without variance computation
+        fitted = fit(model; verbose=false, vcov_type=:none)
         
-        @test !isnothing(get_vcov(fitted; type=:model))
+        @test fitted.vcov_type == :none
         
         # Suppress warnings about missing variance matrices
         with_logger(NullLogger()) do
-            @test isnothing(get_vcov(fitted; type=:ij))
-            @test isnothing(get_vcov(fitted; type=:jk))
+            @test isnothing(get_vcov(fitted))
         end
     end
 end
@@ -264,10 +277,14 @@ end
     simdat = sim_result[1, 1]
     
     model_fit = multistatemodel(h12; data=simdat)
-    fitted = fit(model_fit; verbose=false, compute_vcov=true, compute_ij_vcov=true, compute_jk_vcov=true)
     
-    vcov_ij = get_vcov(fitted; type=:ij)
-    vcov_jk = get_vcov(fitted; type=:jk)
+    # Fit with IJ variance
+    fitted_ij = fit(model_fit; verbose=false, vcov_type=:ij)
+    vcov_ij = get_vcov(fitted_ij)
+    
+    # Fit with JK variance
+    fitted_jk = fit(model_fit; verbose=false, vcov_type=:jk)
+    vcov_jk = get_vcov(fitted_jk)
     
     # Relationship should hold exactly (algebraic identity)
     n = n_subj
@@ -297,11 +314,15 @@ end
     simdat = sim_result[1, 1]
     
     model_fit = multistatemodel(h12; data=simdat)
-    fitted = fit(model_fit; verbose=false, compute_vcov=true, compute_ij_vcov=true, compute_jk_vcov=true)
     
-    vcov_model = get_vcov(fitted; type=:model)
-    vcov_ij = get_vcov(fitted; type=:ij)
-    vcov_jk = get_vcov(fitted; type=:jk)
+    # Fit with each variance type
+    fitted_model = fit(model_fit; verbose=false, vcov_type=:model)
+    fitted_ij = fit(model_fit; verbose=false, vcov_type=:ij)
+    fitted_jk = fit(model_fit; verbose=false, vcov_type=:jk)
+    
+    vcov_model = get_vcov(fitted_model)
+    vcov_ij = get_vcov(fitted_ij)
+    vcov_jk = get_vcov(fitted_jk)
     
     # Check positive semi-definiteness (eigenvalues >= 0 with tolerance for numerical errors)
     @test isposdef(Symmetric(vcov_model + sqrt(eps()) * I))
@@ -333,10 +354,13 @@ end
     simdat = sim_result[1]
     
     model_fit = multistatemodel(h12, h23; data=simdat)
-    fitted = fit(model_fit; verbose=false, compute_vcov=true, compute_ij_vcov=true)
     
-    vcov_model = get_vcov(fitted; type=:model)
-    vcov_ij = get_vcov(fitted; type=:ij)
+    # Fit with model-based and IJ variance
+    fitted_model = fit(model_fit; verbose=false, vcov_type=:model)
+    fitted_ij = fit(model_fit; verbose=false, vcov_type=:ij)
+    
+    vcov_model = get_vcov(fitted_model)
+    vcov_ij = get_vcov(fitted_ij)
     
     @test !isnothing(vcov_model)
     @test !isnothing(vcov_ij)

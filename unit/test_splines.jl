@@ -757,10 +757,13 @@ import StatsModels: apply_schema, coefnames, modelcols, termvars
             knots = calibrate_splines(model; nknots=3)
             @test length(knots.h12.interior_knots) <= 3  # May be fewer due to ties
             
-            # Per-hazard nknots
+            # Per-hazard nknots: Note that hazards from the same origin state share knots!
+            # Since h12 and h13 both have statefrom=1, they share the same knots.
+            # The first hazard's nknots is used (h12=4 in this case).
             knots2 = calibrate_splines(model; nknots=(h12=4, h13=2))
             @test length(knots2.h12.interior_knots) <= 4
-            @test length(knots2.h13.interior_knots) <= 2
+            # h13 gets same knots as h12 (shared origin), so expect same count
+            @test length(knots2.h13.interior_knots) == length(knots2.h12.interior_knots)
         end
         
         @testset "calibrate_splines - explicit quantiles" begin
@@ -851,7 +854,7 @@ import StatsModels: apply_schema, coefnames, modelcols, termvars
             calibrate_splines!(model; nknots=2, verbose=false)
             
             # Model should be fittable
-            fitted = fit(model; verbose=false, compute_vcov=false)
+            fitted = fit(model; verbose=false, vcov_type=:none)
             @test fitted isa MultistateModels.MultistateModelFitted
             @test isfinite(fitted.loglik.loglik)
             

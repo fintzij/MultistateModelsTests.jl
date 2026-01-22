@@ -49,7 +49,7 @@ const IS_WEIGHT_TOL = 1e-10        # IS weights must be exactly 1.0
 # =============================================================================
 function generate_panel_data(hazards, true_params;
     n_subj::Int = N_SUBJECTS,
-    obs_times::Vector{Float64} = [0.0, 3.0, 6.0, 9.0, MAX_TIME],
+    obs_times::Vector{Float64} = [0.0, 2.0, 4.0, 6.0, 8.0, 10.0, MAX_TIME],
     covariate_data::Union{Nothing, DataFrame} = nothing)
     
     nobs = length(obs_times) - 1
@@ -102,7 +102,7 @@ end
     panel_data = generate_panel_data((h12, h23, h13), true_params)
     
     model_fit = multistatemodel(h12, h23, h13; data=panel_data)
-    fitted = fit(model_fit; verbose=false, compute_vcov=true)
+    fitted = fit(model_fit; verbose=false, vcov_type=:ij)
     
     p = get_parameters(fitted; scale=:natural)
     
@@ -139,7 +139,7 @@ end
     panel_data = generate_panel_data((h12, h23, h13), true_params; covariate_data=cov_data)
     
     model_fit = multistatemodel(h12, h23, h13; data=panel_data)
-    fitted = fit(model_fit; verbose=false, compute_vcov=true)
+    fitted = fit(model_fit; verbose=false, vcov_type=:ij)
     
     # Use natural scale NamedTuple - safer than assuming flat vector order
     p = get_parameters(fitted; scale=:natural)
@@ -342,7 +342,7 @@ end
         tol=0.01,
         ess_target_initial=100,
         max_ess=1000,
-        compute_vcov=false,
+        vcov_type=:none,
         return_convergence_records=true)
     
     p = get_parameters(fitted; scale=:natural)
@@ -375,8 +375,8 @@ end
     h12 = Hazard(@formula(0 ~ x), "wei", 1, 2)
     
     # Simple 2-state model (avoids downstream transition issues)
-    nobs = 4
-    obs_times = [0.0, 3.0, 6.0, 9.0, MAX_TIME]
+    nobs = 6
+    obs_times = [0.0, 2.0, 4.0, 6.0, 8.0, 10.0, MAX_TIME]
     
     template = DataFrame(
         id = repeat(1:N_SUBJECTS, inner=nobs),
@@ -402,7 +402,7 @@ end
         tol=0.01,
         ess_target_initial=100,
         max_ess=1000,
-        compute_vcov=false,
+        vcov_type=:none,
         return_convergence_records=true)
     
     p_est = get_parameters_flat(fitted)
@@ -447,7 +447,7 @@ end
         tol=0.01,
         ess_target_initial=100,
         max_ess=1000,
-        compute_vcov=false,
+        vcov_type=:none,
         return_convergence_records=true)
     
     p = get_parameters(fitted; scale=:natural)

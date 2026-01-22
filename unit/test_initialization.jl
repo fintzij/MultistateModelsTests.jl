@@ -13,7 +13,7 @@ using StatsBase: Weights
 
 # Access internal functions for testing
 using MultistateModels: _interpolate_covariates!, _is_semimarkov, 
-                        _transfer_parameters!,
+                        _transfer_parameters!, _is_degenerate_data,
                         SamplePath, paths_to_dataset, set_crude_init!,
                         set_parameters!, get_parameters_flat
 
@@ -31,6 +31,66 @@ using MultistateModels: _interpolate_covariates!, _is_semimarkov,
         h_wei = Hazard(@formula(0 ~ 1), :wei, 1, 2)
         semimarkov_model = multistatemodel(h_wei; data = data, surrogate = :markov)
         @test _is_semimarkov(semimarkov_model)
+    end
+
+    @testset "Helper: _is_degenerate_data" begin
+        # Degenerate data (all statefrom == stateto) - typical template data
+        h12 = Hazard(@formula(0 ~ 1), :wei, 1, 2)
+        h23 = Hazard(@formula(0 ~ 1), :wei, 2, 3)
+        
+        degenerate_data = DataFrame(
+            id = [1, 1, 2, 2],
+            tstart = [0.0, 1.0, 0.0, 1.0],
+            tstop = [1.0, 2.0, 1.0, 2.0],
+            statefrom = [1, 1, 1, 1],  # All same
+            stateto = [1, 1, 1, 1],    # All same (no transitions)
+            obstype = [2, 2, 2, 2]
+        )
+        
+        # Creating model with degenerate data should trigger fallback to :crude
+        # The _is_degenerate_data check catches this and warns
+        degenerate_model = multistatemodel(h12, h23; data = degenerate_data, initialize = false)
+        @test _is_degenerate_data(degenerate_model)
+        
+        # Non-degenerate data (has at least one transition)
+        real_data = DataFrame(
+            id = [1, 1, 2, 2],
+            tstart = [0.0, 1.0, 0.0, 1.0],
+            tstop = [1.0, 2.0, 1.0, 2.0],
+            statefrom = [1, 1, 1, 2],  # Subject 2 has transition
+            stateto = [1, 2, 2, 3],    # Subject 2 has transitions 1→2 and 2→3
+            obstype = [2, 1, 1, 1]
+        )
+        
+        real_model = multistatemodel(h12, h23; data = real_data, initialize = false)
+        @test !_is_degenerate_data(real_model)
+    end
+    
+    @testset "Degenerate data warning" begin
+        # Test that degenerate data triggers warning and falls back to :crude
+        h12 = Hazard(@formula(0 ~ 1), :wei, 1, 2)
+        h23 = Hazard(@formula(0 ~ 1), :wei, 2, 3)
+        
+        degenerate_data = DataFrame(
+            id = [1, 1, 2, 2],
+            tstart = [0.0, 1.0, 0.0, 1.0],
+            tstop = [1.0, 2.0, 1.0, 2.0],
+            statefrom = [1, 1, 1, 1],
+            stateto = [1, 1, 1, 1],
+            obstype = [2, 2, 2, 2]
+        )
+        
+        # Should warn but still create model
+        model = @test_logs (:warn, r"No transitions observed") multistatemodel(h12, h23; data = degenerate_data)
+        
+        # Model should still work (crude init applied)
+        params = get_parameters(model)
+        @test length(params.h12) == 2  # Weibull has 2 parameters
+        @test length(params.h23) == 2
+        
+        # Parameters should be finite (crude fallback worked)
+        @test all(isfinite.(params.h12))
+        @test all(isfinite.(params.h23))
     end
 
     @testset "Helper: Covariate interpolation" begin
@@ -407,7 +467,7 @@ end
             # Fit to exact data
             exact_model = multistatemodel(h12; data = exact_data)
             set_crude_init!(exact_model)
-            fitted = fit(exact_model; verbose=false, compute_vcov=false, compute_ij_vcov=false)
+            fitted = fit(exact_model; verbose=false, vcov_type=:none)
             
             # Get fitted parameters (natural scale)
             fitted_params = get_parameters(fitted; scale = :flat)
@@ -480,7 +540,7 @@ end
             set_crude_init!(exact_model)
             
             try
-                fitted = fit(exact_model; verbose=false, compute_vcov=false, compute_ij_vcov=false)
+                fitted = fit(exact_model; verbose=false, vcov_type=:none)
                 mles[s, :] = get_parameters(fitted; scale = :flat)
             catch
                 mles[s, :] .= NaN
@@ -701,7 +761,7 @@ end
         fitted_params = nothing
         try
             fitted = fit(model; constraints = constraints, verbose = false, 
-                         compute_vcov = false, compute_ij_vcov = false)
+                         vcov_type = :none)
             fitted_params = get_parameters(fitted; scale = :flat)
             fit_succeeded = true
         catch e

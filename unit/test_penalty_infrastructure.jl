@@ -352,12 +352,12 @@ using Random
         model = multistatemodel(h12, h13; data=data)
         
         # Fit without penalty (explicit :none since splines default to penalized)
-        fitted_no_penalty = fit(model; penalty=:none, verbose=false, compute_vcov=false, compute_ij_vcov=false)
+        fitted_no_penalty = fit(model; penalty=:none, verbose=false, vcov_type=:none)
         ll_no_penalty = get_loglik(fitted_no_penalty)
         
         # Fit with penalty
         fitted_with_penalty = fit(model; penalty=SplinePenalty(), lambda_init=10.0,
-                                   verbose=false, compute_vcov=false, compute_ij_vcov=false)
+                                   verbose=false, vcov_type=:none)
         ll_with_penalty = get_loglik(fitted_with_penalty)
         
         # Penalized fit should still complete
@@ -367,7 +367,7 @@ using Random
         # With stronger penalty, likelihood should be <= unpenalized (penalty restricts params)
         # This tests that the penalty is actually being applied during optimization
         fitted_high_penalty = fit(model; penalty=SplinePenalty(), lambda_init=100.0,
-                                   verbose=false, compute_vcov=false, compute_ij_vcov=false)
+                                   verbose=false, vcov_type=:none)
         ll_high_penalty = get_loglik(fitted_high_penalty)
         
         @test ll_high_penalty <= ll_no_penalty  # Higher penalty = worse unpenalized likelihood
@@ -394,8 +394,8 @@ using Random
         
         # With default (penalty=:auto), splines should be penalized
         # Fit with explicit penalty and :auto, verify same behavior
-        fitted_auto = fit(model_sp; verbose=false, compute_vcov=false, compute_ij_vcov=false)
-        fitted_explicit = fit(model_sp; penalty=SplinePenalty(), verbose=false, compute_vcov=false, compute_ij_vcov=false)
+        fitted_auto = fit(model_sp; verbose=false, vcov_type=:none)
+        fitted_explicit = fit(model_sp; penalty=SplinePenalty(), verbose=false, vcov_type=:none)
         
         # Both should produce valid fits
         @test !isnan(get_loglik(fitted_auto))
@@ -409,11 +409,11 @@ using Random
         @test has_spline_hazards(model_exp) == false
         
         # Should fit without issues (no penalty applied)
-        fitted_exp = fit(model_exp; verbose=false, compute_vcov=false, compute_ij_vcov=false)
+        fitted_exp = fit(model_exp; verbose=false, vcov_type=:none)
         @test !isnan(get_loglik(fitted_exp))
         
         # Test :none explicit opt-out
-        fitted_none = fit(model_sp; penalty=:none, verbose=false, compute_vcov=false, compute_ij_vcov=false)
+        fitted_none = fit(model_sp; penalty=:none, verbose=false, vcov_type=:none)
         @test !isnan(get_loglik(fitted_none))
         
         # Unpenalized should have higher log-likelihood (less regularization)
@@ -436,7 +436,7 @@ using Random
         model = multistatemodel(h12; data=data)
         
         # Using penalty=nothing should emit deprecation warning
-        @test_logs (:warn, r"penalty=nothing is deprecated") fit(model; penalty=nothing, verbose=false, compute_vcov=false, compute_ij_vcov=false)
+        @test_logs (:warn, r"penalty=nothing is deprecated") fit(model; penalty=nothing, verbose=false, vcov_type=:none)
     end
 
 end
@@ -466,7 +466,7 @@ end
         
         # First fit to get reasonable parameters (use select_lambda=:none to avoid
         # automatic smoothing parameter selection which can fail on sparse data)
-        fitted = fit(model; verbose=false, compute_vcov=false, compute_ij_vcov=false, select_lambda=:none)
+        fitted = fit(model; verbose=false, vcov_type=:none, select_lambda=:none)
         beta_hat = MultistateModels.get_parameters(fitted; scale=:flat)
         
         # Build penalty config
@@ -547,7 +547,7 @@ end
         model = multistatemodel(h12; data=data)
         
         # First fit to get reasonable parameters
-        fitted = fit(model; verbose=false, compute_vcov=false, compute_ij_vcov=false)
+        fitted = fit(model; verbose=false, vcov_type=:none)
         beta_hat = MultistateModels.get_parameters(fitted; scale=:flat)
         
         # Build penalty config

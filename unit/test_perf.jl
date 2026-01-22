@@ -50,7 +50,7 @@ println("="^70)
         h12 = Hazard(@formula(0 ~ 1), :sp, 1, 2)
         model = multistatemodel(h12; data=surv_data)
         
-        fitted = fit(model; verbose=false, compute_vcov=false, compute_ij_vcov=false)
+        fitted = fit(model; verbose=false, vcov_type=:none)
         beta_hat = MultistateModels.get_parameters(fitted; scale=:flat)
         
         # Build penalty config
@@ -106,7 +106,7 @@ println("="^70)
         h12 = Hazard(@formula(0 ~ 1), :sp, 1, 2)
         model = multistatemodel(h12; data=surv_data)
         
-        fitted = fit(model; verbose=false, compute_vcov=false, compute_ij_vcov=false)
+        fitted = fit(model; verbose=false, vcov_type=:none)
         beta_hat = MultistateModels.get_parameters(fitted; scale=:flat)
         
         penalty_config = build_penalty_config(model, SplinePenalty(); lambda_init=1.0)
@@ -164,7 +164,7 @@ println("="^70)
         h12 = Hazard(@formula(0 ~ 1), :sp, 1, 2)
         model = multistatemodel(h12; data=surv_data)
         
-        fitted = fit(model; verbose=false, compute_vcov=false, compute_ij_vcov=false)
+        fitted = fit(model; verbose=false, vcov_type=:none)
         beta_hat = MultistateModels.get_parameters(fitted; scale=:flat)
         
         penalty_config = build_penalty_config(model, SplinePenalty(); lambda_init=1.0)
@@ -228,7 +228,7 @@ println("="^70)
         h12 = Hazard(@formula(0 ~ 1), :sp, 1, 2)
         model = multistatemodel(h12; data=surv_data)
         
-        fitted = fit(model; verbose=false, compute_vcov=false, compute_ij_vcov=false)
+        fitted = fit(model; verbose=false, vcov_type=:none)
         beta_hat = MultistateModels.get_parameters(fitted; scale=:flat)
         
         penalty_config = build_penalty_config(model, SplinePenalty(); lambda_init=1.0)

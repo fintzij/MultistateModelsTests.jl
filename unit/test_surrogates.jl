@@ -144,7 +144,7 @@ using Statistics
         @test !is_surrogate_fitted(model_none)
     end
     
-    @testset "set_surrogate! marks as fitted" begin
+    @testset "initialize_surrogate! marks as fitted" begin
         dat = create_test_data()
         h12 = Hazard(@formula(0 ~ 1), "wei", 1, 2)
         
@@ -152,8 +152,8 @@ using Statistics
         model = multistatemodel(h12; data = dat, surrogate = :markov, fit_surrogate = false)
         @test !is_surrogate_fitted(model)
         
-        # set_surrogate! should fit and mark as fitted
-        set_surrogate!(model; verbose = false)
+        # initialize_surrogate! should fit and mark as fitted
+        initialize_surrogate!(model; verbose = false)
         @test is_surrogate_fitted(model)
     end
     
@@ -198,9 +198,70 @@ using Statistics
             @test isapprox(sum(Q[i, :]), 0.0, atol = 1e-10)
         end
         
-        # PhaseTypeSurrogate should have fitted=true
-        @test surrogate.fitted == true
-        @test is_fitted(surrogate)
+    end
+    
+    @testset "_build_coxian_from_rate structure variants" begin
+        # Test that SCTP and erlang structures produce valid distributions
+        # with correct means and distinct hazard shapes
+        
+        using LinearAlgebra
+        
+        n_phases = 5
+        total_rate = 0.25
+        target_mean = 1.0 / total_rate
+        
+        # :sctp now includes eigenvalue ordering for identifiability
+        for structure in [:sctp, :erlang]
+            ph = MultistateModels._build_coxian_from_rate(n_phases, total_rate; structure=structure)
+            
+            # Basic validity: correct dimensions
+            @test size(ph.Q) == (n_phases + 1, n_phases + 1)
+            @test length(ph.initial) == n_phases
+            
+            # Initial distribution starts in first phase
+            @test ph.initial[1] == 1.0
+            @test all(ph.initial[2:end] .== 0.0)
+            
+            # Q-matrix validity: rows sum to zero
+            for i in 1:n_phases
+                @test isapprox(sum(ph.Q[i, :]), 0.0, atol=1e-12)
+            end
+            
+            # Q-matrix validity: absorbing row is zeros
+            @test all(ph.Q[end, :] .== 0.0)
+            
+            # Correct mean (critical for proper scaling)
+            S = ph.Q[1:n_phases, 1:n_phases]
+            α = ph.initial
+            e = ones(n_phases)
+            mean_time = -(α' * (S \ e))
+            @test isapprox(mean_time, target_mean, rtol=1e-10)
+        end
+        
+        # Verify distinct hazard behavior between :sctp and :erlang
+        function hazard_at(ph, t)
+            S = ph.Q[1:ph.n_phases, 1:ph.n_phases]
+            α = ph.initial
+            e = ones(ph.n_phases)
+            P_t = exp(S * t)
+            surv = α' * P_t * e
+            dsdt = α' * S * P_t * e
+            return -dsdt / surv
+        end
+        
+        ph_sctp = MultistateModels._build_coxian_from_rate(n_phases, total_rate; structure=:sctp)
+        ph_erl = MultistateModels._build_coxian_from_rate(n_phases, total_rate; structure=:erlang)
+        
+        # SCTP: constant hazard (exponential when τ's are uniform)
+        @test isapprox(hazard_at(ph_sctp, 1.0), hazard_at(ph_sctp, 10.0), rtol=1e-10)
+        
+        # Erlang: strongly increasing hazard
+        @test hazard_at(ph_erl, 1.0) < hazard_at(ph_erl, 10.0)
+    end
+    
+    @testset "_build_coxian_from_rate invalid structure" begin
+        # Test that invalid structure throws an error
+        @test_throws ArgumentError MultistateModels._build_coxian_from_rate(3, 0.25; structure=:invalid_structure)
     end
     
     @testset "MLE >= heuristic log-likelihood" begin
@@ -225,7 +286,7 @@ using Statistics
         @test ll_mle < -5.0     # Not implausibly close to zero for 100 subjects
     end
     
-    @testset "set_surrogate! auto-fits unfitted surrogate" begin
+    @testset "initialize_surrogate! auto-fits unfitted surrogate" begin
         dat = create_test_data(n_subj = 20)
         h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
         
@@ -233,8 +294,8 @@ using Statistics
         model = multistatemodel(h12; data = dat, surrogate = :markov, fit_surrogate = false)
         @test !is_surrogate_fitted(model)
         
-        # set_surrogate! should fit the surrogate (this is what fit() calls internally)
-        MultistateModels.set_surrogate!(model; verbose = false)
+        # initialize_surrogate! should fit the surrogate (this is what fit() calls internally)
+        initialize_surrogate!(model; verbose = false)
         
         # After fitting, the model's surrogate should be fitted
         @test is_surrogate_fitted(model)

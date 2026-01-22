@@ -60,11 +60,11 @@ for n in N_SUBJECTS_BENCHMARK
     model = multistatemodel(h12, h13, h23; data=dat)
     
     # Warmup
-    fit(model; verbose=false, compute_vcov=false, maxiter=2)
+    fit(model; verbose=false, vcov_type=:none, maxiter=2)
     
     # Benchmark
     t_start = time()
-    fit(model; verbose=false, compute_vcov=false, maxiter=MCEM_ITER)
+    fit(model; verbose=false, vcov_type=:none, maxiter=MCEM_ITER)
     t_end = time()
     
     push!(scalability_results, (n, t_end - t_start))
@@ -83,7 +83,7 @@ model_mcem = multistatemodel(h12, h13, h23; data=dat_mcem)
 
 # Run MCEM and record runtime
 t_start = time()
-fit(model_mcem; verbose=false, compute_vcov=false, maxiter=MCEM_ITER)
+fit(model_mcem; verbose=false, vcov_type=:none, maxiter=MCEM_ITER)
 t_mcem = time() - t_start
 
 mcem_results = DataFrame(Method=["MCEM"], Runtime=[t_mcem])
@@ -116,7 +116,7 @@ for nth in N_THREADS_BENCHMARK
         model = multistatemodel(h12, h13, h23; data=dat_th)
         
         t_start = time()
-        fit(model; verbose=false, compute_vcov=false, maxiter=MCEM_ITER)
+        fit(model; verbose=false, vcov_type=:none, maxiter=MCEM_ITER)
         t_end = time()
         push!(threading_results, (nth, t_end - t_start))
     end

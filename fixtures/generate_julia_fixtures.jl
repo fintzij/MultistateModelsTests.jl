@@ -34,7 +34,7 @@ optimal_lambda = smoothing_result.lambda[1]
 println("Optimal λ = $(round(optimal_lambda, digits=2)) ($(round(t_select, digits=1))s)")
 
 println("\nFitting final model with optimal penalty config...")
-t_fit = @elapsed fitted = fit(model_sp; penalty_config=smoothing_result.penalty_config, verbose=false, compute_vcov=false)
+t_fit = @elapsed fitted = fit(model_sp; penalty_config=smoothing_result.penalty_config, verbose=false, vcov_type=:none)
 println("Fit complete ($(round(t_fit, digits=2))s)")
 
 params = get_parameters(fitted)

@@ -167,10 +167,10 @@ end
     true_rate = 0.25
     true_beta = 0.5  # Treatment increases hazard
     
-    # Build panel data with treatment switch at t=3
+    # Build panel data with treatment switch at t=3 (20 intervals of 0.5 for ~5.5 obs/subj)
     panel_data = build_tvc_panel_data(
         n_subjects = N_SUBJECTS,
-        obs_times = [2.0, 4.0, 6.0, 8.0],
+        obs_times = collect(0.5:0.5:10.5),  # 20 intervals for adequate density
         covariate_change_times = [3.0],
         covariate_generator = subj -> rand() < 0.5 ? [0.0, 1.0] : [0.0, 0.0],  # Half get treatment
         obstype = 2
@@ -193,7 +193,7 @@ end
     
     fitted = fit(model_fit;
         verbose=true,
-        compute_vcov=false)
+        vcov_type=:none)
     
     # Verify Markov panel fitting was used (ConvergenceRecords has solution, not ess_trace)
     @test !isnothing(fitted.ConvergenceRecords)
@@ -232,10 +232,10 @@ end
     true_scale = 0.25
     true_beta = 0.6  # Positive effect = increased hazard with treatment
     
-    # Build panel data: observe at t=0,2,4,6,8, treatment starts at t=3
+    # Build panel data: 20 intervals of 0.5 for ~5.5 obs/subj, treatment starts at t=3
     panel_data = build_tvc_panel_data(
         n_subjects = N_SUBJECTS,
-        obs_times = [2.0, 4.0, 6.0, 8.0],
+        obs_times = collect(0.5:0.5:10.5),  # 20 intervals for adequate density
         covariate_change_times = [3.0],
         covariate_generator = _ -> [0.0, 1.0],  # All subjects: control then treatment
         obstype = 2
@@ -264,7 +264,7 @@ end
         tol=MCEM_TOL,
         ess_target_initial=25,
         max_ess=400,
-        compute_vcov=false,
+        vcov_type=:none,
         return_convergence_records=true)
     
     # Verify MCEM was used (has ConvergenceRecords with ess_trace)
@@ -312,10 +312,10 @@ end
     true_scale = 0.2
     true_beta = 0.3  # Each unit increase in biomarker increases log-hazard by 0.3
     
-    # Build panel data with continuous covariate that changes at t=2,4
+    # Build panel data with continuous covariate that changes at t=2,4 (20 intervals for ~5.7 obs/subj)
     panel_data = build_tvc_panel_data(
         n_subjects = N_SUBJECTS,
-        obs_times = [3.0, 6.0],
+        obs_times = collect(0.5:0.5:10.5),  # 20 intervals for adequate density
         covariate_change_times = [2.0, 4.0],
         covariate_generator = subj -> begin
             # Subject-specific biomarker trajectory with some noise
@@ -347,7 +347,7 @@ end
         tol=MCEM_TOL,
         ess_target_initial=25,
         max_ess=400,
-        compute_vcov=false,
+        vcov_type=:none,
         return_convergence_records=true)
     
     # Verify MCEM was used
@@ -393,7 +393,7 @@ end
     # Panel data with TVC - longer observation period
     panel_data = build_tvc_panel_data(
         n_subjects = N_SUBJECTS,
-        obs_times = [3.0, 6.0, 9.0],
+        obs_times = [1.5, 3.0, 4.5, 6.0, 7.5, 9.0, 10.5],
         covariate_change_times = [4.0],
         covariate_generator = subj -> [0.0, 1.0],  # Switch at t=4
         obstype = 2
@@ -421,7 +421,7 @@ set_parameters!(model_sim, (h12 = [true_shape, true_scale, true_beta],))
         tol=MCEM_TOL,
         ess_target_initial=30,
         max_ess=500,
-        compute_vcov=false,
+        vcov_type=:none,
         return_convergence_records=true)
 
     # Verify MCEM was used
@@ -460,7 +460,7 @@ set_parameters!(model_sim, (h12 = [true_shape, true_scale, true_beta],))
         tol=MCEM_TOL,
         ess_target_initial=30,
         max_ess=500,
-        compute_vcov=false)
+        vcov_type=:none)
     
     fitted_params_pt = get_parameters_flat(fitted_pt)
     
@@ -491,7 +491,7 @@ set_parameters!(model_sim, (h12 = [true_shape, true_scale, true_beta],))
     beta_pt = fitted_params_pt[3]
     beta_abs_diff = abs(beta_markov - beta_pt)
     beta_rel_diff = abs(beta_markov) > BETA_COMPARISON_TOL_ABS ? beta_abs_diff / abs(beta_markov) : beta_abs_diff / BETA_COMPARISON_TOL_ABS
-    @test (beta_rel_diff < BETA_COMPARISON_TOL_REL || beta_abs_diff < BETA_COMPARISON_TOL_ABS) "beta: Markov=$(round(beta_markov, digits=4)), PhaseType=$(round(beta_pt, digits=4)), rel_diff=$(round(beta_rel_diff*100, digits=1))%"
+    @test beta_rel_diff < BETA_COMPARISON_TOL_REL || beta_abs_diff < BETA_COMPARISON_TOL_ABS
     
     println("  ✓ Weibull + TVC (semi-Markov) MCEM fitting works")
     println("  ✓ Markov vs PhaseType proposal estimates agree")
@@ -513,7 +513,7 @@ end
     # Panel data with treatment switch
     panel_data = build_tvc_panel_data(
         n_subjects = N_SUBJECTS,
-        obs_times = [3.0, 6.0, 9.0, 12.0],
+        obs_times = [2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0],
         covariate_change_times = [4.0],
         covariate_generator = subj -> rand() < 0.5 ? [0.0, 1.0] : [0.0, 0.0],  # Half get treatment
         obstype = 2
@@ -541,7 +541,7 @@ end
         tol=MCEM_TOL,
         ess_target_initial=25,
         max_ess=400,
-        compute_vcov=false,
+        vcov_type=:none,
         return_convergence_records=true)
     
     # Verify MCEM was used
@@ -617,7 +617,7 @@ end
         tol=MCEM_TOL,
         ess_target_initial=30,
         max_ess=500,
-        compute_vcov=false,
+        vcov_type=:none,
         return_convergence_records=true)
     
     # Verify MCEM was used
@@ -657,7 +657,7 @@ end
     
     panel_data = build_tvc_panel_data(
         n_subjects = N_SUBJECTS,
-        obs_times = [3.0, 5.0, 7.0, 9.0],
+        obs_times = [1.5, 3.0, 4.5, 6.0, 7.5, 9.0, 10.5],
         covariate_change_times = [2.0, 4.0, 6.0],
         covariate_generator = subj -> begin
             # Covariate follows a step pattern
@@ -689,7 +689,7 @@ end
         tol=MCEM_TOL,
         ess_target_initial=25,
         max_ess=400,
-        compute_vcov=false,
+        vcov_type=:none,
         return_convergence_records=true)
     
     # Verify MCEM was used
@@ -717,7 +717,7 @@ end
     
     panel_data = build_tvc_panel_data(
         n_subjects = N_SUBJECTS,
-        obs_times = [2.0, 4.0, 6.0],
+        obs_times = [1.0, 2.0, 3.5, 5.0, 6.5, 8.0, 9.5],
         covariate_change_times = [3.0],
         covariate_generator = _ -> [0.0, 1.0],
         obstype = 2
@@ -745,7 +745,7 @@ end
         tol=MCEM_TOL,
         ess_target_initial=25,
         max_ess=400,
-        compute_vcov=false,
+        vcov_type=:none,
         return_convergence_records=true)
     
     # Verify MCEM was used
@@ -772,7 +772,7 @@ end
     
     # Panel data with TVC - treatment switch at t=3
     n_subj = N_SUBJECTS
-    obs_times = [2.0, 4.0, 6.0]
+    obs_times = [1.0, 2.0, 3.5, 5.0, 6.5, 8.0, 9.5]
     change_time = 3.0
     
     rows = []
@@ -812,7 +812,7 @@ end
         tol=MCEM_TOL,
         ess_target_initial=25,
         max_ess=400,
-        compute_vcov=false,
+        vcov_type=:none,
         return_convergence_records=true)
     
     # Verify MCEM was used
@@ -845,7 +845,7 @@ end
         tol=MCEM_TOL,
         ess_target_initial=30,
         max_ess=500,
-        compute_vcov=false)
+        vcov_type=:none)
     
     fitted_params_pt = get_parameters_flat(fitted_pt)
     
@@ -912,7 +912,7 @@ end
     
     # Panel data with TVC - treatment switch at t=4
     n_subj = N_SUBJECTS
-    obs_times = [3.0, 6.0, 9.0, 12.0]
+    obs_times = [2.0, 4.0, 6.0, 8.0, 10.0, 12.0, 14.0]
     change_time = 4.0
     
     rows = []
@@ -961,7 +961,7 @@ end
         tol=MCEM_TOL,
         ess_target_initial=25,
         max_ess=300,
-        compute_vcov=false,
+        vcov_type=:none,
         return_convergence_records=true)
     
     @testset "Convergence and Pareto-k" begin
@@ -1008,7 +1008,7 @@ end
     
     # Panel data with treatment switch at t=3
     n_subj = N_SUBJECTS
-    obs_times = [2.0, 4.0, 6.0, 8.0]
+    obs_times = [1.0, 2.0, 3.5, 5.0, 6.5, 8.0, 9.5]
     change_time = 3.0
     
     rows = []
@@ -1046,7 +1046,7 @@ end
         tol=MCEM_TOL,
         ess_target_initial=25,
         max_ess=300,
-        compute_vcov=false,
+        vcov_type=:none,
         return_convergence_records=true)
     
     @testset "Convergence and Pareto-k" begin

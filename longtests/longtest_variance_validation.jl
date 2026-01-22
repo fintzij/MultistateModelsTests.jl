@@ -91,7 +91,7 @@ end
 # =============================================================================
 function generate_panel_data_illnessdeath(hazards, true_params;
     n_subj::Int = N_SUBJECTS,
-    obs_times::Vector{Float64} = [0.0, 2.5, 5.0, 7.5, MAX_TIME])
+    obs_times::Vector{Float64} = collect(0.0:0.5:MAX_TIME))  # 20 intervals for ~6.9 obs/subj
     
     nobs = length(obs_times) - 1
     
@@ -123,7 +123,7 @@ function compute_empirical_variance(hazard_tuple, true_params, generate_data_fn;
         
         # Refit model
         model = multistatemodel(hazard_tuple...; data=data)
-        fitted = fit(model; verbose=false, compute_vcov=false, compute_ij_vcov=false)
+        fitted = fit(model; verbose=false, vcov_type=:none)
         
         push!(param_estimates, get_parameters_flat(fitted))
     end
@@ -152,7 +152,7 @@ end
     exact_data = generate_exact_data_2state(h12, true_params; n_subj=N_SUBJECTS)
     
     model = multistatemodel(h12; data=exact_data)
-    fitted = fit(model; verbose=false, compute_vcov=true, compute_ij_vcov=true)
+    fitted = fit(model; verbose=false, vcov_type=:ij)
     
     vcov_model = get_vcov(fitted; type=:model)
     vcov_ij = get_vcov(fitted; type=:ij)
@@ -184,7 +184,7 @@ end
     exact_data = generate_exact_data_2state(h12, true_params; n_subj=N_SUBJECTS)
     
     model = multistatemodel(h12; data=exact_data)
-    fitted = fit(model; verbose=false, compute_vcov=true, compute_ij_vcov=true)
+    fitted = fit(model; verbose=false, vcov_type=:ij)
     
     vcov_model = get_vcov(fitted; type=:model)
     vcov_ij = get_vcov(fitted; type=:ij)
@@ -213,7 +213,7 @@ end
     panel_data = generate_panel_data_illnessdeath((h12, h23, h13), true_params)
     
     model = multistatemodel(h12, h23, h13; data=panel_data)
-    fitted = fit(model; verbose=false, compute_vcov=true, compute_ij_vcov=true)
+    fitted = fit(model; verbose=false, vcov_type=:ij)
     
     vcov_model = get_vcov(fitted; type=:model)
     vcov_ij = get_vcov(fitted; type=:ij)
@@ -241,7 +241,7 @@ end
     exact_data = generate_exact_data_2state(h12, true_params; n_subj=N_SUBJECTS)
     
     model = multistatemodel(h12; data=exact_data)
-    fitted = fit(model; verbose=false, compute_vcov=true, compute_ij_vcov=true, compute_jk_vcov=true)
+    fitted = fit(model; verbose=false, vcov_type=:jk)
     
     vcov_ij = get_vcov(fitted; type=:ij)
     vcov_jk = get_vcov(fitted; type=:jk)
@@ -275,7 +275,7 @@ end
     panel_data = generate_panel_data_illnessdeath((h12, h23, h13), true_params)
     
     model = multistatemodel(h12, h23, h13; data=panel_data)
-    fitted = fit(model; verbose=false, compute_vcov=true, compute_ij_vcov=true, compute_jk_vcov=true)
+    fitted = fit(model; verbose=false, vcov_type=:jk)
     
     vcov_ij = get_vcov(fitted; type=:ij)
     vcov_jk = get_vcov(fitted; type=:jk)
@@ -305,7 +305,7 @@ end
     # Fit one model to get estimated variance
     exact_data = generate_exact_data_2state(h12, true_params; n_subj=N_SUBJECTS)
     model = multistatemodel(h12; data=exact_data)
-    fitted = fit(model; verbose=false, compute_vcov=true)
+    fitted = fit(model; verbose=false, vcov_type=:ij)
     vcov_model = get_vcov(fitted; type=:model)
     
     # Compute empirical variance from repeated simulations
@@ -316,7 +316,7 @@ end
         Random.seed!(RNG_SEED + 20 + rep)
         data = generate_exact_data_2state(h12, true_params; n_subj=N_SUBJECTS)
         m = multistatemodel(h12; data=data)
-        f = fit(m; verbose=false, compute_vcov=false, compute_ij_vcov=false)
+        f = fit(m; verbose=false, vcov_type=:none)
         push!(param_estimates, get_parameters_flat(f))
     end
     
@@ -342,7 +342,7 @@ end
     # Fit one model to get estimated variance
     exact_data = generate_exact_data_2state(h12, true_params; n_subj=N_SUBJECTS)
     model = multistatemodel(h12; data=exact_data)
-    fitted = fit(model; verbose=false, compute_vcov=true)
+    fitted = fit(model; verbose=false, vcov_type=:ij)
     vcov_model = get_vcov(fitted; type=:model)
     
     # Compute empirical variance
@@ -353,7 +353,7 @@ end
         Random.seed!(RNG_SEED + 30 + rep)
         data = generate_exact_data_2state(h12, true_params; n_subj=N_SUBJECTS)
         m = multistatemodel(h12; data=data)
-        f = fit(m; verbose=false, compute_vcov=false, compute_ij_vcov=false)
+        f = fit(m; verbose=false, vcov_type=:none)
         push!(param_estimates, get_parameters_flat(f))
     end
     
@@ -380,7 +380,7 @@ end
     # Fit one model to get IJ variance
     exact_data = generate_exact_data_2state(h12, true_params; n_subj=N_SUBJECTS)
     model = multistatemodel(h12; data=exact_data)
-    fitted = fit(model; verbose=false, compute_vcov=true, compute_ij_vcov=true)
+    fitted = fit(model; verbose=false, vcov_type=:ij)
     vcov_ij = get_vcov(fitted; type=:ij)
     
     # Compute empirical variance
@@ -391,7 +391,7 @@ end
         Random.seed!(RNG_SEED + 40 + rep)
         data = generate_exact_data_2state(h12, true_params; n_subj=N_SUBJECTS)
         m = multistatemodel(h12; data=data)
-        f = fit(m; verbose=false, compute_vcov=false, compute_ij_vcov=false)
+        f = fit(m; verbose=false, vcov_type=:none)
         push!(param_estimates, get_parameters_flat(f))
     end
     
@@ -437,7 +437,7 @@ end
     exact_data = sim_result[1, 1]
     
     model = multistatemodel(h12_cov; data=exact_data)
-    fitted = fit(model; verbose=false, compute_vcov=true, compute_ij_vcov=true)
+    fitted = fit(model; verbose=false, vcov_type=:ij)
     
     vcov_model = get_vcov(fitted; type=:model)
     vcov_ij = get_vcov(fitted; type=:ij)
@@ -472,7 +472,7 @@ end
         Random.seed!(RNG_SEED + 60 + rep)
         data = generate_exact_data_2state(h12, true_params; n_subj=N_SUBJECTS)
         m = multistatemodel(h12; data=data)
-        f = fit(m; verbose=false, compute_vcov=true)
+        f = fit(m; verbose=false, vcov_type=:ij)
         
         est = get_parameters_flat(f)[1]
         se = sqrt(diag(get_vcov(f; type=:model))[1])
@@ -528,7 +528,7 @@ end
     exact_data = sim_result[1, 1]
     
     model = multistatemodel(h12, h23; data=exact_data)
-    fitted = fit(model; verbose=false, compute_vcov=true, compute_ij_vcov=true, compute_jk_vcov=true)
+    fitted = fit(model; verbose=false, vcov_type=:jk)
     
     vcov_model = get_vcov(fitted; type=:model)
     vcov_ij = get_vcov(fitted; type=:ij)
@@ -613,7 +613,7 @@ MCEM fitting (semi-Markov models with panel observations).
 """
 function generate_panel_data_semimarkov(hazards, true_params;
     n_subj::Int = MCEM_N_SUBJECTS,
-    obs_times::Vector{Float64} = [0.0, 2.0, 4.0, 6.0, 8.0, MAX_TIME])
+    obs_times::Vector{Float64} = [0.0, 1.5, 3.0, 4.5, 6.0, 7.5, MAX_TIME])
     
     nobs = length(obs_times) - 1
     
@@ -661,8 +661,8 @@ end
     model = multistatemodel(h12; data=panel_data, surrogate=:markov)
     fitted = fit(model; 
         verbose=false, 
-        compute_vcov=true, 
-        compute_ij_vcov=true,
+        vcov_type=:ij, 
+        
         ess_target_initial=100,  # Higher ESS for better variance estimate
         maxiter=50,
         tol=0.02)
@@ -712,9 +712,9 @@ end
     
     fitted = fit(model; 
         verbose=false, 
-        compute_vcov=true, 
-        compute_ij_vcov=true,
-        compute_jk_vcov=true,
+        vcov_type=:ij, 
+        
+        
         ess_target_initial=100,
         maxiter=50,
         tol=0.02)
@@ -760,7 +760,7 @@ end
     model = multistatemodel(h12; data=panel_data, surrogate=:markov)
     fitted = fit(model; 
         verbose=false, 
-        compute_vcov=true,
+        vcov_type=:ij,
         ess_target_initial=100,
         maxiter=50,
         tol=0.02)
@@ -784,8 +784,8 @@ end
         try
             f = fit(m; 
                 verbose=false, 
-                compute_vcov=false, 
-                compute_ij_vcov=false,
+                vcov_type=:none, 
+                
                 ess_target_initial=50,  # Lower ESS for speed
                 maxiter=30,
                 tol=0.05)  # Looser tolerance for speed
@@ -856,8 +856,8 @@ end
     
     fitted = fit(model; 
         verbose=false, 
-        compute_vcov=true, 
-        compute_ij_vcov=true,
+        vcov_type=:ij, 
+        
         ess_target_initial=100,
         maxiter=50,
         tol=0.02)

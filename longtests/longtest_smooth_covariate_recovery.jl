@@ -256,7 +256,7 @@ end
     fitted = fit(model; 
         penalty=SplinePenalty(),
         verbose=false,
-        compute_vcov=false)
+        vcov_type=:none)
     
     println("  Log-likelihood: ", @sprintf("%.2f", fitted.loglik.loglik))
     
@@ -314,7 +314,7 @@ end
     fitted = fit(model; 
         penalty=SplinePenalty(),
         verbose=false,
-        compute_vcov=false)
+        vcov_type=:none)
     
     println("  Log-likelihood: ", @sprintf("%.2f", fitted.loglik.loglik))
     
@@ -372,7 +372,7 @@ end
     fitted = fit(model; 
         penalty=SplinePenalty(),
         verbose=false,
-        compute_vcov=false)
+        vcov_type=:none)
     
     println("  Log-likelihood: ", @sprintf("%.2f", fitted.loglik.loglik))
     
@@ -469,7 +469,7 @@ end
     fitted = fit(model; 
         penalty=SplinePenalty(),
         verbose=false,
-        compute_vcov=true)
+        vcov_type=:ij)
     
     println("  Log-likelihood: ", @sprintf("%.2f", fitted.loglik.loglik))
     

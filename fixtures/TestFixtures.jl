@@ -68,8 +68,8 @@ function censoring_panel_data()
         tstart = [0.0, 1.0],
         tstop = [1.0, 2.0],
         statefrom = [1, 1],
-        stateto = [2, 0],
-        obstype = [1, 3]
+        stateto = [0, 2],  # First interval is censored, second is exact transition
+        obstype = [3, 1]   # obstype 3 = censoring pattern, obstype 1 = exact
     )
 end
 
@@ -148,9 +148,8 @@ function toy_fitted_exact_model()
         base_model.parameters,
         base_model.bounds,  # bounds
         stored_loglik,
-        nothing,  # vcov
-        nothing,  # ij_vcov
-        nothing,  # jk_vcov
+        nothing,  # vcov (consolidated variance-covariance matrix)
+        :none,    # vcov_type (no vcov computed for this fixture)
         nothing,  # subject_gradients
         base_model.hazards,
         base_model.totalhazards,
@@ -161,7 +160,7 @@ function toy_fitted_exact_model()
         base_model.SubjectWeights,
         base_model.ObservationWeights,
         base_model.CensoringPatterns,
-        base_model.markovsurrogate,
+        base_model.surrogate,  # unified surrogate field (MarkovSurrogate or PhaseTypeSurrogate)
         nothing,  # ConvergenceRecords
         nothing,  # ProposedPaths
         base_model.modelcall,

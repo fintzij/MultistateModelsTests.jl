@@ -274,7 +274,7 @@ function show_test_result(test_name::String)
     
     show_param_table(result)
     
-    return result
+    return nothing  # Don't return result to avoid printing raw object
 end
 ```
 

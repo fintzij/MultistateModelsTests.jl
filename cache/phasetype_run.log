@@ -1,0 +1,34 @@
+Running phase-type exact tests...
+ERROR: LoadError: UndefVarError: `@sprintf` not defined in `Main`
+Suggestion: check for spelling errors or missing imports.
+Hint: a global variable of this name also exists in Printf.
+Stacktrace:
+  [1] #macroexpand#22
+    @ ./expr.jl:126 [inlined]
+  [2] macroexpand
+    @ ./expr.jl:124 [inlined]
+  [3] docm
+    @ ./docs/Docs.jl:643 [inlined]
+  [4] docm(source::LineNumberNode, mod::Module, meta::Any, ex::Any)
+    @ Base.Docs ./docs/Docs.jl:643
+  [5] (::DocStringExtensions.var"#hook!##0#hook!##1"{typeof(DocStringExtensions.template_hook)})(::LineNumberNode, ::Vararg{Any})
+    @ DocStringExtensions ~/.julia/packages/DocStringExtensions/zNis6/src/templates.jl:11
+  [6] var"@doc"(__source__::LineNumberNode, __module__::Module, x::Vararg{Any})
+    @ Core ./boot.jl:715
+  [7] include(mapexpr::Function, mod::Module, _path::String)
+    @ Base ./Base.jl:307
+  [8] top-level scope
+    @ ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/longtests/longtest_phasetype_exact.jl:44
+  [9] include(mapexpr::Function, mod::Module, _path::String)
+    @ Base ./Base.jl:307
+ [10] top-level scope
+    @ none:5
+ [11] eval(m::Module, e::Any)
+    @ Core ./boot.jl:489
+ [12] exec_options(opts::Base.JLOptions)
+    @ Base ./client.jl:283
+ [13] _start()
+    @ Base ./client.jl:550
+in expression starting at /Users/fintzij/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/src/longtest_helpers.jl:64
+in expression starting at /Users/fintzij/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/src/longtest_helpers.jl:64
+in expression starting at /Users/fintzij/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/longtests/longtest_phasetype_exact.jl:42

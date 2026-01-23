@@ -1,0 +1,155 @@
+Running phase-type panel tests...
+
+======================================================================
+Phase-Type Hazard Models: Panel & Mixed Data Long Tests
+======================================================================
+Testing inference for Coxian phase-type models with intermittent observations.
+These models are Markov on expanded state space → direct likelihood (no MCEM).
+Default sample size: n=1000
+
+--- Simple 2-State Phase-Type with Panel Data ---
+Observed states: 2, Expanded phases: 3
+State 1 → phases 1:2
+State 2 → phases 3:3
+┌ Warning: No transitions observed in data (all statefrom == stateto). Falling back to :crude initialization. If this is template data for simulation, consider using `initialize=false` when creating the model.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/initialization.jl:467
+True rates: [0.4, 0.2, 0.5]
+Observation times: [0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0, 9.5, 10.0]
+Simulated 1662 exact observations
+Converted to 20000 panel observations
+Panel data: 985 state changes observed, 14856 absorptions
+┌ Warning: EmissionMatrix rows should sum to ≤ 1.0 for proper probability interpretation. Rows with sum > 1.0: [1, 2, 3, 4, 5]. This may indicate incorrect soft evidence specification.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/construction/model_assembly.jl:153
+
+Fitting phase-type model with panel data...
+True params (natural): [0.4, 0.2, 0.5]
+Fitted params (log): [0.431, 0.216, 0.514]
+[ Info: Saved result: pt_panel_simple -> /Users/fintzij/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/cache/longtest_results/pt_panel_simple.json
+Test Summary:                          | Pass  Total     Time
+Phase-Type Panel: Simple 2-State Model |    5      5  1m09.6s
+
+--- Illness-Death Phase-Type with Panel Data ---
+Observed states: 3, Expanded phases: 5
+┌ Warning: EmissionMatrix rows should sum to ≤ 1.0 for proper probability interpretation. Rows with sum > 1.0: [1, 2, 3, 4, 5]. This may indicate incorrect soft evidence specification.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/construction/model_assembly.jl:153
+True rates: [0.5, 0.3, 0.35, 0.4, 0.25, 0.2, 0.3, 0.35]
+Number of hazards: 8
+Sample size: 1000
+Panel observations: 2046 rows
+
+Fitting illness-death phase-type model with panel data...
+True params (natural): [0.5, 0.3, 0.35, 0.4, 0.25, 0.2, 0.3, 0.35]
+Fitted params (log): [0.535, 0.294, 0.356, 0.386, 0.283, 0.208, 0.29, 0.353]
+[ Info: Saved result: pt_panel_id -> /Users/fintzij/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/cache/longtest_results/pt_panel_id.json
+Test Summary:                         | Pass  Total   Time
+Phase-Type Panel: Illness-Death Model |    1      1  33.6s
+
+--- Mixed Exact + Panel Data ---
+Some subjects observed exactly, others at panel times
+Template: 600 exact + 400 panel subjects
+┌ Warning: EmissionMatrix rows should sum to ≤ 1.0 for proper probability interpretation. Rows with sum > 1.0: [601, 602, 603, 604, 605]. This may indicate incorrect soft evidence specification.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/construction/model_assembly.jl:153
+True rates: [0.35, 0.25, 0.45]
+Simulated: 959 exact + 2392 panel observations
+
+Fitting with mixed observation types...
+True params (natural): [0.35, 0.25, 0.45]
+Fitted params (log): [0.343, 0.253, 0.454]
+[ Info: Saved result: pt_mixed_simple -> /Users/fintzij/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/cache/longtest_results/pt_mixed_simple.json
+
+Comparison of estimation approaches:
+  Exact-only:  [0.359, 0.24, 0.435]
+  Panel-only:  [0.316, 0.276, 0.485]
+  Mixed:       [0.343, 0.253, 0.454]
+  True:        [0.35, 0.25, 0.45]
+Test Summary:                        | Pass  Total   Time
+Phase-Type Mixed: Exact + Panel Data |    4      4  44.1s
+
+--- Structured Mixed Observations ---
+First half of subjects: exact observations
+Second half of subjects: panel observations
+Absorbing phase: 3
+┌ Warning: EmissionMatrix rows should sum to ≤ 1.0 for proper probability interpretation. Rows with sum > 1.0: [501, 502, 503, 504, 505]. This may indicate incorrect soft evidence specification.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/construction/model_assembly.jl:153
+Simulated: 805 exact + 2971 panel observations
+
+Fitting with structured mixed observations...
+True params (natural): [0.4, 0.25, 0.5]
+Fitted params (log): [0.393, 0.249, 0.489]
+[ Info: Saved result: pt_mixed_structured -> /Users/fintzij/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/cache/longtest_results/pt_mixed_structured.json
+Test Summary:                                  | Pass  Total   Time
+Phase-Type Mixed: Structured Mixed Observation |    1      1  31.1s
+
+--- Distributional Fidelity: Panel vs Exact ---
+┌ Warning: EmissionMatrix rows should sum to ≤ 1.0 for proper probability interpretation. Rows with sum > 1.0: [1, 2, 3, 4, 5]. This may indicate incorrect soft evidence specification.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/construction/model_assembly.jl:153
+  Quantiles (true → fitted from panel):
+    25th: 0.999 → 0.955
+    50th: 1.95 → 2.152
+    75th: 3.601 → 3.839
+    90th: 5.703 → 6.156
+Test Summary:                       | Pass  Total  Time
+Distributional Fidelity: Panel Data |    1      1  7.4s
+
+--- 2-Phase Phase-Type with Fixed Covariate (Panel Data) ---
+Using production API with homogeneous covariate constraints
+  True params: λ=0.2, μ₁=0.15, μ₂=0.5, β=0.35
+  Panel data: 20000 observations, 13723 absorptions
+
+Fitting phase-type model with covariate from panel data...
+  True params:   [λ=0.2, μ₁=0.15, β=0.35, μ₂=0.5]
+  Fitted params: [λ=0.303, μ₁=0.13, β=0.375, μ₂=0.433]
+  True eigenvalues:   ν₁=0.35, ν₂=0.5
+  Fitted eigenvalues: ν₁=0.433, ν₂=0.433
+  β relative error: 7.1%
+  μ₂ relative error: 13.4%
+  ν₁ relative error: 23.7%
+Parameter recovery with covariate (panel): Test Failed at /Users/fintzij/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/longtests/longtest_phasetype_panel.jl:971
+  Expression: nu1_rel_err < 0.2
+   Evaluated: 0.23687471737762647 < 0.2
+
+Stacktrace:
+ [1] macro expansion
+   @ ~/.julia/juliaup/julia-1.12.2+0.aarch64.apple.darwin14/share/julia/stdlib/v1.12/Test/src/Test.jl:680 [inlined]
+ [2] macro expansion
+   @ ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/longtests/longtest_phasetype_panel.jl:971 [inlined]
+ [3] macro expansion
+   @ ~/.julia/juliaup/julia-1.12.2+0.aarch64.apple.darwin14/share/julia/stdlib/v1.12/Test/src/Test.jl:1776 [inlined]
+ [4] macro expansion
+   @ ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/longtests/longtest_phasetype_panel.jl:916 [inlined]
+ [5] macro expansion
+   @ ~/.julia/juliaup/julia-1.12.2+0.aarch64.apple.darwin14/share/julia/stdlib/v1.12/Test/src/Test.jl:1776 [inlined]
+ [6] top-level scope
+   @ ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/longtests/longtest_phasetype_panel.jl:829
+Parameter recovery with covariate (panel): Error During Test at /Users/fintzij/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/longtests/longtest_phasetype_panel.jl:914
+  Got exception outside of a @test
+  FieldError: type MultistateModels.MultistateModelFitted has no field `ij_vcov`, available fields: `data`, `parameters`, `bounds`, `loglik`, `vcov`, `vcov_type`, `subject_gradients`, `hazards`, `totalhazards`, `tmat`, `emat`, `hazkeys`, `subjectindices`, `SubjectWeights`, `ObservationWeights`, `CensoringPatterns`, `surrogate`, `ConvergenceRecords`, `ProposedPaths`, `modelcall`, `phasetype_expansion`, `smoothing_parameters`, `edf`
+  Stacktrace:
+    [1] getproperty(m::MultistateModels.MultistateModelFitted, s::Symbol)
+      @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/types/model_structs.jl:389
+    [2] macro expansion
+      @ ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/longtests/longtest_phasetype_panel.jl:1007 [inlined]
+    [3] macro expansion
+      @ ~/.julia/juliaup/julia-1.12.2+0.aarch64.apple.darwin14/share/julia/stdlib/v1.12/Test/src/Test.jl:1776 [inlined]
+    [4] macro expansion
+      @ ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/longtests/longtest_phasetype_panel.jl:916 [inlined]
+    [5] macro expansion
+      @ ~/.julia/juliaup/julia-1.12.2+0.aarch64.apple.darwin14/share/julia/stdlib/v1.12/Test/src/Test.jl:1776 [inlined]
+    [6] top-level scope
+      @ ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/longtests/longtest_phasetype_panel.jl:829
+    [7] include(mapexpr::Function, mod::Module, _path::String)
+      @ Base ./Base.jl:307
+    [8] top-level scope
+      @ none:5
+    [9] eval(m::Module, e::Any)
+      @ Core ./boot.jl:489
+   [10] exec_options(opts::Base.JLOptions)
+      @ Base ./client.jl:283
+   [11] _start()
+      @ Base ./client.jl:550
+Test Summary:                                                | Pass  Fail  Error  Total     Time
+Phase-Type Hazard: 2-Phase with Fixed Covariate (Panel Data) |    7     1      1      9  1m12.8s
+  Parameter recovery with covariate (panel)                  |    7     1      1      9  1m07.9s
+RNG of the outermost testset: Xoshiro(0xc2b21b7a28e83e34, 0xe6c10ea7be66b191, 0x5a4145aafbbd220e, 0xa1b78e275e2cd825, 0xa64086dbe207e630)
+ERROR: LoadError: Some tests did not pass: 7 passed, 1 failed, 1 errored, 0 broken.
+in expression starting at /Users/fintzij/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/longtests/longtest_phasetype_panel.jl:828

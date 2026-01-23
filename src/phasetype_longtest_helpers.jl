@@ -10,6 +10,8 @@ These functions were moved from src/phasetype/expansion.jl during package stream
 This file is included by the MultistateModelsTests module after longtest_helpers.jl.
 """
 
+using StatsModels: FormulaTerm
+
 import MultistateModels: Hazard, multistatemodel, HazardFunction, 
     PhaseTypeSurrogate, PhaseTypeConfig, build_phasetype_surrogate, @formula
 

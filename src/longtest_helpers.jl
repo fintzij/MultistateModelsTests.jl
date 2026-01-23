@@ -5,7 +5,16 @@
 # Shared utility functions for inference long tests.
 # This file is included by the MultistateModelsTests module after longtest_config.jl.
 # All required packages (DataFrames, Distributions, etc.) are imported by the module.
+#
+# For standalone use (direct include), we need to check and load required packages.
 # =============================================================================
+
+# Ensure required packages are available for standalone includes
+# These are all needed by the helper functions below
+using Printf
+using DataFrames
+using Distributions
+using Statistics
 
 mutable struct TestResult
     test_name::String

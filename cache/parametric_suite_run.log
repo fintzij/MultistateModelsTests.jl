@@ -1,0 +1,66 @@
+Running parametric suite tests...
+[ Info:   Running: exp_exact_nocov
+┌ Warning: No transitions observed in data (all statefrom == stateto). Falling back to :crude initialization. If this is template data for simulation, consider using `initialize=false` when creating the model.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/initialization.jl:467
+[ Info: ✓ Event rate: 0.886 (886/1000 events)
+[ Info:     Result: PASS
+[ Info: Saved result: exp_exact_nocov -> /Users/fintzij/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/cache/longtest_results/exp_exact_nocov.json
+[ Info:   Running: exp_exact_fixed
+[ Info:     Result: PASS
+[ Info: Saved result: exp_exact_fixed -> /Users/fintzij/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/cache/longtest_results/exp_exact_fixed.json
+[ Info:   Running: exp_exact_tvc
+[ Info:     Result: PASS
+[ Info: Saved result: exp_exact_tvc -> /Users/fintzij/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/cache/longtest_results/exp_exact_tvc.json
+[ Info:   Running: wei_exact_nocov
+[ Info: ⚠ Event rate: 0.994 (994/1000 events)
+┌ Warning: Event rate 0.994 outside expected range [0.05, 0.99]
+└ @ Main ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/src/longtest_helpers.jl:189
+[ Info:     Result: PASS
+[ Info: Saved result: wei_exact_nocov -> /Users/fintzij/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/cache/longtest_results/wei_exact_nocov.json
+[ Info:   Running: wei_exact_fixed
+[ Info:     Result: PASS
+[ Info: Saved result: wei_exact_fixed -> /Users/fintzij/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/cache/longtest_results/wei_exact_fixed.json
+[ Info:   Running: wei_exact_tvc
+[ Info:     Result: PASS
+[ Info: Saved result: wei_exact_tvc -> /Users/fintzij/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/cache/longtest_results/wei_exact_tvc.json
+[ Info:   Running: gom_exact_nocov
+[ Info: ✓ Event rate: 0.71 (710/1000 events)
+[ Info:     Result: PASS
+[ Info: Saved result: gom_exact_nocov -> /Users/fintzij/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/cache/longtest_results/gom_exact_nocov.json
+[ Info:   Running: gom_exact_fixed
+[ Info:     Result: PASS
+[ Info: Saved result: gom_exact_fixed -> /Users/fintzij/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/cache/longtest_results/gom_exact_fixed.json
+[ Info:   Running: gom_exact_tvc
+[ Info:     Result: PASS
+[ Info: Saved result: gom_exact_tvc -> /Users/fintzij/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/cache/longtest_results/gom_exact_tvc.json
+[ Info:   Running: exp_panel_nocov
+[ Info:     Result: PASS
+[ Info: Saved result: exp_panel_nocov -> /Users/fintzij/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/cache/longtest_results/exp_panel_nocov.json
+[ Info:   Running: exp_panel_fixed
+[ Info:     Result: PASS
+[ Info: Saved result: exp_panel_fixed -> /Users/fintzij/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/cache/longtest_results/exp_panel_fixed.json
+[ Info:   Running: exp_panel_tvc
+[ Info:     Result: PASS
+[ Info: Saved result: exp_panel_tvc -> /Users/fintzij/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/cache/longtest_results/exp_panel_tvc.json
+[ Info:   Running: wei_mcem_nocov
+[ Info:     Result: PASS
+[ Info: Saved result: wei_mcem_nocov -> /Users/fintzij/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/cache/longtest_results/wei_mcem_nocov.json
+[ Info:   Running: wei_mcem_fixed
+[ Info:     Result: PASS
+[ Info: Saved result: wei_mcem_fixed -> /Users/fintzij/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/cache/longtest_results/wei_mcem_fixed.json
+[ Info:   Running: wei_mcem_tvc
+[ Info:     Result: PASS
+[ Info: Saved result: wei_mcem_tvc -> /Users/fintzij/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/cache/longtest_results/wei_mcem_tvc.json
+[ Info:   Running: gom_mcem_nocov
+[ Info:     Result: PASS
+[ Info: Saved result: gom_mcem_nocov -> /Users/fintzij/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/cache/longtest_results/gom_mcem_nocov.json
+[ Info:   Running: gom_mcem_fixed
+[ Info:     Result: PASS
+[ Info: Saved result: gom_mcem_fixed -> /Users/fintzij/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/cache/longtest_results/gom_mcem_fixed.json
+[ Info:   Running: gom_mcem_tvc
+[ Info:     Result: PASS
+[ Info: Saved result: gom_mcem_tvc -> /Users/fintzij/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/cache/longtest_results/gom_mcem_tvc.json
+Test Summary:              | Pass  Total      Time
+Parametric Long Test Suite |   18     18  26m48.3s
+
+Done! Check cache/longtest_results/ for JSON files

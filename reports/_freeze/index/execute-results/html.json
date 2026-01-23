@@ -1,0 +1,12 @@
+{
+  "hash": "aba303f73e8f654b92226973686b8fa9",
+  "result": {
+    "engine": "jupyter",
+    "markdown": "---\ntitle: \"MultistateModels.jl\"\nsubtitle: \"Test & Validation Reports\"\npage-layout: full\n---\n\n\n\n::: {.callout-note appearance=\"minimal\"}\n\n![Tests](https://img.shields.io/badge/tests-stale-yellow) &nbsp; **Branch:** `penalized_splines` &nbsp; **Commit:** `bde2a53`\n\n\n:::\n\n## Overview\n\nComprehensive validation and documentation for [MultistateModels.jl](https://github.com/fintzij/MultistateModels.jl) — a Julia package for continuous-time multistate modeling.\n\n::: {.grid}\n\n::: {.g-col-6 .g-col-md-4}\n### [📐 Architecture](01_architecture.qmd)\nType hierarchy, hazard families, inference engine, and simulation strategies.\n:::\n\n::: {.g-col-6 .g-col-md-4}\n### [✅ Unit Tests](02_unit_tests.qmd)\nFunction-level tests for hazards, simulation, MCEM, and model construction.\n:::\n\n::: {.g-col-6 .g-col-md-4}\n### [📊 Long Tests](03_long_tests.qmd)\nStatistical recovery of parameters across hazard families and data types.\n:::\n\n::: {.g-col-6 .g-col-md-4}\n### [🎯 Simulation](04_simulation_diagnostics.qmd)\nVisual verification of event time distributions (CDF diagnostic plots).\n:::\n\n::: {.g-col-6 .g-col-md-4}\n### [⚡ Benchmarks](05_benchmarks.qmd)\nPerformance comparison of sampling methods and optimization strategies.\n:::\n\n::: {.g-col-6 .g-col-md-4}\n### [📦 Main Package](https://github.com/fintzij/MultistateModels.jl)\nSource code and documentation for MultistateModels.jl.\n:::\n\n:::\n\n## Test Results Summary\n\n*No cached test results available.*\n\n\n## Quick Start\n\n### Building Reports Locally\n\n```bash\ncd MultistateModelsTests/reports\nquarto render\n```\n\n### Running Tests and Recording Results\n\n```bash\n# Run full test suite with automatic cache recording\njulia --project=. -e 'using MultistateModelsTests; MultistateModelsTests.runtests()'\n\n# Or run with the dedicated script\njulia --project=. scripts/run_all_tests.jl\n```\n\nTest results are automatically cached when running via `runtests()`.\n\n### Checking Cache Status\n\n```bash\njulia --project=. scripts/refresh_cache.jl\n```\n\n",
+    "supporting": [
+      "index_files"
+    ],
+    "filters": [],
+    "includes": {}
+  }
+}

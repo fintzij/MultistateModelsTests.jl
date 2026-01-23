@@ -47,6 +47,8 @@ using MultistateModels
 using DataFrames
 using Random
 using LinearAlgebra
+using Distributions
+using Printf
 
 import MultistateModels: Hazard, @formula, multistatemodel, fit, set_parameters!, 
     simulate, get_parameters_flat, get_parameters

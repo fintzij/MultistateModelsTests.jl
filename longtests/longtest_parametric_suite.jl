@@ -51,16 +51,11 @@ using LinearAlgebra
 import MultistateModels: Hazard, @formula, multistatemodel, fit, set_parameters!, 
     simulate, get_parameters_flat, get_parameters
 
-# Configuration - include for standalone runs
-# Note: We check for different symbols to ensure both files are included
-# even when only longtest_config.jl was included first
-if !isdefined(Main, :VERBOSE_LONGTESTS) && !@isdefined(VERBOSE_LONGTESTS)
-    include(joinpath(@__DIR__, "longtest_config.jl"))
-end
-
-# Helpers - check for a function defined in longtest_helpers.jl
-if !isdefined(Main, :create_baseline_template) && !@isdefined(create_baseline_template)
-    include(joinpath(@__DIR__, "longtest_helpers.jl"))
+# Longtest config and helpers are loaded by MultistateModelsTests module.
+# For standalone runs, include from src/ (canonical location).
+if !@isdefined(PARAM_REL_TOL)
+    include(joinpath(@__DIR__, "..", "src", "longtest_config.jl"))
+    include(joinpath(@__DIR__, "..", "src", "longtest_helpers.jl"))
 end
 
 # LongTestResults (include for standalone runs)

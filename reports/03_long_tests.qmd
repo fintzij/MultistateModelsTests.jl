@@ -1175,12 +1175,12 @@ the same spline model to directly compare estimated coefficients to true values.
 
 | Test | Effect | Covariates | Status |
 |------|--------|------------|--------|
-| sp_ph_exact_nocov | PH | None | ✅ Pass |
-| sp_ph_exact_fixed | PH | Fixed | ✅ Pass |
-| sp_ph_exact_tvc | PH | Time-varying | ✅ Pass |
-| sp_aft_exact_nocov | AFT | None | ✅ Pass |
-| sp_aft_exact_fixed | AFT | Fixed | ✅ Pass |
-| sp_aft_exact_tvc | AFT | Time-varying | ✅ Pass |
+| sp_ph_exact_nocov | PH | None | ⏳ Not Run |
+| sp_ph_exact_fixed | PH | Fixed | ⏳ Not Run |
+| sp_ph_exact_tvc | PH | Time-varying | ⏳ Not Run |
+| sp_aft_exact_nocov | AFT | None | ⏳ Not Run |
+| sp_aft_exact_fixed | AFT | Fixed | ⏳ Not Run |
+| sp_aft_exact_tvc | AFT | Time-varying | ⏳ Not Run |
 
 #### 8.1.1 sp_ph_exact_nocov
 
@@ -1344,12 +1344,12 @@ Tests with panel data using MCEM with Markov surrogate.
 
 | Test | Effect | Covariates | Status |
 |------|--------|------------|--------|
-| sp_ph_panel_markov_nocov | PH | None | ✅ Pass |
-| sp_ph_panel_markov_fixed | PH | Fixed | ✅ Pass |
-| sp_ph_panel_markov_tvc | PH | Time-varying | ✅ Pass |
-| sp_aft_panel_markov_nocov | AFT | None | ✅ Pass |
-| sp_aft_panel_markov_fixed | AFT | Fixed | ✅ Pass |
-| sp_aft_panel_markov_tvc | AFT | Time-varying | ✅ Pass |
+| sp_ph_panel_markov_nocov | PH | None | ⏳ Not Run |
+| sp_ph_panel_markov_fixed | PH | Fixed | ⏳ Not Run |
+| sp_ph_panel_markov_tvc | PH | Time-varying | ⏳ Not Run |
+| sp_aft_panel_markov_nocov | AFT | None | ⏳ Not Run |
+| sp_aft_panel_markov_fixed | AFT | Fixed | ⏳ Not Run |
+| sp_aft_panel_markov_tvc | AFT | Time-varying | ⏳ Not Run |
 
 #### 8.2.1 sp_ph_panel_markov_nocov
 
@@ -1513,12 +1513,12 @@ Tests with panel data using MCEM with PhaseType surrogate.
 
 | Test | Effect | Covariates | Status |
 |------|--------|------------|--------|
-| sp_ph_panel_phasetype_nocov | PH | None | ✅ Pass |
-| sp_ph_panel_phasetype_fixed | PH | Fixed | ✅ Pass |
-| sp_ph_panel_phasetype_tvc | PH | Time-varying | ✅ Pass |
-| sp_aft_panel_phasetype_nocov | AFT | None | ✅ Pass |
-| sp_aft_panel_phasetype_fixed | AFT | Fixed | ✅ Pass |
-| sp_aft_panel_phasetype_tvc | AFT | Time-varying | ✅ Pass |
+| sp_ph_panel_phasetype_nocov | PH | None | ⏳ Not Run |
+| sp_ph_panel_phasetype_fixed | PH | Fixed | ⏳ Not Run |
+| sp_ph_panel_phasetype_tvc | PH | Time-varying | ⏳ Not Run |
+| sp_aft_panel_phasetype_nocov | AFT | None | ⏳ Not Run |
+| sp_aft_panel_phasetype_fixed | AFT | Fixed | ⏳ Not Run |
+| sp_aft_panel_phasetype_tvc | AFT | Time-varying | ⏳ Not Run |
 
 #### 8.3.1 sp_ph_panel_phasetype_nocov
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env julia
 """
 Parallel test runner - runs long tests in separate processes simultaneously.
-Usage: julia --project=. scripts/run_tests_parallel.jl [--workers N]
+Usage: julia --project=. scripts/run_tests_parallel.jl [--workers N] [--skip-unit]
 """
 
 using Pkg
@@ -11,17 +11,25 @@ using Distributed
 using Printf
 
 # Parse arguments
-local n_workers = 4  # default
+n_workers = 4  # default
+skip_unit = false
 for (i, arg) in enumerate(ARGS)
     if arg == "--workers" && i < length(ARGS)
-        global n_workers = parse(Int, ARGS[i+1])
+        n_workers = parse(Int, ARGS[i+1])
+    elseif arg == "--skip-unit"
+        skip_unit = true
     end
 end
 
-println("Setting up $n_workers worker processes...")
-addprocs(n_workers; exeflags="--project=$(joinpath(@__DIR__, ".."))")
+# Define paths BEFORE adding workers
+const TESTS_DIR_PATH = joinpath(@__DIR__, "..")
+const FIXTURES_PATH_STR = joinpath(TESTS_DIR_PATH, "fixtures", "TestFixtures.jl")
+const HELPERS_PATH_STR = joinpath(TESTS_DIR_PATH, "longtests", "longtest_helpers.jl")
 
-# Load packages on all workers first
+println("Setting up $n_workers worker processes...")
+addprocs(n_workers; exeflags="--project=$(TESTS_DIR_PATH)")
+
+# Load packages on all workers
 @everywhere begin
     using Test
     using MultistateModels
@@ -33,15 +41,10 @@ addprocs(n_workers; exeflags="--project=$(joinpath(@__DIR__, ".."))")
     using Logging
 end
 
-# Define paths for workers
-const TESTS_DIR = joinpath(@__DIR__, "..")
-const FIXTURES_PATH = joinpath(TESTS_DIR, "fixtures", "TestFixtures.jl")
-const HELPERS_PATH = joinpath(TESTS_DIR, "longtests", "longtest_helpers.jl")
-
-# Load fixtures and helpers on all workers
-@everywhere TESTS_DIR = $TESTS_DIR
-@everywhere FIXTURES_PATH = $FIXTURES_PATH  
-@everywhere HELPERS_PATH = $HELPERS_PATH
+# Send paths to workers and load fixtures/helpers
+@everywhere const TESTS_DIR = $TESTS_DIR_PATH
+@everywhere const FIXTURES_PATH = $FIXTURES_PATH_STR
+@everywhere const HELPERS_PATH = $HELPERS_PATH_STR
 
 @everywhere begin
     include(FIXTURES_PATH)
@@ -50,55 +53,60 @@ const HELPERS_PATH = joinpath(TESTS_DIR, "longtests", "longtest_helpers.jl")
 end
 
 # Load on main process too
-include(FIXTURES_PATH)
+include(FIXTURES_PATH_STR)
 using .TestFixtures
-include(HELPERS_PATH)
+include(HELPERS_PATH_STR)
 
 # ============================================================================
 # Run unit tests first (sequentially on main process - they're fast)
 # ============================================================================
-println("\n" * "="^70)
-println("PHASE 1: Running Unit Tests (sequential)")
-println("="^70 * "\n")
-
-unit_tests = [
-    "test_hazards.jl",
-    "test_helpers.jl",
-    "test_initialization.jl",
-    "test_mcem.jl",
-    "test_mll_consistency.jl",
-    "test_modelgeneration.jl",
-    "test_observation_weights_emat.jl",
-    "test_per_transition_obstype.jl",
-    "test_phasetype.jl",
-    "test_phasetype_emission_expansion.jl",
-    "test_phasetype_panel_expansion.jl",
-    "test_pijcv.jl",
-    "test_reconstructor.jl",
-    "test_reversible_tvc_loglik.jl",
-    "test_simulation.jl",
-    "test_sir.jl",
-    "test_splines.jl",
-    "test_subject_weights.jl",
-    "test_surrogates.jl",
-    "test_variance.jl"
-]
-
 unit_results = Dict{String, Symbol}()
-for test in unit_tests
-    print("  Running $test...")
-    flush(stdout)
-    try
-        @testset "$test" begin
-            include(joinpath(TESTS_DIR, "unit", test))
+
+if !skip_unit
+    println("\n" * "="^70)
+    println("PHASE 1: Running Unit Tests (sequential)")
+    println("="^70 * "\n")
+
+    unit_tests = [
+        "test_hazards.jl",
+        "test_helpers.jl",
+        "test_initialization.jl",
+        "test_mcem.jl",
+        "test_mll_consistency.jl",
+        "test_modelgeneration.jl",
+        "test_observation_weights_emat.jl",
+        "test_per_transition_obstype.jl",
+        "test_phasetype.jl",
+        "test_phasetype_emission_expansion.jl",
+        "test_phasetype_panel_expansion.jl",
+        "test_pijcv.jl",
+        "test_reconstructor.jl",
+        "test_reversible_tvc_loglik.jl",
+        "test_simulation.jl",
+        "test_sir.jl",
+        "test_splines.jl",
+        "test_subject_weights.jl",
+        "test_surrogates.jl",
+        "test_variance.jl"
+    ]
+
+    for test in unit_tests
+        print("  Running $test...")
+        flush(stdout)
+        try
+            @testset "$test" begin
+                include(joinpath(TESTS_DIR_PATH, "unit", test))
+            end
+            unit_results[test] = :passed
+            println(" ✓")
+        catch e
+            unit_results[test] = :failed
+            println(" ✗")
+            @error "Unit test failed" test exception=(e, catch_backtrace())
         end
-        unit_results[test] = :passed
-        println(" ✓")
-    catch e
-        unit_results[test] = :failed
-        println(" ✗")
-        @error "Unit test failed" test exception=(e, catch_backtrace())
     end
+else
+    println("\n[Skipping unit tests as requested]")
 end
 
 # ============================================================================

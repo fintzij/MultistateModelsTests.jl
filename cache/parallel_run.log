@@ -1,0 +1,25 @@
+Running longtests with 4 parallel jobs...
+Logs will be in: cache/longtest_logs/
+
+Starting: longtest_exact_markov.jl
+Starting: longtest_mcem.jl
+Starting: longtest_mcem_splines.jl
+Starting: longtest_mcem_tvc.jl
+✓ PASSED: longtest_exact_markov.jl
+Starting: longtest_phasetype.jl
+✓ PASSED: longtest_mcem.jl
+Starting: longtest_robust_markov_phasetype.jl
+✗ FAILED: longtest_phasetype.jl (see cache/longtest_logs/longtest_phasetype.log)
+Starting: longtest_robust_parametric.jl
+✓ PASSED: longtest_robust_markov_phasetype.jl
+Starting: longtest_simulation_distribution.jl
+✓ PASSED: longtest_mcem_tvc.jl
+Starting: longtest_simulation_tvc.jl
+✓ PASSED: longtest_simulation_tvc.jl
+Starting: longtest_sir.jl
+✓ PASSED: longtest_robust_parametric.jl
+Starting: longtest_variance_validation.jl
+✓ PASSED: longtest_sir.jl
+
+Waiting for all tests to complete...
+✓ PASSED: longtest_variance_validation.jl

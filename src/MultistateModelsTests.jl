@@ -6,8 +6,10 @@ using Distributions
 using LinearAlgebra
 using Logging
 using MultistateModels
+using Printf
 using Random
 using Statistics
+using StatsModels: FormulaTerm
 using Test
 using JSON3
 
@@ -16,6 +18,12 @@ const SUPPRESS_EXPECTED_WARNINGS = get(ENV, "MSM_SUPPRESS_WARNINGS", "true") == 
 
 # Long test results infrastructure
 include("LongTestResults.jl")
+
+# Long test configuration and helpers (moved from longtests/ to src/)
+# These must be included in order: config defines constants, helpers uses them
+include("longtest_config.jl")
+include("longtest_helpers.jl")
+include("phasetype_longtest_helpers.jl")
 
 """
 Custom logger that filters expected warnings during tests.
@@ -71,9 +79,9 @@ function runtests()
     end
 
     @testset "Unit Tests" begin
-        include(joinpath(UNIT_DIR, "test_modelgeneration.jl"))
         include(joinpath(UNIT_DIR, "test_hazards.jl"))
-        include(joinpath(UNIT_DIR, "test_helpers.jl"))
+        include(joinpath(UNIT_DIR, "test_hazard_macro.jl"))
+        include(joinpath(UNIT_DIR, "test_compute_hazard.jl"))
         include(joinpath(UNIT_DIR, "test_simulation.jl"))
         include(joinpath(UNIT_DIR, "test_pijcv.jl"))
         include(joinpath(UNIT_DIR, "test_phasetype.jl"))
@@ -81,11 +89,22 @@ function runtests()
         include(joinpath(UNIT_DIR, "test_surrogates.jl"))
         include(joinpath(UNIT_DIR, "test_mcem.jl"))
         include(joinpath(UNIT_DIR, "test_sir.jl"))
-        include(joinpath(UNIT_DIR, "test_mll_consistency.jl"))
-        include(joinpath(UNIT_DIR, "test_reconstructor.jl"))
         include(joinpath(UNIT_DIR, "test_reversible_tvc_loglik.jl"))
         include(joinpath(UNIT_DIR, "test_initialization.jl"))
         include(joinpath(UNIT_DIR, "test_variance.jl"))
+        include(joinpath(UNIT_DIR, "test_subject_weights.jl"))
+        include(joinpath(UNIT_DIR, "test_bounds.jl"))
+        include(joinpath(UNIT_DIR, "test_constraints.jl"))
+        include(joinpath(UNIT_DIR, "test_numerical_stability.jl"))
+        include(joinpath(UNIT_DIR, "test_ad_backends.jl"))
+        include(joinpath(UNIT_DIR, "test_cumulative_incidence.jl"))
+        include(joinpath(UNIT_DIR, "test_loglik_analytical.jl"))
+        include(joinpath(UNIT_DIR, "test_center_covariates.jl"))
+        include(joinpath(UNIT_DIR, "test_model_output.jl"))
+        include(joinpath(UNIT_DIR, "test_penalty_infrastructure.jl"))
+        include(joinpath(UNIT_DIR, "test_per_transition_obstype.jl"))
+        include(joinpath(UNIT_DIR, "test_error_messages.jl"))
+        include(joinpath(UNIT_DIR, "test_fit_markov_panel.jl"))
         include(joinpath(INTEGRATION_DIR, "test_parallel_likelihood.jl"))
         include(joinpath(INTEGRATION_DIR, "test_parameter_ordering.jl"))
     end
@@ -93,9 +112,8 @@ function runtests()
     if get(ENV, "MSM_TEST_LEVEL", "quick") == "full"
         @info "Running full test suite including long statistical tests..."
 
-        # Load shared configuration and helper functions for long tests
-        include(joinpath(LONGTESTS_DIR, "longtest_config.jl"))
-        include(joinpath(LONGTESTS_DIR, "longtest_helpers.jl"))
+        # Long test configuration and helpers are now loaded at module initialization
+        # (see includes at top of this file)
 
         only_test = get(ENV, "MSM_LONGTEST_ONLY", "")
         if !isempty(only_test)
@@ -113,7 +131,6 @@ function runtests()
             ("sim_tvc", "Long Tests - Simulation (Time-Varying Covariates)", "longtest_simulation_tvc.jl"),
             ("robust_exact", "Long Tests - Robust Exact Data (Tight Tolerances)", "longtest_robust_parametric.jl"),
             ("markov_phasetype_validation", "Long Tests - Markov/PhaseType Validation", "longtest_robust_markov_phasetype.jl"),
-            ("phasetype", "Long Tests - Phase-Type Hazard Models (Exact + Panel Data)", "longtest_phasetype.jl"),
             ("variance_validation", "Long Tests - Variance Estimation Validation", "longtest_variance_validation.jl"),
         ]
         

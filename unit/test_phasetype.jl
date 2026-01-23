@@ -43,8 +43,11 @@ import MultistateModels: PhaseTypeConfig, PhaseTypeDistribution, PhaseTypeSurrog
     collapse_phasetype_path, get_parameters_flat, get_parameters_nested,
     get_parameters_natural, get_unflatten_fn
 
-# Include longtest helper for build_phasetype_emat (test infrastructure)
-include(joinpath(@__DIR__, "..", "longtests", "phasetype_longtest_helpers.jl"))
+# Phase-type longtest helpers are now in src/ (loaded by module).
+# For standalone runs, include from canonical location:
+if !@isdefined(build_phasetype_emat)
+    include(joinpath(@__DIR__, "..", "src", "phasetype_longtest_helpers.jl"))
+end
 
 # =============================================================================
 # Helper: Analytic Matrix Exponential for 2-Phase Coxian

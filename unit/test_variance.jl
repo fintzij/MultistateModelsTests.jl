@@ -530,3 +530,207 @@ end
         @test total_hess ≈ sum_hess atol=1e-10
     end
 end
+
+# =============================================================================
+# Constrained Variance Functions (merged from test_constrained_variance.jl)
+# =============================================================================
+#
+# Tests the reduced Hessian approach for variance estimation under constraints:
+#   Var(θ̂) = Z(Z'HZ)⁻¹Z'
+# where Z spans the null space of the active constraint Jacobian.
+#
+# Reference: Item #27 in CODEBASE_REFACTORING_GUIDE.md
+# =============================================================================
+
+# Import internal functions for constrained variance testing
+import MultistateModels: identify_active_constraints, compute_constraint_jacobian,
+    identify_bound_parameters, compute_null_space_basis, compute_constrained_vcov
+
+@testset "identify_active_constraints" begin
+    @testset "All constraints active (equality constraints)" begin
+        cons_fn = θ -> [θ[1] + θ[2] - 1.0]
+        constraints = (cons_fn = cons_fn, lcons = [0.0], ucons = [0.0])
+        
+        θ = [0.5, 0.5]
+        active = identify_active_constraints(θ, constraints)
+        @test active[1] == true
+        @test sum(active) == 1
+    end
+    
+    @testset "No constraints active (interior point)" begin
+        cons_fn = θ -> [θ[1] + θ[2]]
+        constraints = (cons_fn = cons_fn, lcons = [0.0], ucons = [1.0])
+        
+        θ = [0.2, 0.2]
+        active = identify_active_constraints(θ, constraints)
+        @test active[1] == false
+    end
+    
+    @testset "Inequality at lower bound" begin
+        cons_fn = θ -> [θ[1] + θ[2]]
+        constraints = (cons_fn = cons_fn, lcons = [0.0], ucons = [1.0])
+        
+        θ = [0.0, 0.0]
+        active = identify_active_constraints(θ, constraints)
+        @test active[1] == true
+    end
+    
+    @testset "Inequality at upper bound" begin
+        cons_fn = θ -> [θ[1] + θ[2]]
+        constraints = (cons_fn = cons_fn, lcons = [0.0], ucons = [1.0])
+        
+        θ = [0.5, 0.5]
+        active = identify_active_constraints(θ, constraints)
+        @test active[1] == true
+    end
+    
+    @testset "Multiple constraints with mixed activity" begin
+        cons_fn = θ -> [θ[1] - θ[2], θ[1] + θ[2]]
+        constraints = (cons_fn = cons_fn, lcons = [0.0, -Inf], ucons = [0.0, 2.0])
+        
+        θ = [0.5, 0.5]
+        active = identify_active_constraints(θ, constraints)
+        @test active[1] == true   # equality satisfied
+        @test active[2] == false  # interior of inequality
+    end
+    
+    @testset "Tolerance handling" begin
+        cons_fn = θ -> [θ[1]]
+        constraints = (cons_fn = cons_fn, lcons = [0.0], ucons = [0.0])
+        
+        θ = [1e-5]
+        active_tight = identify_active_constraints(θ, constraints; tol=1e-6)
+        @test active_tight[1] == false
+        
+        active_loose = identify_active_constraints(θ, constraints; tol=1e-4)
+        @test active_loose[1] == true
+    end
+end
+
+@testset "compute_constraint_jacobian" begin
+    @testset "Linear constraint" begin
+        cons_fn = θ -> [θ[1] + 2θ[2] - 3θ[3]]
+        constraints = (cons_fn = cons_fn,)
+        
+        θ = [1.0, 2.0, 3.0]
+        J = compute_constraint_jacobian(θ, constraints)
+        
+        @test size(J) == (1, 3)
+        @test J[1, 1] ≈ 1.0
+        @test J[1, 2] ≈ 2.0
+        @test J[1, 3] ≈ -3.0
+    end
+    
+    @testset "Nonlinear constraint" begin
+        cons_fn = θ -> [θ[1]^2 + θ[2]^2 - 1]
+        constraints = (cons_fn = cons_fn,)
+        
+        θ = [0.6, 0.8]
+        J = compute_constraint_jacobian(θ, constraints)
+        
+        @test size(J) == (1, 2)
+        @test J[1, 1] ≈ 2 * 0.6
+        @test J[1, 2] ≈ 2 * 0.8
+    end
+    
+    @testset "Multiple constraints" begin
+        cons_fn = θ -> [θ[1] + θ[2], θ[1] - θ[2]]
+        constraints = (cons_fn = cons_fn,)
+        
+        θ = [1.0, 2.0]
+        J = compute_constraint_jacobian(θ, constraints)
+        
+        @test size(J) == (2, 2)
+        @test J ≈ [1.0 1.0; 1.0 -1.0]
+    end
+end
+
+@testset "identify_bound_parameters" begin
+    @testset "No parameters at bounds" begin
+        θ = [0.5, 1.0, 1.5]
+        lb = [0.0, 0.0, 0.0]
+        ub = [2.0, 2.0, 2.0]
+        
+        at_bounds = identify_bound_parameters(θ, lb, ub)
+        @test sum(at_bounds) == 0
+    end
+    
+    @testset "Parameter at lower bound" begin
+        θ = [0.0, 1.0, 1.5]
+        lb = [0.0, 0.0, 0.0]
+        ub = [2.0, 2.0, 2.0]
+        
+        at_bounds = identify_bound_parameters(θ, lb, ub)
+        @test at_bounds[1] == true
+        @test at_bounds[2] == false
+    end
+    
+    @testset "Multiple parameters at bounds" begin
+        θ = [0.0, 2.0, 1.5]
+        lb = [0.0, 0.0, 0.0]
+        ub = [2.0, 2.0, 2.0]
+        
+        at_bounds = identify_bound_parameters(θ, lb, ub)
+        @test sum(at_bounds) == 2
+        @test at_bounds[1] == true
+        @test at_bounds[2] == true
+        @test at_bounds[3] == false
+    end
+end
+
+@testset "compute_null_space_basis" begin
+    @testset "Empty matrix returns identity" begin
+        J = Matrix{Float64}(undef, 0, 3)
+        Z = compute_null_space_basis(J)
+        
+        @test size(Z) == (3, 3)
+        @test Z ≈ Matrix(I, 3, 3)
+    end
+    
+    @testset "Full column rank has trivial null space" begin
+        J = Matrix{Float64}(I, 2, 2)
+        Z = compute_null_space_basis(J)
+        
+        @test size(Z) == (2, 0)
+    end
+    
+    @testset "Single linear constraint" begin
+        J = [1.0 1.0 1.0]
+        Z = compute_null_space_basis(J)
+        
+        @test size(Z) == (3, 2)
+        @test Z' * Z ≈ Matrix(I, 2, 2) atol=1e-10
+        @test norm(J * Z) ≈ 0.0 atol=1e-10
+    end
+end
+
+@testset "compute_constrained_vcov" begin
+    @testset "No active constraints reduces to standard inverse" begin
+        H = -[2.0 0.0; 0.0 3.0]
+        J_active = Matrix{Float64}(undef, 0, 2)
+        
+        vcov = compute_constrained_vcov(H, J_active)
+        expected = inv(-H)
+        @test vcov ≈ expected atol=1e-10
+    end
+    
+    @testset "Single equality constraint" begin
+        H = -[4.0 0.0; 0.0 4.0]
+        J_active = [1.0 -1.0]
+        
+        vcov = compute_constrained_vcov(H, J_active)
+        
+        @test issymmetric(vcov)
+        @test vcov[1, 1] ≈ vcov[2, 2] atol=1e-10
+    end
+    
+    @testset "Variance in constrained direction is zero" begin
+        H = -[2.0 0.0; 0.0 2.0]
+        J_active = [1.0 0.0]
+        
+        vcov = compute_constrained_vcov(H, J_active)
+        
+        @test abs(vcov[1, 1]) < 1e-10
+        @test vcov[2, 2] > 0
+    end
+end

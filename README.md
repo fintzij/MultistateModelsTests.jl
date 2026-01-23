@@ -55,45 +55,101 @@ Pkg.instantiate()
 ```
 MultistateModelsTests/
 ├── Project.toml                    # Package manifest
-├── src/
-│   └── MultistateModelsTests.jl    # Main module with runtests()
-├── fixtures/
-│   └── TestFixtures.jl             # Shared test data generators
+├── README.md                       # This file
+│
+├── src/                            # Package module code
+│   ├── MultistateModelsTests.jl    # Main module with runtests()
+│   ├── LongTestResults.jl          # Result storage structures
+│   └── ReportHelpers.jl            # Quarto report utilities
+│
+├── fixtures/                       # Shared test data generators
+│   └── TestFixtures.jl
+│
 ├── unit/                           # Quick tests (~2 min)
-│   ├── test_hazards.jl
-│   ├── test_helpers.jl
-│   ├── test_initialization.jl
-│   ├── test_mcem.jl
-│   ├── test_modelgeneration.jl
-│   ├── test_ncv.jl
-│   ├── test_phasetype.jl
-│   ├── test_reconstructor.jl
-│   ├── test_reversible_tvc_loglik.jl
-│   ├── test_simulation.jl
-│   ├── test_splines.jl
-│   ├── test_surrogates.jl
-│   └── test_variance.jl            # Variance estimation unit tests
+│   ├── test_hazards.jl             # Hazard function validation
+│   ├── test_mcem.jl                # MCEM infrastructure tests
+│   ├── test_phasetype.jl           # Phase-type model tests
+│   ├── test_simulation.jl          # Simulation correctness
+│   ├── test_splines.jl             # Spline hazard tests
+│   ├── test_variance.jl            # Variance estimation tests
+│   └── ...                         # Additional unit tests
+│
 ├── integration/                    # Integration tests
 │   ├── test_parallel_likelihood.jl
 │   └── test_parameter_ordering.jl
-└── longtests/                      # Statistical validation (~30+ min)
-    ├── longtest_config.jl
-    ├── longtest_helpers.jl
-    ├── longtest_exact_markov.jl
-    ├── longtest_mcem.jl
-    ├── longtest_mcem_splines.jl
-    ├── longtest_mcem_tvc.jl
-    ├── longtest_phasetype.jl       # Includes _exact and _panel
-    ├── longtest_phasetype_exact.jl
-    ├── longtest_phasetype_panel.jl
-    ├── longtest_robust_markov_phasetype.jl
-    ├── longtest_robust_parametric.jl
-    ├── longtest_simulation_distribution.jl
-    ├── longtest_simulation_tvc.jl
-    ├── longtest_sir.jl             # SIR/LHS comparison (optional)
-    ├── longtest_variance_validation.jl
-    └── phasetype_longtest_helpers.jl
+│
+├── longtests/                      # Statistical validation (~30+ min)
+│   ├── longtest_config.jl          # Shared configuration
+│   ├── longtest_helpers.jl         # Common test utilities
+│   ├── longtest_exact_markov.jl    # Exact data MLE validation
+│   ├── longtest_mcem.jl            # MCEM convergence tests
+│   ├── longtest_mcem_splines.jl    # Spline MCEM validation
+│   ├── longtest_mcem_tvc.jl        # TVC MCEM validation
+│   ├── longtest_parametric_suite.jl # Full parametric test matrix
+│   ├── longtest_phasetype*.jl      # Phase-type proposal tests
+│   ├── longtest_sir.jl             # SIR/LHS resampling tests
+│   ├── longtest_variance_validation.jl
+│   └── ...                         # Additional long tests
+│
+├── cache/                          # Runtime outputs (gitignored)
+│   ├── longtest_*_YYYYMMDD.txt     # Console output from test runs
+│   ├── unit_output_YYYYMMDD.txt    # Unit test console output
+│   └── longtest_results/           # Structured JSON results
+│       └── *.json                  # Per-scenario results for Quarto
+│
+├── reports/                        # ★ MASTER TEST REPORTS ★
+│   ├── _quarto.yml                 # Quarto project config
+│   ├── index.qmd                   # Report landing page
+│   ├── 02_unit_tests.qmd           # Unit test report
+│   ├── 03_long_tests.qmd           # Long test report (uses cache/longtest_results/)
+│   ├── 04_simulation_diagnostics.qmd
+│   ├── 05_benchmarks.qmd
+│   └── _site/                      # ★ RENDERED HTML REPORTS ★
+│       ├── index.html              # View this for test status
+│       ├── 02_unit_tests.html
+│       ├── 03_long_tests.html
+│       └── ...
+│
+├── diagnostics/                    # Development diagnostics
+│   ├── generate_model_diagnostics.jl  # Diagnostic generator script
+│   ├── *.md / *.html               # Rendered diagnostic reports
+│   └── assets/                     # Generated diagnostic plots
+│
+├── benchmarks/                     # Performance benchmarks
+│   └── spline_comparison/          # Julia vs R spline comparison
+│
+├── scripts/                        # Utility scripts
+│   ├── run_longtests.jl            # Long test runner
+│   └── run_all_tests.jl            # Full test runner
+│
+└── scratch/                        # Temporary development files
 ```
+
+### Key Directories
+
+| Directory | Purpose | Gitignored |
+|-----------|---------|------------|
+| `unit/` | Fast unit tests (~2 min) | No |
+| `integration/` | Integration tests | No |
+| `longtests/` | Statistical validation (~30+ min) | No |
+| `cache/` | Runtime outputs (txt, json) | Yes |
+| `reports/` | Quarto source + rendered HTML | Partial (_site/) |
+| `diagnostics/` | Development diagnostic reports | Partial (assets/) |
+| `scratch/` | Temporary development files | Yes |
+
+### Master Test Reports
+
+**The canonical test reports are in `reports/_site/`**. These HTML files are rendered from Quarto:
+
+```bash
+# Re-render reports after running tests
+cd MultistateModelsTests/reports
+quarto render
+```
+
+The reports pull data from:
+- `cache/longtest_results/*.json` - Structured test results  
+- Unit test output captured during `Pkg.test()`
 
 ## Running Tests
 

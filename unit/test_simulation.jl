@@ -473,3 +473,257 @@ end
         @test length(paths_cached) == 2
     end
 end
+
+# =============================================================================
+# Additional Simulation Boundary Condition Tests (Phase 3 Gap #4)
+# =============================================================================
+#
+# These tests cover edge cases in simulation that were identified as gaps
+# in the testing infrastructure audit (Phase 2).
+#
+# Tests include:
+# 1. Zero hazard rate → paths that never transition
+# 2. Very small time intervals (~1e-15)
+# 3. Very large time intervals (~1e10)
+# 4. Attempting to simulate from absorbing states
+#
+# =============================================================================
+
+@testset "Simulation Boundary Conditions" begin
+    
+    @testset "Zero hazard rate - no transitions" begin
+        # With zero or near-zero hazard rate, subjects should never transition
+        # Note: The box constraint may prevent exactly zero, so we test very small rate
+        
+        h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
+        dat = DataFrame(
+            id = 1:10,
+            tstart = zeros(10),
+            tstop = fill(100.0, 10),  # Long observation window
+            statefrom = ones(Int, 10),
+            stateto = ones(Int, 10),
+            obstype = fill(1, 10)
+        )
+        
+        model = multistatemodel(h12; data=dat, initialize=false)
+        
+        # Set a very small rate (near-zero)
+        very_small_rate = 1e-12
+        set_parameters!(model, (h12 = [very_small_rate],))
+        
+        # Simulate paths - with this tiny rate, almost all should stay in state 1
+        Random.seed!(42)
+        n_stayed = 0
+        nsim = 50
+        for _ in 1:nsim
+            path = simulate_path(model, 1)
+            if path.states[end] == 1  # Still in initial state
+                n_stayed += 1
+            end
+        end
+        
+        # With rate = 1e-12 and tmax = 100, probability of no transition ≈ exp(-1e-10) ≈ 1
+        # So almost all paths should stay in state 1
+        @test n_stayed >= nsim - 5  # Allow a few to transition due to randomness
+    end
+    
+    @testset "Very small time intervals (~1e-15)" begin
+        # Test numerical stability with extremely small time intervals
+        dt = 1e-15
+        
+        h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
+        dat = DataFrame(
+            id = [1],
+            tstart = [0.0],
+            tstop = [dt],
+            statefrom = [1],
+            stateto = [1],
+            obstype = [1]
+        )
+        
+        model = multistatemodel(h12; data=dat, initialize=false)
+        set_parameters!(model, (h12 = [1.0],))  # Standard rate
+        
+        # Simulation should not crash, path should be valid
+        Random.seed!(123)
+        path = simulate_path(model, 1)
+        
+        @test length(path.times) >= 1
+        @test all(isfinite, path.times)
+        @test path.times[1] >= 0.0
+        @test path.times[end] <= dt + 1e-10  # Allow tiny numerical error
+    end
+    
+    @testset "Very large time intervals (~1e10)" begin
+        # Test numerical stability with very large time intervals
+        dt = 1e10
+        
+        h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
+        dat = DataFrame(
+            id = [1],
+            tstart = [0.0],
+            tstop = [dt],
+            statefrom = [1],
+            stateto = [2],
+            obstype = [1]
+        )
+        
+        model = multistatemodel(h12; data=dat, initialize=false)
+        set_parameters!(model, (h12 = [1e-8],))  # Very small rate for large interval
+        
+        Random.seed!(456)
+        path = simulate_path(model, 1)
+        
+        @test length(path.times) >= 1
+        @test all(isfinite, path.times)
+        @test path.times[1] >= 0.0
+        @test path.times[end] <= dt
+    end
+    
+    @testset "High rate with short interval - guaranteed transition" begin
+        # With very high rate and reasonable interval, transition should occur
+        high_rate = 100.0
+        interval = 1.0
+        
+        h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
+        dat = DataFrame(
+            id = 1:20,
+            tstart = zeros(20),
+            tstop = fill(interval, 20),
+            statefrom = ones(Int, 20),
+            stateto = fill(2, 20),
+            obstype = fill(1, 20)
+        )
+        
+        model = multistatemodel(h12; data=dat, initialize=false)
+        set_parameters!(model, (h12 = [high_rate],))
+        
+        # With rate=100, P(transition before t=1) = 1 - exp(-100) ≈ 1
+        Random.seed!(789)
+        n_transitioned = 0
+        for i in 1:20
+            path = simulate_path(model, i)
+            if length(path.states) > 1 && path.states[end] == 2
+                n_transitioned += 1
+            end
+        end
+        
+        # Almost all should transition
+        @test n_transitioned >= 18
+    end
+    
+    @testset "Simulation from absorbing state already handled" begin
+        # The toy_absorbing_start_model fixture tests this
+        # Here we verify the path has exactly one state
+        fixture = toy_absorbing_start_model()
+        model = fixture.model
+        
+        Random.seed!(101)
+        path = simulate_path(model, 1)
+        
+        # Subject starting in absorbing state should have single-point path
+        @test length(path.times) == 1
+        @test length(path.states) == 1
+        # The state should be the absorbing state
+        @test path.states[1] == 3  # State 3 is absorbing in this fixture
+    end
+    
+    @testset "Weibull hazard boundary conditions" begin
+        # Weibull has h(t) = κλt^{κ-1}, which is 0 at t=0 when κ>1
+        # Test that simulation handles this correctly
+        
+        h12 = Hazard(@formula(0 ~ 1), "wei", 1, 2)
+        dat = DataFrame(
+            id = [1],
+            tstart = [0.0],
+            tstop = [10.0],
+            statefrom = [1],
+            stateto = [2],
+            obstype = [1]
+        )
+        
+        model = multistatemodel(h12; data=dat, initialize=false)
+        # Weibull with shape > 1 (increasing hazard)
+        set_parameters!(model, (h12 = [2.0, 0.1],))  # shape=2, scale=0.1
+        
+        Random.seed!(202)
+        path = simulate_path(model, 1)
+        
+        @test length(path.times) >= 1
+        @test all(isfinite, path.times)
+        @test path.times[1] == 0.0
+    end
+    
+    @testset "Gompertz hazard boundary conditions" begin
+        # Gompertz has h(t) = b·exp(a·t)
+        # With a > 0, hazard increases; with a < 0, hazard decreases
+        
+        h12 = Hazard(@formula(0 ~ 1), "gom", 1, 2)
+        dat = DataFrame(
+            id = [1],
+            tstart = [0.0],
+            tstop = [10.0],
+            statefrom = [1],
+            stateto = [2],
+            obstype = [1]
+        )
+        
+        model = multistatemodel(h12; data=dat, initialize=false)
+        # Gompertz with positive shape (increasing hazard)
+        set_parameters!(model, (h12 = [0.1, 0.2],))  # shape=0.1, rate=0.2
+        
+        Random.seed!(303)
+        path = simulate_path(model, 1)
+        
+        @test length(path.times) >= 1
+        @test all(isfinite, path.times)
+        
+        # Also test with negative shape (decreasing hazard)
+        set_parameters!(model, (h12 = [-0.1, 0.3],))
+        
+        Random.seed!(404)
+        path2 = simulate_path(model, 1)
+        
+        @test length(path2.times) >= 1
+        @test all(isfinite, path2.times)
+    end
+    
+    @testset "Multiple competing risks with mixed rates" begin
+        # Test simulation with multiple hazards where one is very high and one very low
+        
+        h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
+        h13 = Hazard(@formula(0 ~ 1), "exp", 1, 3)
+        
+        dat = DataFrame(
+            id = 1:30,
+            tstart = zeros(30),
+            tstop = fill(5.0, 30),
+            statefrom = ones(Int, 30),
+            stateto = fill(2, 30),  # arbitrary
+            obstype = fill(1, 30)
+        )
+        
+        model = multistatemodel(h12, h13; data=dat, initialize=false)
+        
+        # High rate to state 2, very low rate to state 3
+        set_parameters!(model, (h12 = [2.0], h13 = [0.01]))
+        
+        Random.seed!(505)
+        n_to_state2 = 0
+        n_to_state3 = 0
+        for i in 1:30
+            path = simulate_path(model, i)
+            final_state = path.states[end]
+            if final_state == 2
+                n_to_state2 += 1
+            elseif final_state == 3
+                n_to_state3 += 1
+            end
+        end
+        
+        # Most transitions should be to state 2 (higher rate)
+        # With rates 2.0 and 0.01, P(2|transition) ≈ 2/(2+0.01) ≈ 0.995
+        @test n_to_state2 > n_to_state3
+        @test n_to_state2 >= 20  # At least 20 out of 30 should go to state 2
+    end
+end

@@ -452,18 +452,14 @@ end
         # Set initial parameters satisfying constraint
         set_parameters!(model, (h12 = [1.25], h21 = [1.25]))
         
-        # Fit with constraints
+        # Fit with constraints - test with IJ variance
         fitted = fit(model; constraints=cons, verbose=false, vcov_type=:ij)
         
         # Item #27: Variance SHOULD be computed even with constraints (reduced Hessian approach)
-        vcov = get_vcov(fitted; type=:model)
+        vcov = get_vcov(fitted)
         @test !isnothing(vcov)
         @test size(vcov) == (2, 2)  # 2 parameters total
         @test issymmetric(vcov)
-        
-        # IJ variance should also be computable with constraints
-        vcov_ij = get_vcov(fitted; type=:ij)
-        @test !isnothing(vcov_ij)
     end
 end
 

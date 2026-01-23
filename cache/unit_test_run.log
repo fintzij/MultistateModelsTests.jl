@@ -1,0 +1,244 @@
+
+******************************************************************************
+This program contains Ipopt, a library for large-scale nonlinear optimization.
+ Ipopt is released as open source code under the Eclipse Public License (EPL).
+         For more information visit https://github.com/coin-or/Ipopt
+******************************************************************************
+
+┌ Warning: No transitions observed in data (all statefrom == stateto). Falling back to :crude initialization. If this is template data for simulation, consider using `initialize=false` when creating the model.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/initialization.jl:467
+┌ Warning: No transitions observed in data (all statefrom == stateto). Falling back to :crude initialization. If this is template data for simulation, consider using `initialize=false` when creating the model.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/initialization.jl:467
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [0.333, 0.667]
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [0.333, 0.667]
+┌ Warning: No transitions observed in data (all statefrom == stateto). Falling back to :crude initialization. If this is template data for simulation, consider using `initialize=false` when creating the model.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/initialization.jl:467
+┌ Warning: No transitions observed in data (all statefrom == stateto). Falling back to :crude initialization. If this is template data for simulation, consider using `initialize=false` when creating the model.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/initialization.jl:467
+┌ Warning: No transitions observed in data (all statefrom == stateto). Falling back to :crude initialization. If this is template data for simulation, consider using `initialize=false` when creating the model.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/initialization.jl:467
+┌ Warning: No transitions observed in data (all statefrom == stateto). Falling back to :crude initialization. If this is template data for simulation, consider using `initialize=false` when creating the model.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/initialization.jl:467
+┌ Warning: No transitions observed in data (all statefrom == stateto). Falling back to :crude initialization. If this is template data for simulation, consider using `initialize=false` when creating the model.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/initialization.jl:467
+┌ Warning: No transitions observed in data (all statefrom == stateto). Falling back to :crude initialization. If this is template data for simulation, consider using `initialize=false` when creating the model.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/initialization.jl:467
+┌ Warning: No transitions observed in data (all statefrom == stateto). Falling back to :crude initialization. If this is template data for simulation, consider using `initialize=false` when creating the model.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/initialization.jl:467
+┌ Warning: No transitions observed in data (all statefrom == stateto). Falling back to :crude initialization. If this is template data for simulation, consider using `initialize=false` when creating the model.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/initialization.jl:467
+┌ Warning: 30 subject Hessians contain NaN/Inf values. Check for extreme parameter values or zero hazards. Affected subjects: [1, 2, 3, 4, 5]...
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/inference/smoothing_selection.jl:2028
+┌ Warning: Penalized Hessian contains non-finite values (0 NaN, 23 Inf). Returning NaN EDFs.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/inference/smoothing_selection.jl:2043
+┌ Warning: Subject Hessian contains non-finite values (0 NaN, 9 Inf). This typically indicates:
+│   1. Zero/negative hazard values (check parameter bounds)
+│   2. Spline evaluation outside knot range
+│   3. Extreme parameter values during optimization
+│ Affected parameter indices: Int64[]
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/inference/smoothing_selection.jl:801
+┌ Warning: Subject Hessian contains non-finite values (0 NaN, 9 Inf). This typically indicates:
+│   1. Zero/negative hazard values (check parameter bounds)
+│   2. Spline evaluation outside knot range
+│   3. Extreme parameter values during optimization
+│ Affected parameter indices: Int64[]
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/inference/smoothing_selection.jl:801
+┌ Warning: 15 subject Hessians contain NaN/Inf values. Check for extreme parameter values or zero hazards. Affected subjects: [1, 2, 3, 4, 5]...
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/inference/smoothing_selection.jl:2028
+┌ Warning: Penalized Hessian contains non-finite values (0 NaN, 23 Inf). Returning NaN EDFs.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/inference/smoothing_selection.jl:2043
+┌ Warning: build_phasetype_tpm_book with markov_surrogate argument is deprecated. Use build_phasetype_tpm_book(surrogate, books, data) instead.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/inference/sampling_phasetype.jl:966
+┌ Warning: Crude initialization violates constraints. Parameters initialized but may need manual adjustment before fitting.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/initialization.jl:47
+┌ Warning: Crude initialization violates constraints. Parameters initialized but may need manual adjustment before fitting.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/initialization.jl:47
+┌ Warning: Crude initialization violates constraints. Parameters initialized but may need manual adjustment before fitting.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/initialization.jl:47
+┌ Warning: Crude initialization violates constraints. Parameters initialized but may need manual adjustment before fitting.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/initialization.jl:47
+┌ Warning: Crude initialization violates constraints. Parameters initialized but may need manual adjustment before fitting.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/initialization.jl:47
+┌ Warning: Crude initialization violates constraints. Parameters initialized but may need manual adjustment before fitting.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/initialization.jl:47
+┌ Warning: Crude initialization violates constraints. Parameters initialized but may need manual adjustment before fitting.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/initialization.jl:47
+┌ Warning: Crude initialization violates constraints. Parameters initialized but may need manual adjustment before fitting.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/initialization.jl:47
+┌ Warning: Crude initialization violates constraints. Parameters initialized but may need manual adjustment before fitting.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/initialization.jl:47
+┌ Warning: Crude initialization violates constraints. Parameters initialized but may need manual adjustment before fitting.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/initialization.jl:47
+┌ Warning: Crude initialization violates constraints. Parameters initialized but may need manual adjustment before fitting.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/initialization.jl:47
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [0.47, 0.609]
+[ Info: Auto-placed 2 interior knots for 2→1 transition at: [0.36, 0.471]
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [0.47, 0.609]
+[ Info: Auto-placed 2 interior knots for 2→1 transition at: [0.36, 0.471]
+[ Info: Natural boundary conditions are not currently compatible with monotone splines. The restrictions on second derivatives at the spline boundaries will be removed.
+[ Info: Natural boundary conditions are not currently compatible with monotone splines. The restrictions on second derivatives at the spline boundaries will be removed.
+[ Info: Natural boundary conditions are not currently compatible with monotone splines. The restrictions on second derivatives at the spline boundaries will be removed.
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [1.168, 2.697]
+[ Info: Auto-placed 2 interior knots for 1→3 transition at: [2.798, 3.578]
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [1.168, 2.697]
+[ Info: Auto-placed 2 interior knots for 1→3 transition at: [2.798, 3.578]
+[ Info: Using observed transition times for knot calibration
+[ Info: Calibrated 2 shared interior knots for h12 at: [1.722, 3.296]
+[ Info: Calibrated 2 shared interior knots for h13 at: [1.722, 3.296]
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [1.168, 2.697]
+[ Info: Auto-placed 2 interior knots for 1→3 transition at: [2.798, 3.578]
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [1.168, 2.697]
+[ Info: Auto-placed 2 interior knots for 1→3 transition at: [2.798, 3.578]
+[ Info: Using observed transition times for knot calibration
+[ Info: Calibrated 3 shared interior knots for h12 at: [1.196, 2.592, 3.575]
+[ Info: Calibrated 3 shared interior knots for h13 at: [1.196, 2.592, 3.575]
+[ Info: Using observed transition times for knot calibration
+[ Info: Calibrated 4 shared interior knots for h12 at: [1.117, 2.006, 2.889, 3.631]
+[ Info: Calibrated 4 shared interior knots for h13 at: [1.117, 2.006, 2.889, 3.631]
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [1.168, 2.697]
+[ Info: Auto-placed 2 interior knots for 1→3 transition at: [2.798, 3.578]
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [1.168, 2.697]
+[ Info: Auto-placed 2 interior knots for 1→3 transition at: [2.798, 3.578]
+[ Info: Using observed transition times for knot calibration
+[ Info: Calibrated 3 shared interior knots for h12 at: [1.196, 2.592, 3.575]
+[ Info: Calibrated 3 shared interior knots for h13 at: [1.196, 2.592, 3.575]
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [1.168, 2.697]
+[ Info: Auto-placed 2 interior knots for 1→3 transition at: [2.798, 3.578]
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [1.168, 2.697]
+[ Info: Auto-placed 2 interior knots for 1→3 transition at: [2.798, 3.578]
+┌ Warning: Multiple smoothing parameters detected (n_lambda=2).
+│ Current implementation uses shared λ for all smooth terms.
+│ Consider calibrating each term separately with `scope=:baseline` or `scope=:covariates`.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/inference/smoothing_selection.jl:1432
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [1.168, 2.697]
+[ Info: Auto-placed 2 interior knots for 1→3 transition at: [2.798, 3.578]
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [1.168, 2.697]
+[ Info: Auto-placed 2 interior knots for 1→3 transition at: [2.798, 3.578]
+[ Info: Using observed transition times for knot calibration
+[ Info: Calibrated 4 shared interior knots for h12 at: [1.117, 2.006, 2.889, 3.631]
+[ Info: Calibrated 4 shared interior knots for h13 at: [1.117, 2.006, 2.889, 3.631]
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [1.168, 2.697]
+[ Info: Auto-placed 2 interior knots for 1→3 transition at: [2.798, 3.578]
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [1.168, 2.697]
+[ Info: Auto-placed 2 interior knots for 1→3 transition at: [2.798, 3.578]
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [1.168, 2.697]
+[ Info: Auto-placed 2 interior knots for 1→3 transition at: [2.798, 3.578]
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [1.168, 2.697]
+[ Info: Auto-placed 2 interior knots for 1→3 transition at: [2.798, 3.578]
+┌ Warning: Multiple smoothing parameters detected (n_lambda=2).
+│ Current implementation uses shared λ for all smooth terms.
+│ Consider calibrating each term separately with `scope=:baseline` or `scope=:covariates`.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/inference/smoothing_selection.jl:1432
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [1.168, 2.697]
+[ Info: Auto-placed 2 interior knots for 1→3 transition at: [2.798, 3.578]
+[ Info: Auto-placed 2 interior knots for 1→2 transition at: [1.168, 2.697]
+[ Info: Auto-placed 2 interior knots for 1→3 transition at: [2.798, 3.578]
+┌ Warning: set_surrogate! is deprecated. Use initialize_surrogate! instead.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/surrogate/markov.jl:616
+┌ Warning: No transitions observed in data (all statefrom == stateto). Falling back to :crude initialization. If this is template data for simulation, consider using `initialize=false` when creating the model.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/initialization.jl:467
+┌ Warning: No transitions observed in data (all statefrom == stateto). Falling back to :crude initialization. If this is template data for simulation, consider using `initialize=false` when creating the model.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/initialization.jl:467
+┌ Warning: No transitions observed in data (all statefrom == stateto). Falling back to :crude initialization. If this is template data for simulation, consider using `initialize=false` when creating the model.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/initialization.jl:467
+┌ Warning: No transitions observed in data (all statefrom == stateto). Falling back to :crude initialization. If this is template data for simulation, consider using `initialize=false` when creating the model.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/initialization.jl:467
+┌ Warning: No transitions observed in data (all statefrom == stateto). Falling back to :crude initialization. If this is template data for simulation, consider using `initialize=false` when creating the model.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/initialization.jl:467
+┌ Warning: No transitions observed in data (all statefrom == stateto). Falling back to :crude initialization. If this is template data for simulation, consider using `initialize=false` when creating the model.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/initialization.jl:467
+┌ Warning: No transitions observed in data (all statefrom == stateto). Falling back to :crude initialization. If this is template data for simulation, consider using `initialize=false` when creating the model.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/initialization.jl:467
+┌ Warning: No transitions observed in data (all statefrom == stateto). Falling back to :crude initialization. If this is template data for simulation, consider using `initialize=false` when creating the model.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/initialization.jl:467
+┌ Warning: No transitions observed in data (all statefrom == stateto). Falling back to :crude initialization. If this is template data for simulation, consider using `initialize=false` when creating the model.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/initialization.jl:467
+┌ Warning: No transitions observed in data (all statefrom == stateto). Falling back to :crude initialization. If this is template data for simulation, consider using `initialize=false` when creating the model.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/initialization.jl:467
+┌ Warning: No transitions observed in data (all statefrom == stateto). Falling back to :crude initialization. If this is template data for simulation, consider using `initialize=false` when creating the model.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/initialization.jl:467
+┌ Warning: No transitions observed in data (all statefrom == stateto). Falling back to :crude initialization. If this is template data for simulation, consider using `initialize=false` when creating the model.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/initialization.jl:467
+┌ Warning: No transitions observed in data (all statefrom == stateto). Falling back to :crude initialization. If this is template data for simulation, consider using `initialize=false` when creating the model.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/initialization.jl:467
+┌ Warning: No transitions observed in data (all statefrom == stateto). Falling back to :crude initialization. If this is template data for simulation, consider using `initialize=false` when creating the model.
+└ @ MultistateModels ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/src/utilities/initialization.jl:467
+[ Info: Running quick tests only. Set MSM_TEST_LEVEL=full for complete suite.
+
+Phase-Type Correctness Tests Complete
+
+Phase-Type Tests Complete
+Fitting Markov surrogate via MLE ...
+
+Markov surrogate MLE complete.
+
+
+  Sample-level MLL estimates:
+    IS-weighted (full pool): -92.4387
+    SIR (ESS=200):    -92.1941
+    LHS (ESS=200):    -92.5301
+    Max absolute difference: 0.2446
+
+  Subject-level MLL agreement:
+    Correlation (SIR vs IS):  0.9998
+    Correlation (LHS vs IS):  0.9998
+    Correlation (SIR vs LHS): 0.9996
+    Relative MAE (SIR vs IS): 0.34%
+    Relative MAE (LHS vs IS): 0.32%
+
+  Runtime benchmarks (50 reps, warmed up):
+    Pool size: 348 paths/subject avg, ESS target: 200
+
+    MLL computation only (excluding resampling):
+      IS-weighted (full pool, 348 paths): 0.0037 ms
+      SIR resampled (200 paths):             0.0089 ms
+      LHS resampled (200 paths):             0.0084 ms
+      Speedup (IS/SIR): 0.42x
+      Speedup (IS/LHS): 0.45x
+
+    Resampling overhead:
+      SIR resampling: 1.037 ms
+      LHS resampling: 0.3996 ms
+
+    Total (MLL + resampling):
+      IS-weighted:    0.0037 ms
+      SIR:            1.0459 ms
+      LHS:            0.408 ms
+
+    Log-likelihood computation (M-step bottleneck, 10 reps):
+      Full pool (17417 paths total): 31.98 ms
+      SIR subset (10000 paths total):  14.24 ms
+      LHS subset (10000 paths total):  17.96 ms
+      Speedup (Full/SIR): 2.25x
+      Speedup (Full/LHS): 1.78x
+      Expected speedup (paths ratio): 1.74x
+
+  Variance comparison (50 replications, ESS=200):
+    Full Pool IS variance: 0.0 (deterministic)
+    SIR variance:          0.0104, SD: 0.1021
+    LHS variance:          0.0043, SD: 0.0658
+    Variance ratio (SIR/LHS): 2.41
+
+    Full Pool IS mean:     -92.4387 (exact)
+    SIR mean:              -92.4394
+    LHS mean:              -92.4334
+
+    Variance computation runtimes:
+      SIR (50 reps):  0.03 s
+      LHS (50 reps):  0.02 s
+
+  Unbiasedness check (100 bootstrap samples):
+    IS estimate:   -92.4387
+    SIR mean:      -92.4324, bias: 0.0063
+    LHS mean:      -92.4332, bias: 0.0055
+    SIR SD:        0.1336
+    LHS SD:        0.1177
+
+  Edge case tests passed
+
+✓ All MLL consistency tests completed
+Parallel likelihood tests completed!
+Julia threads available: 1
+Physical cores detected: 10
+Test Summary: | Pass  Total     Time
+Unit Tests    | 2162   2162  6m26.8s

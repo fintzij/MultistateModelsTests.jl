@@ -36,9 +36,12 @@ using Random
 using Statistics
 using Printf
 
-# Include shared longtest configuration and helpers
-include("longtest_config.jl")
-include("longtest_helpers.jl")
+# Longtest config and helpers are loaded by MultistateModelsTests module.
+# For standalone runs, include from src/ (canonical location).
+if !@isdefined(PARAM_REL_TOL)
+    include(joinpath(@__DIR__, "..", "src", "longtest_config.jl"))
+    include(joinpath(@__DIR__, "..", "src", "longtest_helpers.jl"))
+end
 
 # Import internal functions for direct hazard evaluation
 import MultistateModels: Hazard, multistatemodel, fit, set_parameters!, simulate,

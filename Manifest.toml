@@ -1714,7 +1714,7 @@ uuid = "0f8f0c3e-0b3a-5b8a-9e9a-0a0a0a0a0a0a"
 version = "0.2.4"
 
 [[deps.MultistateModelsTests]]
-deps = ["BSplineKit", "CSV", "CairoMakie", "DataFrames", "Dates", "Distributions", "FiniteDiff", "ForwardDiff", "HypothesisTests", "JSON", "JSON3", "LinearAlgebra", "Logging", "MultistateModels", "Optim", "ParameterHandling", "Printf", "QuadGK", "Random", "SpecialFunctions", "Statistics", "StatsBase", "StatsModels", "Test"]
+deps = ["BSplineKit", "CSV", "CairoMakie", "DataFrames", "Dates", "Distributions", "FiniteDiff", "ForwardDiff", "HypothesisTests", "JSON", "JSON3", "LinearAlgebra", "Logging", "MultistateModels", "Optim", "ParameterHandling", "PrettyTables", "Printf", "QuadGK", "Random", "SpecialFunctions", "Statistics", "StatsBase", "StatsModels", "Test"]
 path = "."
 uuid = "e3a6b8f0-3f9f-4b8d-9e4b-3f1a6c8db2d3"
 version = "0.1.0"

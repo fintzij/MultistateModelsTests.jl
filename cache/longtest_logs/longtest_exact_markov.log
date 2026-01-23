@@ -1,0 +1,15 @@
+  ▸ [Exact Data] Section 1: Exponential hazards
+    ▸ Exponential - No Covariates
+
+******************************************************************************
+This program contains Ipopt, a library for large-scale nonlinear optimization.
+ Ipopt is released as open source code under the Eclipse Public License (EPL).
+         For more information visit https://github.com/coin-or/Ipopt
+******************************************************************************
+
+Test Summary:               | Pass  Total     Time
+Exponential - No Covariates |    3      3  1m21.1s
+Test Summary:                | Pass  Total   Time
+Exponential - With Covariate |    4      4  13.6s
+  ▸ [Exact Data] Section 2: Weibull hazards
+    ▸ Weibull - No Covariates

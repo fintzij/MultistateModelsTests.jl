@@ -36,12 +36,13 @@ import MultistateModels: Hazard, multistatemodel, fit, set_parameters!, simulate
     get_parameters_flat, get_parameters, SamplePath, @formula,
     PhaseTypeConfig, build_phasetype_surrogate, observe_path
 
-# Include longtest-only helpers (build_phasetype_model, build_phasetype_hazards, etc.)
-include("phasetype_longtest_helpers.jl")
-
-# Include shared longtest helpers for cache integration
-include("longtest_config.jl")
-include("longtest_helpers.jl")
+# Longtest config and helpers are loaded by MultistateModelsTests module.
+# For standalone runs, include from src/ (canonical location).
+if !@isdefined(PARAM_REL_TOL)
+    include(joinpath(@__DIR__, "..", "src", "longtest_config.jl"))
+    include(joinpath(@__DIR__, "..", "src", "longtest_helpers.jl"))
+    include(joinpath(@__DIR__, "..", "src", "phasetype_longtest_helpers.jl"))
+end
 
 # LongTestResult struct for standalone runs
 if !isdefined(Main, :LongTestResult) && !@isdefined(LongTestResult)

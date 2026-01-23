@@ -74,11 +74,11 @@ const PROPOSAL_COMPARISON_TOL = 0.30
 const BETA_COMPARISON_TOL_REL = 0.20
 const BETA_COMPARISON_TOL_ABS = 0.15
 
-# Include shared helper functions for standalone runs
-# (when run via test runner, these are already loaded by MultistateModelsTests module)
-if !isdefined(Main, :compute_state_prevalence)
-    include(joinpath(@__DIR__, "longtest_config.jl"))
-    include(joinpath(@__DIR__, "longtest_helpers.jl"))
+# Longtest config and helpers are loaded by MultistateModelsTests module.
+# For standalone runs, include from src/ (canonical location).
+if !@isdefined(PARAM_REL_TOL)
+    include(joinpath(@__DIR__, "..", "src", "longtest_config.jl"))
+    include(joinpath(@__DIR__, "..", "src", "longtest_helpers.jl"))
 end
 
 # Load result saving infrastructure

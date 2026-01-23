@@ -182,8 +182,8 @@
     },
     "test_description": "exp - panel - nocov",
     "ci_lower": {
-        "h12_rate": 0.1415626116102027,
-        "h23_rate": 0.102189188314
+        "h12_rate": 0.1419017153413348,
+        "h23_rate": 0.10220627504092372
     },
     "cumulative_incidence_true_lower": {
         "2→3": [
@@ -356,8 +356,8 @@
     },
     "passed": true,
     "ci_upper": {
-        "h12_rate": 0.17001817787931287,
-        "h23_rate": 0.13281253959456069
+        "h12_rate": 0.16967907414818076,
+        "h23_rate": 0.13279545286763697
     },
     "prevalence_observed": {
         "1": [
@@ -1560,8 +1560,8 @@
     "failure_messages": [
     ],
     "standard_errors": {
-        "h12_rate": 0.005523207738569519,
-        "h23_rate": 0.005943973462841744
+        "h12_rate": 0.005391568091390906,
+        "h23_rate": 0.005937340416675705
     },
     "cumulative_incidence_fitted": {
         "2→3": [
@@ -1699,7 +1699,7 @@
             0.9129351551372547
         ]
     },
-    "timestamp": "2026-01-15T18:31:27.296",
+    "timestamp": "2026-01-22T14:52:17.678",
     "cumulative_incidence_times": [
         0,
         0.5,

@@ -10,16 +10,14 @@ This repository contains unit tests, integration tests, and long-running statist
 
 | Category | Tests | Status | Description |
 |----------|-------|--------|-------------|
-| **Unit Tests** | 1,246 | ✅ | Fast tests (~2 min) |
-| **Exact Data** | 45 | ✅ | Exact Markov inference validation |
-| **MCEM Parametric** | 51 | ✅ | MCEM with Exp/Weibull/Gompertz (incl. PhaseType proposal) |
-| **MCEM Splines** | 48 | ✅ | MCEM with M-spline hazards (incl. PhaseType proposal) |
-| **MCEM TVC** | 50 | ✅ | Time-varying covariates (incl. PhaseType proposal) |
-| **SIR/LHS** | 54 | ✅ | Resampling methods with PhaseType proposal |
-| **Simulation Distribution** | 65 | ✅ | Event time distribution correctness |
-| **Simulation TVC** | 9,702 | ✅ | TVC simulation validation |
-| **Phase-Type Hazards** | 40 | ✅ | Coxian PT hazard models with covariates |
-| **Total** | **11,300+** | ✅ | All tests passing |
+| **Unit Tests** | ~2,831 | ✅ | Fast tests (~8.5 min) |
+| **Long Tests** | 13 files | ✅ | Statistical validation (~30+ min) |
+| **Total** | **2,831+** | ✅ | All tests passing |
+
+> **Last Updated:** 2025-01-23 (post-cleanup)
+>
+> The test suite was consolidated from 35 files to 26 files in January 2025.
+> See `audit/TESTING_AUDIT_REPORT.md` for details.
 
 ### What is Tested
 
@@ -65,14 +63,14 @@ MultistateModelsTests/
 ├── fixtures/                       # Shared test data generators
 │   └── TestFixtures.jl
 │
-├── unit/                           # Quick tests (~2 min)
-│   ├── test_hazards.jl             # Hazard function validation
+├── unit/                           # Quick tests (~8.5 min)
+│   ├── test_hazards.jl             # Hazard function validation  
 │   ├── test_mcem.jl                # MCEM infrastructure tests
 │   ├── test_phasetype.jl           # Phase-type model tests
 │   ├── test_simulation.jl          # Simulation correctness
 │   ├── test_splines.jl             # Spline hazard tests
 │   ├── test_variance.jl            # Variance estimation tests
-│   └── ...                         # Additional unit tests
+│   └── ...                         # Additional unit tests (26 files total)
 │
 ├── integration/                    # Integration tests
 │   ├── test_parallel_likelihood.jl
@@ -85,11 +83,10 @@ MultistateModelsTests/
 │   ├── longtest_mcem.jl            # MCEM convergence tests
 │   ├── longtest_mcem_splines.jl    # Spline MCEM validation
 │   ├── longtest_mcem_tvc.jl        # TVC MCEM validation
-│   ├── longtest_parametric_suite.jl # Full parametric test matrix
 │   ├── longtest_phasetype*.jl      # Phase-type proposal tests
 │   ├── longtest_sir.jl             # SIR/LHS resampling tests
 │   ├── longtest_variance_validation.jl
-│   └── ...                         # Additional long tests
+│   └── ...                         # 13 longtest files total
 │
 ├── cache/                          # Runtime outputs (gitignored)
 │   ├── longtest_*_YYYYMMDD.txt     # Console output from test runs
@@ -129,7 +126,7 @@ MultistateModelsTests/
 
 | Directory | Purpose | Gitignored |
 |-----------|---------|------------|
-| `unit/` | Fast unit tests (~2 min) | No |
+| `unit/` | Fast unit tests (~8.5 min) | No |
 | `integration/` | Integration tests | No |
 | `longtests/` | Statistical validation (~30+ min) | No |
 | `cache/` | Runtime outputs (txt, json) | Yes |
@@ -199,7 +196,7 @@ julia --project=. scripts/run_longtests.jl
 ## Test Categories
 
 ### Unit Tests
-Fast tests (~2 min total) covering:
+Fast tests (~8.5 min total) covering:
 - Hazard function correctness (analytic validation)
 - Model generation and parsing
 - Simulation mechanics

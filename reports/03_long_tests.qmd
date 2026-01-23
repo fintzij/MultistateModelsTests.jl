@@ -283,31 +283,39 @@ end
 All long tests validate statistical parameter recovery with relative tolerances
 of 15-35% depending on the complexity of the model and inference method.
 
-**Last full run**: January 15, 2026  
+**Last full run**: January 23, 2026  
 **Branch**: `penalized_splines`
 
 ::: {.callout-note}
-## Bug Fix (2026-01-15): AFT Covariate Scaling in PhaseType Proposal
+## Test Suite Cleanup (2026-01-23)
 
-`build_phasetype_tpm_book()` was using `exp(β'x)` for all models, but AFT models
-require `exp(-β'x)`. This caused wrong-signed estimates for AFT panel models
-fitted via MCEM with PhaseType proposal. Fixed in `src/inference/sampling.jl`.
+Long test suite consolidated from 24 files to 13 files. Deleted redundant/deprecated tests:
+`longtest_aft_suite.jl`, `longtest_sir.jl`, `longtest_phasetype.jl`, `longtest_pijcv_loocv.jl`,
+`longtest_sensitivity_check.jl`, `longtest_smooth_covariate_recovery.jl`,
+`longtest_tensor_product_recovery.jl`, `longtest_spline_suite.jl`.
+
+Helper files moved to `src/`: `longtest_config.jl`, `longtest_helpers.jl`, `phasetype_longtest_helpers.jl`.
 :::
 
 ### 1.1 Overall Status
 
-| Test Suite | Tests | Passed | Failed |
-|------------|-------|--------|--------|
-| Parametric Suite | 18 | 18 | 0 |
-| Phase-Type Hazard Models | 9 | 9 | 0 |
-| MCEM | 13 | 13 | 0 |
-| MCEM TVC | 7 | 7 | 0 |
-| SIR Resampling | 7 | 7 | 0 |
-| Simulation Distribution | 65 | 65 | 0 |
-| AFT Suite | 19 | 19 | 0 |
-| Spline Exact | 6 | 6 | 0 |
-| Unpenalized Spline Suite | 18 | 18 | 0 |
-| **Total** | **162** | **162** | **0** |
+| Test Suite | File | Status |
+|------------|------|--------|
+| Parametric Suite | `longtest_parametric_suite.jl` | ✅ |
+| Exact Markov | `longtest_exact_markov.jl` | ✅ |
+| MCEM Parametric | `longtest_mcem.jl` | ✅ |
+| MCEM Splines | `longtest_mcem_splines.jl` | ✅ |
+| MCEM TVC | `longtest_mcem_tvc.jl` | ✅ |
+| Phase-Type Exact | `longtest_phasetype_exact.jl` | ✅ |
+| Phase-Type Panel | `longtest_phasetype_panel.jl` | ✅ |
+| Robust Parametric | `longtest_robust_parametric.jl` | ✅ |
+| Robust Markov/PT | `longtest_robust_markov_phasetype.jl` | ✅ |
+| Simulation Dist | `longtest_simulation_distribution.jl` | ✅ |
+| Simulation TVC | `longtest_simulation_tvc.jl` | ✅ |
+| Spline Exact | `longtest_spline_exact.jl` | ✅ |
+| Variance Validation | `longtest_variance_validation.jl` | ✅ |
+
+**Total**: 13 long test files
 
 ---
 

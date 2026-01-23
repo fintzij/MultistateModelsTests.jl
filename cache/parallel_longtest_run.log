@@ -1,6 +1,0 @@
-  Activating project at `~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests`
-┌ Warning: Assignment to `n_workers` in soft scope is ambiguous because a global variable by the same name exists: `n_workers` will be treated as a new local. Disambiguate by using `local n_workers` to suppress this warning or `global n_workers` to assign to the existing global variable.
-└ @ ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/scripts/run_tests_parallel.jl:18
-┌ Warning: Assignment to `skip_unit` in soft scope is ambiguous because a global variable by the same name exists: `skip_unit` will be treated as a new local. Disambiguate by using `local skip_unit` to suppress this warning or `global skip_unit` to assign to the existing global variable.
-└ @ ~/Library/CloudStorage/OneDrive-BristolMyersSquibb/Documents/Julia packages/MultistateModels.jl/MultistateModelsTests/scripts/run_tests_parallel.jl:20
-Setting up 4 worker processes...

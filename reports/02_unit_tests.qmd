@@ -6,31 +6,34 @@ date: last-modified
 
 ## 1. Coverage Summary
 
-### Overall Statistics (as of January 12, 2026)
+### Overall Statistics (as of January 23, 2026)
 
 | Metric | Value |
 |--------|-------|
-| Total Test Files | 35 |
-| Total Test Cases | ~2100 |
-| Passing | ~2100 |
+| Total Test Files | 26 |
+| Total Test Cases | ~2831 |
+| Passing | ~2831 |
 | Failing | 0 |
 | Branch | `penalized_splines` |
+| Runtime | ~8.5 minutes |
 
 ### Coverage by Functional Area
 
 | Area | Test Files | Description |
 |------|------------|-------------|
 | Hazard Evaluation | `test_hazards.jl`, `test_compute_hazard.jl` | Hazard functions, cumulative hazards, survival |
-| Spline Infrastructure | `test_splines.jl` | B-spline basis, penalization, tensor products |
+| Spline Infrastructure | `test_splines.jl`, `test_penalty_infrastructure.jl` | B-spline basis, penalization |
 | Simulation | `test_simulation.jl` | Path simulation, distribution fidelity |
 | MCEM Algorithm | `test_mcem.jl` | Monte Carlo EM helper functions |
-| Phase-Type | `test_phasetype.jl`, `test_phasetype_*.jl` | State expansion, FFBS, emission matrices |
+| Phase-Type | `test_phasetype.jl` | State expansion, FFBS, emission matrices, Coxian math |
+| Surrogates | `test_surrogates.jl` | Markov and phase-type surrogate fitting |
 | SIR Resampling | `test_sir.jl` | Multinomial and LHS resampling |
 | Variance Estimation | `test_variance.jl` | Model, IJ, jackknife variance |
-| PIJCV | `test_pijcv.jl`, `test_pijcv_*.jl` | Smoothing parameter selection |
-| Likelihood | `test_mll_consistency.jl`, `test_loglik_analytical.jl` | Exact, panel, penalized likelihoods |
-| Model Construction | `test_modelgeneration.jl`, `test_initialization.jl` | Model building, parameter init |
-| Infrastructure | `test_reconstructor.jl`, `test_bounds.jl`, `test_infrastructure.jl` | Parameter flattening, AD compat |
+| Weights | `test_subject_weights.jl` | Subject and observation weights |
+| PIJCV | `test_pijcv.jl` | Smoothing parameter selection |
+| Likelihood | `test_loglik_analytical.jl` | Exact, panel, penalized likelihoods |
+| Model Construction | `test_hazard_macro.jl`, `test_initialization.jl` | Model building, parameter init |
+| Infrastructure | `test_bounds.jl`, `test_constraints.jl`, `test_ad_backends.jl` | Parameter bounds, optimization, AD compatibility |
 
 ---
 
@@ -833,15 +836,34 @@ Tests verify AD-compatible parameter flattening/unflattening.
 | Edge cases | Degenerate transition matrices | Low |
 | Performance | Benchmark regression tests | Low |
 
-### 14.2 Recently Added Coverage
+### 14.2 Test Suite History
 
-| Date | Area | Files Added |
-|------|------|-------------|
-| 2026-01 | EFS smoothing | `test_efs.jl` |
-| 2026-01 | PIJCV reference | `test_pijcv_reference.jl`, `test_pijcv_vs_loocv.jl` |
-| 2026-01 | Analytical likelihood | `test_loglik_analytical.jl` |
-| 2026-01 | Subject weights | `test_subject_weights.jl` |
-| 2026-01 | Penalty infrastructure | `test_penalty_infrastructure.jl` |
+| Date | Action | Result |
+|------|--------|--------|
+| 2026-01-23 | Major cleanup: consolidated/deleted redundant tests | 26 files, 2831 tests |
+| 2026-01-22 | Merged variance and weight tests | Reduced redundancy |
+| 2026-01-21 | Merged phase-type tests (7→2 files) | Consolidated coverage |
+| 2026-01 | Added analytical likelihood tests | `test_loglik_analytical.jl` |
+| 2026-01 | Added penalty infrastructure tests | `test_penalty_infrastructure.jl` |
+
+### 14.3 Deleted Test Files (Cleanup 2026-01-23)
+
+The following files were deleted during test suite cleanup due to redundancy, obsolescence, or low value:
+
+- `test_perf.jl` - Hardware-dependent, moved to benchmarks
+- `test_error_paths.jl` - Redundant with test_error_messages.jl
+- `test_infrastructure.jl` - Tested internal implementation details
+- `test_regressions.jl` - Bug fixes now covered by other tests
+- `test_modelgeneration.jl` - Superseded by test_hazard_macro.jl
+- `test_mll_consistency.jl` - Superseded by test_loglik_analytical.jl
+- `test_helpers.jl` - Low value utility function tests
+- `test_efs.jl` - Outdated EDF implementation
+- `test_reconstructor.jl` - Internal ReConstructor tests
+- `test_phasetype_*.jl` (6 files) - Merged into test_phasetype.jl
+- `test_pijcv_reference.jl`, `test_pijcv_vs_loocv.jl` - Merged into test_pijcv.jl
+- `test_constrained_variance.jl` - Merged into test_variance.jl
+- `test_observation_weights_emat.jl`, `test_weight_validation.jl` - Merged into test_subject_weights.jl
+- `test_concurrency.jl`, `test_ordering_at.jl` - Stale APIs
 
 ---
 
@@ -849,11 +871,11 @@ Tests verify AD-compatible parameter flattening/unflattening.
 
 ```bash
 # Run all unit tests
-julia --project=MultistateModelsTests -e 'using MultistateModelsTests; MultistateModelsTests.runtests()'
+julia --project -e 'using Pkg; Pkg.test()'
 
-# Run specific test file
-julia --project=MultistateModelsTests MultistateModelsTests/unit/test_hazards.jl
+# Run specific test file (standalone - may need imports)
+julia --project -e 'using Test, MultistateModels; include("MultistateModelsTests/unit/test_hazards.jl")'
 
-# Run with verbose output
-julia --project=MultistateModelsTests -e 'using Pkg; Pkg.test(test_args=["--verbose"])'
+# Run with full long tests
+MSM_TEST_LEVEL=full julia --project -e 'using Pkg; Pkg.test()'
 ```

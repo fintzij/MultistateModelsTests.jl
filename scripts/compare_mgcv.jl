@@ -6,6 +6,7 @@
 # This generates data in Julia, exports it, fits with both packages, and
 # compares the estimated hazard curves and smoothing parameters.
 #
+# Updated 2026-01-24: Uses new fit() API with penalty=:auto, select_lambda=:pijcv
 # =============================================================================
 
 using MultistateModels
@@ -15,6 +16,8 @@ using JSON
 using Random
 using Statistics
 using LinearAlgebra
+
+import MultistateModels: get_parameters
 
 # =============================================================================
 # 1. Generate exact observation data with known hazard
@@ -90,14 +93,16 @@ interior_knots = quantile(event_times, knot_quantiles)
 
 println("Interior knots at quantiles: ", round.(interior_knots, digits=3))
 
-h12 = Hazard(@formula(0 ~ 1), "sp", 1, 2; degree=3, knots=interior_knots)
+# Use new API with boundaryknots
+h12 = Hazard(@formula(0 ~ 1), "sp", 1, 2; degree=3, knots=interior_knots, 
+             boundaryknots=[0.0, maximum(times)*1.01])
 model = multistatemodel(h12; data=data)
 
-# Fit the model
-fitted_model = fit(model; verbose=false)
+# Fit the model with automatic smoothing selection (PIJCV)
+fitted_model = fit(model; penalty=:auto, select_lambda=:pijcv, verbose=true, vcov_type=:ij)
 
-# Get fitted parameters
-fitted_params = get_parameters(fitted_model; scale=:natural)
+# Get fitted parameters using the nested structure
+fitted_params = get_parameters(fitted_model)
 spline_coeffs = fitted_params.h12
 
 println("Spline coefficients: $(length(spline_coeffs)) parameters")
@@ -108,6 +113,14 @@ hazard_obj = fitted_model.hazards[1]
 knots = hazard_obj.knots
 println("Full knots (including boundaries): ", round.(knots, digits=3))
 
+# Print smoothing info
+if !isnothing(fitted_model.smoothing_parameters)
+    println("Selected λ: ", round.(fitted_model.smoothing_parameters, digits=4))
+end
+if !isnothing(fitted_model.edf)
+    println("EDF: ", fitted_model.edf)
+end
+
 # =============================================================================
 # 3. Evaluate Julia fitted hazard
 # =============================================================================
@@ -117,13 +130,11 @@ println("\n--- Evaluating Julia fit ---")
 # Evaluation grid
 t_eval = range(0.5, maximum(times) * 0.95, length=50)
 
-# Use the model's built-in hazard evaluation
-# For spline hazards, we can use the hazard_fn directly
+# Evaluate hazard at each time point using the nested parameter structure
 h_julia = Float64[]
 for t in t_eval
-    # The hazard function takes (t, pars, covars)
-    # For intercept-only model, covars is empty or ones
-    h_val = hazard_obj.hazard_fn(t, spline_coeffs, Float64[])
+    # The hazard function takes (t, pars, covars) where pars is the nested params for this hazard
+    h_val = hazard_obj(t, spline_coeffs, NamedTuple())
     push!(h_julia, h_val)
 end
 
@@ -166,10 +177,12 @@ julia_results = Dict(
     "knots" => knots,
     "interior_knots" => interior_knots,
     "degree" => hazard_obj.degree,
-    "natural_spline" => hazard_obj.natural_spline,
+    "natural_spline" => hasfield(typeof(hazard_obj), :natural_spline) ? hazard_obj.natural_spline : false,
     "n_events" => sum(status),
     "n_censored" => sum(1 .- status),
-    "rmse" => rmse_julia
+    "rmse" => rmse_julia,
+    "lambda" => isnothing(fitted_model.smoothing_parameters) ? [] : collect(fitted_model.smoothing_parameters),
+    "edf" => isnothing(fitted_model.edf) ? NaN : (isa(fitted_model.edf, NamedTuple) ? fitted_model.edf.total : fitted_model.edf)
 )
 
 julia_results_path = joinpath(fixtures_dir, "julia_fit_results.json")
@@ -366,15 +379,15 @@ println("  mgcv REML:           $(round(r_results["reml"]["rmse"], digits=6))")
 println("  mgcv NCV (PIJCV):    $(round(r_results["ncv"]["rmse"], digits=6))")
 println("  mgcv GCV:            $(round(r_results["gcv"]["rmse"], digits=6))")
 
-println("\nmgcv Smoothing Selection:")
-println("  REML: sp=$(round(r_results["reml"]["sp"], digits=4)), EDF=$(round(r_results["reml"]["edf"], digits=2))")
-println("  NCV:  sp=$(round(r_results["ncv"]["sp"], digits=4)), EDF=$(round(r_results["ncv"]["edf"], digits=2))")
-println("  GCV:  sp=$(round(r_results["gcv"]["sp"], digits=4)), EDF=$(round(r_results["gcv"]["edf"], digits=2))")
+println("\nSmoothing Selection:")
+println("  Julia (PIJCV): λ=$(isnothing(fitted_model.smoothing_parameters) ? "N/A" : round.(fitted_model.smoothing_parameters, digits=4)), EDF=$(isnothing(fitted_model.edf) ? "N/A" : round(isa(fitted_model.edf, NamedTuple) ? fitted_model.edf.total : fitted_model.edf, digits=2))")
+println("  mgcv REML: sp=$(round(r_results["reml"]["sp"], digits=4)), EDF=$(round(r_results["reml"]["edf"], digits=2))")
+println("  mgcv NCV:  sp=$(round(r_results["ncv"]["sp"], digits=4)), EDF=$(round(r_results["ncv"]["edf"], digits=2))")
+println("  mgcv GCV:  sp=$(round(r_results["gcv"]["sp"], digits=4)), EDF=$(round(r_results["gcv"]["edf"], digits=2))")
 
 println("\nJulia Spline Configuration:")
 println("  Basis dimension: $(length(spline_coeffs))")
 println("  Degree: $(hazard_obj.degree)")
-println("  Natural spline: $(hazard_obj.natural_spline)")
 
 # Calculate relative performance
 best_rmse = minimum([rmse_julia, r_results["reml"]["rmse"], r_results["ncv"]["rmse"], r_results["gcv"]["rmse"]])

@@ -150,6 +150,7 @@ function toy_fitted_exact_model()
         stored_loglik,
         nothing,  # vcov (consolidated variance-covariance matrix)
         :none,    # vcov_type (no vcov computed for this fixture)
+        nothing,  # vcov_model (model-based variance H⁻¹)
         nothing,  # subject_gradients
         base_model.hazards,
         base_model.totalhazards,

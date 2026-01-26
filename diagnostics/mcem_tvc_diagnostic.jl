@@ -10,8 +10,8 @@ println("MCEM + TVC DIAGNOSTIC")
 println("="^80)
 
 true_params = Dict(
-    "log_scale12" => log(5.0),   # scale = 5
-    "log_scale23" => log(5.0),
+    "scale12" => 5.0,            # Weibull scale (natural scale)
+    "scale23" => 5.0,
     "shape12" => 1.2,            # Weibull shape
     "shape23" => 1.3,
     "beta12" => 0.5,
@@ -43,8 +43,8 @@ template = vcat(template_rows...)
 
 model_sim = multistatemodel(h12, h23; data=template, initialize=false)
 set_parameters!(model_sim, (
-    h12 = [true_params["shape12"], true_params["log_scale12"], true_params["beta12"]],
-    h23 = [true_params["shape23"], true_params["log_scale23"], true_params["beta23"]]
+    h12 = [true_params["shape12"], true_params["scale12"], true_params["beta12"]],
+    h23 = [true_params["shape23"], true_params["scale23"], true_params["beta23"]]
 ))
 
 # Simulate exact data
@@ -90,8 +90,8 @@ println("\n1. EXACT DATA FIT (gold standard):")
 model_exact = multistatemodel(h12, h23; data=exact_data)
 fitted_exact = fit(model_exact; verbose=false)
 params_exact = get_parameters_flat(fitted_exact)
-@printf "   h12: shape=%.3f (true=%.1f), log_scale=%.3f (true=%.3f), beta=%.3f (true=%.1f)\n" params_exact[1] true_params["shape12"] params_exact[2] true_params["log_scale12"] params_exact[3] true_params["beta12"]
-@printf "   h23: shape=%.3f (true=%.1f), log_scale=%.3f (true=%.3f), beta=%.3f (true=%.1f)\n" params_exact[4] true_params["shape23"] params_exact[5] true_params["log_scale23"] params_exact[6] true_params["beta23"]
+@printf "   h12: shape=%.3f (true=%.1f), scale=%.3f (true=%.1f), beta=%.3f (true=%.1f)\n" params_exact[1] true_params["shape12"] params_exact[2] true_params["scale12"] params_exact[3] true_params["beta12"]
+@printf "   h23: shape=%.3f (true=%.1f), scale=%.3f (true=%.1f), beta=%.3f (true=%.1f)\n" params_exact[4] true_params["shape23"] params_exact[5] true_params["scale23"] params_exact[6] true_params["beta23"]
 
 # Create panel data with TVC
 obs_times = [0.0, 3.0, 5.0, 6.0, 9.0, 12.0]
@@ -149,7 +149,7 @@ surrogate_pars = (
     h23 = [-1.6, 0.0]
 )
 surrogate = MultistateModels.fit_surrogate(model_mcem; surrogate_parameters = surrogate_pars)
-model_mcem.markovsurrogate = surrogate
+model_mcem.surrogate = surrogate
 
 # Ensure surrogate is set (this will trigger MLE fit which is unstable)
 # set_surrogate!(model_mcem; verbose=true)

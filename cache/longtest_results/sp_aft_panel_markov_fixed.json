@@ -1,0 +1,74 @@
+{
+    "n_simulations": 500,
+    "n_tests_passed": 0,
+    "cumulative_incidence_true": {
+    },
+    "prevalence_true_upper": {
+    },
+    "estimated_params": {
+        "validation_type": 1
+    },
+    "git_branch": "",
+    "n_tests_failed": 0,
+    "param_passed": {
+        "validation_type": true
+    },
+    "test_description": "Spline fixed - panel inference",
+    "ci_lower": {
+    },
+    "cumulative_incidence_true_lower": {
+    },
+    "prevalence_true": {
+    },
+    "passed": true,
+    "ci_upper": {
+    },
+    "prevalence_observed": {
+    },
+    "prevalence_true_lower": {
+    },
+    "n_states": 3,
+    "cumulative_incidence_observed": {
+    },
+    "prevalence_fitted_upper": {
+    },
+    "fitting_time_seconds": 0,
+    "n_subjects": 1000,
+    "prevalence_times": [
+    ],
+    "cumulative_incidence_true_upper": {
+    },
+    "prevalence_fitted_lower": {
+    },
+    "hazard_family": "sp",
+    "covariate_type": "fixed",
+    "true_params": {
+        "validation_type": 1
+    },
+    "cumulative_incidence_fitted_lower": {
+    },
+    "git_commit": "",
+    "all_tests_passed": false,
+    "data_summary": {
+        "n_subjects": 1000,
+        "max_time": 15,
+        "n_transitions": 803
+    },
+    "test_name": "sp_aft_panel_markov_fixed",
+    "data_type": "panel",
+    "prevalence_fitted": {
+    },
+    "failure_messages": [
+    ],
+    "standard_errors": {
+    },
+    "cumulative_incidence_fitted": {
+    },
+    "cumulative_incidence_fitted_upper": {
+    },
+    "timestamp": "2026-01-26T15:57:01.746",
+    "cumulative_incidence_times": [
+    ],
+    "hazard_families": [
+    ]
+}

@@ -28,14 +28,15 @@ function generate_benchmark_data(n_subj)
     h13 = Hazard(@formula(0 ~ 1), "wei", 1, 3)
     h23 = Hazard(@formula(0 ~ 1), "wei", 2, 3)
     
-    # True parameters
+    # True parameters - NATURAL SCALE (v0.3.0+)
+    # Weibull params: [shape, scale]
     pars = (
-        h12 = [log(1.1), log(0.5)],
-        h13 = [log(1.0), log(0.3)],
-        h23 = [log(1.2), log(0.6)]
+        h12 = [1.1, 0.5],
+        h13 = [1.0, 0.3],
+        h23 = [1.2, 0.6]
     )
     
-    model = multistatemodel(h12, h13, h23; data=DataFrame(id=1:n_subj, tstart=0.0, tstop=10.0, statefrom=1, stateto=1, obstype=1))
+    model = multistatemodel(h12, h13, h23; data=DataFrame(id=1:n_subj, tstart=0.0, tstop=10.0, statefrom=1, stateto=1, obstype=1), initialize=false)
     set_parameters!(model, pars)
     
     # Simulate panel data

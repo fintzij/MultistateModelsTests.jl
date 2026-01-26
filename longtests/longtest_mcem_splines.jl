@@ -981,13 +981,13 @@ end
     true_shape = 1.4
     true_scale = 0.20
     
-    # Panel data template - 6 intervals
-    nobs = 6
+    # Panel data template - 6 intervals (7 observation times)
     obs_times = [0.0, 1.5, 3.0, 4.5, 6.0, 7.5, 9.0]
+    nobs = length(obs_times) - 1  # Number of intervals
     template = DataFrame(
         id = repeat(1:N_SUBJECTS, inner=nobs),
-        tstart = repeat([0.0; obs_times[1:end-1]], N_SUBJECTS),
-        tstop = repeat(obs_times, N_SUBJECTS),
+        tstart = repeat(obs_times[1:end-1], N_SUBJECTS),
+        tstop = repeat(obs_times[2:end], N_SUBJECTS),
         statefrom = ones(Int, N_SUBJECTS * nobs),
         stateto = ones(Int, N_SUBJECTS * nobs),
         obstype = fill(2, N_SUBJECTS * nobs)

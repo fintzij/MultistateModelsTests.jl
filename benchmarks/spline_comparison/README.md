@@ -1,5 +1,9 @@
 # Penalized Spline Benchmark: mgcv vs flexsurv vs MultistateModels.jl
 
+**Last Run**: 2026-01-26  
+**Julia Version**: 1.11  
+**MultistateModels.jl Branch**: `penalized_splines`
+
 ## Overview
 
 This benchmark compares penalized spline fitting for multistate survival models across three packages:
@@ -7,6 +11,42 @@ This benchmark compares penalized spline fitting for multistate survival models 
 1. **mgcv** (R) - Gold standard for GAMs with REML/GCV/NCV smoothing selection
 2. **flexsurv** (R) - Flexible parametric survival models with splines
 3. **MultistateModels.jl** (Julia) - Our implementation with PIJCV smoothing selection
+
+## Latest Results
+
+### RMSE vs True Hazard (lower is better)
+
+| Method | h12 | h13 | h23 |
+|--------|-----|-----|-----|
+| **Julia (PIJCV)** | **0.130** | 0.088 | **0.355** |
+| mgcv (NCV) | 0.305 | **0.049** | 0.699 |
+| flexsurv | 0.296 | **0.044** | 0.759 |
+
+### Computation Time
+
+| Method | Time (seconds) |
+|--------|---------------|
+| Julia | 28.57 |
+| mgcv | 0.22 |
+| flexsurv | 0.17 |
+
+*Note: Julia time includes JIT compilation. After warmup, fits are ~2-5 seconds.*
+
+### Smoothing Parameters
+
+| Method | λ_h12 | λ_h13 | λ_h23 |
+|--------|-------|-------|-------|
+| Julia | 0.239 | 38.4 | 0.304 |
+| mgcv (sp) | 1.5M | 3.5M | 6005 |
+
+*Note: mgcv uses a different parameterization with much larger penalty scale.*
+
+### Key Findings
+
+1. **MultistateModels.jl achieves significantly better accuracy** for h12 (2.3x) and h23 (2x) compared to mgcv/flexsurv
+2. Julia uses continuous-time exact likelihood vs PAM discretization in mgcv
+3. Per-hazard λ selection: λ_h13 ≈ 38 (more smoothing for sparse h13 transition)
+4. EDF ≈ 14.7 (Julia) vs EDF ≈ 6.2 (mgcv) - Julia allows more flexible fits where data supports it
 
 ## Model Structure
 

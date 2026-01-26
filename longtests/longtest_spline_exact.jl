@@ -150,6 +150,129 @@ function print_hazard_comparison(test_times, h_true, h_fitted, tolerance; label=
     return all_passed
 end
 
+# Option to save results to cache for reports
+const SAVE_RESULTS_TO_CACHE = get(ENV, "LONGTEST_SAVE_RESULTS", "true") == "true"
+
+"""
+    create_spline_result(test_name, passed, fitted, data;
+                         hazard_family="sp", data_type="exact", covariate_type="nocov",
+                         true_dgp_params=nothing, model_dgp=nothing, eval_times=nothing)
+
+Create a LongTestResult for spline tests with simulation comparison data.
+
+Spline tests validate hazard curve approximation rather than parameter recovery,
+so we focus on simulation-based comparison (CI, prevalence) for visualization.
+"""
+function create_spline_result(
+    test_name::String,
+    passed::Bool,
+    fitted,
+    data::DataFrame;
+    hazard_family::String="sp",
+    data_type::String="exact",
+    covariate_type::String="nocov",
+    true_dgp_params::Union{Nothing, NamedTuple}=nothing,
+    model_dgp=nothing,
+    eval_times::Union{Nothing, Vector{Float64}}=nothing,
+    n_sim::Int=500
+)
+    if isnothing(eval_times)
+        eval_times = collect(0.0:1.0:10.0)
+    end
+    
+    result = LongTestResult(
+        test_name = test_name,
+        test_description = "Spline $(covariate_type == "nocov" ? "baseline" : covariate_type) - exact data",
+        hazard_family = hazard_family,
+        data_type = data_type,
+        covariate_type = covariate_type,
+        n_subjects = length(unique(data.id)),
+        n_simulations = n_sim,
+        passed = passed
+    )
+    
+    # Data summary
+    result.data_summary = Dict{String, Any}(
+        "n_subjects" => length(unique(data.id)),
+        "n_transitions" => sum(data.statefrom .!= data.stateto),
+        "max_time" => maximum(data.tstop)
+    )
+    
+    # For spline tests, we don't have direct parameter recovery (B-spline coeffs 
+    # don't map to true Weibull params). Instead, store hazard comparison metrics.
+    # The fitted spline approximates the Weibull, so we note this in the result.
+    result.true_params["validation_type"] = 1.0  # Flag: hazard curve validation
+    result.estimated_params["validation_type"] = 1.0
+    result.param_passed["validation_type"] = passed
+    
+    # Simulate for comparison if we have the models
+    max_time = maximum(eval_times)
+    
+    if !isnothing(model_dgp) && !isnothing(true_dgp_params)
+        # Create template for simulation
+        if covariate_type == "nocov"
+            template = DataFrame(
+                id = 1:n_sim,
+                tstart = zeros(n_sim),
+                tstop = fill(max_time, n_sim),
+                statefrom = ones(Int, n_sim),
+                stateto = ones(Int, n_sim),
+                obstype = ones(Int, n_sim)
+            )
+        else
+            # For covariate tests, use same covariate structure
+            template = DataFrame(
+                id = 1:n_sim,
+                tstart = zeros(n_sim),
+                tstop = fill(max_time, n_sim),
+                statefrom = ones(Int, n_sim),
+                stateto = ones(Int, n_sim),
+                obstype = ones(Int, n_sim),
+                x = repeat([0.0, 1.0], n_sim ÷ 2)
+            )
+        end
+        
+        # Simulate from true DGP using the actual model object (not hazards)
+        # model_dgp is already the full MultistateModel with parameters set
+        try
+            Random.seed!(RNG_SEED_SPLINE_EXACT + 9000)
+            paths_true = simulate(model_dgp; paths=true, data=false, nsim=1)[1]
+            Random.seed!(RNG_SEED_SPLINE_EXACT + 9001)
+            paths_fitted = simulate(fitted; paths=true, data=false, nsim=1)[1]
+            
+            # Compute prevalence
+            result.prevalence_times = copy(eval_times)
+            for s in 1:2  # 2-state model
+                prev_true = compute_state_prevalence(paths_true, s, eval_times)
+                prev_fitted = compute_state_prevalence(paths_fitted, s, eval_times)
+                
+                result.prevalence_true[string(s)] = prev_true.mean
+                result.prevalence_true_lower[string(s)] = prev_true.lower
+                result.prevalence_true_upper[string(s)] = prev_true.upper
+                result.prevalence_fitted[string(s)] = prev_fitted.mean
+                result.prevalence_fitted_lower[string(s)] = prev_fitted.lower
+                result.prevalence_fitted_upper[string(s)] = prev_fitted.upper
+            end
+            
+            # Compute cumulative incidence for 1→2 transition
+            result.cumulative_incidence_times = copy(eval_times)
+            ci_true = compute_cumulative_incidence(paths_true, 1, 2, eval_times)
+            ci_fitted = compute_cumulative_incidence(paths_fitted, 1, 2, eval_times)
+            
+            result.cumulative_incidence_true["1→2"] = ci_true.mean
+            result.cumulative_incidence_true_lower["1→2"] = ci_true.lower
+            result.cumulative_incidence_true_upper["1→2"] = ci_true.upper
+            result.cumulative_incidence_fitted["1→2"] = ci_fitted.mean
+            result.cumulative_incidence_fitted_lower["1→2"] = ci_fitted.lower
+            result.cumulative_incidence_fitted_upper["1→2"] = ci_fitted.upper
+        catch e
+            @warn "Simulation failed for result visualization: $e"
+        end
+    end
+    
+    return result
+end
+
 # =============================================================================
 # Test 1: Spline Exact Data - No Covariates
 # =============================================================================
@@ -235,7 +358,19 @@ end
     @test all_h_passed
     @test all_H_passed
     
-    VERBOSE_LONGTESTS && println("  ✓ sp_exact_nocov: $(all_h_passed && all_H_passed ? "PASS" : "FAIL")")
+    # Save result for reports
+    overall_passed = all_h_passed && all_H_passed
+    if SAVE_RESULTS_TO_CACHE
+        result = create_spline_result(
+            "sp_exact_nocov", overall_passed, fitted, exact_data;
+            covariate_type="nocov",
+            true_dgp_params=(h12 = [TRUE_WEIBULL_SHAPE, TRUE_WEIBULL_SCALE],),
+            model_dgp=model_dgp
+        )
+        save_longtest_result(result; force=true)
+    end
+    
+    VERBOSE_LONGTESTS && println("  ✓ sp_exact_nocov: $(overall_passed ? "PASS" : "FAIL")")
 end
 
 # =============================================================================
@@ -422,7 +557,19 @@ end
     @test all_h1_passed
     @test all_beta_passed
     
-    VERBOSE_LONGTESTS && println("  ✓ sp_exact_tfc: $(all_h0_passed && all_h1_passed && all_beta_passed ? "PASS" : "FAIL")")
+    # Save result for reports
+    overall_passed = all_h0_passed && all_h1_passed && all_beta_passed
+    if SAVE_RESULTS_TO_CACHE
+        result = create_spline_result(
+            "sp_exact_tfc", overall_passed, fitted, exact_data;
+            covariate_type="fixed",
+            true_dgp_params=(h12 = [TRUE_WEIBULL_SHAPE, TRUE_WEIBULL_SCALE, TRUE_BETA],),
+            model_dgp=model_dgp
+        )
+        save_longtest_result(result; force=true)
+    end
+    
+    VERBOSE_LONGTESTS && println("  ✓ sp_exact_tfc: $(overall_passed ? "PASS" : "FAIL")")
 end
 
 # =============================================================================
@@ -536,6 +683,18 @@ end
     @test all_effect_passed
     
     overall_passed = all_before_passed && all_after_passed && all_effect_passed
+    
+    # Save result for reports
+    if SAVE_RESULTS_TO_CACHE
+        result = create_spline_result(
+            "sp_exact_tvc", overall_passed, fitted, exact_data;
+            covariate_type="tvc",
+            true_dgp_params=(h12 = [TRUE_WEIBULL_SHAPE, TRUE_WEIBULL_SCALE, TRUE_BETA],),
+            model_dgp=model_dgp
+        )
+        save_longtest_result(result; force=true)
+    end
+    
     VERBOSE_LONGTESTS && println("  ✓ sp_exact_tvc: $(overall_passed ? "PASS" : "FAIL")")
 end
 
@@ -629,7 +788,19 @@ end
     @test all_h_passed
     @test all_H_passed
     
-    VERBOSE_LONGTESTS && println("  ✓ sp_aft_exact_nocov: $(all_h_passed && all_H_passed ? "PASS" : "FAIL")")
+    # Save result for reports
+    overall_passed = all_h_passed && all_H_passed
+    if SAVE_RESULTS_TO_CACHE
+        result = create_spline_result(
+            "sp_aft_exact_nocov", overall_passed, fitted, exact_data;
+            covariate_type="nocov",
+            true_dgp_params=(h12 = [TRUE_WEIBULL_SHAPE, TRUE_WEIBULL_SCALE],),
+            model_dgp=model_dgp
+        )
+        save_longtest_result(result; force=true)
+    end
+    
+    VERBOSE_LONGTESTS && println("  ✓ sp_aft_exact_nocov: $(overall_passed ? "PASS" : "FAIL")")
 end
 
 # =============================================================================
@@ -757,7 +928,19 @@ weibull_aft_cumhaz(t, shape, scale, beta, x) = scale * (t * exp(-beta * x))^shap
     @test all_h0_passed
     @test all_h1_passed
     
-    VERBOSE_LONGTESTS && println("  ✓ sp_aft_exact_tfc: $(all_h0_passed && all_h1_passed ? "PASS" : "FAIL")")
+    # Save result for reports
+    overall_passed = all_h0_passed && all_h1_passed
+    if SAVE_RESULTS_TO_CACHE
+        result = create_spline_result(
+            "sp_aft_exact_tfc", overall_passed, fitted, exact_data;
+            covariate_type="fixed",
+            true_dgp_params=(h12 = [TRUE_WEIBULL_SHAPE, TRUE_WEIBULL_SCALE, TRUE_BETA],),
+            model_dgp=model_dgp
+        )
+        save_longtest_result(result; force=true)
+    end
+    
+    VERBOSE_LONGTESTS && println("  ✓ sp_aft_exact_tfc: $(overall_passed ? "PASS" : "FAIL")")
 end
 
 # =============================================================================
@@ -883,7 +1066,150 @@ end
     @test all_after_passed
     
     overall_passed = all_before_passed && all_after_passed
+    
+    # Save result for reports
+    if SAVE_RESULTS_TO_CACHE
+        result = create_spline_result(
+            "sp_aft_exact_tvc", overall_passed, fitted, exact_data;
+            covariate_type="tvc",
+            true_dgp_params=(h12 = [TRUE_WEIBULL_SHAPE, TRUE_WEIBULL_SCALE, TRUE_BETA],),
+            model_dgp=model_dgp
+        )
+        save_longtest_result(result; force=true)
+    end
+    
     VERBOSE_LONGTESTS && println("  ✓ sp_aft_exact_tvc: $(overall_passed ? "PASS" : "FAIL")")
+end
+
+# =============================================================================
+# Test 7: Adaptive Penalty Weighting
+# =============================================================================
+#
+# Validate that adaptive penalty weighting (at-risk-based) produces valid fits.
+# We compare:
+# 1. Uniform weighting (standard P-spline)
+# 2. At-risk weighting with fixed α=1.0
+# 3. At-risk weighting with learned α
+#
+# All three should produce valid hazard estimates that approximate the true
+# Weibull hazard reasonably well. The goal is to verify the infrastructure
+# works correctly, not to demonstrate superiority of one approach.
+# =============================================================================
+
+@testset "Spline Exact: Adaptive Penalty Weighting (sp_exact_adaptive)" begin
+    Random.seed!(RNG_SEED_SPLINE_EXACT + 7000)
+    
+    VERBOSE_LONGTESTS && println("\n  ▶ Running: sp_exact_adaptive")
+    
+    # --- Setup DGP (Weibull) ---
+    h12_wei = Hazard(@formula(0 ~ 1), "wei", 1, 2)
+    
+    template = create_baseline_template(N_SUBJECTS; max_time=MAX_TIME)
+    model_dgp = multistatemodel(h12_wei; data=template)
+    set_parameters!(model_dgp, (h12 = [TRUE_WEIBULL_SHAPE, TRUE_WEIBULL_SCALE],))
+    
+    # --- Simulate exact data ---
+    sim_result = simulate(model_dgp; paths=false, data=true, nsim=1)
+    exact_data = sim_result[1]
+    
+    n_transitions = sum(exact_data.stateto .== 2)
+    n_subjects = length(unique(exact_data.id))
+    VERBOSE_LONGTESTS && println("    Data: n=$n_subjects, transitions=$n_transitions")
+    
+    # --- Setup spline model ---
+    knots = get_spline_knots(MAX_TIME, N_INTERIOR_KNOTS)
+    h12_sp = Hazard(@formula(0 ~ 1), "sp", 1, 2;
+                     degree=SPLINE_DEGREE,
+                     knots=knots,
+                     boundaryknots=[0.0, MAX_TIME],
+                     natural_spline=true)
+    
+    model_sp = multistatemodel(h12_sp; data=exact_data)
+    
+    # --- Fit with uniform weighting (standard P-spline) ---
+    VERBOSE_LONGTESTS && println("    Fitting with uniform weighting...")
+    fitted_uniform = fit(model_sp; 
+                         penalty=SplinePenalty(),
+                         select_lambda=:efs,
+                         vcov_type=:none,
+                         verbose=false)
+    
+    # --- Fit with at-risk weighting (α=1.0) ---
+    VERBOSE_LONGTESTS && println("    Fitting with at-risk weighting (α=1.0)...")
+    fitted_atrisk = fit(model_sp;
+                        penalty=SplinePenalty(adaptive_weight=:atrisk, alpha=1.0),
+                        select_lambda=:efs,
+                        vcov_type=:none,
+                        verbose=false)
+    
+    # --- Fit with learned α ---
+    VERBOSE_LONGTESTS && println("    Fitting with learned α...")
+    fitted_learned = fit(model_sp;
+                         penalty=SplinePenalty(adaptive_weight=:atrisk, learn_alpha=true),
+                         select_lambda=:efs,
+                         vcov_type=:none,
+                         verbose=false)
+    
+    # --- Evaluate hazards ---
+    # Use a grid that avoids boundary issues (start a bit above 0)
+    test_times = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
+    
+    h_true = [weibull_hazard(t, TRUE_WEIBULL_SHAPE, TRUE_WEIBULL_SCALE) for t in test_times]
+    h_uniform = evaluate_hazard_at_times(fitted_uniform, test_times)
+    h_atrisk = evaluate_hazard_at_times(fitted_atrisk, test_times)
+    h_learned = evaluate_hazard_at_times(fitted_learned, test_times)
+    
+    # Print comparison
+    if VERBOSE_LONGTESTS
+        println("\n    Hazard comparison at test times:")
+        println("    Time      True        Uniform     AtRisk-1.0  Learned-α")
+        println("    " * "-"^60)
+        for (i, t) in enumerate(test_times)
+            @printf("    %-9.1f %-11.4f %-11.4f %-11.4f %-11.4f\n",
+                    t, h_true[i], h_uniform[i], h_atrisk[i], h_learned[i])
+        end
+        println("    " * "-"^60)
+        
+        # Report λ values
+        println("\n    Smoothing parameters (λ):")
+        println("      Uniform:  $(round(fitted_uniform.smoothing_parameters[1], digits=3))")
+        println("      AtRisk:   $(round(fitted_atrisk.smoothing_parameters[1], digits=3))")
+        println("      Learned:  $(round(fitted_learned.smoothing_parameters[1], digits=3))")
+    end
+    
+    # --- Validation ---
+    # All fits should produce positive, finite hazards
+    @test all(h_uniform .> 0)
+    @test all(h_atrisk .> 0)
+    @test all(h_learned .> 0)
+    @test all(isfinite.(h_uniform))
+    @test all(isfinite.(h_atrisk))
+    @test all(isfinite.(h_learned))
+    
+    # All fits should have reasonable smoothing parameters
+    @test fitted_uniform.smoothing_parameters[1] > 0
+    @test fitted_atrisk.smoothing_parameters[1] > 0
+    @test fitted_learned.smoothing_parameters[1] > 0
+    
+    # Hazard approximation should be reasonable (within HAZARD_RTOL of truth)
+    # We use relaxed tolerance since splines only approximate Weibull
+    uniform_passed = all(abs.(h_uniform .- h_true) ./ h_true .<= HAZARD_RTOL)
+    atrisk_passed = all(abs.(h_atrisk .- h_true) ./ h_true .<= HAZARD_RTOL)
+    learned_passed = all(abs.(h_learned .- h_true) ./ h_true .<= HAZARD_RTOL)
+    
+    if VERBOSE_LONGTESTS
+        println("\n    Hazard approximation (tol=$(HAZARD_RTOL)):")
+        println("      Uniform:  $(uniform_passed ? "PASS" : "FAIL")")
+        println("      AtRisk:   $(atrisk_passed ? "PASS" : "FAIL")")
+        println("      Learned:  $(learned_passed ? "PASS" : "FAIL")")
+    end
+    
+    # At minimum, uniform should pass (baseline); adaptive should not be worse
+    @test uniform_passed
+    
+    overall_passed = uniform_passed && atrisk_passed && learned_passed
+    
+    VERBOSE_LONGTESTS && println("  ✓ sp_exact_adaptive: $(overall_passed ? "PASS" : "PARTIAL")")
 end
 
 # =============================================================================

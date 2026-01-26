@@ -399,41 +399,14 @@ import StatsModels: apply_schema, coefnames, modelcols, termvars
     end
 
     @testset "default_nknots_penalized function" begin
-        # Boundary cases
-        @test MultistateModels.default_nknots_penalized(0) == 0
+        # default_nknots_penalized() returns a fixed value (not sample-size dependent)
+        # This follows the philosophy that penalized splines don't need data-adaptive 
+        # knot counts - the penalty controls overfitting, so we just need enough knots
+        # to capture any plausible true function shape.
+        @test MultistateModels.default_nknots_penalized() == 9
         
-        # Small samples - hits lower bound of 4
-        @test MultistateModels.default_nknots_penalized(1) == 4
-        @test MultistateModels.default_nknots_penalized(10) == 4  # 10^(1/3) ≈ 2.15 → clamped to 4
-        @test MultistateModels.default_nknots_penalized(64) == 4  # 64^(1/3) = 4.0
-        
-        # Typical survival data sizes - uses floor(n^(1/3))
-        # Note: Due to floating point, cube roots often slightly under exact values
-        # e.g., 1000^(1/3) ≈ 9.9999..., 8000^(1/3) ≈ 19.9999...
-        @test MultistateModels.default_nknots_penalized(100) == 4  # 100^(1/3) ≈ 4.64 → 4
-        @test MultistateModels.default_nknots_penalized(125) == 5  # 125^(1/3) = 5
-        @test MultistateModels.default_nknots_penalized(500) == 7  # 500^(1/3) ≈ 7.94 → 7
-        @test MultistateModels.default_nknots_penalized(1000) == 9  # 1000^(1/3) ≈ 9.999... → 9 (floating point)
-        @test MultistateModels.default_nknots_penalized(1001) == 10  # Just over 1000 → 10
-        @test MultistateModels.default_nknots_penalized(8000) == 19  # 8000^(1/3) ≈ 19.999... → 19 (floating point)
-        @test MultistateModels.default_nknots_penalized(8001) == 20  # Just over 8000 → 20
-        @test MultistateModels.default_nknots_penalized(10000) == 21  # 10000^(1/3) ≈ 21.5 → 21
-        
-        # Large samples - check upper bound clamping
-        # Note: 64000^(1/3) ≈ 39.999... due to floating point
-        @test MultistateModels.default_nknots_penalized(64000) == 39  # 64000^(1/3) ≈ 39.999... → 39 (floating point)
-        @test MultistateModels.default_nknots_penalized(64001) == 40  # Just over 64000 → 40
-        @test MultistateModels.default_nknots_penalized(100000) == 40  # 100000^(1/3) ≈ 46.4 → clamped to 40
-        @test MultistateModels.default_nknots_penalized(1000000) == 40  # Clamped to upper bound
-        
-        # Monotonicity: more data → more knots (up to bound)
-        @test MultistateModels.default_nknots_penalized(100) <= MultistateModels.default_nknots_penalized(1000)
-        @test MultistateModels.default_nknots_penalized(1000) <= MultistateModels.default_nknots_penalized(10000)
-        
-        # P-spline formula gives MORE knots than regression spline formula
-        # for typical sample sizes (once past minimum bounds)
-        @test MultistateModels.default_nknots_penalized(1000) > MultistateModels.default_nknots(1000)
-        @test MultistateModels.default_nknots_penalized(10000) > MultistateModels.default_nknots(10000)
+        # P-spline default (9 knots) is more than regression spline default for typical sizes
+        @test MultistateModels.default_nknots_penalized() > MultistateModels.default_nknots(1000)
     end
 
     # =========================================================================

@@ -63,11 +63,11 @@ using Statistics
         
         # Unfitted MarkovSurrogate (from model creation with fit_surrogate=false)
         model_unfitted = multistatemodel(h12; data = dat, surrogate = :markov, fit_surrogate = false)
-        @test !is_fitted(model_unfitted.markovsurrogate)
+        @test !is_fitted(model_unfitted.surrogate)
         
         # Fitted MarkovSurrogate
         model_fitted = multistatemodel(h12; data = dat, surrogate = :markov, fit_surrogate = true)
-        @test is_fitted(model_fitted.markovsurrogate)
+        @test is_fitted(model_fitted.surrogate)
         
         # PhaseTypeSurrogate is always fitted (built from fitted Markov)
         model = multistatemodel(h12; data = dat)
@@ -132,12 +132,12 @@ using Statistics
         # Default: fit_surrogate=true - surrogate should be fitted during model creation
         model_default = multistatemodel(h12; data = dat, surrogate = :markov)
         @test is_surrogate_fitted(model_default)
-        @test model_default.markovsurrogate.fitted == true
+        @test model_default.surrogate.fitted == true
         
         # Explicit fit_surrogate=false - surrogate exists but not fitted
         model_deferred = multistatemodel(h12; data = dat, surrogate = :markov, fit_surrogate = false)
         @test !is_surrogate_fitted(model_deferred)
-        @test model_deferred.markovsurrogate.fitted == false
+        @test model_deferred.surrogate.fitted == false
         
         # No surrogate - is_surrogate_fitted returns false
         model_none = multistatemodel(h12; data = dat)
@@ -299,10 +299,10 @@ using Statistics
         
         # After fitting, the model's surrogate should be fitted
         @test is_surrogate_fitted(model)
-        @test model.markovsurrogate.fitted == true
+        @test model.surrogate.fitted == true
         
         # Rates should be positive and in plausible range (access via flat params)
-        rates = model.markovsurrogate.parameters.flat
+        rates = model.surrogate.parameters.flat
         rate_12 = rates[1]  # First (and only) rate for exp hazard
         @test rate_12 > 0.05  # Lower bound
         @test rate_12 < 1.0   # Upper bound
@@ -317,4 +317,192 @@ using Statistics
         @test_throws ArgumentError MultistateModels._validate_surrogate_inputs(:markov, :invalid)
     end
     
+    # =========================================================================
+    # BIC-Based Surrogate Selection Tests
+    # =========================================================================
+    
+    @testset "select_surrogate basic functionality" begin
+        dat = create_test_data(n_subj = 50)
+        h12 = Hazard(@formula(0 ~ 1), "wei", 1, 2)
+        model = multistatemodel(h12; data = dat)
+        
+        # select_surrogate returns a valid surrogate
+        surrogate = select_surrogate(model; verbose = false)
+        @test surrogate isa AbstractSurrogate
+        @test surrogate isa Union{MarkovSurrogate, PhaseTypeSurrogate}
+        @test is_fitted(surrogate)
+    end
+    
+    @testset "select_surrogate with return_all" begin
+        dat = create_test_data(n_subj = 50)
+        h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
+        model = multistatemodel(h12; data = dat)
+        
+        # Return all results for inspection
+        result = select_surrogate(model; verbose = false, return_all = true)
+        
+        @test haskey(result, :best)
+        @test haskey(result, :comparison)
+        @test haskey(result, :selected)
+        
+        @test result.best isa AbstractSurrogate
+        @test result.comparison isa DataFrame
+        @test result.selected isa Symbol
+        
+        # Comparison DataFrame should have expected columns
+        @test "candidate" in names(result.comparison)
+        @test "bic" in names(result.comparison)
+        @test "loglik" in names(result.comparison)
+        @test "n_params" in names(result.comparison)
+        @test "selected" in names(result.comparison)
+        
+        # Exactly one candidate should be selected
+        @test sum(result.comparison.selected) == 1
+    end
+    
+    @testset "select_surrogate custom candidates" begin
+        dat = create_test_data(n_subj = 30)
+        h12 = Hazard(@formula(0 ~ 1), "wei", 1, 2)
+        model = multistatemodel(h12; data = dat)
+        
+        # Test with custom candidates
+        surrogate = select_surrogate(model; 
+            candidates = [:markov, :phasetype_2],
+            verbose = false)
+        @test surrogate isa AbstractSurrogate
+        
+        # Test with tuple format
+        surrogate2 = select_surrogate(model; 
+            candidates = [:markov, (:phasetype, 3)],
+            verbose = false)
+        @test surrogate2 isa AbstractSurrogate
+    end
+    
+    @testset "compute_surrogate_bic for MarkovSurrogate" begin
+        dat = create_test_data(n_subj = 50)
+        h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
+        model = multistatemodel(h12; data = dat)
+        
+        surrogate = fit_surrogate(model; type = :markov, verbose = false)
+        bic_val, loglik, n_params = compute_surrogate_bic(model, surrogate)
+        
+        # BIC should be finite
+        @test isfinite(bic_val)
+        @test isfinite(loglik)
+        
+        # Parameter count: 1 transition = 1 parameter
+        @test n_params == 1
+        
+        # Manual BIC calculation should match
+        n_subjects = 50
+        expected_bic = -2.0 * loglik + log(n_subjects) * n_params
+        @test isapprox(bic_val, expected_bic, rtol = 1e-10)
+    end
+    
+    @testset "compute_surrogate_bic for PhaseTypeSurrogate" begin
+        dat = create_test_data(n_subj = 50)
+        h12 = Hazard(@formula(0 ~ 1), "wei", 1, 2)
+        model = multistatemodel(h12; data = dat)
+        
+        surrogate = fit_surrogate(model; type = :phasetype, n_phases = 2, verbose = false)
+        bic_val, loglik, n_params = compute_surrogate_bic(model, surrogate)
+        
+        # BIC should be finite
+        @test isfinite(bic_val)
+        @test isfinite(loglik)
+        
+        # Phase-type with 2 phases, 1 destination: 
+        # Parameters = (2-1) progression + 2*1 absorption = 3
+        @test n_params == 3
+        
+        # Manual BIC calculation should match
+        n_subjects = 50
+        expected_bic = -2.0 * loglik + log(n_subjects) * n_params
+        @test isapprox(bic_val, expected_bic, rtol = 1e-10)
+    end
+    
+    @testset "BIC favors parsimony for exponential data" begin
+        # For truly exponential data, Markov should have lower BIC
+        # because it has fewer parameters and exponential is the true model
+        Random.seed!(42)
+        
+        # Generate data with exponential sojourns (Markov is correct model)
+        n_subj = 100
+        dat = DataFrame(
+            id = repeat(1:n_subj, inner = 3),
+            tstart = repeat([0.0, 1.0, 2.0], n_subj),
+            tstop = repeat([1.0, 2.0, 3.0], n_subj),
+            statefrom = repeat([1, 1, 1], n_subj),
+            stateto = vcat([[rand() < 0.25 ? 2 : 1, rand() < 0.25 ? 2 : 1, 2] for _ in 1:n_subj]...),
+            obstype = repeat([2, 2, 2], n_subj)
+        )
+        
+        h12 = Hazard(@formula(0 ~ 1), "exp", 1, 2)
+        model = multistatemodel(h12; data = dat)
+        
+        result = select_surrogate(model; 
+            candidates = [:markov, :phasetype_2],
+            verbose = false, 
+            return_all = true)
+        
+        # Extract BIC values
+        markov_row = filter(row -> row.candidate == :markov, result.comparison)
+        phasetype_row = filter(row -> row.candidate == :phasetype_2, result.comparison)
+        
+        markov_bic = markov_row.bic[1]
+        phasetype_bic = phasetype_row.bic[1]
+        
+        # Markov should have lower (or nearly equal) BIC for exponential data
+        # Phase-type has 3 params vs 1 param, so it needs significantly better fit to win
+        # Allow some tolerance since MLE can have variance
+        @test markov_bic <= phasetype_bic + 5.0  # Markov shouldn't be much worse
+    end
+    
+    @testset "_parse_surrogate_candidates" begin
+        # Test parsing of various candidate formats
+        parsed = MultistateModels._parse_surrogate_candidates([:markov])
+        @test parsed == [(:markov, nothing)]
+        
+        parsed = MultistateModels._parse_surrogate_candidates([:phasetype_2])
+        @test parsed == [(:phasetype, 2)]
+        
+        parsed = MultistateModels._parse_surrogate_candidates([:phasetype_3])
+        @test parsed == [(:phasetype, 3)]
+        
+        parsed = MultistateModels._parse_surrogate_candidates([(:phasetype, 4)])
+        @test parsed == [(:phasetype, 4)]
+        
+        # Invalid formats should throw
+        @test_throws ArgumentError MultistateModels._parse_surrogate_candidates([:invalid])
+        @test_throws ArgumentError MultistateModels._parse_surrogate_candidates([:phasetype_abc])
+        @test_throws ArgumentError MultistateModels._parse_surrogate_candidates([(:phasetype, -1)])
+    end
+    
+    @testset "initialize_surrogate! with type=:auto" begin
+        dat = create_test_data(n_subj = 30)
+        h12 = Hazard(@formula(0 ~ 1), "wei", 1, 2)
+        
+        # Create model with unfitted surrogate
+        model = multistatemodel(h12; data = dat, surrogate = :markov, fit_surrogate = false)
+        
+        # Initialize with :auto should use BIC-based selection
+        initialize_surrogate!(model; type = :auto, verbose = false)
+        
+        # Should be fitted with some surrogate
+        @test is_surrogate_fitted(model)
+        @test model.surrogate isa AbstractSurrogate
+    end
+    
+    @testset "multistatemodel surrogate=:auto uses BIC selection" begin
+        dat = create_test_data(n_subj = 30)
+        h12 = Hazard(@formula(0 ~ 1), "wei", 1, 2)
+        
+        # Create model with :auto surrogate selection
+        model = multistatemodel(h12; data = dat, surrogate = :auto, verbose = false)
+        
+        # Should have a fitted surrogate
+        @test is_surrogate_fitted(model)
+        @test model.surrogate isa AbstractSurrogate
+    end
+
 end

@@ -875,4 +875,248 @@ end
         @test isapprox(grad_penalty_from_diff, expected_penalty_grad, rtol=1e-6)
     end
 
+    @testset "_resolve_selector - Hyperparameter Selector Resolution" begin
+        # Test with NoPenalty - always returns NoSelection
+        @test MultistateModels._resolve_selector(:pijcv, NoPenalty()) isa NoSelection
+        @test MultistateModels._resolve_selector(:efs, NoPenalty()) isa NoSelection
+        @test MultistateModels._resolve_selector(:none, NoPenalty()) isa NoSelection
+        
+        # Create a QuadraticPenalty for non-trivial tests
+        K = 6
+        S = rand(K, K)
+        S = S' * S  # Make symmetric PSD
+        term = MultistateModels.PenaltyTerm(1:K, S, 1.0, 2, [:h12])
+        penalty = QuadraticPenalty(
+            [term], 
+            MultistateModels.TotalHazardPenaltyTerm[],
+            MultistateModels.SmoothCovariatePenaltyTerm[],
+            Dict{Int,Vector{Int}}(),
+            Vector{Int}[],
+            1
+        )
+        
+        # Test :none
+        @test MultistateModels._resolve_selector(:none, penalty) isa NoSelection
+        
+        # Test PIJCVSelector variants
+        pijcv_loo = MultistateModels._resolve_selector(:pijcv, penalty)
+        @test pijcv_loo isa PIJCVSelector
+        @test pijcv_loo.nfolds == 0
+        
+        pijlcv_loo = MultistateModels._resolve_selector(:pijlcv, penalty)  # alias
+        @test pijlcv_loo isa PIJCVSelector
+        @test pijlcv_loo.nfolds == 0
+        
+        pijcv5 = MultistateModels._resolve_selector(:pijcv5, penalty)
+        @test pijcv5 isa PIJCVSelector
+        @test pijcv5.nfolds == 5
+        
+        pijcv10 = MultistateModels._resolve_selector(:pijcv10, penalty)
+        @test pijcv10 isa PIJCVSelector
+        @test pijcv10.nfolds == 10
+        
+        pijcv20 = MultistateModels._resolve_selector(:pijcv20, penalty)
+        @test pijcv20 isa PIJCVSelector
+        @test pijcv20.nfolds == 20
+        
+        # Test ExactCVSelector variants
+        loocv = MultistateModels._resolve_selector(:loocv, penalty)
+        @test loocv isa ExactCVSelector
+        @test loocv.nfolds == 0
+        
+        cv5 = MultistateModels._resolve_selector(:cv5, penalty)
+        @test cv5 isa ExactCVSelector
+        @test cv5.nfolds == 5
+        
+        cv10 = MultistateModels._resolve_selector(:cv10, penalty)
+        @test cv10 isa ExactCVSelector
+        @test cv10.nfolds == 10
+        
+        cv20 = MultistateModels._resolve_selector(:cv20, penalty)
+        @test cv20 isa ExactCVSelector
+        @test cv20.nfolds == 20
+        
+        # Test REML/EFS
+        efs = MultistateModels._resolve_selector(:efs, penalty)
+        @test efs isa REMLSelector
+        
+        # Test PERF
+        perf = MultistateModels._resolve_selector(:perf, penalty)
+        @test perf isa PERFSelector
+        
+        # Test invalid selector throws error
+        @test_throws ArgumentError MultistateModels._resolve_selector(:invalid, penalty)
+        @test_throws ArgumentError MultistateModels._resolve_selector(:foo, penalty)
+    end
+
+    # =========================================================================
+    # Phase 3 Integration Tests: New Fitting Function Architecture
+    # =========================================================================
+    
+    @testset "_select_hyperparameters dispatcher" begin
+        # Create a simple spline model for testing
+        # Column order MUST be: id, tstart, tstop, statefrom, stateto, obstype
+        Random.seed!(12345)
+        n = 50
+        df = DataFrame(
+            id = Int[],
+            tstart = Float64[],
+            tstop = Float64[],
+            statefrom = Int[],
+            stateto = Int[],
+            obstype = Int[]
+        )
+        
+        for subj in 1:n
+            t1 = rand() + 0.1
+            t2 = t1 + rand() + 0.1
+            push!(df, (subj, 0.0, t1, 1, 2, 1))
+            push!(df, (subj, t1, t2, 2, 3, 1))
+        end
+        
+        h12 = Hazard(@formula(0 ~ 1), :sp, 1, 2; degree=3, knots=[0.5, 1.0, 1.5])
+        h23 = Hazard(@formula(0 ~ 1), :exp, 2, 3)
+        
+        model = multistatemodel(h12, h23; data=df)
+        
+        # Build penalty and data
+        penalty_spec = SplinePenalty()
+        penalty_config = MultistateModels.build_penalty_config(model, penalty_spec; lambda_init=1.0)
+        
+        samplepaths = MultistateModels.extract_paths(model)
+        exact_data = MultistateModels.ExactData(model, samplepaths)
+        beta_init = MultistateModels.get_parameters_flat(model)
+        
+        # Test NoSelection returns immediately
+        selector_none = NoSelection()
+        result_none = MultistateModels._select_hyperparameters(
+            model, exact_data, penalty_config, selector_none;
+            beta_init=beta_init, verbose=false
+        )
+        @test result_none isa MultistateModels.HyperparameterSelectionResult
+        @test result_none.converged == true
+        @test result_none.method == :none
+        @test length(result_none.lambda) == penalty_config.n_lambda
+        @test length(result_none.warmstart_beta) == length(beta_init)
+    end
+
+    @testset "_fit_inner_coefficients" begin
+        # Create a simple spline model for testing
+        # Column order MUST be: id, tstart, tstop, statefrom, stateto, obstype
+        Random.seed!(12346)
+        n = 40
+        df = DataFrame(
+            id = Int[],
+            tstart = Float64[],
+            tstop = Float64[],
+            statefrom = Int[],
+            stateto = Int[],
+            obstype = Int[]
+        )
+        
+        for subj in 1:n
+            t1 = rand() + 0.1
+            t2 = t1 + rand() + 0.1
+            push!(df, (subj, 0.0, t1, 1, 2, 1))
+            push!(df, (subj, t1, t2, 2, 3, 1))
+        end
+        
+        h12 = Hazard(@formula(0 ~ 1), :sp, 1, 2; degree=3, knots=[0.5, 1.0, 1.5])
+        h23 = Hazard(@formula(0 ~ 1), :exp, 2, 3)
+        
+        model = multistatemodel(h12, h23; data=df)
+        
+        penalty_spec = SplinePenalty()
+        penalty_config = MultistateModels.build_penalty_config(model, penalty_spec; lambda_init=1.0)
+        
+        samplepaths = MultistateModels.extract_paths(model)
+        exact_data = MultistateModels.ExactData(model, samplepaths)
+        beta_init = MultistateModels.get_parameters_flat(model)
+        lb, ub = model.bounds.lb, model.bounds.ub
+        
+        # Test that _fit_inner_coefficients returns a vector of correct size
+        beta_fitted = MultistateModels._fit_inner_coefficients(
+            model, exact_data, penalty_config, beta_init;
+            lb=lb, ub=ub, maxiter=20
+        )
+        
+        @test length(beta_fitted) == length(beta_init)
+        @test all(isfinite.(beta_fitted))
+        # Check bounds are respected
+        @test all(beta_fitted .>= lb .- 1e-6)  # Small tolerance for numerical precision
+        @test all(beta_fitted .<= ub .+ 1e-6)
+    end
+
+    @testset "_fit_coefficients_at_fixed_hyperparameters" begin
+        # Create a simple spline model for testing
+        # Column order MUST be: id, tstart, tstop, statefrom, stateto, obstype
+        Random.seed!(12347)
+        n = 30
+        df = DataFrame(
+            id = Int[],
+            tstart = Float64[],
+            tstop = Float64[],
+            statefrom = Int[],
+            stateto = Int[],
+            obstype = Int[]
+        )
+        
+        for subj in 1:n
+            t1 = rand() + 0.1
+            t2 = t1 + rand() + 0.1
+            push!(df, (subj, 0.0, t1, 1, 2, 1))
+            push!(df, (subj, t1, t2, 2, 3, 1))
+        end
+        
+        h12 = Hazard(@formula(0 ~ 1), :sp, 1, 2; degree=3, knots=[0.5, 1.0, 1.5])
+        h23 = Hazard(@formula(0 ~ 1), :exp, 2, 3)
+        
+        model = multistatemodel(h12, h23; data=df)
+        
+        penalty_spec = SplinePenalty()
+        penalty_config = MultistateModels.build_penalty_config(model, penalty_spec; lambda_init=10.0)
+        
+        samplepaths = MultistateModels.extract_paths(model)
+        exact_data = MultistateModels.ExactData(model, samplepaths)
+        beta_init = MultistateModels.get_parameters_flat(model)
+        lb, ub = model.bounds.lb, model.bounds.ub
+        
+        # Test final fit returns real OptimizationSolution
+        sol = MultistateModels._fit_coefficients_at_fixed_hyperparameters(
+            model, exact_data, penalty_config, beta_init;
+            lb=lb, ub=ub, maxiter=50, verbose=false
+        )
+        
+        # Verify it's a real solution object (not a fake tuple)
+        @test hasfield(typeof(sol), :u)
+        @test hasfield(typeof(sol), :objective)
+        @test hasfield(typeof(sol), :retcode)
+        @test length(sol.u) == length(beta_init)
+        @test isfinite(sol.objective)
+    end
+
+    @testset "HyperparameterSelectionResult structure" begin
+        # Test that we can create and use HyperparameterSelectionResult
+        result = MultistateModels.HyperparameterSelectionResult(
+            [1.0, 2.0],           # lambda
+            randn(5),             # warmstart_beta
+            NoPenalty(),          # penalty
+            -100.5,               # criterion_value
+            (total=3.5, per_term=[2.0, 1.5]),  # edf
+            true,                 # converged
+            :pijcv,               # method
+            10,                   # n_iterations
+            (;)                   # diagnostics (empty)
+        )
+        
+        @test result.lambda == [1.0, 2.0]
+        @test length(result.warmstart_beta) == 5
+        @test result.penalty isa NoPenalty
+        @test result.criterion_value ≈ -100.5
+        @test result.edf.total ≈ 3.5
+        @test result.converged == true
+        @test result.method == :pijcv
+        @test result.n_iterations == 10
+    end
+
 end

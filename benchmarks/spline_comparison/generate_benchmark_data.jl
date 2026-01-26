@@ -13,6 +13,8 @@
 #   h23(t) = 0.4 * exp(-0.1*t) (decreasing exponential)
 #
 # Run with: julia --project=../../.. generate_benchmark_data.jl
+#
+# Updated 2026-01-24: Uses new fit() API with penalty=:auto, select_lambda=:pijcv
 # =============================================================================
 
 using MultistateModels
@@ -22,8 +24,10 @@ using JSON
 using Random
 using Statistics
 
+import MultistateModels: get_parameters
+
 const OUTPUT_DIR = @__DIR__
-const SEED = 20260104
+const SEED = 20260124
 
 # =============================================================================
 # True Hazard Functions
@@ -218,45 +222,47 @@ function run_benchmark(; n_subjects=200, max_time=5.0, verbose=true)
     # Define spline hazards (cubic B-splines)
     # Use interior knots to match mgcv k=8 approximately (8 basis = degree+1 + interior_knots)
     interior_knots = [1.0, 2.0, 3.0, 4.0]  # 4 interior knots
-    h12 = Hazard(@formula(0 ~ 1), :sp, 1, 2; degree=3, knots=interior_knots)
-    h13 = Hazard(@formula(0 ~ 1), :sp, 1, 3; degree=3, knots=interior_knots)
-    h23 = Hazard(@formula(0 ~ 1), :sp, 2, 3; degree=3, knots=interior_knots)
+    h12 = Hazard(@formula(0 ~ 1), :sp, 1, 2; degree=3, knots=interior_knots, boundaryknots=[0.0, max_time])
+    h13 = Hazard(@formula(0 ~ 1), :sp, 1, 3; degree=3, knots=interior_knots, boundaryknots=[0.0, max_time])
+    h23 = Hazard(@formula(0 ~ 1), :sp, 2, 3; degree=3, knots=interior_knots, boundaryknots=[0.0, max_time])
     
     model = multistatemodel(h12, h13, h23; data=data)
     
     # Warm-up JIT
     println("  Warming up JIT...")
     try
-        penalty_warmup = SplinePenalty()
-        _ = select_smoothing_parameters(model, penalty_warmup; 
-                                        method=:pijcv, max_outer_iter=2, verbose=false)
+        _ = fit(model; penalty=:auto, select_lambda=:pijcv, verbose=false, vcov_type=:none)
     catch e
         @warn "Warm-up failed, continuing..." exception=e
     end
     
-    # Time the fit with smoothing selection
+    # Time the fit with smoothing selection using the new API
     println("  Running smoothing parameter selection (PIJCV)...")
-    penalty = SplinePenalty()
     
     t_julia_start = time()
-    result = select_smoothing_parameters(model, penalty; 
-                                         method=:pijcv, 
-                                         verbose=verbose,
-                                         max_outer_iter=20)
+    fitted = fit(model; 
+                 penalty=:auto, 
+                 select_lambda=:pijcv,
+                 verbose=verbose,
+                 vcov_type=:ij)
     t_julia = time() - t_julia_start
     
+    # Extract results from fitted model
+    lambda = isnothing(fitted.smoothing_parameters) ? Float64[] : collect(fitted.smoothing_parameters)
+    edf_result = isnothing(fitted.edf) ? (total=NaN, per_term=[]) : fitted.edf
+    converged = true  # fit() throws on failure
+    
     println("\n  Results:")
-    println("    Converged: $(result.converged)")
-    println("    Lambda: $(round.(result.lambda, sigdigits=4))")
-    println("    N outer iterations: $(result.n_outer_iter)")
+    println("    Lambda: $(round.(lambda, sigdigits=4))")
+    println("    EDF: $(edf_result)")
     println("    Time: $(round(t_julia, digits=2)) seconds")
     
     # Extract fitted hazards
-    beta_hat = result.beta
+    beta_hat = MultistateModels.get_parameters_flat(fitted)
     
     # Compute parameter offsets for each hazard
     # Each hazard has npar_total parameters, stored contiguously in flat vector
-    hazards = model.hazards
+    hazards = fitted.hazards
     n_hazards = length(hazards)
     param_offsets = Vector{UnitRange{Int}}(undef, n_hazards)
     offset = 1
@@ -275,13 +281,14 @@ function run_benchmark(; n_subjects=200, max_time=5.0, verbose=true)
     h13_julia = Float64[]
     h23_julia = Float64[]
     
-    # Evaluate hazards at each time point
-    # The callable interface: hazard(t, pars, covars) where pars is the slice for that hazard
+    # Evaluate hazards at each time point using get_parameters for nested structure
+    pars_nested = get_parameters(fitted)
+    
     for t in eval_times
         # Pass empty NamedTuple for covariates since we have no covariates
-        push!(h12_julia, hazards[1](t, beta_hat[param_offsets[1]], NamedTuple()))
-        push!(h13_julia, hazards[2](t, beta_hat[param_offsets[2]], NamedTuple()))
-        push!(h23_julia, hazards[3](t, beta_hat[param_offsets[3]], NamedTuple()))
+        push!(h12_julia, hazards[1](t, pars_nested.h12, NamedTuple()))
+        push!(h13_julia, hazards[2](t, pars_nested.h13, NamedTuple()))
+        push!(h23_julia, hazards[3](t, pars_nested.h23, NamedTuple()))
     end
     
     # Compute RMSE
@@ -291,13 +298,6 @@ function run_benchmark(; n_subjects=200, max_time=5.0, verbose=true)
     println("    h13: $(round(rmse(h13_julia, h13_true), sigdigits=4))")
     println("    h23: $(round(rmse(h23_julia, h23_true), sigdigits=4))")
     
-    # Compute effective degrees of freedom
-    # EDF = tr(F) where F is the influence matrix
-    # For a rough approximation, use n_params for each hazard
-    # (true EDF would require computing tr((X'X + λS)^{-1} X'X))
-    n_basis = [hazards[i].npar_baseline for i in 1:n_hazards]
-    edf_approx = n_basis  # Placeholder - would need more computation for true EDF
-    
     # Export Julia results
     julia_results = Dict(
         "hazards" => Dict(
@@ -305,12 +305,12 @@ function run_benchmark(; n_subjects=200, max_time=5.0, verbose=true)
             "h13" => h13_julia,
             "h23" => h23_julia
         ),
-        "lambda" => result.lambda,
-        "beta" => result.beta,
-        "converged" => result.converged,
-        "n_outer_iter" => result.n_outer_iter,
+        "lambda" => lambda,
+        "beta" => beta_hat,
+        "edf" => isa(edf_result, NamedTuple) ? edf_result.total : edf_result,
+        "converged" => converged,
         "time_seconds" => t_julia,
-        "criterion" => result.criterion,
+        "loglik" => fitted.loglik.loglik,
         "rmse" => Dict(
             "h12" => rmse(h12_julia, h12_true),
             "h13" => rmse(h13_julia, h13_true),
@@ -328,7 +328,7 @@ function run_benchmark(; n_subjects=200, max_time=5.0, verbose=true)
     println("  julia_results.json")
     println("\nRun the R script next to compare with mgcv and flexsurv.")
     
-    return (data=data, result=result, julia_results=julia_results)
+    return (data=data, fitted=fitted, julia_results=julia_results)
 end
 
 # Run if called directly

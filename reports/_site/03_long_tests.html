@@ -6,7 +6,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="dcterms.date" content="2026-01-23">
+<meta name="dcterms.date" content="2026-01-25">
 
 <title>Long Tests Status – MultistateModels Test Reports</title>
 <style>
@@ -148,101 +148,8 @@ ul.task-list li input[type="checkbox"] {
 <div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-        <nav id="TOC" role="doc-toc" class="toc-active" data-toc-expanded="1">
-    <h2 id="toc-title">On this page</h2>
-   
-  <ul>
-  <li><a href="#overview" id="toc-overview" class="nav-link active" data-scroll-target="#overview">1. Overview</a>
-  <ul>
-  <li><a href="#overall-status" id="toc-overall-status" class="nav-link" data-scroll-target="#overall-status">1.1 Overall Status</a></li>
-  </ul></li>
-  <li><a href="#exponential-hazard-models" id="toc-exponential-hazard-models" class="nav-link" data-scroll-target="#exponential-hazard-models">2. Exponential Hazard Models</a>
-  <ul>
-  <li><a href="#exp_exact_nocov" id="toc-exp_exact_nocov" class="nav-link" data-scroll-target="#exp_exact_nocov">2.1 exp_exact_nocov</a></li>
-  <li><a href="#exp_exact_fixed" id="toc-exp_exact_fixed" class="nav-link" data-scroll-target="#exp_exact_fixed">2.2 exp_exact_fixed</a></li>
-  <li><a href="#exp_exact_tvc" id="toc-exp_exact_tvc" class="nav-link" data-scroll-target="#exp_exact_tvc">2.3 exp_exact_tvc</a></li>
-  <li><a href="#exp_panel_nocov" id="toc-exp_panel_nocov" class="nav-link" data-scroll-target="#exp_panel_nocov">2.4 exp_panel_nocov</a></li>
-  <li><a href="#exp_panel_fixed" id="toc-exp_panel_fixed" class="nav-link" data-scroll-target="#exp_panel_fixed">2.5 exp_panel_fixed</a></li>
-  <li><a href="#exp_panel_tvc" id="toc-exp_panel_tvc" class="nav-link" data-scroll-target="#exp_panel_tvc">2.6 exp_panel_tvc</a></li>
-  </ul></li>
-  <li><a href="#weibull-hazard-models" id="toc-weibull-hazard-models" class="nav-link" data-scroll-target="#weibull-hazard-models">3. Weibull Hazard Models</a>
-  <ul>
-  <li><a href="#wei_exact_nocov" id="toc-wei_exact_nocov" class="nav-link" data-scroll-target="#wei_exact_nocov">3.1 wei_exact_nocov</a></li>
-  <li><a href="#wei_exact_fixed" id="toc-wei_exact_fixed" class="nav-link" data-scroll-target="#wei_exact_fixed">3.2 wei_exact_fixed</a></li>
-  <li><a href="#wei_exact_tvc" id="toc-wei_exact_tvc" class="nav-link" data-scroll-target="#wei_exact_tvc">3.3 wei_exact_tvc</a></li>
-  <li><a href="#wei_mcem_nocov" id="toc-wei_mcem_nocov" class="nav-link" data-scroll-target="#wei_mcem_nocov">3.4 wei_mcem_nocov</a></li>
-  <li><a href="#wei_mcem_fixed" id="toc-wei_mcem_fixed" class="nav-link" data-scroll-target="#wei_mcem_fixed">3.5 wei_mcem_fixed</a></li>
-  <li><a href="#wei_mcem_tvc" id="toc-wei_mcem_tvc" class="nav-link" data-scroll-target="#wei_mcem_tvc">3.6 wei_mcem_tvc</a></li>
-  </ul></li>
-  <li><a href="#gompertz-hazard-models" id="toc-gompertz-hazard-models" class="nav-link" data-scroll-target="#gompertz-hazard-models">4. Gompertz Hazard Models</a>
-  <ul>
-  <li><a href="#gom_exact_nocov" id="toc-gom_exact_nocov" class="nav-link" data-scroll-target="#gom_exact_nocov">4.1 gom_exact_nocov</a></li>
-  <li><a href="#gom_exact_fixed" id="toc-gom_exact_fixed" class="nav-link" data-scroll-target="#gom_exact_fixed">4.2 gom_exact_fixed</a></li>
-  <li><a href="#gom_exact_tvc" id="toc-gom_exact_tvc" class="nav-link" data-scroll-target="#gom_exact_tvc">4.3 gom_exact_tvc</a></li>
-  <li><a href="#gom_mcem_nocov" id="toc-gom_mcem_nocov" class="nav-link" data-scroll-target="#gom_mcem_nocov">4.4 gom_mcem_nocov</a></li>
-  <li><a href="#gom_mcem_fixed" id="toc-gom_mcem_fixed" class="nav-link" data-scroll-target="#gom_mcem_fixed">4.5 gom_mcem_fixed</a></li>
-  <li><a href="#gom_mcem_tvc" id="toc-gom_mcem_tvc" class="nav-link" data-scroll-target="#gom_mcem_tvc">4.6 gom_mcem_tvc</a></li>
-  </ul></li>
-  <li><a href="#phase-type-hazard-models" id="toc-phase-type-hazard-models" class="nav-link" data-scroll-target="#phase-type-hazard-models">5. Phase-Type Hazard Models</a>
-  <ul>
-  <li><a href="#test-overview" id="toc-test-overview" class="nav-link" data-scroll-target="#test-overview">Test Overview</a></li>
-  <li><a href="#pt_exact_nocov" id="toc-pt_exact_nocov" class="nav-link" data-scroll-target="#pt_exact_nocov">5.1 pt_exact_nocov</a></li>
-  <li><a href="#pt_exact_fixed" id="toc-pt_exact_fixed" class="nav-link" data-scroll-target="#pt_exact_fixed">5.2 pt_exact_fixed</a></li>
-  <li><a href="#pt_exact_tvc" id="toc-pt_exact_tvc" class="nav-link" data-scroll-target="#pt_exact_tvc">5.3 pt_exact_tvc</a></li>
-  <li><a href="#pt_panel_simple" id="toc-pt_panel_simple" class="nav-link" data-scroll-target="#pt_panel_simple">5.4 pt_panel_simple</a></li>
-  <li><a href="#pt_panel_id" id="toc-pt_panel_id" class="nav-link" data-scroll-target="#pt_panel_id">5.5 pt_panel_id</a></li>
-  <li><a href="#pt_mixed_simple" id="toc-pt_mixed_simple" class="nav-link" data-scroll-target="#pt_mixed_simple">5.6 pt_mixed_simple</a></li>
-  <li><a href="#pt_mixed_structured" id="toc-pt_mixed_structured" class="nav-link" data-scroll-target="#pt_mixed_structured">5.7 pt_mixed_structured</a></li>
-  <li><a href="#pt_panel_fixed" id="toc-pt_panel_fixed" class="nav-link" data-scroll-target="#pt_panel_fixed">5.8 pt_panel_fixed</a></li>
-  <li><a href="#pt_panel_tvc" id="toc-pt_panel_tvc" class="nav-link" data-scroll-target="#pt_panel_tvc">5.9 pt_panel_tvc</a></li>
-  </ul></li>
-  <li><a href="#aft-models" id="toc-aft-models" class="nav-link" data-scroll-target="#aft-models">6. AFT Models</a>
-  <ul>
-  <li><a href="#exponential-aft" id="toc-exponential-aft" class="nav-link" data-scroll-target="#exponential-aft">6.1 Exponential AFT</a></li>
-  <li><a href="#weibull-aft" id="toc-weibull-aft" class="nav-link" data-scroll-target="#weibull-aft">6.2 Weibull AFT</a></li>
-  <li><a href="#gompertz-aft" id="toc-gompertz-aft" class="nav-link" data-scroll-target="#gompertz-aft">6.3 Gompertz AFT</a></li>
-  </ul></li>
-  <li><a href="#penalized-spline-models" id="toc-penalized-spline-models" class="nav-link" data-scroll-target="#penalized-spline-models">7. Penalized Spline Models</a>
-  <ul>
-  <li><a href="#smooth-covariate-effects-sx" id="toc-smooth-covariate-effects-sx" class="nav-link" data-scroll-target="#smooth-covariate-effects-sx">7.1 Smooth Covariate Effects (s(x))</a></li>
-  <li><a href="#tensor-product-smooths-texy" id="toc-tensor-product-smooths-texy" class="nav-link" data-scroll-target="#tensor-product-smooths-texy">7.2 Tensor Product Smooths (te(x,y))</a></li>
-  <li><a href="#spline-hazards-with-exact-data" id="toc-spline-hazards-with-exact-data" class="nav-link" data-scroll-target="#spline-hazards-with-exact-data">7.3 Spline Hazards with Exact Data</a></li>
-  <li><a href="#mcem-with-spline-hazards" id="toc-mcem-with-spline-hazards" class="nav-link" data-scroll-target="#mcem-with-spline-hazards">7.4 MCEM with Spline Hazards</a></li>
-  </ul></li>
-  <li><a href="#unpenalized-spline-suite" id="toc-unpenalized-spline-suite" class="nav-link" data-scroll-target="#unpenalized-spline-suite">8. Unpenalized Spline Suite</a>
-  <ul>
-  <li><a href="#exact-data-tests-6-tests" id="toc-exact-data-tests-6-tests" class="nav-link" data-scroll-target="#exact-data-tests-6-tests">8.1 Exact Data Tests (6 tests)</a>
-  <ul class="collapse">
-  <li><a href="#sp_ph_exact_nocov" id="toc-sp_ph_exact_nocov" class="nav-link" data-scroll-target="#sp_ph_exact_nocov">8.1.1 sp_ph_exact_nocov</a></li>
-  <li><a href="#sp_ph_exact_fixed" id="toc-sp_ph_exact_fixed" class="nav-link" data-scroll-target="#sp_ph_exact_fixed">8.1.2 sp_ph_exact_fixed</a></li>
-  <li><a href="#sp_ph_exact_tvc" id="toc-sp_ph_exact_tvc" class="nav-link" data-scroll-target="#sp_ph_exact_tvc">8.1.3 sp_ph_exact_tvc</a></li>
-  <li><a href="#sp_aft_exact_nocov" id="toc-sp_aft_exact_nocov" class="nav-link" data-scroll-target="#sp_aft_exact_nocov">8.1.4 sp_aft_exact_nocov</a></li>
-  <li><a href="#sp_aft_exact_fixed" id="toc-sp_aft_exact_fixed" class="nav-link" data-scroll-target="#sp_aft_exact_fixed">8.1.5 sp_aft_exact_fixed</a></li>
-  <li><a href="#sp_aft_exact_tvc" id="toc-sp_aft_exact_tvc" class="nav-link" data-scroll-target="#sp_aft_exact_tvc">8.1.6 sp_aft_exact_tvc</a></li>
-  </ul></li>
-  <li><a href="#panel-data-tests---markov-surrogate-6-tests" id="toc-panel-data-tests---markov-surrogate-6-tests" class="nav-link" data-scroll-target="#panel-data-tests---markov-surrogate-6-tests">8.2 Panel Data Tests - Markov Surrogate (6 tests)</a>
-  <ul class="collapse">
-  <li><a href="#sp_ph_panel_markov_nocov" id="toc-sp_ph_panel_markov_nocov" class="nav-link" data-scroll-target="#sp_ph_panel_markov_nocov">8.2.1 sp_ph_panel_markov_nocov</a></li>
-  <li><a href="#sp_ph_panel_markov_fixed" id="toc-sp_ph_panel_markov_fixed" class="nav-link" data-scroll-target="#sp_ph_panel_markov_fixed">8.2.2 sp_ph_panel_markov_fixed</a></li>
-  <li><a href="#sp_ph_panel_markov_tvc" id="toc-sp_ph_panel_markov_tvc" class="nav-link" data-scroll-target="#sp_ph_panel_markov_tvc">8.2.3 sp_ph_panel_markov_tvc</a></li>
-  <li><a href="#sp_aft_panel_markov_nocov" id="toc-sp_aft_panel_markov_nocov" class="nav-link" data-scroll-target="#sp_aft_panel_markov_nocov">8.2.4 sp_aft_panel_markov_nocov</a></li>
-  <li><a href="#sp_aft_panel_markov_fixed" id="toc-sp_aft_panel_markov_fixed" class="nav-link" data-scroll-target="#sp_aft_panel_markov_fixed">8.2.5 sp_aft_panel_markov_fixed</a></li>
-  <li><a href="#sp_aft_panel_markov_tvc" id="toc-sp_aft_panel_markov_tvc" class="nav-link" data-scroll-target="#sp_aft_panel_markov_tvc">8.2.6 sp_aft_panel_markov_tvc</a></li>
-  </ul></li>
-  <li><a href="#panel-data-tests---phasetype-surrogate-6-tests" id="toc-panel-data-tests---phasetype-surrogate-6-tests" class="nav-link" data-scroll-target="#panel-data-tests---phasetype-surrogate-6-tests">8.3 Panel Data Tests - PhaseType Surrogate (6 tests)</a>
-  <ul class="collapse">
-  <li><a href="#sp_ph_panel_phasetype_nocov" id="toc-sp_ph_panel_phasetype_nocov" class="nav-link" data-scroll-target="#sp_ph_panel_phasetype_nocov">8.3.1 sp_ph_panel_phasetype_nocov</a></li>
-  <li><a href="#sp_ph_panel_phasetype_fixed" id="toc-sp_ph_panel_phasetype_fixed" class="nav-link" data-scroll-target="#sp_ph_panel_phasetype_fixed">8.3.2 sp_ph_panel_phasetype_fixed</a></li>
-  <li><a href="#sp_ph_panel_phasetype_tvc" id="toc-sp_ph_panel_phasetype_tvc" class="nav-link" data-scroll-target="#sp_ph_panel_phasetype_tvc">8.3.3 sp_ph_panel_phasetype_tvc</a></li>
-  <li><a href="#sp_aft_panel_phasetype_nocov" id="toc-sp_aft_panel_phasetype_nocov" class="nav-link" data-scroll-target="#sp_aft_panel_phasetype_nocov">8.3.4 sp_aft_panel_phasetype_nocov</a></li>
-  <li><a href="#sp_aft_panel_phasetype_fixed" id="toc-sp_aft_panel_phasetype_fixed" class="nav-link" data-scroll-target="#sp_aft_panel_phasetype_fixed">8.3.5 sp_aft_panel_phasetype_fixed</a></li>
-  <li><a href="#sp_aft_panel_phasetype_tvc" id="toc-sp_aft_panel_phasetype_tvc" class="nav-link" data-scroll-target="#sp_aft_panel_phasetype_tvc">8.3.6 sp_aft_panel_phasetype_tvc</a></li>
-  </ul></li>
-  </ul></li>
-  <li><a href="#notes" id="toc-notes" class="nav-link" data-scroll-target="#notes">9. Notes</a></li>
-  </ul>
-<div class="toc-actions"><ul><li><a href="https://github.com/fintzij/MultistateModelsTests.jl/blob/main/03_long_tests.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/fintzij/MultistateModelsTests.jl/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></nav>
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
+        
     </div>
 <!-- main -->
 <main class="content" id="quarto-document-content">
@@ -261,7 +168,7 @@ ul.task-list li input[type="checkbox"] {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">January 23, 2026</p>
+      <p class="date">January 25, 2026</p>
     </div>
   </div>
   
@@ -2215,715 +2122,37 @@ Warning
 <section id="pt_exact_nocov" class="level3">
 <h3 class="anchored" data-anchor-id="pt_exact_nocov">5.1 pt_exact_nocov</h3>
 <p>Tests a 3-state illness-death model (1→2→3 and 1→3) with 2 Coxian phases per transient state, using exactly observed transition times. Validates that phase-type rate parameters are recovered when all transition times are known. This is the simplest case with 8 rate parameters.</p>
-<p><strong>Test</strong>: pt_exact_nocov | <strong>Passed</strong>: ✅ | <strong>Time</strong>: 0.0s</p>
-<table class="caption-top table">
-<thead>
-<tr class="header headerLastRow">
-<th style="text-align: right;" data-quarto-table-cell-role="th">Parameter</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">True</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">Estimated</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">SE</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">CI Low</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">CI High</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">Rel Err %</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">Covered</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: right;">rate_1</td>
-<td style="text-align: right;">0.5</td>
-<td style="text-align: right;">0.4585</td>
-<td style="text-align: right;">0.0244</td>
-<td style="text-align: right;">0.3957</td>
-<td style="text-align: right;">0.5213</td>
-<td style="text-align: right;">8.3</td>
-<td style="text-align: right;">✓</td>
-</tr>
-<tr class="even">
-<td style="text-align: right;">rate_2</td>
-<td style="text-align: right;">0.3</td>
-<td style="text-align: right;">0.3411</td>
-<td style="text-align: right;">0.0201</td>
-<td style="text-align: right;">0.2894</td>
-<td style="text-align: right;">0.3929</td>
-<td style="text-align: right;">13.7</td>
-<td style="text-align: right;">✓</td>
-</tr>
-<tr class="odd">
-<td style="text-align: right;">rate_3</td>
-<td style="text-align: right;">0.4</td>
-<td style="text-align: right;">0.4101</td>
-<td style="text-align: right;">0.0221</td>
-<td style="text-align: right;">0.3533</td>
-<td style="text-align: right;">0.4669</td>
-<td style="text-align: right;">2.5</td>
-<td style="text-align: right;">✓</td>
-</tr>
-<tr class="even">
-<td style="text-align: right;">rate_4</td>
-<td style="text-align: right;">0.2</td>
-<td style="text-align: right;">0.2103</td>
-<td style="text-align: right;">0.0164</td>
-<td style="text-align: right;">0.1679</td>
-<td style="text-align: right;">0.2526</td>
-<td style="text-align: right;">5.1</td>
-<td style="text-align: right;">✓</td>
-</tr>
-<tr class="odd">
-<td style="text-align: right;">rate_5</td>
-<td style="text-align: right;">0.25</td>
-<td style="text-align: right;">0.2364</td>
-<td style="text-align: right;">0.0159</td>
-<td style="text-align: right;">0.1954</td>
-<td style="text-align: right;">0.2775</td>
-<td style="text-align: right;">5.4</td>
-<td style="text-align: right;">✓</td>
-</tr>
-<tr class="even">
-<td style="text-align: right;">rate_6</td>
-<td style="text-align: right;">0.35</td>
-<td style="text-align: right;">0.3614</td>
-<td style="text-align: right;">0.0222</td>
-<td style="text-align: right;">0.3042</td>
-<td style="text-align: right;">0.4187</td>
-<td style="text-align: right;">3.3</td>
-<td style="text-align: right;">✓</td>
-</tr>
-<tr class="odd">
-<td style="text-align: right;">rate_7</td>
-<td style="text-align: right;">0.3</td>
-<td style="text-align: right;">0.2923</td>
-<td style="text-align: right;">0.0195</td>
-<td style="text-align: right;">0.2422</td>
-<td style="text-align: right;">0.3425</td>
-<td style="text-align: right;">2.6</td>
-<td style="text-align: right;">✓</td>
-</tr>
-<tr class="even">
-<td style="text-align: right;">rate_8</td>
-<td style="text-align: right;">0.15</td>
-<td style="text-align: right;">0.1734</td>
-<td style="text-align: right;">0.014</td>
-<td style="text-align: right;">0.1372</td>
-<td style="text-align: right;">0.2096</td>
-<td style="text-align: right;">15.6</td>
-<td style="text-align: right;">✓</td>
-</tr>
-</tbody>
-</table>
-<div id="cell-fig-pt-exact-nocov-ci" class="cell" data-execution_count="57">
-<div class="cell-output cell-output-display" data-execution_count="58">
-<div id="fig-pt-exact-nocov-ci" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-pt-exact-nocov-ci-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="03_long_tests_files/figure-html/fig-pt-exact-nocov-ci-output-1.svg" class="img-fluid figure-img">
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-pt-exact-nocov-ci-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;37: Cumulative Incidence (Observed State Space)
-</figcaption>
-</figure>
-</div>
-</div>
-</div>
-<div id="cell-fig-pt-exact-nocov-prev" class="cell" data-execution_count="58">
-<div class="cell-output cell-output-display" data-execution_count="59">
-<div id="fig-pt-exact-nocov-prev" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-pt-exact-nocov-prev-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="03_long_tests_files/figure-html/fig-pt-exact-nocov-prev-output-1.svg" class="img-fluid figure-img">
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-pt-exact-nocov-prev-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;38: State Prevalence (Observed State Space)
-</figcaption>
-</figure>
-</div>
-</div>
-</div>
+<p><em>Test <code>pt_exact_nocov</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
 </section>
 <section id="pt_exact_fixed" class="level3">
 <h3 class="anchored" data-anchor-id="pt_exact_fixed">5.2 pt_exact_fixed</h3>
 <p>Tests a 2-state model (1→2) with 2 phases and a time-fixed binary covariate affecting transition rates. Validates that both baseline rates and covariate effects (log hazard ratios) are recovered from exact data.</p>
-<p><strong>Test</strong>: pt_exact_fixed | <strong>Passed</strong>: ✅ | <strong>Time</strong>: 0.0s</p>
-<table class="caption-top table">
-<thead>
-<tr class="header headerLastRow">
-<th style="text-align: right;" data-quarto-table-cell-role="th">Parameter</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">True</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">Estimated</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">SE</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">CI Low</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">CI High</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">Rel Err %</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">Covered</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: right;">beta_1</td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: right;">0.0204</td>
-<td style="text-align: right;">0.0872</td>
-<td style="text-align: right;">-0.2042</td>
-<td style="text-align: right;">0.245</td>
-<td style="text-align: right;">2.0</td>
-<td style="text-align: right;">✓</td>
-</tr>
-<tr class="even">
-<td style="text-align: right;">beta_2</td>
-<td style="text-align: right;">0.4</td>
-<td style="text-align: right;">0.4337</td>
-<td style="text-align: right;">0.0994</td>
-<td style="text-align: right;">0.1775</td>
-<td style="text-align: right;">0.6899</td>
-<td style="text-align: right;">8.4</td>
-<td style="text-align: right;">✓</td>
-</tr>
-<tr class="odd">
-<td style="text-align: right;">beta_3</td>
-<td style="text-align: right;">0.3</td>
-<td style="text-align: right;">0.3241</td>
-<td style="text-align: right;">0.0793</td>
-<td style="text-align: right;">0.1198</td>
-<td style="text-align: right;">0.5284</td>
-<td style="text-align: right;">8.0</td>
-<td style="text-align: right;">✓</td>
-</tr>
-<tr class="even">
-<td style="text-align: right;">rate_1</td>
-<td style="text-align: right;">0.5</td>
-<td style="text-align: right;">0.4954</td>
-<td style="text-align: right;">0.0296</td>
-<td style="text-align: right;">0.4191</td>
-<td style="text-align: right;">0.5717</td>
-<td style="text-align: right;">0.9</td>
-<td style="text-align: right;">✓</td>
-</tr>
-<tr class="odd">
-<td style="text-align: right;">rate_2</td>
-<td style="text-align: right;">0.3</td>
-<td style="text-align: right;">0.314</td>
-<td style="text-align: right;">0.0243</td>
-<td style="text-align: right;">0.2515</td>
-<td style="text-align: right;">0.3765</td>
-<td style="text-align: right;">4.7</td>
-<td style="text-align: right;">✓</td>
-</tr>
-<tr class="even">
-<td style="text-align: right;">rate_3</td>
-<td style="text-align: right;">0.6</td>
-<td style="text-align: right;">0.5985</td>
-<td style="text-align: right;">0.0337</td>
-<td style="text-align: right;">0.5116</td>
-<td style="text-align: right;">0.6853</td>
-<td style="text-align: right;">0.3</td>
-<td style="text-align: right;">✓</td>
-</tr>
-</tbody>
-</table>
-<div id="cell-fig-pt-exact-fixed-ci" class="cell" data-execution_count="60">
-<div class="cell-output cell-output-display" data-execution_count="61">
-<div id="fig-pt-exact-fixed-ci" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-pt-exact-fixed-ci-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="03_long_tests_files/figure-html/fig-pt-exact-fixed-ci-output-1.svg" class="img-fluid figure-img">
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-pt-exact-fixed-ci-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;39: Cumulative Incidence (Observed State Space)
-</figcaption>
-</figure>
-</div>
-</div>
-</div>
-<div id="cell-fig-pt-exact-fixed-prev" class="cell" data-execution_count="61">
-<div class="cell-output cell-output-display" data-execution_count="62">
-<div id="fig-pt-exact-fixed-prev" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-pt-exact-fixed-prev-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="03_long_tests_files/figure-html/fig-pt-exact-fixed-prev-output-1.svg" class="img-fluid figure-img">
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-pt-exact-fixed-prev-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;40: State Prevalence (Observed State Space)
-</figcaption>
-</figure>
-</div>
-</div>
-</div>
+<p><em>Test <code>pt_exact_fixed</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
 </section>
 <section id="pt_exact_tvc" class="level3">
 <h3 class="anchored" data-anchor-id="pt_exact_tvc">5.3 pt_exact_tvc</h3>
 <p>Tests a 2-state model with 2 phases and a time-varying covariate that changes at a fixed time point. Validates inference for phase-type models when covariate values change during follow-up.</p>
-<p><strong>Test</strong>: pt_exact_tvc | <strong>Passed</strong>: ✅ | <strong>Time</strong>: 0.0s</p>
-<table class="caption-top table">
-<thead>
-<tr class="header headerLastRow">
-<th style="text-align: right;" data-quarto-table-cell-role="th">Parameter</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">True</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">Estimated</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">SE</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">CI Low</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">CI High</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">Rel Err %</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">Covered</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: right;">beta_1</td>
-<td style="text-align: right;">0.0</td>
-<td style="text-align: right;">-0.0185</td>
-<td style="text-align: right;">0.1697</td>
-<td style="text-align: right;">-0.4556</td>
-<td style="text-align: right;">0.4186</td>
-<td style="text-align: right;">1.8</td>
-<td style="text-align: right;">✓</td>
-</tr>
-<tr class="even">
-<td style="text-align: right;">beta_2</td>
-<td style="text-align: right;">0.5</td>
-<td style="text-align: right;">0.4548</td>
-<td style="text-align: right;">0.1779</td>
-<td style="text-align: right;">-0.0035</td>
-<td style="text-align: right;">0.913</td>
-<td style="text-align: right;">9.0</td>
-<td style="text-align: right;">✓</td>
-</tr>
-<tr class="odd">
-<td style="text-align: right;">beta_3</td>
-<td style="text-align: right;">0.4</td>
-<td style="text-align: right;">0.3191</td>
-<td style="text-align: right;">0.0984</td>
-<td style="text-align: right;">0.0657</td>
-<td style="text-align: right;">0.5726</td>
-<td style="text-align: right;">20.2</td>
-<td style="text-align: right;">✓</td>
-</tr>
-<tr class="even">
-<td style="text-align: right;">rate_1</td>
-<td style="text-align: right;">0.4</td>
-<td style="text-align: right;">0.4166</td>
-<td style="text-align: right;">0.0175</td>
-<td style="text-align: right;">0.3714</td>
-<td style="text-align: right;">0.4617</td>
-<td style="text-align: right;">4.1</td>
-<td style="text-align: right;">✓</td>
-</tr>
-<tr class="odd">
-<td style="text-align: right;">rate_2</td>
-<td style="text-align: right;">0.25</td>
-<td style="text-align: right;">0.2521</td>
-<td style="text-align: right;">0.0134</td>
-<td style="text-align: right;">0.2177</td>
-<td style="text-align: right;">0.2865</td>
-<td style="text-align: right;">0.8</td>
-<td style="text-align: right;">✓</td>
-</tr>
-<tr class="even">
-<td style="text-align: right;">rate_3</td>
-<td style="text-align: right;">0.5</td>
-<td style="text-align: right;">0.5574</td>
-<td style="text-align: right;">0.0239</td>
-<td style="text-align: right;">0.4959</td>
-<td style="text-align: right;">0.6189</td>
-<td style="text-align: right;">11.5</td>
-<td style="text-align: right;">✓</td>
-</tr>
-</tbody>
-</table>
-<div id="cell-fig-pt-exact-tvc-ci" class="cell" data-execution_count="63">
-<div class="cell-output cell-output-display" data-execution_count="64">
-<div id="fig-pt-exact-tvc-ci" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-pt-exact-tvc-ci-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="03_long_tests_files/figure-html/fig-pt-exact-tvc-ci-output-1.svg" class="img-fluid figure-img">
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-pt-exact-tvc-ci-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;41: Cumulative Incidence (Observed State Space)
-</figcaption>
-</figure>
-</div>
-</div>
-</div>
-<div id="cell-fig-pt-exact-tvc-prev" class="cell" data-execution_count="64">
-<div class="cell-output cell-output-display" data-execution_count="65">
-<div id="fig-pt-exact-tvc-prev" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-pt-exact-tvc-prev-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="03_long_tests_files/figure-html/fig-pt-exact-tvc-prev-output-1.svg" class="img-fluid figure-img">
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-pt-exact-tvc-prev-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;42: State Prevalence (Observed State Space)
-</figcaption>
-</figure>
-</div>
-</div>
-</div>
+<p><em>Test <code>pt_exact_tvc</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
 </section>
 <section id="pt_panel_simple" class="level3">
 <h3 class="anchored" data-anchor-id="pt_panel_simple">5.4 pt_panel_simple</h3>
 <p>Tests a simple 2-state model (1→2 absorbing) with 2 phases using panel/interval-censored data where states are observed only at discrete times. Validates that panel data likelihood works correctly for phase-type models.</p>
-<p><strong>Test</strong>: pt_panel_simple | <strong>Passed</strong>: ✅ | <strong>Time</strong>: 0.0s</p>
-<table class="caption-top table">
-<thead>
-<tr class="header headerLastRow">
-<th style="text-align: right;" data-quarto-table-cell-role="th">Parameter</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">True</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">Estimated</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">SE</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">CI Low</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">CI High</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">Rel Err %</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">Covered</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: right;">p1</td>
-<td style="text-align: right;">0.4</td>
-<td style="text-align: right;">0.4306</td>
-<td style="text-align: right;">0.0183</td>
-<td style="text-align: right;">0.3836</td>
-<td style="text-align: right;">0.4777</td>
-<td style="text-align: right;">7.7</td>
-<td style="text-align: right;">✓</td>
-</tr>
-<tr class="even">
-<td style="text-align: right;">p2</td>
-<td style="text-align: right;">0.2</td>
-<td style="text-align: right;">0.2156</td>
-<td style="text-align: right;">0.0135</td>
-<td style="text-align: right;">0.1809</td>
-<td style="text-align: right;">0.2503</td>
-<td style="text-align: right;">7.8</td>
-<td style="text-align: right;">✓</td>
-</tr>
-<tr class="odd">
-<td style="text-align: right;">p3</td>
-<td style="text-align: right;">0.5</td>
-<td style="text-align: right;">0.5139</td>
-<td style="text-align: right;">0.021</td>
-<td style="text-align: right;">0.4597</td>
-<td style="text-align: right;">0.5681</td>
-<td style="text-align: right;">2.8</td>
-<td style="text-align: right;">✓</td>
-</tr>
-</tbody>
-</table>
-<div id="cell-fig-pt-panel-simple-ci" class="cell" data-execution_count="66">
-<div class="cell-output cell-output-display" data-execution_count="67">
-<div id="fig-pt-panel-simple-ci" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-pt-panel-simple-ci-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="03_long_tests_files/figure-html/fig-pt-panel-simple-ci-output-1.svg" class="img-fluid figure-img">
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-pt-panel-simple-ci-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;43: Cumulative Incidence (Observed State Space)
-</figcaption>
-</figure>
-</div>
-</div>
-</div>
-<div id="cell-fig-pt-panel-simple-prev" class="cell" data-execution_count="67">
-<div class="cell-output cell-output-display" data-execution_count="68">
-<div id="fig-pt-panel-simple-prev" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-pt-panel-simple-prev-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="03_long_tests_files/figure-html/fig-pt-panel-simple-prev-output-1.svg" class="img-fluid figure-img">
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-pt-panel-simple-prev-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;44: State Prevalence (Observed State Space)
-</figcaption>
-</figure>
-</div>
-</div>
-</div>
+<p><em>Test <code>pt_panel_simple</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
 </section>
 <section id="pt_panel_id" class="level3">
 <h3 class="anchored" data-anchor-id="pt_panel_id">5.5 pt_panel_id</h3>
 <p>Tests a 3-state illness-death model with 2 phases per transient state using panel data. This is the most complex panel test with 8 rate parameters estimated from interval-censored observations.</p>
-<p><strong>Test</strong>: pt_panel_id | <strong>Passed</strong>: ✅ | <strong>Time</strong>: 0.0s</p>
-<table class="caption-top table">
-<thead>
-<tr class="header headerLastRow">
-<th style="text-align: right;" data-quarto-table-cell-role="th">Parameter</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">True</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">Estimated</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">SE</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">CI Low</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">CI High</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">Rel Err %</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">Covered</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: right;">p1</td>
-<td style="text-align: right;">0.5</td>
-<td style="text-align: right;">0.5349</td>
-<td style="text-align: right;">0.0543</td>
-<td style="text-align: right;">0.3951</td>
-<td style="text-align: right;">0.6747</td>
-<td style="text-align: right;">7.0</td>
-<td style="text-align: right;">✓</td>
-</tr>
-<tr class="even">
-<td style="text-align: right;">p2</td>
-<td style="text-align: right;">0.3</td>
-<td style="text-align: right;">0.2941</td>
-<td style="text-align: right;">0.0445</td>
-<td style="text-align: right;">0.1795</td>
-<td style="text-align: right;">0.4086</td>
-<td style="text-align: right;">2.0</td>
-<td style="text-align: right;">✓</td>
-</tr>
-<tr class="odd">
-<td style="text-align: right;">p3</td>
-<td style="text-align: right;">0.35</td>
-<td style="text-align: right;">0.3562</td>
-<td style="text-align: right;">0.0363</td>
-<td style="text-align: right;">0.2628</td>
-<td style="text-align: right;">0.4497</td>
-<td style="text-align: right;">1.8</td>
-<td style="text-align: right;">✓</td>
-</tr>
-<tr class="even">
-<td style="text-align: right;">p4</td>
-<td style="text-align: right;">0.4</td>
-<td style="text-align: right;">0.3857</td>
-<td style="text-align: right;">0.0485</td>
-<td style="text-align: right;">0.2608</td>
-<td style="text-align: right;">0.5106</td>
-<td style="text-align: right;">3.6</td>
-<td style="text-align: right;">✓</td>
-</tr>
-<tr class="odd">
-<td style="text-align: right;">p5</td>
-<td style="text-align: right;">0.25</td>
-<td style="text-align: right;">0.2829</td>
-<td style="text-align: right;">0.0396</td>
-<td style="text-align: right;">0.1809</td>
-<td style="text-align: right;">0.3848</td>
-<td style="text-align: right;">13.1</td>
-<td style="text-align: right;">✓</td>
-</tr>
-<tr class="even">
-<td style="text-align: right;">p6</td>
-<td style="text-align: right;">0.2</td>
-<td style="text-align: right;">0.2084</td>
-<td style="text-align: right;">0.0184</td>
-<td style="text-align: right;">0.161</td>
-<td style="text-align: right;">0.2557</td>
-<td style="text-align: right;">4.2</td>
-<td style="text-align: right;">✓</td>
-</tr>
-<tr class="odd">
-<td style="text-align: right;">p7</td>
-<td style="text-align: right;">0.3</td>
-<td style="text-align: right;">0.2905</td>
-<td style="text-align: right;">0.028</td>
-<td style="text-align: right;">0.2184</td>
-<td style="text-align: right;">0.3626</td>
-<td style="text-align: right;">3.2</td>
-<td style="text-align: right;">✓</td>
-</tr>
-<tr class="even">
-<td style="text-align: right;">p8</td>
-<td style="text-align: right;">0.35</td>
-<td style="text-align: right;">0.3535</td>
-<td style="text-align: right;">0.0323</td>
-<td style="text-align: right;">0.2703</td>
-<td style="text-align: right;">0.4366</td>
-<td style="text-align: right;">1.0</td>
-<td style="text-align: right;">✓</td>
-</tr>
-</tbody>
-</table>
-<div id="cell-fig-pt-panel-id-ci" class="cell" data-execution_count="69">
-<div class="cell-output cell-output-display" data-execution_count="70">
-<div id="fig-pt-panel-id-ci" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-pt-panel-id-ci-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="03_long_tests_files/figure-html/fig-pt-panel-id-ci-output-1.svg" class="img-fluid figure-img">
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-pt-panel-id-ci-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;45: Cumulative Incidence (Observed State Space)
-</figcaption>
-</figure>
-</div>
-</div>
-</div>
-<div id="cell-fig-pt-panel-id-prev" class="cell" data-execution_count="70">
-<div class="cell-output cell-output-display" data-execution_count="71">
-<div id="fig-pt-panel-id-prev" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-pt-panel-id-prev-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="03_long_tests_files/figure-html/fig-pt-panel-id-prev-output-1.svg" class="img-fluid figure-img">
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-pt-panel-id-prev-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;46: State Prevalence (Observed State Space)
-</figcaption>
-</figure>
-</div>
-</div>
-</div>
+<p><em>Test <code>pt_panel_id</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
 </section>
 <section id="pt_mixed_simple" class="level3">
 <h3 class="anchored" data-anchor-id="pt_mixed_simple">5.6 pt_mixed_simple</h3>
 <p>Tests a 2-state model where some subjects have exact observations and others have panel observations. Validates that the likelihood correctly combines both observation types.</p>
-<p><strong>Test</strong>: pt_mixed_simple | <strong>Passed</strong>: ✅ | <strong>Time</strong>: 0.0s</p>
-<table class="caption-top table">
-<thead>
-<tr class="header headerLastRow">
-<th style="text-align: right;" data-quarto-table-cell-role="th">Parameter</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">True</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">Estimated</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">SE</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">CI Low</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">CI High</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">Rel Err %</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">Covered</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: right;">p1</td>
-<td style="text-align: right;">0.35</td>
-<td style="text-align: right;">0.3434</td>
-<td style="text-align: right;">0.0148</td>
-<td style="text-align: right;">0.3053</td>
-<td style="text-align: right;">0.3816</td>
-<td style="text-align: right;">1.9</td>
-<td style="text-align: right;">✓</td>
-</tr>
-<tr class="even">
-<td style="text-align: right;">p2</td>
-<td style="text-align: right;">0.25</td>
-<td style="text-align: right;">0.2531</td>
-<td style="text-align: right;">0.0127</td>
-<td style="text-align: right;">0.2203</td>
-<td style="text-align: right;">0.286</td>
-<td style="text-align: right;">1.3</td>
-<td style="text-align: right;">✓</td>
-</tr>
-<tr class="odd">
-<td style="text-align: right;">p3</td>
-<td style="text-align: right;">0.45</td>
-<td style="text-align: right;">0.4544</td>
-<td style="text-align: right;">0.02</td>
-<td style="text-align: right;">0.4028</td>
-<td style="text-align: right;">0.506</td>
-<td style="text-align: right;">1.0</td>
-<td style="text-align: right;">✓</td>
-</tr>
-</tbody>
-</table>
-<div id="cell-fig-pt-mixed-simple-ci" class="cell" data-execution_count="72">
-<div class="cell-output cell-output-display" data-execution_count="73">
-<div id="fig-pt-mixed-simple-ci" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-pt-mixed-simple-ci-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="03_long_tests_files/figure-html/fig-pt-mixed-simple-ci-output-1.svg" class="img-fluid figure-img">
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-pt-mixed-simple-ci-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;47: Cumulative Incidence (Observed State Space)
-</figcaption>
-</figure>
-</div>
-</div>
-</div>
-<div id="cell-fig-pt-mixed-simple-prev" class="cell" data-execution_count="73">
-<div class="cell-output cell-output-display" data-execution_count="74">
-<div id="fig-pt-mixed-simple-prev" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-pt-mixed-simple-prev-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="03_long_tests_files/figure-html/fig-pt-mixed-simple-prev-output-1.svg" class="img-fluid figure-img">
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-pt-mixed-simple-prev-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;48: State Prevalence (Observed State Space)
-</figcaption>
-</figure>
-</div>
-</div>
-</div>
+<p><em>Test <code>pt_mixed_simple</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
 </section>
 <section id="pt_mixed_structured" class="level3">
 <h3 class="anchored" data-anchor-id="pt_mixed_structured">5.7 pt_mixed_structured</h3>
 <p>Tests a 2-state model with structured mixed observations where the first half of subjects are observed exactly and the second half have panel data. Validates inference with heterogeneous observation patterns.</p>
-<p><strong>Test</strong>: pt_mixed_structured | <strong>Passed</strong>: ✅ | <strong>Time</strong>: 0.0s</p>
-<table class="caption-top table">
-<thead>
-<tr class="header headerLastRow">
-<th style="text-align: right;" data-quarto-table-cell-role="th">Parameter</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">True</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">Estimated</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">SE</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">CI Low</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">CI High</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">Rel Err %</th>
-<th style="text-align: right;" data-quarto-table-cell-role="th">Covered</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td style="text-align: right;">p1</td>
-<td style="text-align: right;">0.4</td>
-<td style="text-align: right;">0.3934</td>
-<td style="text-align: right;">0.0164</td>
-<td style="text-align: right;">0.3513</td>
-<td style="text-align: right;">0.4356</td>
-<td style="text-align: right;">1.6</td>
-<td style="text-align: right;">✓</td>
-</tr>
-<tr class="even">
-<td style="text-align: right;">p2</td>
-<td style="text-align: right;">0.25</td>
-<td style="text-align: right;">0.2487</td>
-<td style="text-align: right;">0.0135</td>
-<td style="text-align: right;">0.2139</td>
-<td style="text-align: right;">0.2836</td>
-<td style="text-align: right;">0.5</td>
-<td style="text-align: right;">✓</td>
-</tr>
-<tr class="odd">
-<td style="text-align: right;">p3</td>
-<td style="text-align: right;">0.5</td>
-<td style="text-align: right;">0.4894</td>
-<td style="text-align: right;">0.0213</td>
-<td style="text-align: right;">0.4345</td>
-<td style="text-align: right;">0.5444</td>
-<td style="text-align: right;">2.1</td>
-<td style="text-align: right;">✓</td>
-</tr>
-</tbody>
-</table>
-<div id="cell-fig-pt-mixed-structured-ci" class="cell" data-execution_count="75">
-<div class="cell-output cell-output-display" data-execution_count="76">
-<div id="fig-pt-mixed-structured-ci" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-pt-mixed-structured-ci-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="03_long_tests_files/figure-html/fig-pt-mixed-structured-ci-output-1.svg" class="img-fluid figure-img">
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-pt-mixed-structured-ci-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;49: Cumulative Incidence (Observed State Space)
-</figcaption>
-</figure>
-</div>
-</div>
-</div>
-<div id="cell-fig-pt-mixed-structured-prev" class="cell" data-execution_count="76">
-<div class="cell-output cell-output-display" data-execution_count="77">
-<div id="fig-pt-mixed-structured-prev" class="quarto-float quarto-figure quarto-figure-center anchored">
-<figure class="quarto-float quarto-float-fig figure">
-<div aria-describedby="fig-pt-mixed-structured-prev-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<img src="03_long_tests_files/figure-html/fig-pt-mixed-structured-prev-output-1.svg" class="img-fluid figure-img">
-</div>
-<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-pt-mixed-structured-prev-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-Figure&nbsp;50: State Prevalence (Observed State Space)
-</figcaption>
-</figure>
-</div>
-</div>
-</div>
+<p><em>Test <code>pt_mixed_structured</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
 </section>
 <section id="pt_panel_fixed" class="level3">
 <h3 class="anchored" data-anchor-id="pt_panel_fixed">5.8 pt_panel_fixed</h3>
@@ -3134,10 +2363,115 @@ Note
 <hr>
 </section>
 </section>
+<section id="unpenalized-spline-suite" class="level2">
+<h2 class="anchored" data-anchor-id="unpenalized-spline-suite">7. Unpenalized Spline Suite</h2>
+<p>Tests in <code>longtest_spline_suite.jl</code> validate round-trip spline hazard recovery using a spline-based data generating process. Data is simulated from a spline model with known coefficients, then a spline model is fitted and the estimated hazard curve is compared to the true hazard curve at multiple time points.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+<span class="screen-reader-only">Note</span>Validation Strategy
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Unlike parametric tests that compare parameter values directly, spline tests compare <strong>hazard curves</strong> since B-spline basis coefficients are not directly comparable between models with different data. Validation checks that pointwise hazard h(t) and covariate effects β are recovered within tolerance.</p>
+</div>
+</div>
+<section id="test-matrix" class="level3">
+<h3 class="anchored" data-anchor-id="test-matrix">7.1 Test Matrix</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 28%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Category</th>
+<th>PH Tests</th>
+<th>AFT Tests</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Exact, No Covariate</td>
+<td>sp_ph_exact_nocov</td>
+<td>sp_aft_exact_nocov</td>
+<td>✅ Pass</td>
+</tr>
+<tr class="even">
+<td>Exact, Fixed Covariate</td>
+<td>sp_ph_exact_fixed</td>
+<td>sp_aft_exact_fixed</td>
+<td>✅ Pass</td>
+</tr>
+<tr class="odd">
+<td>Exact, Time-varying</td>
+<td>sp_ph_exact_tvc</td>
+<td>sp_aft_exact_tvc</td>
+<td>✅ Pass</td>
+</tr>
+<tr class="even">
+<td>Panel (Markov), No Covariate</td>
+<td>sp_ph_panel_markov_nocov</td>
+<td>sp_aft_panel_markov_nocov</td>
+<td>⏳ Pending</td>
+</tr>
+<tr class="odd">
+<td>Panel (Markov), Fixed</td>
+<td>sp_ph_panel_markov_fixed</td>
+<td>sp_aft_panel_markov_fixed</td>
+<td>⏳ Pending</td>
+</tr>
+<tr class="even">
+<td>Panel (Markov), TVC</td>
+<td>sp_ph_panel_markov_tvc</td>
+<td>sp_aft_panel_markov_tvc</td>
+<td>⏳ Pending</td>
+</tr>
+<tr class="odd">
+<td>Panel (PhaseType), No Covariate</td>
+<td>sp_ph_panel_phasetype_nocov</td>
+<td>sp_aft_panel_phasetype_nocov</td>
+<td>⏳ Pending</td>
+</tr>
+<tr class="even">
+<td>Panel (PhaseType), Fixed</td>
+<td>sp_ph_panel_phasetype_fixed</td>
+<td>sp_aft_panel_phasetype_fixed</td>
+<td>⏳ Pending</td>
+</tr>
+<tr class="odd">
+<td>Panel (PhaseType), TVC</td>
+<td>sp_ph_panel_phasetype_tvc</td>
+<td>sp_aft_panel_phasetype_tvc</td>
+<td>⏳ Pending</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="exact-data-results" class="level3">
+<h3 class="anchored" data-anchor-id="exact-data-results">7.2 Exact Data Results</h3>
+<p>Results for exact data spline tests (sp_ph_exact_<em>, sp_aft_exact_</em>):</p>
+<ul>
+<li><strong>sp_ph_exact_nocov</strong>: Not available</li>
+<li><strong>sp_ph_exact_fixed</strong>: Not available</li>
+<li><strong>sp_ph_exact_tvc</strong>: Not available</li>
+<li><strong>sp_aft_exact_nocov</strong>: Not available</li>
+<li><strong>sp_aft_exact_fixed</strong>: Not available</li>
+<li><strong>sp_aft_exact_tvc</strong>: Not available</li>
+</ul>
+<hr>
+</section>
+</section>
 <section id="penalized-spline-models" class="level2">
-<h2 class="anchored" data-anchor-id="penalized-spline-models">7. Penalized Spline Models</h2>
+<h2 class="anchored" data-anchor-id="penalized-spline-models">8. Penalized Spline Models</h2>
 <section id="smooth-covariate-effects-sx" class="level3">
-<h3 class="anchored" data-anchor-id="smooth-covariate-effects-sx">7.1 Smooth Covariate Effects (s(x))</h3>
+<h3 class="anchored" data-anchor-id="smooth-covariate-effects-sx">8.1 Smooth Covariate Effects (s(x))</h3>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -3171,7 +2505,7 @@ Note
 </table>
 </section>
 <section id="tensor-product-smooths-texy" class="level3">
-<h3 class="anchored" data-anchor-id="tensor-product-smooths-texy">7.2 Tensor Product Smooths (te(x,y))</h3>
+<h3 class="anchored" data-anchor-id="tensor-product-smooths-texy">8.2 Tensor Product Smooths (te(x,y))</h3>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -3200,7 +2534,7 @@ Note
 </table>
 </section>
 <section id="spline-hazards-with-exact-data" class="level3">
-<h3 class="anchored" data-anchor-id="spline-hazards-with-exact-data">7.3 Spline Hazards with Exact Data</h3>
+<h3 class="anchored" data-anchor-id="spline-hazards-with-exact-data">8.3 Spline Hazards with Exact Data</h3>
 <p>Tests in <code>longtest_spline_exact.jl</code> validate spline hazard recovery with exact observation data (obstype=1) using a Weibull DGP.</p>
 <table class="caption-top table">
 <thead>
@@ -3252,7 +2586,7 @@ Note
 </table>
 </section>
 <section id="mcem-with-spline-hazards" class="level3">
-<h3 class="anchored" data-anchor-id="mcem-with-spline-hazards">7.4 MCEM with Spline Hazards</h3>
+<h3 class="anchored" data-anchor-id="mcem-with-spline-hazards">8.4 MCEM with Spline Hazards</h3>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -3280,271 +2614,6 @@ Note
 </tbody>
 </table>
 <hr>
-</section>
-</section>
-<section id="unpenalized-spline-suite" class="level2">
-<h2 class="anchored" data-anchor-id="unpenalized-spline-suite">8. Unpenalized Spline Suite</h2>
-<p>Tests in <code>longtest_spline_suite.jl</code> comprehensively validate unpenalized spline hazard inference. The test matrix covers: (exact × panel) × (PH × AFT) × (Markov × PhaseType surrogate) × (nocov × fixed × tvc).</p>
-<p><strong>Validation Strategy</strong>: Generate data from spline models with known B-spline coefficients, then fit the same spline model to directly compare estimated coefficients to true values.</p>
-<p><strong>Spline Configuration</strong>: degree=3 (cubic), 2 interior knots, boundary=[0.0, 15.0], no penalization.</p>
-<section id="exact-data-tests-6-tests" class="level3">
-<h3 class="anchored" data-anchor-id="exact-data-tests-6-tests">8.1 Exact Data Tests (6 tests)</h3>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>Test</th>
-<th>Effect</th>
-<th>Covariates</th>
-<th>Status</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>sp_ph_exact_nocov</td>
-<td>PH</td>
-<td>None</td>
-<td>⏳ Not Run</td>
-</tr>
-<tr class="even">
-<td>sp_ph_exact_fixed</td>
-<td>PH</td>
-<td>Fixed</td>
-<td>⏳ Not Run</td>
-</tr>
-<tr class="odd">
-<td>sp_ph_exact_tvc</td>
-<td>PH</td>
-<td>Time-varying</td>
-<td>⏳ Not Run</td>
-</tr>
-<tr class="even">
-<td>sp_aft_exact_nocov</td>
-<td>AFT</td>
-<td>None</td>
-<td>⏳ Not Run</td>
-</tr>
-<tr class="odd">
-<td>sp_aft_exact_fixed</td>
-<td>AFT</td>
-<td>Fixed</td>
-<td>⏳ Not Run</td>
-</tr>
-<tr class="even">
-<td>sp_aft_exact_tvc</td>
-<td>AFT</td>
-<td>Time-varying</td>
-<td>⏳ Not Run</td>
-</tr>
-</tbody>
-</table>
-<section id="sp_ph_exact_nocov" class="level4">
-<h4 class="anchored" data-anchor-id="sp_ph_exact_nocov">8.1.1 sp_ph_exact_nocov</h4>
-<p>Spline PH hazard, exact data, no covariates. Tests direct coefficient recovery.</p>
-<p><em>Test <code>sp_ph_exact_nocov</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
-</section>
-<section id="sp_ph_exact_fixed" class="level4">
-<h4 class="anchored" data-anchor-id="sp_ph_exact_fixed">8.1.2 sp_ph_exact_fixed</h4>
-<p>Spline PH hazard, exact data, time-fixed covariate.</p>
-<p><em>Test <code>sp_ph_exact_fixed</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
-</section>
-<section id="sp_ph_exact_tvc" class="level4">
-<h4 class="anchored" data-anchor-id="sp_ph_exact_tvc">8.1.3 sp_ph_exact_tvc</h4>
-<p>Spline PH hazard, exact data, time-varying covariate.</p>
-<p><em>Test <code>sp_ph_exact_tvc</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
-</section>
-<section id="sp_aft_exact_nocov" class="level4">
-<h4 class="anchored" data-anchor-id="sp_aft_exact_nocov">8.1.4 sp_aft_exact_nocov</h4>
-<p>Spline AFT hazard, exact data, no covariates.</p>
-<p><em>Test <code>sp_aft_exact_nocov</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
-</section>
-<section id="sp_aft_exact_fixed" class="level4">
-<h4 class="anchored" data-anchor-id="sp_aft_exact_fixed">8.1.5 sp_aft_exact_fixed</h4>
-<p>Spline AFT hazard, exact data, time-fixed covariate.</p>
-<p><em>Test <code>sp_aft_exact_fixed</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
-</section>
-<section id="sp_aft_exact_tvc" class="level4">
-<h4 class="anchored" data-anchor-id="sp_aft_exact_tvc">8.1.6 sp_aft_exact_tvc</h4>
-<p>Spline AFT hazard, exact data, time-varying covariate.</p>
-<p><em>Test <code>sp_aft_exact_tvc</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
-</section>
-</section>
-<section id="panel-data-tests---markov-surrogate-6-tests" class="level3">
-<h3 class="anchored" data-anchor-id="panel-data-tests---markov-surrogate-6-tests">8.2 Panel Data Tests - Markov Surrogate (6 tests)</h3>
-<p>Tests with panel data using MCEM with Markov surrogate.</p>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>Test</th>
-<th>Effect</th>
-<th>Covariates</th>
-<th>Status</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>sp_ph_panel_markov_nocov</td>
-<td>PH</td>
-<td>None</td>
-<td>⏳ Not Run</td>
-</tr>
-<tr class="even">
-<td>sp_ph_panel_markov_fixed</td>
-<td>PH</td>
-<td>Fixed</td>
-<td>⏳ Not Run</td>
-</tr>
-<tr class="odd">
-<td>sp_ph_panel_markov_tvc</td>
-<td>PH</td>
-<td>Time-varying</td>
-<td>⏳ Not Run</td>
-</tr>
-<tr class="even">
-<td>sp_aft_panel_markov_nocov</td>
-<td>AFT</td>
-<td>None</td>
-<td>⏳ Not Run</td>
-</tr>
-<tr class="odd">
-<td>sp_aft_panel_markov_fixed</td>
-<td>AFT</td>
-<td>Fixed</td>
-<td>⏳ Not Run</td>
-</tr>
-<tr class="even">
-<td>sp_aft_panel_markov_tvc</td>
-<td>AFT</td>
-<td>Time-varying</td>
-<td>⏳ Not Run</td>
-</tr>
-</tbody>
-</table>
-<section id="sp_ph_panel_markov_nocov" class="level4">
-<h4 class="anchored" data-anchor-id="sp_ph_panel_markov_nocov">8.2.1 sp_ph_panel_markov_nocov</h4>
-<p>Spline PH, panel data, Markov surrogate, no covariates.</p>
-<p><em>Test <code>sp_ph_panel_markov_nocov</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
-</section>
-<section id="sp_ph_panel_markov_fixed" class="level4">
-<h4 class="anchored" data-anchor-id="sp_ph_panel_markov_fixed">8.2.2 sp_ph_panel_markov_fixed</h4>
-<p>Spline PH, panel data, Markov surrogate, time-fixed covariate.</p>
-<p><em>Test <code>sp_ph_panel_markov_fixed</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
-</section>
-<section id="sp_ph_panel_markov_tvc" class="level4">
-<h4 class="anchored" data-anchor-id="sp_ph_panel_markov_tvc">8.2.3 sp_ph_panel_markov_tvc</h4>
-<p>Spline PH, panel data, Markov surrogate, time-varying covariate.</p>
-<p><em>Test <code>sp_ph_panel_markov_tvc</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
-</section>
-<section id="sp_aft_panel_markov_nocov" class="level4">
-<h4 class="anchored" data-anchor-id="sp_aft_panel_markov_nocov">8.2.4 sp_aft_panel_markov_nocov</h4>
-<p>Spline AFT, panel data, Markov surrogate, no covariates.</p>
-<p><em>Test <code>sp_aft_panel_markov_nocov</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
-</section>
-<section id="sp_aft_panel_markov_fixed" class="level4">
-<h4 class="anchored" data-anchor-id="sp_aft_panel_markov_fixed">8.2.5 sp_aft_panel_markov_fixed</h4>
-<p>Spline AFT, panel data, Markov surrogate, time-fixed covariate.</p>
-<p><em>Test <code>sp_aft_panel_markov_fixed</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
-</section>
-<section id="sp_aft_panel_markov_tvc" class="level4">
-<h4 class="anchored" data-anchor-id="sp_aft_panel_markov_tvc">8.2.6 sp_aft_panel_markov_tvc</h4>
-<p>Spline AFT, panel data, Markov surrogate, time-varying covariate.</p>
-<p><em>Test <code>sp_aft_panel_markov_tvc</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
-</section>
-</section>
-<section id="panel-data-tests---phasetype-surrogate-6-tests" class="level3">
-<h3 class="anchored" data-anchor-id="panel-data-tests---phasetype-surrogate-6-tests">8.3 Panel Data Tests - PhaseType Surrogate (6 tests)</h3>
-<p>Tests with panel data using MCEM with PhaseType surrogate.</p>
-<table class="caption-top table">
-<thead>
-<tr class="header">
-<th>Test</th>
-<th>Effect</th>
-<th>Covariates</th>
-<th>Status</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td>sp_ph_panel_phasetype_nocov</td>
-<td>PH</td>
-<td>None</td>
-<td>⏳ Not Run</td>
-</tr>
-<tr class="even">
-<td>sp_ph_panel_phasetype_fixed</td>
-<td>PH</td>
-<td>Fixed</td>
-<td>⏳ Not Run</td>
-</tr>
-<tr class="odd">
-<td>sp_ph_panel_phasetype_tvc</td>
-<td>PH</td>
-<td>Time-varying</td>
-<td>⏳ Not Run</td>
-</tr>
-<tr class="even">
-<td>sp_aft_panel_phasetype_nocov</td>
-<td>AFT</td>
-<td>None</td>
-<td>⏳ Not Run</td>
-</tr>
-<tr class="odd">
-<td>sp_aft_panel_phasetype_fixed</td>
-<td>AFT</td>
-<td>Fixed</td>
-<td>⏳ Not Run</td>
-</tr>
-<tr class="even">
-<td>sp_aft_panel_phasetype_tvc</td>
-<td>AFT</td>
-<td>Time-varying</td>
-<td>⏳ Not Run</td>
-</tr>
-</tbody>
-</table>
-<section id="sp_ph_panel_phasetype_nocov" class="level4">
-<h4 class="anchored" data-anchor-id="sp_ph_panel_phasetype_nocov">8.3.1 sp_ph_panel_phasetype_nocov</h4>
-<p>Spline PH, panel data, PhaseType surrogate, no covariates.</p>
-<p><em>Test <code>sp_ph_panel_phasetype_nocov</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
-</section>
-<section id="sp_ph_panel_phasetype_fixed" class="level4">
-<h4 class="anchored" data-anchor-id="sp_ph_panel_phasetype_fixed">8.3.2 sp_ph_panel_phasetype_fixed</h4>
-<p>Spline PH, panel data, PhaseType surrogate, time-fixed covariate.</p>
-<p><em>Test <code>sp_ph_panel_phasetype_fixed</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
-</section>
-<section id="sp_ph_panel_phasetype_tvc" class="level4">
-<h4 class="anchored" data-anchor-id="sp_ph_panel_phasetype_tvc">8.3.3 sp_ph_panel_phasetype_tvc</h4>
-<p>Spline PH, panel data, PhaseType surrogate, time-varying covariate.</p>
-<p><em>Test <code>sp_ph_panel_phasetype_tvc</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
-</section>
-<section id="sp_aft_panel_phasetype_nocov" class="level4">
-<h4 class="anchored" data-anchor-id="sp_aft_panel_phasetype_nocov">8.3.4 sp_aft_panel_phasetype_nocov</h4>
-<p>Spline AFT, panel data, PhaseType surrogate, no covariates.</p>
-<p><em>Test <code>sp_aft_panel_phasetype_nocov</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
-</section>
-<section id="sp_aft_panel_phasetype_fixed" class="level4">
-<h4 class="anchored" data-anchor-id="sp_aft_panel_phasetype_fixed">8.3.5 sp_aft_panel_phasetype_fixed</h4>
-<p>Spline AFT, panel data, PhaseType surrogate, time-fixed covariate.</p>
-<p><em>Test <code>sp_aft_panel_phasetype_fixed</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
-</section>
-<section id="sp_aft_panel_phasetype_tvc" class="level4">
-<h4 class="anchored" data-anchor-id="sp_aft_panel_phasetype_tvc">8.3.6 sp_aft_panel_phasetype_tvc</h4>
-<p>Spline AFT, panel data, PhaseType surrogate, time-varying covariate.</p>
-<p><em>Test <code>sp_aft_panel_phasetype_tvc</code> not yet run. Execute <code>longtest_parametric_suite.jl</code> to populate.</em></p>
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>Surrogate Comparison
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>Both Markov and PhaseType surrogates should produce similar estimates. For each test case, we verify that estimates from both surrogates are within 35% relative tolerance of each other (20% for β parameters).</p>
-</div>
-</div>
-<hr>
-</section>
 </section>
 </section>
 <section id="notes" class="level2">
@@ -3968,7 +3037,7 @@ Note
 </div>   
     <div class="nav-footer-center">
       &nbsp;
-    <div class="toc-actions d-sm-block d-md-none"><ul><li><a href="https://github.com/fintzij/MultistateModelsTests.jl/blob/main/03_long_tests.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/fintzij/MultistateModelsTests.jl/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div>
+    <div class="toc-actions"><ul><li><a href="https://github.com/fintzij/MultistateModelsTests.jl/blob/main/03_long_tests.qmd" class="toc-action"><i class="bi bi-github"></i>View source</a></li><li><a href="https://github.com/fintzij/MultistateModelsTests.jl/issues/new" class="toc-action"><i class="bi empty"></i>Report an issue</a></li></ul></div></div>
     <div class="nav-footer-right">
 <p>Built with <a href="https://quarto.org/">Quarto</a></p>
 </div>

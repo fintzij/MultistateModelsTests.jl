@@ -1,0 +1,16 @@
+# Scratch/archive files
+scratch/archive/
+
+# Cache log files (keep only .gitkeep and longtest_results)
+cache/*.log
+
+# Generated files
+*.DS_Store
+LocalPreferences.toml
+Manifest.toml
+
+# Reports build artifacts
+reports/_site/
+reports/.quarto/
+reports/_freeze/
+reports/.jupyter_cache/
